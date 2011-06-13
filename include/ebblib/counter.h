@@ -24,48 +24,24 @@
 /* authors and should not be interpreted as representing official policies, either expressed */
 /* or implied, of Boston University */
 
-#include <sdi/sdi.h>
+#ifndef COUNTER_H
+#define COUNTER_H
 
-#include "ebb.h"
-#include "counter.h"
+typedef struct Counter_struct Counter;
 
-static void Counter_inc (Counter *self) {
-/*   assert(self && self->val); */
+typedef struct CounterData_struct CounterData;
 
-  *self->val += 1; //should be atomic
+typedef struct CounterInterface_struct {
+  void (*inc) (CounterData *self);
+  void (*dec) (CounterData *self);
+  int (*val) (CounterData *self);  
+} CounterInterface;
 
-  return;
-}
+struct Counter_struct {
+  CounterInterface *itf;
+  CounterData *data;
+};
 
-static void Counter_dec (Counter *self) {
-/*   assert(self && self->val); */
-  
-  *self->val -= 1; //should be atomic
+Counter *new_counter(void);
 
-  return;
-}
-
-static int Counter_val (Counter *self) {
-/*   assert(self && self->val); */
- 
-  return *self->val;
-}
-
-Counter *new_counter() {
-  int i, id, *val;
-  Counter *c;
-  
-  val = alloc(sizeof(int));
-  id = get_id();
-  
-  for (i = 0; i < NUMPROCS; i++) {
-    c = (Counter *)&idtable[i][id];
-    c->itf = alloc(sizeof(CounterInterface));
-    c->itf->inc = Counter_inc;
-    c->itf->dec = Counter_dec;
-    c->itf->val = Counter_val;
-    c->val = val;
-  }
-
-  return (Counter *)(id*sizeof(EBB_Object *));
-}
+#endif

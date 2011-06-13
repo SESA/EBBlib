@@ -32,25 +32,41 @@ typedef struct EBB_Object_struct {
   void *data;
 } EBB_Object;
 
-#ifndef NUMPROCS
-#define NUMPROCS (4)
+#ifndef NUM_VCPUS
+#define NUM_VCPUS (4)
 #endif
 
-#ifndef NUMOBJS
-#define NUMOBJS (100)
+#ifndef NUM_EBB_IDS
+#define NUM_EBB_IDS (100)
 #endif
 
-extern EBB_Object idtable[NUMPROCS][NUMOBJS];
+#ifdef L4
 
-#include "proctable.h"
-int get_id(void);
+//one table for the root table
+extern EBB_Object ebb_table[NUM_VCPUS+1][NUM_EBB_IDS];
 
-#define invk(obj, fun)							\
+#include <l4/types.h>
+#include <l4/thread.h>
+
+#define ROOT(obj)						\
+  ((typeof(obj))(((L4_Word_t)obj) + ((L4_Word_t)ebb_table)))
+
+#define REP(obj, i)							\
+  ((typeof(obj))(((L4_Word_t)obj) + ((L4_Word_t)(ebb_table[i+1]))))
+
+#define INVK(obj, fun, ...)						\
   ({									\
     typeof(obj) _obj = (obj);						\
-    _obj = (typeof(_obj))(get_proctable() /* + ((EBB_Object *)_obj) */); \
-    typeof(_obj->itf) _itf = _obj->itf;					\
-    _itf->fun(_obj);							\
-  })
+    _obj = (typeof(_obj))(((L4_Word_t)_obj) + L4_UserDefinedHandle());	\
+    _obj->itf->fun(_obj->data, ##__VA_ARGS__);				\
+  })									\
+  
+#define INVK_ROOT(obj, fun, ...)					\
+  ({									\
+    typeof(obj) _obj = ROOT(obj);					\
+    _obj->itf->fun(_obj->data, ##__VA_ARGS__);				\
+  })									\
+  
+#endif
 
 #endif
