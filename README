@@ -1,1 +1,4 @@
 System independent library to support Elastic Building Blocks
+
+To build - overwrite any settings by making build/Makeconf
+		In particular, make sure that the path to L4hal is correct

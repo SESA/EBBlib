@@ -1,0 +1,4 @@
+Makeconf
+*.d
+*.o
+*.a
