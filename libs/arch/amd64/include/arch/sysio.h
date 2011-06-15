@@ -24,24 +24,39 @@
 /* authors and should not be interpreted as representing official policies, either expressed */
 /* or implied, of Boston University */
 
-#ifndef COUNTER_H
-#define COUNTER_H
+#ifndef _SYSIO_H_
+#define _SYSIO_H_
 
-typedef struct Counter_struct Counter;
+#include <l4hal/types.h>
 
-typedef struct CounterData_struct CounterData;
+static inline u32 sysIn32 (u16 port) {
+  u32 ret;
+  __asm__ volatile ("inl %w1,%0":"=a"(ret) : "Nd"(port));
+  return ret;
+}
 
-typedef struct CounterInterface_struct {
-  void (*inc) (CounterData *self);
-  void (*dec) (CounterData *self);
-  int (*val) (CounterData *self);  
-} CounterInterface;
+static inline u16 sysIn16 (u16 port) {
+  u16 ret;
+  __asm__ volatile ("inw %w1,%w0":"=a"(ret) : "Nd"(port));
+  return ret;
+}
 
-struct Counter_struct {
-  CounterInterface *itf;
-  CounterData *data;
-};
+static inline u8 sysIn8 (u16 port) {
+  u16 ret;
+  __asm__ volatile ("inb %w1,%b0":"=a"(ret) : "Nd"(port));
+  return ret;
+}
 
-Counter *new_counter(void);
+static inline void sysOut32 (u16 port, u32 val) {
+  __asm__ volatile ("outl %0,%w1"::"a"(val), "Nd" (port));
+}
+
+static inline void sysOut16 (u16 port, u16 val) {
+  __asm__ volatile ("outw %w0,%w1"::"a"(val), "Nd" (port));
+}
+
+static inline void sysOut8 (u16 port, u8 val) {
+  __asm__ volatile ("outb %b0,%w1"::"a"(val), "Nd" (port));
+}
 
 #endif

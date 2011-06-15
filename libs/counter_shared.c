@@ -29,7 +29,9 @@ static int Counter_val (CounterData *data) {
 static CounterInterface root_counter_itf;
 static CounterData root_counter_data;
 
-Counter *new_counter() {
+int a;
+
+Counter *new_counter(void) {
   int i;
 
   //should be buying an ID here, but we're just gonna steal it for now

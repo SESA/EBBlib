@@ -5,7 +5,7 @@ CC ?= gcc
 TOOLPREFIX ?=
 AR ?= $(TOOLPREFIX)ar
 
-SRCDIR := ../src
+SRCDIR := ../libs
 L4HALDIR ?= ../../l4hal/
 
 DEFINES ?= L4
@@ -22,10 +22,10 @@ OBJFILES := $(patsubst %.c, %.o, $(SRCFILES))
 DEPFILES := $(patsubst %.c, %.d, $(SRCFILES))
 
 WARNINGS := -Wall -Wshadow -Wpointer-arith -Wstrict-prototypes
-CFLAGS ?= -g -O2 $(WARNINGS) $(addprefix -I,$(INC_DIR)) \
+CFLAGS += -g -O2 $(WARNINGS) $(addprefix -I,$(INC_DIR)) \
 		$(addprefix -D,$(DEFINES))
 
-EBBLIB := ebblib.a
+EBBLIB := libebb.a
 
 .PHONY: all clean
 
