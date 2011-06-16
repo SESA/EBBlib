@@ -1,0 +1,2 @@
+SRCFILES += counter_shared.c
+HDRFILES += counter.h

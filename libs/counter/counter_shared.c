@@ -1,5 +1,5 @@
-#include "ebb.h"
-#include "counter.h"
+#include <ebb.h>
+#include <counter.h>
 
 struct CounterData_struct {
   Counter *self;
