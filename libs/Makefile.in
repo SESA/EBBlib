@@ -1,5 +1,5 @@
 WARNINGS := -Wall -Wshadow -Wpointer-arith -Wstrict-prototypes
-CFLAGS += -g -O2 $(WARNINGS) -I$(INSTALLDIR)/include \
+CFLAGS += -g -O2 $(WARNINGS) -I$(INCLUDEDIR) \
 		-I$(L4HALDIR)/include \
 		$(addprefix -D,$(DEFINES))
 
@@ -20,18 +20,12 @@ include $(MAKEFILES)
 
 OBJFILES := $(patsubst %.c, %.o, $(SRCFILES))
 DEPFILES := $(patsubst %.c, %.d, $(SRCFILES))
+INSTALLED_HDRS := $(addprefix $(INCLUDEDIR)/,$(HDRFILES))
+INSTALLED_ARCHIVES := $(addprefix $(LIBDIR)/,$(ARCHIVES))
 
-.PHONY: all install_headers install_archives clean
+.PHONY: all clean
 
-all: install_headers $(ARCHIVES) install_archives
-
-install_headers: $(HDRFILES)
-	mkdir -p $(INSTALLDIR)/include
-	cp $^ $(INSTALLDIR)/include
-
-install_archives: $(ARCHIVES)
-	mkdir -p $(INSTALLDIR)/lib
-	cp $< $(INSTALLDIR)/lib
+all: $(INSTALLED_HDRS) $(INSTALLED_ARCHIVES)
 
 clean:
 	rm $(wildcard $(OBJFILES) $(DEPFILES) $(ARCHIVES))
@@ -40,9 +34,14 @@ clean:
 libebb.a: $(OBJFILES)
 	$(AR) r $@ $?
 
+$(INCLUDEDIR) $(LIBDIR):
+	mkdir -p $@
 
 -include $(DEPFILES)
 
 .SECONDEXPANSION:
+$(INSTALLED_HDRS) $(INSTALLED_ARCHIVES): $$(@F) | $(INCLUDEDIR) $(LIBDIR)
+	cp $< $@
+
 %.o: %.c Makefile $(SRCDIR)/Makefile.in $$(@D)/Makefile.in
 	$(CC) $(CFLAGS) -MMD -MP -c $< -o $@
