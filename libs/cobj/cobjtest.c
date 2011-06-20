@@ -3,37 +3,37 @@
 
 /***** Inteface and Object Declarations can go into .H files *****/
 CObjInterface (CObj) {
-  const char *CObjFunc(name);
-  uval        CObjFunc(init);
+  const char * (*name) (void *_self);
+  uval         (*init) (void *_self);
 };
 
 CObjInterface (Counter) {
-  void CObjFunc(inc);
-  void CObjFunc(dec);
-  uval CObjFunc(val);
+  void (*inc) (void *_self);
+  void (*dec) (void *_self);
+  uval (*val) (void *_self);
 };
 
 CObjInterface (File) {
-  uval CObjFunc(open, char *name, uval mode);
-  uval CObjFunc(close);
-  uval CObjFunc(read, char *buf, uval len); 
-  uval CObjFunc(write, char *buf, uval len); 
+  uval (*open)  (void *_self, char *name, uval mode);
+  uval (*close) (void *_self);
+  uval (*read)  (void *_self, char *buf, uval len); 
+  uval (*write) (void *_self, char *buf, uval len); 
 };
 
-CObject (MyObj) {
-  CObjInterface (MyObj) {
-    CObjImplements(CObj);
-    CObjImplements(Counter);
-    CObjImplements(File);  
-    uval CObjFunc(Init, uval v);
-    void CObjFunc(Print);
-  } * _vtable;
+CObjInterface (MyObj) {
+  CObjImplements(CObj);
+  CObjImplements(Counter);
+  CObjImplements(File);  
+  uval (*Init) (void *_self, uval v);
+  void (*Print) (void *_self);
+};
 
+CObjBegin (MyObj) 
   uval val;
   uval fd;
   uval offset;
   uval ocnt, ccnt,rcnt, wcnt;
-};
+CObjEnd
 
 extern uval MyObj_Alloc(MyObjRef *o);
 extern uval MyObj_Prep(MyObjRef o);
@@ -101,7 +101,7 @@ MyObj_Print(void *_self)
 }
 
 /* static instance of default function table for object instances */
-struct MyObj_if MyObj_vtable = { 
+struct MyObj_if MyObj_ftable = { 
   {MyObj_CObj_name, MyObj_CObj_init}, 
   {MyObj_Counter_inc, MyObj_Counter_dec, MyObj_Counter_val},
   {MyObj_File_open, MyObj_File_close, MyObj_File_read, MyObj_File_write},
@@ -127,7 +127,7 @@ MyObj_Alloc(MyObjRef *o)
 uval
 MyObj_Prep(MyObjRef o)
 {
-  o->_vtable = &MyObj_vtable;
+  CObjFtable(o) = &MyObj_ftable;
 } 
 
 

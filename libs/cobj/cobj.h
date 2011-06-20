@@ -9,25 +9,20 @@
 //   is obvious ways to create vtables which are aggregates.  You may of course
 //   use your own conventions to support inheritance.
 
+// typedef struct CObj { void * _ftable; }
+
+#define CObjFtable(o) (o->_ftable)
 #define CObjInterface(name) struct name ## _if 
-#define CObjFunc(func, ...) (*func) (void *, ##__VA_ARGS__)
 #define CObjImplements(name) struct name ## _if name ## _if 
 
-#define CObjData(name) struct name ##_data
-
-
-#define CObject(name)				\
+#define CObjBegin(name)				\
   typedef struct name ## _obj name;		\
   typedef name * name ## Ref;			\
-  struct name ## _obj 				
+  struct name ## _obj {				\
+  CObjInterface(name) * _ftable;       
 
-//#define CObjInterfacesBegin struct vtable
-//#define CObjInterfacesEnd * _vtable
-
-
-// #define ObjData struct data 
-
-#define COBJ_CALL(o,f, ...) (o->_vtable->f(o, ##__VA_ARGS__))
-
+#define CObjEnd };
+      
+#define COBJ_CALL(o,f, ...) (CObjFtable(o)->f(o, ##__VA_ARGS__))
 
 #endif
