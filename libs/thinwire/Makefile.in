@@ -1,2 +1,0 @@
-SRCFILES += ThinWireChan.c ThinWireIP.c
-HDRFILES += ThinWireChan.h ThinWireIP.h
