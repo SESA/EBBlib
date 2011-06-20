@@ -1,10 +1,7 @@
 #include "../types.h"
 #include "cobj.h"
 
-
-#include <stdio.h>
-
-// CObjInterface introduces a struct of name CObj_if
+/***** Inteface and Object Declarations can go into .H files *****/
 CObjInterface (CObj) {
   const char *CObjFunc(name);
   uval        CObjFunc(init);
@@ -38,16 +35,50 @@ CObject (MyObj) {
   uval ocnt, ccnt,rcnt, wcnt;
 };
 
+extern uval MyObj_Alloc(MyObjRef *o);
+extern uval MyObj_Prep(MyObjRef o);
 
+/****** Rest of this can go in Object specific .c ********/
+#include <stdio.h>
+
+/* defintions of all functions of the object */
 const char * MyObj_CObj_name(void * _self) { return 0; }
 uval         MyObj_CObj_init(void * _self) { return 1; }
-void MyObj_Counter_inc(void * _self) { MyObj *self = _self; self->val++; }
-void MyObj_Counter_dec(void * _self) { MyObj *self = _self; self->val--; }
-uval MyObj_Counter_val(void * _self) { MyObj *self = _self; return self->val; }
-uval MyObj_File_open(void * _self, char *name, uval mode) {MyObj *self = _self; self->ocnt++; return 1; }
-uval MyObj_File_close(void * _self) { MyObj *self = _self; self->ccnt++; return 1; }
-uval MyObj_File_read(void * _self, char *buf, uval len) { MyObj *self = _self; self->rcnt+=len; return 1; }
-uval MyObj_File_write(void * _self, char *buf, uval len) { MyObj *self = _self; self->wcnt+=len; return 1; }
+
+void MyObj_Counter_inc(void * _self) { MyObjRef self = _self; self->val++; }
+void MyObj_Counter_dec(void * _self) { MyObjRef self = _self; self->val--; }
+uval MyObj_Counter_val(void * _self) { MyObjRef self = _self; return self->val; }
+
+uval 
+MyObj_File_open(void * _self, char *name, uval mode) 
+{
+  MyObjRef self = _self; 
+  self->ocnt++; 
+  return 1; 
+}
+
+uval 
+MyObj_File_close(void * _self) 
+{ 
+  MyObjRef self = _self; 
+  self->ccnt++; 
+  return 1; 
+}
+
+uval 
+MyObj_File_read(void * _self, char *buf, uval len) 
+{ 
+  MyObjRef self = _self; 
+  self->rcnt+=len; 
+  return 1; 
+}
+
+uval MyObj_File_write(void * _self, char *buf, uval len) 
+{ 
+  MyObjRef self = _self; 
+  self->wcnt+=len; 
+  return 1; 
+}
 
 uval 
 MyObj_Init(void * _self, uval v) 
@@ -69,6 +100,7 @@ MyObj_Print(void *_self)
 	 self->rcnt, self->wcnt, self->ocnt, self->ccnt);
 }
 
+/* static instance of default function table for object instances */
 struct MyObj_if MyObj_vtable = { 
   {MyObj_CObj_name, MyObj_CObj_init}, 
   {MyObj_Counter_inc, MyObj_Counter_dec, MyObj_Counter_val},
@@ -77,6 +109,9 @@ struct MyObj_if MyObj_vtable = {
   MyObj_Print
 };
 
+/* non object based code that would should eventually go into a factory */
+/* code to allocate and prepare and instance of the object */
+#include <assert.h>
 uval 
 MyObj_Alloc(MyObjRef *o)
 {
@@ -84,6 +119,7 @@ MyObj_Alloc(MyObjRef *o)
   // Object specific memory allocation logic
   
   // For the moment MyObj only supports static allocations
+  assert(0);
   *o = NULL;
   return -1;
 }
@@ -93,6 +129,10 @@ MyObj_Prep(MyObjRef o)
 {
   o->_vtable = &MyObj_vtable;
 } 
+
+
+/***** The test code that could go in it's own .c file *****/
+//#include <cobj.h>
 
 int
 main(int argc, char **argv)
