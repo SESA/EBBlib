@@ -27,14 +27,66 @@
 #ifndef __EBB_TRANS_H__
 #define __EBB_TRANS_H__
 
-typedef struct EBBTransStruct {
-  uval v1;
-  uval v2;
+#define EBB_MAX_FUNCS 256
+
+typedef EBBRC (*EBBFunc) (uval arg);
+typedef EBBFunc EBBFuncTable[];
+
+extern EBBFuncTable EBBDefFT[EBB_MAXFUNCS];
+extern EBBFuncTable EBBNullFT[EBB_MAXFUNCS];
+
+typedef struct EBBCallDesc {
+  EBBFuncTable * funcs;
+  uval           extra;
+} EBBCallDesc;
+
+typedef struct EBBTrans {
+  EBBCallDesc fdesc;
+  uval transVal;
 } EBBTrans;
 
-typedef struct EBBTransSysStruct {
-  EBBTrans *gTable;
-  EBBTrans *lTable;
-} EBBTransSys;
+typedef EBBTrans EBBLTrans;
+typedef EBBTrans EBBGTrans;
+
+typedef struct EBBTransLSysStruct {
+  EBBGTrans *gTable;
+  EBBLTrans *lTable;
+  EBBGTrans *free;
+  uval numAllocated;
+} EBBTransLSys;
+
+typedef EBBTrans *EBBId;
+
+#define EBBIdNull 0
+
+static inline EBBLTrans * EBBIdToLTrans(EBBTransLSys *sys, EBBid id)
+{
+}
+
+static inline EBBGTrans * EBBLTransToGTrans(EBBTransLSys *sys, EBBLTrans *lt)
+{
+}
+
+static inline EBBGTrans * EBBIdToGTrans(EBBTransLSys *sys, EBBid id)
+{
+}
+
+static inline EBBid * EBBIdAlloc(EBBTransLSys *sys)
+{
+}
+
+static inline EBBIdFree(EBBTransLSys *sys, EBBid id)
+{
+}
+
+static inline EBBIdBind(EBBTransLSys *sys, EBBid id, uval v1, uval v2)
+{
+}
+
+static inline EBBIdUnBind(EBBTransLSys *sys, EBBid id, uval *v1, uval *v2)
+{
+}
+
+#define EBBId_CALL(id, f, ...) ((*id)->fdesc.funcs[f](&id->fdesc))  
 
 #endif
