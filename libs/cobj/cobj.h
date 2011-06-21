@@ -19,7 +19,7 @@
   typedef struct name ## _obj name;		\
   typedef name * name ## Ref;			\
   struct name ## _obj {				\
-  CObjInterface(name) * _ftable;       
+    CObjInterface(name) * _ftable;       
 
 #define CObjEnd };
       

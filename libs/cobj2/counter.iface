@@ -1,0 +1,5 @@
+void (*inc) (void *_self);
+void (*dec) (void *_self);
+uval (*val) (void *_self);
+
+
