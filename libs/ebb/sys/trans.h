@@ -27,6 +27,13 @@
 #ifndef __EBB_TRANS_H__
 #define __EBB_TRANS_H__
 
+#include "../../types.h"
+
+static inline uval myEL() {
+  return 0;
+}
+
+#define EBB_NUM_IDS 100
 #define EBB_MAX_FUNCS 256
 
 typedef EBBRC (*EBBFunc) (uval arg);
@@ -61,32 +68,62 @@ typedef EBBTrans *EBBId;
 
 static inline EBBLTrans * EBBIdToLTrans(EBBTransLSys *sys, EBBid id)
 {
+  return (EBBLTrans *)(id + myEl() * EBB_NUM_IDS);
+}
+
+static inline EBBid EBBLTransToId(EBBTransLSys *sys, EBBLTrans *lt)
+{
+  return (EBBid)(lt - myEl() * EBB_NUM_IDS);
 }
 
 static inline EBBGTrans * EBBLTransToGTrans(EBBTransLSys *sys, EBBLTrans *lt)
 {
+  return (EBBGTrans *)((uval)lt - (uval)sys->lTable + (uval)sys->gTable);
+}
+
+static inline EBBLTrans * EBBGTransToLTrans(EBBTransLSys *sys, EBBGTrans *gt)
+{
+  return (EBBLTrans *)((uval)gt - (uval)sys->gTable + (uval)sys->lTable);
 }
 
 static inline EBBGTrans * EBBIdToGTrans(EBBTransLSys *sys, EBBid id)
 {
+  return EBBLTransToGTrans(sys, EBBIdToLTrans(sys, id));
+}
+
+static inline EBBid EBBGTransToId(EBBTransLSys *sys, EBBGTrans *gt) {
+  return EBBLTransToId(sys, EBBGTransToLTrans(sys, gt));
 }
 
 static inline EBBid * EBBIdAlloc(EBBTransLSys *sys)
 {
+  EBBGTrans *ret = sys->free;
+  sys->free = (EBBGTrans *)sys->free->transVal;
+  return EBBGTransToId(ret);
 }
 
-static inline EBBIdFree(EBBTransLSys *sys, EBBid id)
+static inline void EBBIdFree(EBBTransLSys *sys, EBBid id)
 {
+  EBBGTrans *free = EBBIdToGTrans(sys, id);
+  free->transVal = (uval)sys->free;
+  sys->free = free;
 }
 
-static inline EBBIdBind(EBBTransLSys *sys, EBBid id, uval v1, uval v2)
+static inline void EBBIdBind(EBBTransLSys *sys, EBBid id, uval v1, uval v2)
 {
+  EBBGTrans *gt = EBBIdToGTrans(sys, id);
+  gt->fdesc.funcs = (EBBFuncTable *)v1;
+  gt->extra = v2;
 }
 
-static inline EBBIdUnBind(EBBTransLSys *sys, EBBid id, uval *v1, uval *v2)
+static inline void EBBIdUnBind(EBBTransLSys *sys, EBBid id, uval *v1, uval *v2)
 {
+  EBBGTrans *gt = EBBIdToGTrans(sys, id);
+  *v1 = gt->fdesc.funcs;
+  *v2 = gt->extra;
 }
 
-#define EBBId_CALL(id, f, ...) ((*id)->fdesc.funcs[f](&id->fdesc))  
+#define EBBId_DREF(id) *EBBIdToLTrans(id)
+/* #define EBBId_CALL(id, f, ...) ((*id)->fdesc.funcs[f](&id->fdesc))   */
 
 #endif
