@@ -33,21 +33,33 @@ static inline uval myEL() {
   return 0;
 }
 
-#define EBB_NUM_IDS 100
-#define EBB_MAX_FUNCS 256
+#define EBB_NUM_ELS (16)
+#define EBB_NUM_IDS (100)
+#define EBB_MAX_FUNCS (256)
 
-typedef EBBRC (*EBBFunc) (uval arg);
+typedef sval EBBRC;
+typedef enum { EBBRC_FAILURE = -1, EBBRC_OK = 0 } EBBRC_STDVALS;
+#define EBBRC_SUCCESS(rc) ( rc >= 0 )
+
+typedef EBBRC (*EBBFunc) (void);
+typedef EBBRC (*EBBDefFunc) (EBBLTrans *, uval);
 typedef EBBFunc EBBFuncTable[];
 
-extern EBBFuncTable EBBDefFT[EBB_MAXFUNCS];
-extern EBBFuncTable EBBNullFT[EBB_MAXFUNCS];
+extern EBBFunc EBBDefFT[EBB_MAX_FUNCS];
+extern EBBFunc EBBNullFT[EBB_MAX_FUNCS];
 
-typedef struct EBBCallDesc {
+/* EBBTRANS: */
+/* function table pointer: owned by the user, */
+/*   overwritten on a bind to point to the correct object */
+/* extra: owned by the EBBManager for whatever purpose it needs */
+/* transVal: owned by the translation system for whatever purpose it needs */
+
+typedef struct EBBCallDescStruct {
   EBBFuncTable * funcs;
   uval           extra;
 } EBBCallDesc;
 
-typedef struct EBBTrans {
+typedef struct EBBTransStruct {
   EBBCallDesc fdesc;
   uval transVal;
 } EBBTrans;
@@ -66,14 +78,14 @@ typedef EBBTrans *EBBId;
 
 #define EBBIdNull 0
 
-static inline EBBLTrans * EBBIdToLTrans(EBBTransLSys *sys, EBBid id)
+static inline EBBLTrans * EBBIdToLTrans(EBBTransLSys *sys, EBBId id)
 {
   return (EBBLTrans *)(id + myEl() * EBB_NUM_IDS);
 }
 
-static inline EBBid EBBLTransToId(EBBTransLSys *sys, EBBLTrans *lt)
+static inline EBBId *EBBLTransToId(EBBTransLSys *sys, EBBLTrans *lt)
 {
-  return (EBBid)(lt - myEl() * EBB_NUM_IDS);
+  return (EBBId *)(lt - myEl() * EBB_NUM_IDS);
 }
 
 static inline EBBGTrans * EBBLTransToGTrans(EBBTransLSys *sys, EBBLTrans *lt)
@@ -86,44 +98,48 @@ static inline EBBLTrans * EBBGTransToLTrans(EBBTransLSys *sys, EBBGTrans *gt)
   return (EBBLTrans *)((uval)gt - (uval)sys->gTable + (uval)sys->lTable);
 }
 
-static inline EBBGTrans * EBBIdToGTrans(EBBTransLSys *sys, EBBid id)
+static inline EBBGTrans * EBBIdToGTrans(EBBTransLSys *sys, EBBId id)
 {
   return EBBLTransToGTrans(sys, EBBIdToLTrans(sys, id));
 }
 
-static inline EBBid EBBGTransToId(EBBTransLSys *sys, EBBGTrans *gt) {
+static inline EBBId * EBBGTransToId(EBBTransLSys *sys, EBBGTrans *gt) {
   return EBBLTransToId(sys, EBBGTransToLTrans(sys, gt));
 }
 
-static inline EBBid * EBBIdAlloc(EBBTransLSys *sys)
+static inline EBBId * EBBIdAlloc(EBBTransLSys *sys)
 {
   EBBGTrans *ret = sys->free;
+  if(ret == NULL) {
+    return EBBIdNull;
+  }
   sys->free = (EBBGTrans *)sys->free->transVal;
-  return EBBGTransToId(ret);
+  sys->numAllocated++;
+  return EBBGTransToId(sys, ret);
 }
 
-static inline void EBBIdFree(EBBTransLSys *sys, EBBid id)
+static inline void EBBIdFree(EBBTransLSys *sys, EBBId id)
 {
   EBBGTrans *free = EBBIdToGTrans(sys, id);
   free->transVal = (uval)sys->free;
   sys->free = free;
 }
 
-static inline void EBBIdBind(EBBTransLSys *sys, EBBid id, uval v1, uval v2)
+static inline void EBBIdBind(EBBTransLSys *sys, EBBId id, uval v1, uval v2)
 {
   EBBGTrans *gt = EBBIdToGTrans(sys, id);
   gt->fdesc.funcs = (EBBFuncTable *)v1;
-  gt->extra = v2;
+  gt->fdesc.extra = v2;
 }
 
-static inline void EBBIdUnBind(EBBTransLSys *sys, EBBid id, uval *v1, uval *v2)
+static inline void EBBIdUnBind(EBBTransLSys *sys, EBBId id, uval *v1, uval *v2)
 {
   EBBGTrans *gt = EBBIdToGTrans(sys, id);
-  *v1 = gt->fdesc.funcs;
-  *v2 = gt->extra;
+  *v1 = (uval)(gt->fdesc.funcs);
+  *v2 = gt->fdesc.extra;
 }
 
-#define EBBId_DREF(id) *EBBIdToLTrans(id)
+#define EBBId_DREF(id) **EBBIdToLTrans(id)
 /* #define EBBId_CALL(id, f, ...) ((*id)->fdesc.funcs[f](&id->fdesc))   */
 
 #endif
