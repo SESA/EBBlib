@@ -41,12 +41,17 @@ typedef sval EBBRC;
 typedef enum { EBBRC_FAILURE = -1, EBBRC_OK = 0 } EBBRC_STDVALS;
 #define EBBRC_SUCCESS(rc) ( rc >= 0 )
 
+typedef uval FuncNum;
+typedef uval EBBMissArg;
+
 typedef EBBRC (*EBBFunc) (void);
-typedef EBBRC (*EBBDefFunc) (EBBLTrans *, uval);
+typedef EBBRC (*EBBMissFunc) (EBBLTrans *, FuncNum, EBBMissArg);
 typedef EBBFunc EBBFuncTable[];
 
 extern EBBFunc EBBDefFT[EBB_MAX_FUNCS];
 extern EBBFunc EBBNullFT[EBB_MAX_FUNCS];
+
+extern EBBMissFunc theERRMF;
 
 /* EBBTRANS: */
 /* function table pointer: owned by the user, */
@@ -54,38 +59,100 @@ extern EBBFunc EBBNullFT[EBB_MAX_FUNCS];
 /* extra: owned by the EBBManager for whatever purpose it needs */
 /* transVal: owned by the translation system for whatever purpose it needs */
 
+typedef struct EBBTransStruct EBBTrans;
+typedef EBBTrans EBBLTrans;
+typedef EBBTrans EBBGTrans;
+
 typedef struct EBBCallDescStruct {
-  EBBFuncTable * funcs;
-  uval           extra;
+  union {
+    EBBFuncTable * funcs;
+    EBBMissFunc mf;
+  };
+  union {
+    uval           extra;
+    EBBFuncTable ftable;
+    EBBMissArg     arg;
+  };
 } EBBCallDesc;
 
 typedef struct EBBTransStruct {
   EBBCallDesc fdesc;
-  uval transVal;
+  union {
+    uval transVal;
+    EBBGTrans *next;
+  }
 } EBBTrans;
 
-typedef EBBTrans EBBLTrans;
-typedef EBBTrans EBBGTrans;
 
-typedef struct EBBTransLSysStruct {
-  EBBGTrans *gTable;
-  EBBLTrans *lTable;
-  EBBGTrans *free;
+typedef struct EBBTransLSys {
+  EBBGTrans *gTable; //the global table
+  EBBLTrans *lTable; //my local table
+  EBBGTrans *free; 
   uval numAllocated;
+  uval numIds;
 } EBBTransLSys;
 
 typedef EBBTrans *EBBId;
-
 #define EBBIdNull 0
 
-static inline EBBLTrans * EBBIdToLTrans(EBBTransLSys *sys, EBBId id)
-{
-  return (EBBLTrans *)(id + myEl() * EBB_NUM_IDS);
+#if 0
+// At some point we will need to support multiple trans system instances
+// This code is template code is meant to document what we had in mind
+// for this
+typedef struct EBBTransGSys {
+  uval numIds;
+} EBBTransGSys;
+
+typedef sval EBBTransSysId
+#define EBB_TRANS_SYS_MAX (4) //num free bits for 32 bit aligned pointer
+
+typedef struct EBBTransSystems {
+  EBBTRansGSys transSystems[EBB_TRANS_SYS_MAX];
+  uval free;
+} EBBTransSystems;
+
+extern EBBTransSystems theEBBTransSystems;
+
+EBBTransSysId  EBBTransAllocSys() {
+  uval sysid = theEBBTransSystems.free;
+
+  theEBBTransSystems.free++;
+  if (theEBBTransSystems.free > EBB_TRANS_SYS_MAX) return -1;
+  return sysid;
 }
 
-static inline EBBId *EBBLTransToId(EBBTransLSys *sys, EBBLTrans *lt)
+EBBTransSysId EBBIdToSysId(EBBid id) { 
+  return id & ((1 << EBB_TRANS_SYS_MAX) - 1);
+}
+
+void EBBIdSetSysId(EBBid *id, EBBTransSysId sid) {
+  *id = *id | (sid & ((1 << EBB_TRANS_SYS_MAX) - 1));
+}
+
+static inline EBBNumIds(EBBId id) { 
+  return EBBTransSystems[EBBIdToSysId(id)].numIds; 
+}
+#endif
+
+// FIXME:  THIS IS HERE SO THAT WE CAN ADD A LEVEL OF INDIRECTION
+//         TO SUPPORT MULTIPLE EBBTRANS SYS INSTANCES
+//         (LIKE WE NEED ANOTHER F#%^#%^ LEVEL OF INDIRECTION :-)
+static inline EBBNumIds(EBBId id) { return EBB_NUM_IDS; }
+
+// We avoid using sys to compute your ltrans so that dref is
+// efficient and usable
+static inline EBBLTrans * EBBIdToLTrans(EBBId id)
 {
-  return (EBBId *)(lt - myEl() * EBB_NUM_IDS);
+  return (EBBLTrans *)(id + myEl() * EBBNumIds(id));
+}
+
+static inline uval EBBSysNumIds(EBBTransLSys *sys) {
+  return sys->numIds;
+}
+
+static inline EBBId EBBLTransToId(EBBTransLSys *sys, EBBLTrans *lt)
+{
+  return (EBBId)(lt - myEl() * EBBSysNumIds(sys));
 }
 
 static inline EBBGTrans * EBBLTransToGTrans(EBBTransLSys *sys, EBBLTrans *lt)
@@ -103,17 +170,17 @@ static inline EBBGTrans * EBBIdToGTrans(EBBTransLSys *sys, EBBId id)
   return EBBLTransToGTrans(sys, EBBIdToLTrans(sys, id));
 }
 
-static inline EBBId * EBBGTransToId(EBBTransLSys *sys, EBBGTrans *gt) {
+static inline EBBId EBBGTransToId(EBBTransLSys *sys, EBBGTrans *gt) {
   return EBBLTransToId(sys, EBBGTransToLTrans(sys, gt));
 }
 
-static inline EBBId * EBBIdAlloc(EBBTransLSys *sys)
+static inline EBBId EBBIdAlloc(EBBTransLSys *sys)
 {
   EBBGTrans *ret = sys->free;
   if(ret == NULL) {
     return EBBIdNull;
   }
-  sys->free = (EBBGTrans *)sys->free->transVal;
+  sys->free = (EBBGTrans *)sys->free->next;
   sys->numAllocated++;
   return EBBGTransToId(sys, ret);
 }
@@ -121,22 +188,47 @@ static inline EBBId * EBBIdAlloc(EBBTransLSys *sys)
 static inline void EBBIdFree(EBBTransLSys *sys, EBBId id)
 {
   EBBGTrans *free = EBBIdToGTrans(sys, id);
-  free->transVal = (uval)sys->free;
+  free->next = (uval)sys->free;
   sys->free = free;
 }
 
-static inline void EBBIdBind(EBBTransLSys *sys, EBBId id, uval v1, uval v2)
-{
-  EBBGTrans *gt = EBBIdToGTrans(sys, id);
-  gt->fdesc.funcs = (EBBFuncTable *)v1;
-  gt->fdesc.extra = v2;
+// We expect this to be used by external code 
+// such as miss handing functions to cache an local
+// object for translation on future calls.
+static inline void EBBCacheObj(EBBLTrans *lt,
+				 EBBFuncTable *funcs) {
+  lt->funcs = funcs;
 }
 
-static inline void EBBIdUnBind(EBBTransLSys *sys, EBBId id, uval *v1, uval *v2)
+static inline void EBBSetLTrans(EBBLTrans *lt,
+				EBBFuncTable ftable) {
+  EBBInstallObj(&lt->ftable);
+  lt->ftable = ftable;
+}
+
+// JA: BIGFING KLUDGE 
+static inline void EBBSetALLLTrans(EBBId id, EBBFuncTable ftable) {
+  
+}
+
+static inline void EBBIdBind(EBBTransLSys *sys, EBBId id,
+			     EBBMissFunc mf, EBBMissArg arg)
 {
   EBBGTrans *gt = EBBIdToGTrans(sys, id);
-  *v1 = (uval)(gt->fdesc.funcs);
-  *v2 = gt->fdesc.extra;
+
+  gt->fdesc.mf = mf;
+  gt->fdesc.arg = arg;
+
+}
+
+static inline void EBBIdUnBind(EBBTransLSys *sys, EBBId id,
+			       EBBMissFunc *mf, EBBMissArg *arg)
+{
+  EBBGTrans *gt = EBBIdToGTrans(sys, id);
+  *mf = gt->fdesc.mf; 
+  *arg = gt->fdesc.arg;
+  
+  EBBIdBind(sys, id, theERRMF, 0);
 }
 
 #define EBBId_DREF(id) **EBBIdToLTrans(id)
