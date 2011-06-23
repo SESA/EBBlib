@@ -34,6 +34,8 @@
 #define EBB_TRANS_NUM_PAGES (1024)
 #define EBB_TRANS_MAX_FUNCS (256)
 
+
+//FIXME: All Trans Mem is statically allocated
 extern struct EBB_Trans_Mem {
   u8 GMem [EBB_TRANS_PAGE_SIZE * EBB_TRANS_NUM_PAGES];
   u8 LMem [EBB_TRANS_PAGE_SIZE * EBB_TRANS_NUM_PAGES *
@@ -194,6 +196,7 @@ static inline EBBIdUnBind(EBBId id, EBBMissFunc *mf, EBBMissArg *arg) {
   EBBGTrans *gt = EBBIdToGTrans(id);
   *mf = gt->mf;
   *arg = gt->arg;
+  //FIXME: this is how we reset the local tables after an unbind
   EBBSetALLLTrans(id, EBBDefFT);
   EBBIdBind(id, theERRMF, 0);
 }

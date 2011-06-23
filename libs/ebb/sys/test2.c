@@ -279,6 +279,8 @@ myBind (void *obj) {
 
 int main () {
   EBB_Trans_Mem_Init();
+  //FIXME: Assuming here that we are the only LSys
+  // and we own the entire gtable
   EBB_Trans_Mem_Alloc_Pages(1, (u8 **)&myEBBTransLSys.gTable);
   
   myEBBTransLSys.lTable = 
@@ -292,6 +294,8 @@ int main () {
   for (i = 0; i < EBB_TRANS_MAX_FUNCS; i++) {
     EBBNullFT[i] = EBBNullFunc;
   }
+  //FIXME: we have to init all local tables before they can be used
+  //perhaps this should be done at bind time?
   //init the local tables to call the default func table
   for (i = 0; 
        i < (EBB_TRANS_PAGE_SIZE * 
@@ -308,5 +312,7 @@ int main () {
       lt->ftable = EBBDefFT;
     }
   }
+
+  //should be able to alloc/free and bind/unbind now
   return 0;
 }
