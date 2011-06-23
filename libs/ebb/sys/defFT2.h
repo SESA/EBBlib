@@ -12,6 +12,7 @@
     return gt->mf(self, i, gt->arg);				\
   }								
 
+EBBDefFunc(0)
 EBBDefFunc(1)
 EBBDefFunc(2)
 EBBDefFunc(3)

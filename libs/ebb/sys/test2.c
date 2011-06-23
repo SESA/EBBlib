@@ -3,7 +3,6 @@
 #include "defFT2.h"
 #include <stdio.h>
 
-EBBDefFunc(0)
 
 EBBFunc EBBDefFT[EBB_TRANS_MAX_FUNCS] = {
   (EBBFunc)EBBDefFunc_0,
