@@ -1,6 +1,7 @@
 #include "../../types.h"
 #include "trans2.h"
 #include "defFT2.h"
+#include <stdio.h>
 
 EBBDefFunc(0)
 
@@ -267,6 +268,19 @@ EBBFunc EBBNullFT[EBB_TRANS_MAX_FUNCS];
 
 EBBTransLSys myEBBTransLSys;
 struct EBB_Trans_Mem EBB_Trans_Mem;
+EBBMissFunc theERRMF;
+
+static EBBRC ERRMF (EBBLTrans *lt, FuncNum fnum, EBBMissArg arg) {
+  printf("ERROR: unbound object invoked with l5: %p, fnum: %ld"
+	 ", arg: %ld\n", lt, fnum, arg);
+  return EBBRC_FAILURE;
+}
+
+static EBBRC TestMissFunc(EBBLTrans *lt, FuncNum fnum, EBBMissArg arg) {
+  printf("Global miss called with lt: %p, fnum: %ld, arg: %ld\n",
+	 lt, fnum,arg);
+  return EBBRC_FAILURE;
+}
 
 static EBBRC 
 EBBNullFunc () {
@@ -297,22 +311,32 @@ int main () {
   //FIXME: we have to init all local tables before they can be used
   //perhaps this should be done at bind time?
   //init the local tables to call the default func table
+  theERRMF = ERRMF;
   for (i = 0; 
        i < (EBB_TRANS_PAGE_SIZE * 
-	    EBB_TRANS_NUM_PAGES /
-	    sizeof(EBBLTrans));
-       i++) {
+	    EBB_TRANS_NUM_PAGES);
+       i+= sizeof(EBBTrans)) {
+    //putting an error miss handler in all the global entries
+    EBBId id = (EBBId)&EBB_Trans_Mem.LMem[i];
+    EBBIdBind(id, theERRMF, 0);
     for (j = 0; j < EBB_TRANS_MAX_ELS; j++) {
       EBBLTrans * lt = 
 	(EBBLTrans *)&EBB_Trans_Mem.LMem[j * 
 					EBB_TRANS_PAGE_SIZE *
 					EBB_TRANS_NUM_PAGES +
-					i * sizeof(EBBLTrans)];
-      lt->obj = &lt->ftable;
-      lt->ftable = EBBDefFT;
+					i];
+      EBBSetLTrans(lt, EBBDefFT);
     }
   }
 
   //should be able to alloc/free and bind/unbind now
+  EBBId myId = EBBIdAlloc(&myEBBTransLSys);
+  EBBIdBind(myId, TestMissFunc, -1);
+  (*EBBId_DREF(myId).obj)[0](EBBId_DREF(myId).obj);
+  (*EBBId_DREF(myId).obj)[0](EBBId_DREF(myId).obj);
+/*   myId++; //invalid id */
+/*   (*EBBId_DREF(myId).obj)[0](EBBId_DREF(myId).obj); */
+  EBBIdUnBind(myId, NULL, NULL);
+  (*EBBId_DREF(myId).obj)[0](EBBId_DREF(myId).obj);  
   return 0;
 }

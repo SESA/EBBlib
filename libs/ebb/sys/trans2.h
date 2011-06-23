@@ -70,7 +70,7 @@ typedef struct EBBTransStruct EBBTrans;
 typedef EBBTrans EBBLTrans;
 typedef EBBTrans EBBGTrans;
 
-typedef EBBRC (*EBBFunc) (void);
+typedef EBBRC (*EBBFunc) (void *);
 typedef EBBRC (*EBBMissFunc) (EBBLTrans *, FuncNum, EBBMissArg);
 typedef EBBFunc *EBBFuncTable;
 
@@ -194,8 +194,10 @@ static inline EBBIdBind(EBBId id, EBBMissFunc mf,
 
 static inline EBBIdUnBind(EBBId id, EBBMissFunc *mf, EBBMissArg *arg) {
   EBBGTrans *gt = EBBIdToGTrans(id);
-  *mf = gt->mf;
-  *arg = gt->arg;
+  if (mf)
+    *mf = gt->mf;
+  if (arg)
+    *arg = gt->arg;
   //FIXME: this is how we reset the local tables after an unbind
   EBBSetALLLTrans(id, EBBDefFT);
   EBBIdBind(id, theERRMF, 0);
