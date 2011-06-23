@@ -334,9 +334,9 @@ int main () {
   EBBIdBind(myId, TestMissFunc, -1);
   (*EBBId_DREF(myId).obj)[0](EBBId_DREF(myId).obj);
   (*EBBId_DREF(myId).obj)[0](EBBId_DREF(myId).obj);
-/*   myId++; //invalid id */
-/*   (*EBBId_DREF(myId).obj)[0](EBBId_DREF(myId).obj); */
   EBBIdUnBind(myId, NULL, NULL);
   (*EBBId_DREF(myId).obj)[0](EBBId_DREF(myId).obj);  
+  myId++; //invalid id
+  (*EBBId_DREF(myId).obj)[0](EBBId_DREF(myId).obj);
   return 0;
 }

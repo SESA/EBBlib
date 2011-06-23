@@ -106,9 +106,13 @@ static inline uval myLTransIndex() {
   return myEL();
 }
 
-static inline EBBLTrans * EBBIdToLTrans(EBBId id) {
-  return (EBBLTrans *)((uval)id + myLTransIndex() * 
+static inline EBBLTrans * EBBIdToSpecificLTrans(EBBId id, uval i) {
+  return (EBBLTrans *)((uval)id + i *
 		       EBB_TRANS_PAGE_SIZE * EBB_TRANS_NUM_PAGES);
+}
+
+static inline EBBLTrans * EBBIdToLTrans(EBBId id) {
+  return EBBIdToSpecificLTrans(id, myLTransIndex());
 }
 
 static inline EBBId EBBLTransToId(EBBLTrans *lt) {
@@ -179,8 +183,7 @@ static inline void EBBSetALLLTrans(EBBId id, EBBFuncTable ftable) {
   int i;
   EBBLTrans *lt;
   for (i = 0; i < EBB_TRANS_MAX_ELS; i++) {
-    lt = (EBBLTrans *)(id + i * 
-		       EBB_TRANS_PAGE_SIZE * EBB_TRANS_NUM_PAGES);
+    lt = EBBIdToSpecificLTrans(id, i);
     EBBSetLTrans(lt, ftable);
   }
 }
