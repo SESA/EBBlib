@@ -1,7 +1,7 @@
 SRCS := cobjtest.c 
 OBJS := $(patsubst %.c, %.o, $(SRCS))
 DEPS := $(patsubst %.c, %.d, $(SRCS))
-CFLAGS := -Wall -pendantic
+CFLAGS := -g -Wall -pendantic
 
 all: cobjtest
 
@@ -11,7 +11,7 @@ cobjtest: $(OBJS)
 -include $(DEPS)
 
 %.o: %.c Makefile
-	gcc -MMD -MP -c $< -o $@
+	gcc $(CFLAGS) -MMD -MP -c $< -o $@
 
 clean:
 	rm $(OBJS) $(DEPS) cobjtest
