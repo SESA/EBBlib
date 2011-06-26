@@ -25,4 +25,6 @@
       
 #define COBJ_CALL(o,f, ...) (CObjFtable(o)->f(o, ##__VA_ARGS__))
 
+// gratuitous change
+
 #endif
