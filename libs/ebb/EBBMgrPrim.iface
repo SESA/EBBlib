@@ -1,0 +1,4 @@
+EBBRC (*AllocId) (void *_self, void **id);
+EBBRC (*FreeId) (void *_self, EBBId id);
+EBBRC (*BindId) (void *_self, EBBId id, EBBMissFunc mf, EBBMissArg arg);
+EBBRC (*UnBindId) (void *_self, EBBId id, EBBMissFunc *mf, EBBMissArg *arg);
