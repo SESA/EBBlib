@@ -1,67 +1,50 @@
-#ifndef __EBB_EBB_TYPES_H__
-#define __EBB_EBB_TYPES_H__
+#ifndef __EBB_TYPES_H__
+#define __EBB_TYPES_H__
 
-/**************************************************************/
-/* An EBB is composed of two types of components:             */
-/*    1) A single Root Component (then may change on          */
-/*       multi-node systems)                                  */
-/*    2) 0 or more Representatives                            */
-/*                                                            */
-/* These components are called EBBObjects (EBBObjs/objects)   */
-/* An EBBObj is a data structure plus a calling convention    */
-/* Various defintions for a EBBObj are possible but you must  */
-/* make it compatiable with the EBB translation system        */
-/*                                                            */
-/* In particular in this file is a EBB "C" definition         */
-/* Which defines an EBBObj to structure which has a pointer   */
-/* to an EBBVtable and a pointer to an EBBData instance       */
-/*                                                            */
-/* A Root object is considered to be the EBBInstance (EBBInst)*/
-/* To publish an instance in the EBB system you must allocate */
-/* a EBBId and bind the instance to the EBBId                 */
-/*                                                            */
-/* A vtable is constructed from a set of interface definitions*/
-/* which defines methods that take as their first paramter    */
-/* a pointer to the object instance                           */
-/* A primordial EBB called the EBBMgr provides an interface   */
-/* for various methods such as allocId, bind, etc             */
-/**************************************************************/
-
-/***** EBB Stuff builds on object abstractions ******/
-
+#include "EBBConst.h"
 #include "lrt/ulnx/EBBTypes.h"
 
-#define EBBMethod(method) EBBRC (*method)
+typedef struct EBBTransStruct EBBTrans;
+typedef EBBTrans EBBLTrans;
+typedef EBBTrans EBBGTrans;
 
-typedef Obj     *EBBRootRef;
-typedef Obj     *EBBRepRef;
-typedef EBBRootRef  EBBInst;
-
-// FIXME: JA some of these types might need to move around
-typedef void * EBBId;
-#define EBBNullId NULL
-
-#define EBBCreateTypes(ebb)			\
-  ObjCreateType(ebb);				\
-  typedef ebb * ebb ## Id;                      \
-  ObjCreateType(ebb ## Root)                           
+typedef EBBTrans *EBBId;
+#define EBBNullId NULL;
 
 typedef sval EBBRC;
-typedef enum { EBBRC_OK = 0 } EBBRC_STDVALS;
+typedef enum { EBBRC_FAILURE = -1, EBBRC_OK = 0 } EBBRC_STDVALS;
 #define EBBRC_SUCCESS(rc) ( rc >= 0 )
 
-static inline EBBTrans * EBBIdToRepTrans(EBBId id)
-{
-  return ((EBBTrans *)id) + (EBBMyEL() * EBB_NUM_PRIMITIVE_EBBS);
+typedef uval FuncNum;
+typedef uval EBBMissArg;
+
+typedef EBBRC (*EBBMissFunc) (void *, EBBLTrans *, FuncNum,
+			     EBBMissArg);
+
+//FIXME: Not sure if the type of the 2nd arg should be something different
+static inline void EBBCacheObj(EBBLTrans *lt, void *obj) {
+  //assuming the first element of EBBLTrans 
+  //is the object pointer
+  *((void **)lt) = obj; 
 }
 
-static inline EBBRepRef EBBIdToRep(EBBId id)
-{
-  return (EBBRepRef)EBBIdToRepTrans(id);
+static inline uval EBBMyEL() {
+  return LRTEBBMyEL();
 }
 
-#define INVK(ebbid, fun, ...)                          \
-  ( OBJ_INVK((typeof(ebbid))EBBIdToRep(ebbid), fun, ##__VA_ARGS__); )
+static inline uval EBBMyLTransIndex() {
+  return EBBMyEL();
+}
 
+static inline EBBLTrans * EBBIdToSpecificLTrans(EBBId id, uval i) {
+  return (EBBLTrans *)((uval)id + i *
+		       EBB_TRANS_PAGE_SIZE * EBB_TRANS_NUM_PAGES);
+}
+
+static inline EBBLTrans * EBBIdToLTrans(EBBId id) {
+  return EBBIdToSpecificLTrans(id, EBBMyLTransIndex());
+}
+
+#define EBBId_DREF(id) ((typeof(*id))(*(void **)EBBIdToLTrans((EBBId)id)))
 
 #endif

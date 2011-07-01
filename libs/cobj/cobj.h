@@ -11,20 +11,16 @@
 
 // typedef struct CObj { void * _ftable; }
 
-#define CObjFtable(o) (o->_ftable)
-#define CObjInterface(name) struct name ## _if 
-#define CObjImplements(name) struct name ## _if name ## _if 
+/* #define CObjFtable(o) (o->_ftable) */
+#define CObjIfName(name) name ## _if
+#define CObjInterface(name) struct CObjIfName(name) 
+#define CObjImplements(name) CObjInterface(name) CObjIfName(name) 
 
-#define CObjBegin(name)				\
-  typedef struct name ## _obj name;		\
-  typedef name * name ## Ref;			\
-  struct name ## _obj {				\
-    CObjInterface(name) * _ftable;       
-
-#define CObjEnd };
+#define CObject(name)		    \
+  typedef struct name ## _obj name; \
+  typedef name * name ## Ref;	    \
+  struct name ## _obj
       
-#define COBJ_CALL(o,f, ...) (CObjFtable(o)->f(o, ##__VA_ARGS__))
-
-// gratuitous change
+/* #define COBJ_CALL(o,f, ...) (CObjFtable(o)->f(o, ##__VA_ARGS__)) */
 
 #endif

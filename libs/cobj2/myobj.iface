@@ -1,2 +1,0 @@
-uval (*Init) (void *_self, uval v);
-void (*Print) (void *_self);

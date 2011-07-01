@@ -1,7 +1,0 @@
-// Interface for EBBMgr
-
-EBBMethod (init)    (void);
-EBBMethod (allocId) (EBBId *id);
-EBBMethod (bind)    (EBBId id, Obj o);
-EBBMethod (destroy) (EBBId id);
-

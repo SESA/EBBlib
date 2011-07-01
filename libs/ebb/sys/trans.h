@@ -1,3 +1,6 @@
+#ifndef __EBB_TRANS_H__
+#define __EBB_TRANS_H__
+
 /* Copyright 2011 Boston University. All rights reserved. */
 
 /* Redistribution and use in source and binary forms, with or without modification, are */
@@ -24,214 +27,176 @@
 /* authors and should not be interpreted as representing official policies, either expressed */
 /* or implied, of Boston University */
 
-#ifndef __EBB_TRANS_H__
-#define __EBB_TRANS_H__
+#include "../../base/types.h"
+#include "../EBBTypes.h"
+#include "../EBBConst.h"
 
-#include "../../types.h"
+//FIXME: All Trans Mem is statically allocated
+extern struct EBB_Trans_Mem {
+  u8 GMem [EBB_TRANS_PAGE_SIZE * EBB_TRANS_NUM_PAGES];
+  u8 LMem [EBB_TRANS_PAGE_SIZE * EBB_TRANS_NUM_PAGES *
+	      EBB_TRANS_MAX_ELS];
+  u8 *free;  // pointer to next available range of GMem
+} EBB_Trans_Mem;
 
-static inline uval myEL() {
-  return 0;
+static void EBB_Trans_Mem_Init(void) {
+  EBB_Trans_Mem.free = EBB_Trans_Mem.GMem;
+}  
+// could also do initial mapping here if memory is
+// is not actually static reservation
+
+static void EBB_Trans_Mem_Alloc_Pages(uval num_pages, u8 **pages) {
+  if (&(EBB_Trans_Mem.free[EBB_TRANS_PAGE_SIZE * num_pages]) >
+      &(EBB_Trans_Mem.GMem[EBB_TRANS_PAGE_SIZE * EBB_TRANS_NUM_PAGES])) {
+    *pages = NULL;
+  } else {
+    *pages = EBB_Trans_Mem.free;
+    EBB_Trans_Mem.free = EBB_Trans_Mem.free + (EBB_TRANS_PAGE_SIZE * num_pages);
+  }
 }
 
-#define EBB_NUM_ELS (16)
-#define EBB_NUM_IDS (100)
-#define EBB_MAX_FUNCS (256)
+typedef EBBRC (*EBBFunc) (void *);
+typedef EBBFunc *EBBFuncTable;
 
-typedef sval EBBRC;
-typedef enum { EBBRC_FAILURE = -1, EBBRC_OK = 0 } EBBRC_STDVALS;
-#define EBBRC_SUCCESS(rc) ( rc >= 0 )
-
-typedef uval FuncNum;
-typedef uval EBBMissArg;
-
-typedef EBBRC (*EBBFunc) (void);
-typedef EBBRC (*EBBMissFunc) (EBBLTrans *, FuncNum, EBBMissArg);
-typedef EBBFunc EBBFuncTable[];
-
-extern EBBFunc EBBDefFT[EBB_MAX_FUNCS];
-extern EBBFunc EBBNullFT[EBB_MAX_FUNCS];
+extern EBBFunc EBBDefFT[EBB_TRANS_MAX_FUNCS];
+/* extern EBBFunc EBBNullFT[EBB_TRANS_MAX_FUNCS]; */
 
 extern EBBMissFunc theERRMF;
 
-/* EBBTRANS: */
-/* function table pointer: owned by the user, */
-/*   overwritten on a bind to point to the correct object */
-/* extra: owned by the EBBManager for whatever purpose it needs */
-/* transVal: owned by the translation system for whatever purpose it needs */
-
-typedef struct EBBTransStruct EBBTrans;
-typedef EBBTrans EBBLTrans;
-typedef EBBTrans EBBGTrans;
-
-typedef struct EBBCallDescStruct {
+struct EBBTransStruct {
   union {
-    EBBFuncTable * funcs;
-    EBBMissFunc mf;
+    uval v1;
+    EBBFuncTable *obj; //as a local entry
+    EBBMissFunc mf; //as a global entry
   };
   union {
-    uval           extra;
-    EBBFuncTable ftable;
-    EBBMissArg     arg;
+    uval v2;
+    EBBFuncTable ftable; //as a local entry (by default)
+    EBBMissArg arg; //as a global entry
   };
-} EBBCallDesc;
-
-typedef struct EBBTransStruct {
-  EBBCallDesc fdesc;
+  //FIXME: used for a free list, probably should be separate
   union {
-    uval transVal;
-    EBBGTrans *next;
-  }
-} EBBTrans;
+    uval v3;
+    EBBGTrans *next; 
+  };
+};
 
+static inline EBBId EBBLTransToId(EBBLTrans *lt) {
+  return (EBBId)((uval)lt - EBBMyLTransIndex() *
+		 EBB_TRANS_PAGE_SIZE * EBB_TRANS_NUM_PAGES);
+}
 
-typedef struct EBBTransLSys {
-  EBBGTrans *gTable; //the global table
-  EBBLTrans *lTable; //my local table
-  EBBGTrans *free; 
+static inline EBBGTrans * EBBIdToGTrans(EBBId id) {
+  return (EBBGTrans *)((uval)id - (uval)EBB_Trans_Mem.LMem +
+		       (uval)EBB_Trans_Mem.GMem);
+}
+
+static inline EBBId EBBGTransToId(EBBGTrans *gt) {
+  return (EBBId)((uval)gt - (uval)EBB_Trans_Mem.GMem +
+		 (uval)EBB_Trans_Mem.LMem);
+}
+
+static inline EBBGTrans * EBBLTransToGTrans(EBBLTrans *lt) {
+  return EBBIdToGTrans(EBBLTransToId(lt));
+}
+
+static inline EBBLTrans * EBBGTransToLTrans(EBBGTrans *gt) {
+  return EBBIdToLTrans(EBBGTransToId(gt));
+}
+
+//FIXME: move this out of this header
+typedef struct EBBTransLSysStruct {
+  EBBGTrans *gTable;
+  EBBLTrans *lTable;
+  EBBGTrans *free;
   uval numAllocated;
-  uval numIds;
+  uval size; //number of EBBGTrans in our portion of the gTable
 } EBBTransLSys;
 
-typedef EBBTrans *EBBId;
-#define EBBIdNull 0
-
-#if 0
-// At some point we will need to support multiple trans system instances
-// This code is template code is meant to document what we had in mind
-// for this
-typedef struct EBBTransGSys {
-  uval numIds;
-} EBBTransGSys;
-
-typedef sval EBBTransSysId
-#define EBB_TRANS_SYS_MAX (4) //num free bits for 32 bit aligned pointer
-
-typedef struct EBBTransSystems {
-  EBBTRansGSys transSystems[EBB_TRANS_SYS_MAX];
-  uval free;
-} EBBTransSystems;
-
-extern EBBTransSystems theEBBTransSystems;
-
-EBBTransSysId  EBBTransAllocSys() {
-  uval sysid = theEBBTransSystems.free;
-
-  theEBBTransSystems.free++;
-  if (theEBBTransSystems.free > EBB_TRANS_SYS_MAX) return -1;
-  return sysid;
-}
-
-EBBTransSysId EBBIdToSysId(EBBid id) { 
-  return id & ((1 << EBB_TRANS_SYS_MAX) - 1);
-}
-
-void EBBIdSetSysId(EBBid *id, EBBTransSysId sid) {
-  *id = *id | (sid & ((1 << EBB_TRANS_SYS_MAX) - 1));
-}
-
-static inline EBBNumIds(EBBId id) { 
-  return EBBTransSystems[EBBIdToSysId(id)].numIds; 
-}
-#endif
-
-// FIXME:  THIS IS HERE SO THAT WE CAN ADD A LEVEL OF INDIRECTION
-//         TO SUPPORT MULTIPLE EBBTRANS SYS INSTANCES
-//         (LIKE WE NEED ANOTHER F#%^#%^ LEVEL OF INDIRECTION :-)
-static inline EBBNumIds(EBBId id) { return EBB_NUM_IDS; }
-
-// We avoid using sys to compute your ltrans so that dref is
-// efficient and usable
-static inline EBBLTrans * EBBIdToLTrans(EBBId id)
-{
-  return (EBBLTrans *)(id + myEl() * EBBNumIds(id));
-}
-
-static inline uval EBBSysNumIds(EBBTransLSys *sys) {
-  return sys->numIds;
-}
-
-static inline EBBId EBBLTransToId(EBBTransLSys *sys, EBBLTrans *lt)
-{
-  return (EBBId)(lt - myEl() * EBBSysNumIds(sys));
-}
-
-static inline EBBGTrans * EBBLTransToGTrans(EBBTransLSys *sys, EBBLTrans *lt)
-{
-  return (EBBGTrans *)((uval)lt - (uval)sys->lTable + (uval)sys->gTable);
-}
-
-static inline EBBLTrans * EBBGTransToLTrans(EBBTransLSys *sys, EBBGTrans *gt)
-{
-  return (EBBLTrans *)((uval)gt - (uval)sys->gTable + (uval)sys->lTable);
-}
-
-static inline EBBGTrans * EBBIdToGTrans(EBBTransLSys *sys, EBBId id)
-{
-  return EBBLTransToGTrans(sys, EBBIdToLTrans(sys, id));
-}
-
-static inline EBBId EBBGTransToId(EBBTransLSys *sys, EBBGTrans *gt) {
-  return EBBLTransToId(sys, EBBGTransToLTrans(sys, gt));
-}
-
-static inline EBBId EBBIdAlloc(EBBTransLSys *sys)
-{
+static inline EBBId EBBIdAlloc(EBBTransLSys *sys) {
   EBBGTrans *ret = sys->free;
-  if(ret == NULL) {
-    return EBBIdNull;
+  if(ret != NULL) {
+    ret->next = (EBBGTrans *)-1;
+    sys->free = sys->free->next;
+    return EBBGTransToId(ret);
   }
-  sys->free = (EBBGTrans *)sys->free->next;
-  sys->numAllocated++;
-  return EBBGTransToId(sys, ret);
+  int i;
+  for (i = 0; i < sys->size; i++) {
+    if((uval)sys->gTable[i].next != -1) {
+      sys->gTable[i].next = (EBBGTrans *)-1;
+      return EBBGTransToId(&sys->gTable[i]);
+    }
+  }
+  return NULL;
 }
-
-static inline void EBBIdFree(EBBTransLSys *sys, EBBId id)
-{
-  EBBGTrans *free = EBBIdToGTrans(sys, id);
-  free->next = (uval)sys->free;
+    
+static inline void EBBIdFree(EBBTransLSys *sys, EBBId id) {
+  EBBGTrans *free = EBBIdToGTrans(id);
+  free->next = sys->free;
   sys->free = free;
-}
-
-// We expect this to be used by external code 
-// such as miss handing functions to cache an local
-// object for translation on future calls.
-static inline void EBBCacheObj(EBBLTrans *lt,
-				 EBBFuncTable *funcs) {
-  lt->funcs = funcs;
 }
 
 static inline void EBBSetLTrans(EBBLTrans *lt,
 				EBBFuncTable ftable) {
-  EBBInstallObj(&lt->ftable);
+  EBBCacheObj(lt, &lt->ftable);
   lt->ftable = ftable;
 }
 
-// JA: BIGFING KLUDGE 
-static inline void EBBSetALLLTrans(EBBId id, EBBFuncTable ftable) {
+static inline void EBBSetAllLTrans(EBBId id, EBBFuncTable ftable) {
+  int i;
+  EBBLTrans *lt;
+  for (i = 0; i < EBB_TRANS_MAX_ELS; i++) {
+    lt = EBBIdToSpecificLTrans(id, i);
+    EBBSetLTrans(lt, ftable);
+  }
+}
+
+static inline void EBBIdBind(EBBId id, EBBMissFunc mf, 
+			     EBBMissArg arg) {
+  EBBGTrans *gt = EBBIdToGTrans(id);
+  gt->mf = mf;
+  gt->arg = arg;
+}
+
+static inline void EBBIdUnBind(EBBId id, EBBMissFunc *mf,
+			       EBBMissArg *arg) {
+  EBBGTrans *gt = EBBIdToGTrans(id);
+  if (mf)
+    *mf = gt->mf;
+  if (arg)
+    *arg = gt->arg;
+  //FIXME: this is how we reset the local tables after an unbind
+  EBBSetAllLTrans(id, EBBDefFT);
+  EBBIdBind(id, theERRMF, 0);
+}
+
+//initialize the portion of ltable from lt
+// to the specified number of pages
+static void initLTable(EBBLTrans *lt, uval pages) {
+  EBBLTrans *iter;
+  for (iter = lt; 
+       iter < (&lt[EBB_TRANS_PAGE_SIZE * pages]);
+       iter++) {
+    EBBSetLTrans(iter, EBBDefFT);
+  }
+}
+
+//init all ltables from lt to the specified number of pages
+//id must be the first id allocated
+static void initAllLTables(EBBId id, uval pages) {
+  int i;
+  for (i = 0; i < EBB_TRANS_MAX_ELS; i++) {
+    initLTable(EBBIdToSpecificLTrans(id, i), pages);
+  }
+}
+
+static void initGTable(EBBGTrans *gt, uval pages) {
+  EBBGTrans *iter;
+  for (iter = gt;
+       iter < (EBBGTrans *)((uval)gt + pages * EBB_TRANS_PAGE_SIZE);
+       iter++) {
+    EBBIdBind(EBBGTransToId(iter), theERRMF, 0);
+  }
+}
   
-}
-
-static inline void EBBIdBind(EBBTransLSys *sys, EBBId id,
-			     EBBMissFunc mf, EBBMissArg arg)
-{
-  EBBGTrans *gt = EBBIdToGTrans(sys, id);
-
-  gt->fdesc.mf = mf;
-  gt->fdesc.arg = arg;
-
-}
-
-static inline void EBBIdUnBind(EBBTransLSys *sys, EBBId id,
-			       EBBMissFunc *mf, EBBMissArg *arg)
-{
-  EBBGTrans *gt = EBBIdToGTrans(sys, id);
-  *mf = gt->fdesc.mf; 
-  *arg = gt->fdesc.arg;
-  
-  EBBIdBind(sys, id, theERRMF, 0);
-}
-
-#define EBBId_DREF(id) **EBBIdToLTrans(id)
-/* #define EBBId_CALL(id, f, ...) ((*id)->fdesc.funcs[f](&id->fdesc))   */
-
 #endif

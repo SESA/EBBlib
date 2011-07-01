@@ -1,4 +1,0 @@
-uval (*open)  (void *_self, char *name, uval mode);
-uval (*close) (void *_self);
-uval (*read)  (void *_self, char *buf, uval len); 
-uval (*write) (void *_self, char *buf, uval len); 

@@ -1,3 +1,0 @@
-#include "EBBRoot.iface"
-
-EBBMETHOD (init)(void)

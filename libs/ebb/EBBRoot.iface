@@ -1,2 +1,0 @@
-EBBMethod (getRep)           (ELNum el, EBBRepRef *rep);
-EBBMethod (handleTransFault) (EBBTrans *t, ObjMethodNum mnum);
