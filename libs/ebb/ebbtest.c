@@ -1,10 +1,10 @@
 #include "../cobj/cobj.h"
 #include "sys/trans.h" //FIXME: move EBBTransLSys out of this header
 #include "EBBTypes.h"
+#include "CObjEBB.h"
 #include "EBBMgrPrim.h"
-#include "EBBCtr.H"
-#include "EBBCtrPrim.H"
-#include "EBBCObj.h"
+#include "EBBCtr.h"
+#include "EBBCtrPrim.h"
 
 #include <stdio.h>
 

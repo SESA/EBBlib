@@ -1,13 +1,16 @@
 #include "../base/types.h"
 #include "../cobj/cobj.h"
 #include "sys/trans.h" //FIXME: move EBBTransLSys out of this header
+#include "CObjEBB.h"
 #include "EBBTypes.h"
-#include "EBBRoot.H"
-#include "EBBRootShared.H"
-#include "EBBCtr.H"
-#include "EBBCtrPrim.H"
 #include "EBBMgrPrim.h"
-#include "EBBCObj.h"
+#include "CObjEBBUtils.h"
+#include "CObjEBBRoot.h"
+#include "CObjEBBRootShared.h"
+#include "EBBCtr.h"
+#include "EBBCtrPrim.h"
+
+
 
 #include "stdio.h"
 
@@ -56,12 +59,12 @@ EBBCtrPrimSharedCreate(EBBCtrPrimId *id)
 {
   EBBRC rc;
   static EBBCtrPrim theRep;
-  static EBBRootShared theRoot;
+  static CObjEBBRootShared theRoot;
   EBBCtrPrimRef repRef = &theRep;
-  EBBRootSharedRef rootRef = &theRoot;
+  CObjEBBRootSharedRef rootRef = &theRoot;
 
   // setup function tables
-  EBBRootSharedSetFT(rootRef);
+  CObjEBBRootSharedSetFT(rootRef);
   EBBCtrPrimSetFT(repRef);
 
   // setup my representative and root
@@ -73,7 +76,7 @@ EBBCtrPrimSharedCreate(EBBCtrPrimId *id)
   rc = EBBAllocPrimId(id);
   //  EBBRCAssert(rc);
 
-  rc = EBBCObjBind(id, rootRef); 
+  rc = CObjEBBBind(id, rootRef); 
   //  EBBRCAssert(rc);
 
   return EBBRC_OK;

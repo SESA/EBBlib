@@ -1,8 +1,8 @@
 #include "../cobj/cobj.h"
 #include "sys/trans.h" //FIXME: move EBBTransLSys out of this header
 #include "EBBTypes.h"
+#include "CObjEBB.h"
 #include "EBBMgrPrim.h"
-#include "EBBCObj.h"
 
 static EBBRC
 AllocId (void *_self, void **id) {
