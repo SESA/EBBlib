@@ -1,6 +1,6 @@
 #include "../base/types.h"
 #include "../cobj/cobj.h"
-#include "EBBTypes.H"
+#include "EBBTypes.h"
 #include "CObjEBB.h"
 #include "CObjEBBRoot.h"
 #include "CObjEBBRootShared.h"
