@@ -17,13 +17,15 @@ extern void EBBMgrPrimInit(void);
 static inline EBBRC
 EBBAllocPrimId(void *id)
 {
-  return EC(theEBBMgrPrimId)->AllocId(EB(theEBBMgrPrimId), &id);
+  return EC(theEBBMgrPrimId)->AllocId(EB(theEBBMgrPrimId), 
+				      &id);
 }
 
 static inline EBBRC
 EBBBindPrimId(void *id, EBBMissFunc mf, EBBMissArg arg)
 {  
-  return EC(theEBBMgrPrimId)->BindId(EB(theEBBMgrPrimId), (EBBId)id, mf, arg);
+  return EC(theEBBMgrPrimId)->BindId(EB(theEBBMgrPrimId), 
+				     (EBBId)id, mf, arg);
 }
 
 

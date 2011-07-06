@@ -4,6 +4,8 @@
 #include "CObjEBB.h"
 #include "EBBMgrPrim.h"
 
+#define panic() (*(uval *)0)
+
 static EBBRC
 AllocId (void *_self, void **id) {
   EBBMgrPrimRef self = (EBBMgrPrimRef)_self;
@@ -88,6 +90,9 @@ struct EBB_Trans_Mem EBB_Trans_Mem;
 EBBMgrPrimRef *theEBBMgrPrimId;
 
 void EBBMgrPrimInit () {
+  EBBRC rc;
+  EBBId id;
+
   EBB_Trans_Mem_Init();
   gsys.pages = 1;
   EBB_Trans_Mem_Alloc_Pages(gsys.pages, (u8 **)&gsys.gTable);
@@ -95,8 +100,14 @@ void EBBMgrPrimInit () {
   initGTable(gsys.gTable, gsys.pages);
   initAllLTables(EBBGTransToId(gsys.gTable), gsys.pages);
 
-
-  //manually binding the EBBMgrPrim in
+  // manually binding the EBBMgrPrim in
   theEBBMgrPrimId = (EBBMgrPrimRef *)EBBGTransToId(gsys.gTable);
   EBBIdBind((EBBId)theEBBMgrPrimId, EBBMgrPrimMF, (EBBMissArg)&gsys);
+  
+  // do an alloc to account for manual binding 
+  rc = EBBAllocPrimId(&id);
+
+  if (!EBBRC_SUCCESS(rc)) panic();
+  if ( id != (EBBId)theEBBMgrPrimId) panic();
+
 }

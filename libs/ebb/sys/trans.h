@@ -190,6 +190,7 @@ static void initAllLTables(EBBId id, uval pages) {
   }
 }
 
+// FIXME: JA think there is a bug here.  We should be calcing NUM explicity
 static void initGTable(EBBGTrans *gt, uval pages) {
   EBBGTrans *iter;
   for (iter = gt;
