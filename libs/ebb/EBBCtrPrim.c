@@ -76,7 +76,7 @@ EBBCtrPrimSharedCreate(EBBCtrPrimId *id)
   rc = EBBAllocPrimId(id);
   //  EBBRCAssert(rc);
 
-  rc = CObjEBBBind(id, rootRef); 
+  rc = CObjEBBBind(*id, rootRef); 
   //  EBBRCAssert(rc);
 
   return EBBRC_OK;

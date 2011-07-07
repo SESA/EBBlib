@@ -18,7 +18,7 @@ static inline EBBRC
 EBBAllocPrimId(void *id)
 {
   return EC(theEBBMgrPrimId)->AllocId(EB(theEBBMgrPrimId), 
-				      &id);
+				      id);
 }
 
 static inline EBBRC
