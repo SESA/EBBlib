@@ -18,6 +18,8 @@ typedef enum { EBBRC_FAILURE = -1, EBBRC_OK = 0 } EBBRC_STDVALS;
 typedef uval FuncNum;
 typedef uval EBBMissArg;
 
+//first arg is the address of the EBBRep that will be executed
+//second arg is the local table pointer so that a rep can be installed
 typedef EBBRC (*EBBMissFunc) (void *, EBBLTrans *, FuncNum,
 			     EBBMissArg);
 
