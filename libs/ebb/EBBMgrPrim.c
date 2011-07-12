@@ -9,14 +9,14 @@
 static EBBRC
 AllocId (void *_self, void **id) {
   EBBMgrPrimRef self = (EBBMgrPrimRef)_self;
-  *id = (void *)EBBIdAlloc(&self->lsys);
+  *id = (void *)EBBIdAlloc(self->lsys);
   return EBBRC_OK;
 }
 
 static EBBRC
 FreeId (void *_self, EBBId id) {
   EBBMgrPrimRef self = (EBBMgrPrimRef)_self;
-  EBBIdFree(&self->lsys, id);
+  EBBIdFree(self->lsys, id);
   return EBBRC_OK;
 }
 
@@ -41,6 +41,7 @@ static CObjInterface(EBBMgrPrim) EBBMgrPrim_ftable = {
 //FIXME: have to statically allocate these because there is
 //       no memory manager
 EBBMgrPrim EBBMgrPrimLObjs[EBB_TRANS_MAX_ELS];
+EBBTransLSys EBBMgrPrimLTrans[EBB_TRANS_MAX_ELS];
 
 typedef struct EBBTransGSysStruct {
   EBBGTrans *gTable;
@@ -53,11 +54,12 @@ static void EBBMgrPrimRepInit (EBBLTrans *lt, EBBMgrPrimRef ref,
   int numGTransPerEL;
   numGTransPerEL = gsys.pages * EBB_TRANS_PAGE_SIZE / 
     sizeof(EBBGTrans) / EBB_TRANS_MAX_ELS;
-  ref->lsys.gTable = &gsys.gTable[numGTransPerEL * EBBMyEL()];
-  ref->lsys.lTable = EBBGTransToLTrans(ref->lsys.gTable);
-  ref->lsys.free = NULL;
-  ref->lsys.numAllocated = 0;
-  ref->lsys.size = numGTransPerEL;
+  ref->lsys = &EBBMgrPrimLTrans[EBBMyEL()];
+  ref->lsys->gTable = &gsys.gTable[numGTransPerEL * EBBMyEL()];
+  ref->lsys->lTable = EBBGTransToLTrans(ref->lsys->gTable);
+  ref->lsys->free = NULL;
+  ref->lsys->numAllocated = 0;
+  ref->lsys->size = numGTransPerEL;
   ref->ft = &EBBMgrPrim_ftable;
 }
 

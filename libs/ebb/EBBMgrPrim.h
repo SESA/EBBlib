@@ -7,7 +7,7 @@ CObjInterface(EBBMgrPrim) {
 
 CObject(EBBMgrPrim) {
   CObjInterface(EBBMgrPrim) *ft;
-  EBBTransLSys lsys;
+  EBBTransLSys *lsys;
 };
 
 extern EBBMgrPrimRef *theEBBMgrPrimId;

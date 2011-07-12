@@ -104,14 +104,13 @@ static inline EBBLTrans * EBBGTransToLTrans(EBBGTrans *gt) {
   return EBBIdToLTrans(EBBGTransToId(gt));
 }
 
-//FIXME: move this out of this header
-typedef struct EBBTransLSysStruct {
+struct EBBTransLSysStruct {
   EBBGTrans *gTable;
   EBBLTrans *lTable;
   EBBGTrans *free;
   uval numAllocated;
   uval size; //number of EBBGTrans in our portion of the gTable
-} EBBTransLSys;
+};
 
 static inline EBBId EBBIdAlloc(EBBTransLSys *sys) {
   EBBGTrans *ret = sys->free;
