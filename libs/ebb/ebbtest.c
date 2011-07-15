@@ -46,7 +46,7 @@ EBBCtrTest(void)
     rc = inc(r);
 #endif
 
-#if 0
+#if 1
     rc = f(r);
 #endif
 
@@ -58,7 +58,7 @@ EBBCtrTest(void)
     rc = r->ft->inc(r);
 #endif
 
-#if 1
+#if 0
     rc = EC(c)->inc(EB(c)); 
 #endif
 

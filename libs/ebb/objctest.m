@@ -1,4 +1,5 @@
 #include "objc/Object.h"
+#include "objc/objc-api.h"
 
 #include "../base/types.h"
 
@@ -6,8 +7,6 @@
 #include "EBBTypes.h"
 #include "CObjEBB.h"
 #include "EBBMgrPrim.h"
-#include "EBBCtr.h"
-#include "EBBCtrPrim.h"
 
 #include <stdio.h>
 
@@ -66,7 +65,24 @@
 }
 @end
 
+#define MY_CALL_HACK 1
 
+#if MY_CALL_HACK
+
+inline IMP 
+objc_msg_lookup(id receiver, SEL op)
+{
+  IMP imp;
+
+  static IMP func=NULL;
+
+  if (func) return func;
+  imp = get_imp(receiver->class_pointer, op);
+  if (op == @selector(inc)) func = imp;
+
+  return imp; 
+}
+#endif
 
 void 
 EBBCtrTest(void)
@@ -98,17 +114,26 @@ EBBCtrTest(void)
 
 #endif
 
-#if 1
+#if 0
   c = NULL;
 #endif
 
+  SEL s = @selector(inc);
+  IMP f = objc_msg_lookup(c, s);
+
   for (i=0; i<1000000000; i++ ) {
 
+#if 0
+    rc = (EBBRC) f(c, s);
+#endif
+
+#if 1
     rc = [c inc];
+#endif
 
     if (!EBBRC_SUCCESS(rc)) printf("error\n");
   }
-
+  
   rc = [c val: &v];
   printf("i=%ld rc=%ld, v=%ld\n", i, rc, v);
 }
