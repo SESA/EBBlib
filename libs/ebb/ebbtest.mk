@@ -1,4 +1,4 @@
-CFLAGS := -g 
+CFLAGS := -O4 
 SRCS := ebbtest.c EBBMgrPrim.c EBBCtrPrim.c CObjEBBRootShared.c CObjEBB.c \
 	sys/defFT.c 
 OBJS := $(patsubst %.c, %.o, $(SRCS))

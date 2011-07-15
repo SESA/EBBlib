@@ -14,14 +14,15 @@ EBBCtrTest(void)
   EBBCtrPrimId c;
   EBBRC rc;
   uval v;
+  uval i;
 
   EBBCtrPrimSharedCreate(&c);
 
   printf("id=%p\n", c);
   rc = EC(c)->val(EB(c), &v);
-
   printf("rc=%ld, v=%ld\n", rc, v);
 
+#if 0
   rc = EC(c)->inc(EB(c)); rc = EC(c)->val(EB(c), &v);  
   printf("rc=%ld, v=%ld\n", rc, v);
 
@@ -33,6 +34,40 @@ EBBCtrTest(void)
 
   rc = EC(c)->dec(EB(c)); rc = EC(c)->val(EB(c), &v);  
   printf("rc=%ld, v=%ld\n", rc, v);
+#endif
+
+  EBBCtrPrimRef r = EB(c);
+  EBBRC (*f) (void *_self) = r->ft->inc;
+  EBBRC (**ftbl) (void *_self) = &f;
+
+  for (i=0; i<1000000000; i++ ) {
+    
+#if 1
+    rc = inc(r);
+#endif
+
+#if 0
+    rc = f(r);
+#endif
+
+#if 0
+    rc = ftbl[0](r);
+#endif
+
+#if 0
+    rc = r->ft->inc(r);
+#endif
+
+#if 0
+    rc = EC(c)->inc(EB(c)); 
+#endif
+
+    if (!EBBRC_SUCCESS(rc)) printf("error\n");
+  } 
+
+  rc = EC(c)->val(EB(c), &v);
+  printf("i=%ld rc=%ld, v=%ld\n", i, rc, v);
+  
 }
 
 
