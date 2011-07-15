@@ -1,4 +1,7 @@
+#include "objc/Object.h"
+
 #include "../base/types.h"
+
 #include "../cobj/cobj.h"
 #include "EBBTypes.h"
 #include "CObjEBB.h"
@@ -8,66 +11,106 @@
 
 #include <stdio.h>
 
+@interface EBBObject : Object
+{
+}
++ alloc;
+@end
+
+@implementation EBBObject
++ (id) alloc
+{
+  return [super alloc];
+}
+@end
+
+@interface Counter : EBBObject
+{
+  uval val;
+}
+
+- (EBBRC) init: (Counter **) c;
+- (EBBRC) inc;
+- (EBBRC) dec;
+- (EBBRC) val: (uval *)v;
+
+@end
+
+
+@implementation Counter
+
+- (EBBRC) init: (Counter **) c 
+{
+  self = [super init];
+  val = 0;
+  *c = self;
+  return EBBRC_OK;
+}
+
+- (EBBRC) inc
+{
+  val++;
+  return EBBRC_OK;
+}
+
+- (EBBRC) dec
+{
+  val--;
+  return EBBRC_OK;
+}
+
+- (EBBRC) val: (uval *)v 
+{
+  *v = val;
+   return EBBRC_OK;
+}
+@end
+
+
+
 void 
 EBBCtrTest(void)
 {
-  EBBCtrPrimId c;
+  Counter *c;
   EBBRC rc;
+
   uval v;
   uval i;
 
-  EBBCtrPrimSharedCreate(&c);
+  rc = [[Counter alloc] init:&c];
 
   printf("id=%p\n", c);
-  rc = EC(c)->val(EB(c), &v);
+  rc = [c val: &v];
   printf("rc=%ld, v=%ld\n", rc, v);
 
 #if 0
-  rc = EC(c)->inc(EB(c)); rc = EC(c)->val(EB(c), &v);  
+  rc = [c inc]; rc = [c val: &v];  
   printf("rc=%ld, v=%ld\n", rc, v);
 
-  rc = EC(c)->inc(EB(c)); rc = EC(c)->val(EB(c), &v);  
+  rc = [c inc]; rc = [c val: &v];  
   printf("rc=%ld, v=%ld\n", rc, v);
 
-  rc = EC(c)->inc(EB(c)); rc = EC(c)->val(EB(c), &v);  
+  rc = [c inc]; rc = [c val: &v];  
   printf("rc=%ld, v=%ld\n", rc, v);
 
-  rc = EC(c)->dec(EB(c)); rc = EC(c)->val(EB(c), &v);  
+  rc = [c dec]; rc = [c val: &v];  
   printf("rc=%ld, v=%ld\n", rc, v);
-#endif
 
-  EBBCtrPrimRef r = EB(c);
-  EBBRC (*f) (void *_self) = r->ft->inc;
-  EBBRC (**ftbl) (void *_self) = &f;
-
-  for (i=0; i<1000000000; i++ ) {
-    
-#if 0
-    rc = inc(r);
-#endif
-
-#if 0
-    rc = f(r);
-#endif
-
-#if 0
-    rc = ftbl[0](r);
-#endif
-
-#if 0
-    rc = r->ft->inc(r);
 #endif
 
 #if 1
-    rc = EC(c)->inc(EB(c)); 
+  c = NULL;
 #endif
 
-    if (!EBBRC_SUCCESS(rc)) printf("error\n");
-  } 
+  for (i=0; i<1000000000; i++ ) {
 
-  rc = EC(c)->val(EB(c), &v);
+    rc = [c inc];
+
+    if (!EBBRC_SUCCESS(rc)) printf("error\n");
+  }
+
+  rc = [c val: &v];
   printf("i=%ld rc=%ld, v=%ld\n", i, rc, v);
-  
 }
 
 
