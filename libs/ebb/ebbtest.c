@@ -5,6 +5,7 @@
 #include "EBBMgrPrim.h"
 #include "EBBCtr.h"
 #include "EBBCtrPrim.h"
+#include "clrBTB.h"
 
 #include <stdio.h>
 
@@ -14,7 +15,7 @@ EBBCtrTest(void)
   EBBCtrPrimId c;
   EBBRC rc;
   uval v;
-  uval i;
+  sval i,j;
 
   EBBCtrPrimSharedCreate(&c);
 
@@ -40,33 +41,39 @@ EBBCtrTest(void)
   EBBRC (*f) (void *_self) = r->ft->inc;
   EBBRC (**ftbl) (void *_self) = &f;
 
-  for (i=0; i<1000000000; i++ ) {
-    
-#if 0
-    rc = inc(r);
-#endif
+  for (i=0; i<2; i++ ) {
 
 #if 1
-    rc = f(r);
+    clrBTB();
 #endif
 
+    for (j=0; j<2; j++) {
 #if 0
-    rc = ftbl[0](r);
+      rc = inc(r);
 #endif
-
+      
+#if 1
+      rc = f(r);
+#endif
+      
 #if 0
-    rc = r->ft->inc(r);
+      rc = ftbl[0](r);
 #endif
-
+      
 #if 0
-    rc = EC(c)->inc(EB(c)); 
+      rc = r->ft->inc(r);
+#endif
+      
+#if 0
+      rc = EC(c)->inc(EB(c)); 
 #endif
 
-    if (!EBBRC_SUCCESS(rc)) printf("error\n");
-  } 
+      if (!EBBRC_SUCCESS(rc)) printf("error\n");
+    }
+  }
 
   rc = EC(c)->val(EB(c), &v);
-  printf("i=%ld rc=%ld, v=%ld\n", i, rc, v);
+  printf("i=%ld j=%ld rc=%ld, v=%ld\n", i, j, rc, v);
   
 }
 
