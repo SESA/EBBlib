@@ -45,6 +45,8 @@ typedef long sval;
 /* typedef u32 __le32; */
 /* typedef u64 __le64; */
 
+#ifndef NULL
 #define NULL (void *)(0)
+#endif
 
 #endif	/* __COMMON__IA32__TYPES_H__ */

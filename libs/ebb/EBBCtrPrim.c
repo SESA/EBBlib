@@ -10,12 +10,18 @@
 #include "EBBCtr.h"
 #include "EBBCtrPrim.h"
 
-
-
 #include "stdio.h"
 
+#include "ebbtest.h"
+
+#ifdef EBB_TEST
+#define PRIVATE
+#else
+#define PRIVATE static
+#endif
+
 // Representative Code
-static EBBRC
+PRIVATE EBBRC
 init(void *_self) 
 {
   EBBCtrPrimRef self = _self;
@@ -23,7 +29,7 @@ init(void *_self)
   return EBBRC_OK;
 }
 
-static EBBRC 
+PRIVATE EBBRC 
 inc(void *_self) 
 {
   EBBCtrPrimRef self = _self;
@@ -32,7 +38,7 @@ inc(void *_self)
   return EBBRC_OK;
 }
 
-static EBBRC 
+PRIVATE EBBRC 
 dec(void *_self) 
 {
   EBBCtrPrimRef self = _self;
@@ -41,7 +47,7 @@ dec(void *_self)
   return EBBRC_OK;
 }
 
-static EBBRC
+PRIVATE EBBRC
 val(void *_self, uval *v)
 {
   EBBCtrPrimRef self = _self;
