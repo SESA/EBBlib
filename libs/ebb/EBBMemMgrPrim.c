@@ -1,13 +1,24 @@
+#include "../base/types.h"
+#include "../cobj/cobj.h"
+#include "EBBTypes.h"
+#include "CObjEBB.h"
+#include "EBBMgrPrim.h"
+#include "CObjEBBUtils.h"
+#include "CObjEBBRoot.h"
+#include "CObjEBBRootShared.h"
+#include "EBBMemMgr.h"
+#include "EBBMemMgrPrim.h"
+
 #define MEMSIZE (1 << 20)
 
-static u8 theMemory[MEMSIZE]
+static u8 theMemory[MEMSIZE];
 
 static EBBRC
 init(void *_self)
 {
   EBBMemMgrPrimRef self = _self;
   self->mem = theMemory;
-  len = MEMSIZE;
+  self->len = MEMSIZE;
   return EBBRC_OK;
 }
 
@@ -37,8 +48,10 @@ CObjInterface(EBBMemMgr) EBBMemMgrPrim_ftable = {
   init, alloc, free
 };
 
+EBBMemMgrPrimRef *theEBBMemMgrPrimId;
+
 EBBRC
-EBBMemMgrPrimShared(EBBMemMgrPrimId *id)
+EBBMemMgrPrimInit()
 {
   EBBRC rc;
   static EBBMemMgrPrim theRep;
@@ -56,10 +69,10 @@ EBBMemMgrPrimShared(EBBMemMgrPrimId *id)
   // pass it along for it's init
   rootRef->ft->init(rootRef, &theRep);
 
-  rc = EBBAllocPrimId(id);
+  rc = EBBAllocPrimId(&theEBBMemMgrPrimId);
   //  EBBRCAssert(rc);
 
-  rc = CObjEBBBind(*id, rootRef); 
+  rc = CObjEBBBind(theEBBMemMgrPrimId, rootRef); 
   //  EBBRCAssert(rc);
 
   return EBBRC_OK;

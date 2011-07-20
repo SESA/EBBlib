@@ -10,9 +10,22 @@ CObject(EBBMemMgrPrim) {
 extern CObjInterface(EBBMemMgr) EBBMemMgrPrim_ftable;
 
 static inline void
-EBBMemMgrPrimSetFT(EBBMemMgrPrimRef o) {o->ft = &EBBCtrPrim_ftable; }
+EBBMemMgrPrimSetFT(EBBMemMgrPrimRef o) {o->ft = &EBBMemMgrPrim_ftable; }
 
 typedef EBBMemMgrPrimRef *EBBMemMgrPrimId;
-extern EBBRC EBBMemMgrPrimSharedCreate(EBBMemMgrPrimId *id);
+extern EBBRC EBBMemMgrPrimInit(void);
+extern EBBMemMgrPrimRef *theEBBMemMgrPrimId;
+
+static inline EBBRC
+EBBMalloc(uval size, void **mem) {
+  return EC(theEBBMemMgrPrimId)->alloc(EB(theEBBMgrPrimId),
+				       size, mem);
+}
+
+static inline EBBRC
+EBBFree(void *mem) {
+  return EC(theEBBMemMgrPrimId)->free(EB(theEBBMgrPrimId),
+				      mem);
+}
 
 #endif

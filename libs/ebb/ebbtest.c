@@ -3,6 +3,8 @@
 #include "EBBTypes.h"
 #include "CObjEBB.h"
 #include "EBBMgrPrim.h"
+#include "EBBMemMgr.h"
+#include "EBBMemMgrPrim.h"
 #include "EBBCtr.h"
 #include "EBBCtrPrim.h"
 #include "clrBTB.h"
@@ -92,7 +94,17 @@ int main () {
   rc = EBBAllocPrimId(&id2);
   printf("rc = %ld id2=%p\n", rc, id2);
 
-  EBBCtrTest();
+  EBBMemMgrPrimInit();
+
+  char *mem;
+  EBBMalloc(sizeof(mem), &mem);
+  printf("0: mem=%p\n");
+  EBBFree(mem);
+  EBBMalloc(sizeof(mem), &mem);
+  printf("1: mem=%p\n");
+  EBBFree(mem);
+
+/*   EBBCtrTest(); */
 
   return 0;
 }

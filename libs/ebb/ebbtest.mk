@@ -12,14 +12,14 @@ ebbtest: ebbtest.o clrBTB.o EBBCtrPrim.o $(OBJS) sys/arch/amd64/defFT.o
 objctest: objctest.m clrBTB.o $(OBJS) sys/arch/amd64/defFT.o
 	gcc-mp-4.4 -fgnu-runtime $(CFLAGS) objctest.m clrBTB.o $(OBJS) -lobjc sys/arch/amd64/defFT.o -o $@ 
 
-clrBTB.o: jmps.s clrBTB.s
-	gcc -c clrBTB.s
+clrBTB.o: jmps.S clrBTB.S
+	gcc -c clrBTB.S
 
-clrBTB.s: jmps.s
-	touch clrBTB.s
+clrBTB.S: jmps.S
+	touch clrBTB.S
 
-jmps.s:
-	./mkjmps 1024 > jmps.s
+jmps.S:
+	./mkjmps 1024 > jmps.S
 
 -include $(DEPS)
 
