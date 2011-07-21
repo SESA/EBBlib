@@ -1,13 +1,17 @@
-CFLAGS := -O4
+# CFLAGS := -O4 
+CFLAGS := -g
 SRCS := EBBMgrPrim.c CObjEBBRootShared.c CObjEBB.c \
-	sys/defFT.c 
+	sys/defFT.c EBBMemMgrPrim.c
 OBJS := $(patsubst %.c, %.o, $(SRCS))
 DEPS := $(patsubst %.c, %.d, $(SRCS))
 
 all: ebbtest
 
-ebbtest: ebbtest.o clrBTB.o EBBCtrPrim.o $(OBJS) sys/arch/amd64/defFT.o
-	gcc $(CFLAGS) ebbtest.o clrBTB.o EBBCtrPrim.o $(OBJS) sys/arch/amd64/defFT.o -o $@
+# ebbtest: ebbtest.o clrBTB.o EBBCtrPrim.o $(OBJS) sys/arch/amd64/defFT.o
+# 	gcc $(CFLAGS) ebbtest.o clrBTB.o EBBCtrPrim.o $(OBJS) sys/arch/amd64/defFT.o -o $@
+
+ebbtest: ebbtest.o EBBCtrPrim.o $(OBJS) sys/arch/amd64/defFT.o
+	gcc $(CFLAGS) ebbtest.o EBBCtrPrim.o $(OBJS) sys/arch/amd64/defFT.o -o $@
 
 objctest: objctest.m clrBTB.o $(OBJS) sys/arch/amd64/defFT.o
 	gcc-mp-4.4 -fgnu-runtime $(CFLAGS) objctest.m clrBTB.o $(OBJS) -lobjc sys/arch/amd64/defFT.o -o $@ 

@@ -45,7 +45,7 @@ EBBCtrTest(void)
 
   for (i=0; i<2; i++ ) {
 
-#if 1
+#if 0
     clrBTB();
 #endif
 
@@ -97,11 +97,11 @@ int main () {
   EBBMemMgrPrimInit();
 
   char *mem;
-  EBBMalloc(sizeof(mem), &mem);
-  printf("0: mem=%p\n");
+  EBBMalloc(4, &mem);
+  printf("0: mem=%p\n", mem);
   EBBFree(mem);
-  EBBMalloc(sizeof(mem), &mem);
-  printf("1: mem=%p\n");
+  EBBMalloc(4, &mem);
+  printf("1: mem=%p\n", mem);
   EBBFree(mem);
 
 /*   EBBCtrTest(); */
