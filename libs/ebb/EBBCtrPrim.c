@@ -4,6 +4,8 @@
 #include "CObjEBB.h"
 #include "EBBTypes.h"
 #include "EBBMgrPrim.h"
+#include "EBBMemMgr.h"
+#include "EBBMemMgrPrim.h"
 #include "CObjEBBUtils.h"
 #include "CObjEBBRoot.h"
 #include "CObjEBBRootShared.h"
@@ -64,11 +66,20 @@ EBBRC
 EBBCtrPrimSharedCreate(EBBCtrPrimId *id)
 {
   EBBRC rc;
+
+#if 0
+  //One could statically allocate like so
   static EBBCtrPrim theRep;
   static CObjEBBRootShared theRoot;
   EBBCtrPrimRef repRef = &theRep;
   CObjEBBRootSharedRef rootRef = &theRoot;
-
+#else
+  //or use the memory allocator
+  EBBCtrPrimRef repRef;
+  CObjEBBRootSharedRef rootRef;
+  EBBMalloc(sizeof(*repRef), &repRef);
+  EBBMalloc(sizeof(*rootRef), &rootRef);
+#endif
   // setup function tables
   CObjEBBRootSharedSetFT(rootRef);
   EBBCtrPrimSetFT(repRef);
@@ -77,7 +88,7 @@ EBBCtrPrimSharedCreate(EBBCtrPrimId *id)
   repRef->ft->init(repRef);
   // shared root knows about only one rep so we 
   // pass it along for it's init
-  rootRef->ft->init(rootRef, &theRep);
+  rootRef->ft->init(rootRef, repRef);
 
   rc = EBBAllocPrimId(id);
   //  EBBRCAssert(rc);
