@@ -1,17 +1,17 @@
 # CFLAGS := -O4 
 CFLAGS := -g
 SRCS := EBBMgrPrim.c CObjEBBRootShared.c CObjEBB.c \
-	sys/defFT.c EBBMemMgrPrim.c
-OBJS := $(patsubst %.c, %.o, $(SRCS))
-DEPS := $(patsubst %.c, %.d, $(SRCS))
+	sys/defFT.c EBBMemMgrPrim.c EBBCtrPrim.c ebbtest.c \
+	sys/arch/amd64/defFT.S
+OBJS := $(patsubst %.c, %.o, $(filter %.c, $(SRCS)))
+OBJS += $(patsubst %.S, %.o, $(filter %.S, $(SRCS)))
+DEPS := $(patsubst %.c, %.d, $(filter %.c, $(SRCS)))
+DEPS := $(patsubst %.S, %.d, $(filter %.S, $(SRCS)))
 
 all: ebbtest
 
-# ebbtest: ebbtest.o clrBTB.o EBBCtrPrim.o $(OBJS) sys/arch/amd64/defFT.o
-# 	gcc $(CFLAGS) ebbtest.o clrBTB.o EBBCtrPrim.o $(OBJS) sys/arch/amd64/defFT.o -o $@
-
-ebbtest: ebbtest.o EBBCtrPrim.o $(OBJS) sys/arch/amd64/defFT.o
-	gcc $(CFLAGS) ebbtest.o EBBCtrPrim.o $(OBJS) sys/arch/amd64/defFT.o -o $@
+ebbtest: $(OBJS) ebbtest.mk
+	gcc $(CFLAGS) $(OBJS) -o $@
 
 objctest: objctest.m clrBTB.o $(OBJS) sys/arch/amd64/defFT.o
 	gcc-mp-4.4 -fgnu-runtime $(CFLAGS) objctest.m clrBTB.o $(OBJS) -lobjc sys/arch/amd64/defFT.o -o $@ 
@@ -27,11 +27,11 @@ jmps.S:
 
 -include $(DEPS)
 
-%.o: %.c Makefile
+%.o : %.c ebbtest.mk
 	gcc $(CFLAGS) -MMD -MP -c $< -o $@
 
-sys/arch/amd64/defFT.o: sys/arch/amd64/defFT.S
+%.o: %.S ebbtest.mk
 	gcc $(CFLAGS) -MMD -MP -c $< -o $@
 
 clean:
-	rm $(OBJS) $(DEPS) sys/arch/amd64/defFT.o sys/arch/amd64/defFT.d ebbtest
+	-rm $(wildcard $(OBJS) $(DEPS) ebbtest)
