@@ -7,7 +7,7 @@ LCFI0:
 	movq	%rsp, %rbp
 LCFI1:
 
-#include "jmps.s"
+#include "jmps.S"
   
 	leave
 	ret
