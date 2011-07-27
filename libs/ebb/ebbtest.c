@@ -10,6 +10,9 @@
 #include "clrBTB.h"
 
 #include <stdio.h>
+#include <pthread.h>
+
+pthread_key_t ELKey;
 
 void 
 EBBCtrTest(void)
@@ -85,6 +88,8 @@ int main () {
   EBBId id1, id2;
   EBBRC rc;
 
+  pthread_key_create(&ELKey, NULL);
+  
   EBBMgrPrimInit();
 
   printf("0: EBBId_DREF(theEBBMgrPrimId)=%p: ", EBBId_DREF(theEBBMgrPrimId));
