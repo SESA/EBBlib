@@ -1,5 +1,5 @@
-# CFLAGS := -O4 
-CFLAGS := -g
+CFLAGS := -O4 
+#CFLAGS := -g -O2
 SRCS := EBBMgrPrim.c CObjEBBRootShared.c CObjEBB.c \
 	sys/defFT.c EBBMemMgrPrim.c EBBCtrPrim.c ebbtest.c \
 	sys/arch/amd64/defFT.S

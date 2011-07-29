@@ -20,7 +20,7 @@ EBBCtrTest(void)
   EBBCtrPrimId c;
   EBBRC rc;
   uval v;
-  sval i,j;
+  sval i;
 
   EBBCtrPrimSharedCreate(&c);
 
@@ -46,14 +46,15 @@ EBBCtrTest(void)
   EBBCtrPrimRef r = EB(c);
   EBBRC (*f) (void *_self) = r->ft->inc;
   EBBRC (**ftbl) (void *_self) = &f;
+  // EBBRC (**ftbl) (void *_self) = r->ft;
 
-  for (i=0; i<2; i++ ) {
+  for (i=0; i<10000000; i++ ) {
 
 #if 0
     clrBTB();
 #endif
 
-    for (j=0; j<2; j++) {
+/*     for (j=0; j<2; j++) { */
 #if 0
       rc = inc(r);
 #endif
@@ -75,11 +76,11 @@ EBBCtrTest(void)
 #endif
 
       if (!EBBRC_SUCCESS(rc)) printf("error\n");
-    }
+/*     } */
   }
 
   rc = EC(c)->val(EB(c), &v);
-  printf("i=%ld j=%ld rc=%ld, v=%ld\n", i, j, rc, v);
+  printf("i=%ld j=%ld rc=%ld, v=%ld\n", i, rc, v);
 #endif
 }
 

@@ -35,8 +35,8 @@ PRIVATE EBBRC
 inc(void *_self) 
 {
   EBBCtrPrimRef self = _self;
-  //  add atomics here
-  self->v++;
+  //gcc built-in atomics
+  __sync_fetch_and_add(&self->v,1);
   return EBBRC_OK;
 }
 
@@ -44,8 +44,8 @@ PRIVATE EBBRC
 dec(void *_self) 
 {
   EBBCtrPrimRef self = _self;
-  //  add atomics here
-  self->v--;
+  //gcc builtin atomics
+  __sync_fetch_and_sub(&self->v,1);
   return EBBRC_OK;
 }
 
