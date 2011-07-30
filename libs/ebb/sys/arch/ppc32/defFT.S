@@ -1,34 +1,13 @@
-; Copyright 2011 Boston University. All rights reserved.
-
-; Redistribution and use in source and binary forms, with or without modification, are
-; permitted provided that the following conditions are met:
-
-;    1. Redistributions of source code must retain the above copyright notice, this list of
-;       conditions and the following disclaimer.
-
-;    2. Redistributions in binary form must reproduce the above copyright notice, this list
-;       of conditions and the following disclaimer in the documentation and/or other materials
-;       provided with the distribution.
-
-; THIS SOFTWARE IS PROVIDED BY BOSTON UNIVERSITY ``AS IS'' AND ANY EXPRESS OR IMPLIED
-; WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
-; FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL BOSTON UNIVERSITY OR
-; CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-; CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-; SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
-; ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-; NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
-; ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-; The views and conclusions contained in the software and documentation are those of the
-; authors and should not be interpreted as representing official policies, either expressed
-; or implied, of Boston University
-
 #include "../../../../arch/ppc32/include/arch/asm.h"
 #include "../../../../arch/ppc32/include/arch/asdef.h"
 #include "../../../EBBConst.h"
 
-CODE_ENTRY(defaultFuncCommon)
+	
+.section ".text"
+.align 2
+.globl defaultFuncCommon
+.type defaultFuncCommon, @function
+defaultFuncCommon:
 	mflr r0
 	stw r0, 0x4(r1)  //save link register
 	stfd	f1,((-1)*8)(r1)			// save parameter fprs
@@ -50,16 +29,15 @@ CODE_ENTRY(defaultFuncCommon)
 	la r3, ((-64)+(-1)*4)(r1) //first param: &this	
 	mr r4, r11                //second param: method number
 	stwu r1, -(8+(8*8)+(8*4))(r1) //push frame
-	bl C_TEXT(GenericDefaultFunc) //call generic function
+	bl GenericDefaultFunc //call generic function
 	la r1, (8+(8*8)+(8*4))(r1)    //pop frame
 	l r0, 0x4(r1)               //restore link register
 	mtlr r0
-	cmpli r3, 0                   //check return value
+	cmpdi r3, 0                   //check return value
 	bne   OnSuccess
 	blr
 OnSuccess:
 	mtctr r3  //load ctr to branch to later
-	ld r3, 
 	lfd	f1,((-1)*8)(r1)			// restore parameter fprs
 	lfd	f2,((-2)*8)(r1)	
 	lfd	f3,((-3)*8)(r1)
@@ -77,13 +55,15 @@ OnSuccess:
 	l r9, ((-64)+(-7)*4)(r1)
 	l r10, ((-64)+(-8)*4)(r1)
 	bctr                          //branch to method
-CODE_END(defaultFuncCommon)
 
 #define	DEFAULT_FUNC(OP)	\
-	C_TEXT_BASIC_ENTRY(defaultFunc ## OP) ; \
+	.section ".text"; \
+	.align 2; \
+	.globl EBBDefFunc_ ## OP; \
+	.type EBBDefFunc_ ## OP ##, @function; \
+EBBDefFunc_ ## OP ##: ;\
 		li r11, OP	; \
-		b defaultFuncCommon ; \
-	C_TEXT_BASE_END(defaultFunc ## OP)
+		b defaultFuncCommon ; 
 
 DEFAULT_FUNC(0) // Not sure we actually want this as the first vtable seems
                 // empty or atleast reserved for other uses, but for the sake
