@@ -11,6 +11,7 @@
 #include "CObjEBBRootShared.h"
 #include "EBBCtr.h"
 #include "EBBCtrPrim.h"
+#include "EBBAssert.h"
 
 #include "stdio.h"
 
@@ -61,25 +62,10 @@ CObjInterface(EBBCtr) EBBCtrPrim_ftable = {
   init, inc, dec, val
 };
 
-
-EBBRC
-EBBCtrPrimSharedCreate(EBBCtrPrimId *id)
+static EBBRC 
+setup(EBBCtrPrimRef repRef, CObjEBBRootSharedRef rootRef, EBBCtrPrimId *id)
 {
   EBBRC rc;
-
-#if 0
-  //One could statically allocate like so
-  static EBBCtrPrim theRep;
-  static CObjEBBRootShared theRoot;
-  EBBCtrPrimRef repRef = &theRep;
-  CObjEBBRootSharedRef rootRef = &theRoot;
-#else
-  //or use the memory allocator
-  EBBCtrPrimRef repRef;
-  CObjEBBRootSharedRef rootRef;
-  EBBMalloc(sizeof(*repRef), &repRef);
-  EBBMalloc(sizeof(*rootRef), &rootRef);
-#endif
   // setup function tables
   CObjEBBRootSharedSetFT(rootRef);
   EBBCtrPrimSetFT(repRef);
@@ -91,10 +77,39 @@ EBBCtrPrimSharedCreate(EBBCtrPrimId *id)
   rootRef->ft->init(rootRef, repRef);
 
   rc = EBBAllocPrimId(id);
-  //  EBBRCAssert(rc);
+  EBBRCAssert(rc);
 
   rc = CObjEBBBind(*id, rootRef); 
-  //  EBBRCAssert(rc);
+  EBBRCAssert(rc);
 
-  return EBBRC_OK;
+  return rc;
+}
+
+// Statically declared root and rep... this does
+// not therefore account for memory locality 
+EBBRC
+EBBCtrPrimStaticSharedCreate(EBBCtrPrimId *id)
+{
+  static EBBCtrPrim theRep;
+  static CObjEBBRootShared theRoot;
+
+  // use the statically declared root and rep instances
+  EBBCtrPrimRef repRef = &theRep;
+  CObjEBBRootSharedRef rootRef = &theRoot;
+
+  return setup(repRef, rootRef, id);
+}
+
+
+EBBRC
+EBBCtrPrimSharedCreate(EBBCtrPrimId *id)
+{
+  EBBCtrPrimRef repRef;
+  CObjEBBRootSharedRef rootRef;
+
+  //Allocate a root and rep via Primitive Allocator
+  EBBPrimMalloc(sizeof(*repRef), &repRef, EBB_MEM_DEFAULT);
+  EBBPrimMalloc(sizeof(*rootRef), &rootRef, EBB_MEM_DEFAULT);
+
+  return setup(repRef, rootRef, id);
 }

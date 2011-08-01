@@ -1,31 +1,36 @@
+/* Copyright 2011 Boston University. All rights reserved.                  */
+/*                                                                         */  
+/* Redistribution and use in source and binary forms, with or without      */ 
+/* modification, are permitted provided that the following conditions are  */
+/* met:                                                                    */
+/*                                                                         */  
+/*    1. Redistributions of source code must retain the above copyright    */
+/*       notice, this list of conditions and the following disclaimer.     */
+/*                                                                         */  
+/*    2. Redistributions in binary form must reproduce the above copyright */ 
+/*       notice, this list of conditions and the following disclaimer in   */
+/*       the documentation and/or other materials  provided with the       */
+/*       distribution.                                                     */
+/*                                                                         */  
+/*                                                                         */  
+/* THIS SOFTWARE IS PROVIDED BY BOSTON UNIVERSITY ``AS IS'' AND ANY        */
+/* EXPRESS OR IMPLIED  WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE      */
+/* IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR      */
+/* PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL BOSTON UNIVERSITY OR          */
+/* CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,   */
+/* EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,     */
+/* PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR      */
+/* PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF  */
+/* LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING    */
+/* NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS      */
+/* SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.            */
+/*                                                                         */  
+/* The views and conclusions contained in the software and documentation   */
+/* are those of the  authors and should not be interpreted as representing */
+/* official policies, either expressed or implied, of Boston University    */
+
 #ifndef __EBB_TRANS_H__
 #define __EBB_TRANS_H__
-
-/* Copyright 2011 Boston University. All rights reserved. */
-
-/* Redistribution and use in source and binary forms, with or without modification, are */
-/* permitted provided that the following conditions are met: */
-
-/*    1. Redistributions of source code must retain the above copyright notice, this list of */
-/*       conditions and the following disclaimer. */
-
-/*    2. Redistributions in binary form must reproduce the above copyright notice, this list */
-/*       of conditions and the following disclaimer in the documentation and/or other materials */
-/*       provided with the distribution. */
-
-/* THIS SOFTWARE IS PROVIDED BY BOSTON UNIVERSITY ``AS IS'' AND ANY EXPRESS OR IMPLIED */
-/* WARRANTIES, INCLUDING, BUT NOT LIMITED TO, `E IMPLIED WARRANTIES OF MERCHANTABILITY AND */
-/* FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL BOSTON UNIVERSITY OR */
-/* CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR */
-/* CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR */
-/* SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON */
-/* ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING */
-/* NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF */
-/* ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. */
-
-/* The views and conclusions contained in the software and documentation are those of the */
-/* authors and should not be interpreted as representing official policies, either expressed */
-/* or implied, of Boston University */
 
 #include "../../base/types.h"
 #include "../EBBTypes.h"
@@ -33,10 +38,10 @@
 
 //FIXME: All Trans Mem is statically allocated
 extern struct EBB_Trans_Mem {
-  u8 GMem [EBB_TRANS_PAGE_SIZE * EBB_TRANS_NUM_PAGES];
-  u8 LMem [EBB_TRANS_PAGE_SIZE * EBB_TRANS_NUM_PAGES *
+  uval8 GMem [EBB_TRANS_PAGE_SIZE * EBB_TRANS_NUM_PAGES];
+  uval8 LMem [EBB_TRANS_PAGE_SIZE * EBB_TRANS_NUM_PAGES *
 	      EBB_TRANS_MAX_ELS];
-  u8 *free;  // pointer to next available range of GMem
+  uval8 *free;  // pointer to next available range of GMem
 } EBB_Trans_Mem;
 
 static void EBB_Trans_Mem_Init(void) {
@@ -45,7 +50,7 @@ static void EBB_Trans_Mem_Init(void) {
 // could also do initial mapping here if memory is
 // is not actually static reservation
 
-static void EBB_Trans_Mem_Alloc_Pages(uval num_pages, u8 **pages) {
+static void EBB_Trans_Mem_Alloc_Pages(uval num_pages, uval8 **pages) {
   if (&(EBB_Trans_Mem.free[EBB_TRANS_PAGE_SIZE * num_pages]) >
       &(EBB_Trans_Mem.GMem[EBB_TRANS_PAGE_SIZE * EBB_TRANS_NUM_PAGES])) {
     *pages = NULL;

@@ -14,7 +14,7 @@ typedef EBBTrans *EBBId;
 typedef struct EBBTransLSysStruct EBBTransLSys;
 
 typedef sval EBBRC;
-typedef enum { EBBRC_FAILURE = -1, EBBRC_OK = 0 } EBBRC_STDVALS;
+typedef enum { EBBRC_GENERIC_FAILURE = -1, EBBRC_OK = 0 } EBBRC_STDVALS;
 #define EBBRC_SUCCESS(rc) ( rc >= 0 )
 
 typedef uval FuncNum;

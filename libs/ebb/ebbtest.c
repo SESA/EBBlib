@@ -1,4 +1,5 @@
 #include "../base/types.h"
+#include "../base/lrt/ulnx/lrtio.h"
 #include "../cobj/cobj.h"
 #include "EBBTypes.h"
 #include "CObjEBB.h"
@@ -8,11 +9,42 @@
 #include "EBBCtr.h"
 #include "EBBCtrPrim.h"
 #include "clrBTB.h"
+#include "EBB9PClient.h"
+#include "EBB9PClientPrim.h"
+#include "EBBAssert.h"
 
-#include <stdio.h>
 #include <pthread.h>
 
+#define EBBCALL(id, method, ...) (EC(id)->method(EB(id), ##__VA_ARGS__))
+
 pthread_key_t ELKey;
+
+void 
+EBBMgrPrimTest(void)
+{
+  EBBId id1, id2;
+  EBBRC rc;
+
+  EBB_LRT_printf("0: EBBId_DREF(theEBBMgrPrimId)=%p: ", EBBId_DREF(theEBBMgrPrimId));
+  rc = EBBAllocPrimId(&id1);
+  EBB_LRT_printf("rc = %ld id1=%p\n", rc, id1);
+
+  EBB_LRT_printf("1: EBBId_DREF(theEBBMgrPrimId)=%p: ", EBBId_DREF(theEBBMgrPrimId));
+  rc = EBBAllocPrimId(&id2);
+  EBB_LRT_printf("rc = %ld id2=%p\n", rc, id2);
+}
+
+void
+EBBMemMgrPrimTest(void)
+{
+  char *mem;
+  EBBPrimMalloc(4, (void **)&mem, EBB_MEM_DEFAULT);
+  EBB_LRT_printf("0: mem=%p\n", mem);
+  EBBPrimFree(mem);
+  EBBPrimMalloc(4, (void **)&mem, EBB_MEM_DEFAULT);
+  EBB_LRT_printf("1: mem=%p\n", mem);
+  EBBPrimFree(mem);
+}
 
 void 
 EBBCtrTest(void)
@@ -20,29 +52,29 @@ EBBCtrTest(void)
   EBBCtrPrimId c;
   EBBRC rc;
   uval v;
-  sval i;
 
   EBBCtrPrimSharedCreate(&c);
 
-  printf("id=%p\n", c);
+  EBB_LRT_printf("id=%p\n", c);
   rc = EC(c)->val(EB(c), &v);
-  printf("rc=%ld, v=%ld\n", rc, v);
+  EBB_LRT_printf("rc=%ld, v=%ld\n", rc, v);
 
 #if 1
   rc = EC(c)->inc(EB(c)); rc = EC(c)->val(EB(c), &v);  
-  printf("rc=%ld, v=%ld\n", rc, v);
+  EBB_LRT_printf("rc=%ld, v=%ld\n", rc, v);
 
   rc = EC(c)->inc(EB(c)); rc = EC(c)->val(EB(c), &v);  
-  printf("rc=%ld, v=%ld\n", rc, v);
+  EBB_LRT_printf("rc=%ld, v=%ld\n", rc, v);
 
   rc = EC(c)->inc(EB(c)); rc = EC(c)->val(EB(c), &v);  
-  printf("rc=%ld, v=%ld\n", rc, v);
+  EBB_LRT_printf("rc=%ld, v=%ld\n", rc, v);
 
   rc = EC(c)->dec(EB(c)); rc = EC(c)->val(EB(c), &v);  
-  printf("rc=%ld, v=%ld\n", rc, v);
+  EBB_LRT_printf("rc=%ld, v=%ld\n", rc, v);
 #endif
 
 #if 0
+  sval i;
   EBBCtrPrimRef r = EB(c);
   EBBRC (*f) (void *_self) = r->ft->inc;
   EBBRC (**ftbl) (void *_self) = &f;
@@ -75,43 +107,63 @@ EBBCtrTest(void)
       rc = EC(c)->inc(EB(c)); 
 #endif
 
-      if (!EBBRC_SUCCESS(rc)) printf("error\n");
+      EBBRCAssert(rc);
 /*     } */
   }
 
   rc = EC(c)->val(EB(c), &v);
-  printf("i=%ld j=%ld rc=%ld, v=%ld\n", i, rc, v);
+  EBB_LRT_printf("i=%ld j=%ld rc=%ld, v=%ld\n", i, rc, v);
 #endif
 }
 
-
-int main () {
-  EBBId id1, id2;
+void
+EBB9PClientTest(char *address)
+{
+  EBB9PClientId p;
   EBBRC rc;
+  IxpCFid  *fd;
+  char buf[80];
+  sval n;
+
+  EBB_LRT_printf("EBB9PClientTest: BEGIN\n");
+
+  EBB9PClientPrimCreate(&p);
+
+  rc = EBBCALL(p, mount, address);
+  EBBRCAssert(rc);
+
+  rc = EBBCALL(p, open, "/etc/passwd", P9_OREAD, &fd);
+  EBBRCAssert(rc);
+
+  rc = EBBCALL(p, read, fd, buf, 80, &n); 
+  EBBRCAssert(rc);
+
+  buf[79] = 0;
+  EBB_LRT_printf("%s\n", buf);
+  
+  EBB_LRT_printf("EBB9PClientTest: END\n");
+}
+
+int 
+main (int argc, char **argv) 
+{
+
+  /* Three main EBB's are EBBMgrPrim, EBBEventMgrPrim EBBMemMgrPrim    */
+  /* There creation and initialization are interdependent and requires */
+  /* fancy footwork */
 
   pthread_key_create(&ELKey, NULL);
   
   EBBMgrPrimInit();
-
-  printf("0: EBBId_DREF(theEBBMgrPrimId)=%p: ", EBBId_DREF(theEBBMgrPrimId));
-  rc = EBBAllocPrimId(&id1);
-  printf("rc = %ld id1=%p\n", rc, id1);
-
-  printf("1: EBBId_DREF(theEBBMgrPrimId)=%p: ", EBBId_DREF(theEBBMgrPrimId));
-  rc = EBBAllocPrimId(&id2);
-  printf("rc = %ld id2=%p\n", rc, id2);
+  EBBMgrPrimTest();
 
   EBBMemMgrPrimInit();
-
-  char *mem;
-  EBBMalloc(4, &mem);
-  printf("0: mem=%p\n", mem);
-  EBBFree(mem);
-  EBBMalloc(4, &mem);
-  printf("1: mem=%p\n", mem);
-  EBBFree(mem);
-
+  EBBMemMgrPrimTest();
+  
   EBBCtrTest();
+
+  if (argc > 1) 
+    EBB9PClientTest(argv[1]);
 
   return 0;
 }

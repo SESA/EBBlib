@@ -3,6 +3,7 @@
 #include "EBBTypes.h"
 #include "CObjEBB.h"
 #include "EBBMgrPrim.h"
+#include "EBBAssert.h"
 
 #define panic() (*(uval *)0)
 
@@ -22,14 +23,14 @@ FreeId (void *_self, EBBId id) {
 
 static EBBRC
 BindId (void *_self, EBBId id, EBBMissFunc mf, EBBMissArg arg) {
-  EBBMgrPrimRef self = (EBBMgrPrimRef)_self;
+  //  EBBMgrPrimRef self = (EBBMgrPrimRef)_self;
   EBBIdBind(id, mf, arg);
   return EBBRC_OK;
 }
 
 static EBBRC
 UnBindId (void *_self, EBBId id, EBBMissFunc *mf, EBBMissArg *arg) {
-  EBBMgrPrimRef self = (EBBMgrPrimRef)_self;
+  //  EBBMgrPrimRef self = (EBBMgrPrimRef)_self;
   EBBIdUnBind(id, mf, arg);
   return EBBRC_OK;
 }
@@ -80,7 +81,7 @@ static EBBRC EBBMgrPrimERRMF (void *_self, EBBLTrans *lt,
 			      FuncNum fnum, EBBMissArg arg) {
   printf("ERROR: unbound object invoked with self: %p, lt: %p,"
 	 "fnum: %ld, arg: %ld\n", _self, lt, fnum, arg);
-  return EBBRC_FAILURE;
+  return EBBRC_GENERIC_FAILURE;
 }
 
 
@@ -97,7 +98,7 @@ void EBBMgrPrimInit () {
 
   EBB_Trans_Mem_Init();
   gsys.pages = 1;
-  EBB_Trans_Mem_Alloc_Pages(gsys.pages, (u8 **)&gsys.gTable);
+  EBB_Trans_Mem_Alloc_Pages(gsys.pages, (uval8 **)&gsys.gTable);
   theERRMF = EBBMgrPrimERRMF;
   initGTable(gsys.gTable, gsys.pages);
   initAllLTables(EBBGTransToId(gsys.gTable), gsys.pages);
@@ -109,7 +110,7 @@ void EBBMgrPrimInit () {
   // do an alloc to account for manual binding 
   rc = EBBAllocPrimId(&id);
 
-  if (!EBBRC_SUCCESS(rc)) panic();
-  if ( id != (EBBId)theEBBMgrPrimId) panic();
+  EBBRCAssert(rc);
+  EBBAssert(id == (EBBId)theEBBMgrPrimId);
 
 }

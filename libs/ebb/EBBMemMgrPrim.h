@@ -17,13 +17,13 @@ extern EBBRC EBBMemMgrPrimInit(void);
 extern EBBMemMgrPrimRef *theEBBMemMgrPrimId;
 
 static inline EBBRC
-EBBMalloc(uval size, void **mem) {
+EBBPrimMalloc(uval size, void *mem, EBB_MEM_POOL pool) {
   return EC(theEBBMemMgrPrimId)->alloc(EB(theEBBMemMgrPrimId),
-				       size, mem);
+				       size, mem, pool);
 }
 
 static inline EBBRC
-EBBFree(void *mem) {
+EBBPrimFree(void *mem) {
   return EC(theEBBMemMgrPrimId)->free(EB(theEBBMemMgrPrimId),
 				      mem);
 }

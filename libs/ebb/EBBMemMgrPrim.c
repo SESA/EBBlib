@@ -11,7 +11,7 @@
 
 #define MEMSIZE (1 << 20)
 
-static u8 theMemory[MEMSIZE];
+static uval8 theMemory[MEMSIZE];
 
 static EBBRC
 init(void *_self)
@@ -25,13 +25,13 @@ init(void *_self)
 //just grab from the beginning of the memory and move
 //the pointer forward until we run out
 static EBBRC
-alloc(void *_self, uval size, void **mem)
+alloc(void *_self, uval size, void *mem, EBB_MEM_POOL pool)
 {
   EBBMemMgrPrimRef self = _self;
   if (size > self->len) {
-    *mem = NULL; //Do I return some error code here??
+    *((void **)mem) = NULL; //Do I return some error code here??
   } else {
-    *mem = self->mem;
+    *((void **)mem) = self->mem;
     self->mem += size;
     self->len -= size;
   }
