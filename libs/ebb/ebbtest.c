@@ -7,6 +7,7 @@
 #include "EBBMemMgrPrim.h"
 #include "EBBCtr.h"
 #include "EBBCtrPrim.h"
+#include "EBBCtrPrimDistributed.h"
 #include "clrBTB.h"
 
 #include <stdio.h>
@@ -18,11 +19,13 @@ void
 EBBCtrTest(void)
 {
   EBBCtrPrimId c;
+  EBBCtrPrimDistributedId c2;
   EBBRC rc;
   uval v;
   sval i;
 
   EBBCtrPrimSharedCreate(&c);
+  EBBCtrPrimDistributedCreate(&c2);
 
   printf("id=%p\n", c);
   rc = EC(c)->val(EB(c), &v);
@@ -39,6 +42,24 @@ EBBCtrTest(void)
   printf("rc=%ld, v=%ld\n", rc, v);
 
   rc = EC(c)->dec(EB(c)); rc = EC(c)->val(EB(c), &v);  
+  printf("rc=%ld, v=%ld\n", rc, v);
+#endif
+
+  printf("id=%p\n", c2);
+  rc = EC(c2)->val(EB(c2), &v);
+  printf("rc=%ld, v=%ld\n", rc, v);
+
+#if 1
+  rc = EC(c2)->inc(EB(c2)); rc = EC(c2)->val(EB(c2), &v);  
+  printf("rc=%ld, v=%ld\n", rc, v);
+
+  rc = EC(c2)->inc(EB(c2)); rc = EC(c2)->val(EB(c2), &v);  
+  printf("rc=%ld, v=%ld\n", rc, v);
+
+  rc = EC(c2)->inc(EB(c2)); rc = EC(c2)->val(EB(c2), &v);  
+  printf("rc=%ld, v=%ld\n", rc, v);
+
+  rc = EC(c2)->dec(EB(c2)); rc = EC(c2)->val(EB(c2), &v);  
   printf("rc=%ld, v=%ld\n", rc, v);
 #endif
 

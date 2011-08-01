@@ -46,6 +46,7 @@ void *vp_thread(void *arg) {
 int main () {
   long i;
   pthread_t threads[LRT_MAX_VPS];
+  cpu_set_t set;
 
   EBBMgrPrimInit();
   EBBMemMgrPrimInit();

@@ -1,7 +1,8 @@
-CFLAGS := -O4 
-#CFLAGS := -g -O2
+#CFLAGS := -O4 
+CFLAGS := -g
 SRCS := EBBMgrPrim.c CObjEBBRootShared.c CObjEBB.c \
 	sys/defFT.c EBBMemMgrPrim.c EBBCtrPrim.c ebbtest.c \
+	EBBCtrPrimDistributed.c CObjEBBRootMulti.c \
 	sys/arch/amd64/defFT.S
 OBJS := $(patsubst %.c, %.o, $(filter %.c, $(SRCS)))
 OBJS += $(patsubst %.S, %.o, $(filter %.S, $(SRCS)))
