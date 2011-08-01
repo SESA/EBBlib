@@ -1,8 +1,10 @@
-# CFLAGS := -O4 
-CFLAGS := -g
+CFLAGS := -O4 
+# CFLAGS := -g
 SRCS := ../../libs/ebb/EBBMgrPrim.c ../../libs/ebb/CObjEBBRootShared.c \
 	../../libs/ebb/CObjEBB.c ../../libs/ebb/sys/defFT.c \
 	../../libs/ebb/EBBMemMgrPrim.c ../../libs/ebb/EBBCtrPrim.c \
+	../../libs/ebb/EBBCtrPrimDistributed.c \
+	../../libs/ebb/CObjEBBRootMulti.c \
 	main.c ../../libs/ebb/sys/arch/amd64/defFT.S
 OBJS := $(patsubst %.c, %.o, $(filter %.c, $(SRCS)))
 OBJS += $(patsubst %.S, %.o, $(filter %.S, $(SRCS)))
@@ -27,6 +29,9 @@ jmps.S:
 	./mkjmps 1024 > jmps.S
 
 -include $(DEPS)
+
+main.o : main.c ebbtest.mk
+	gcc $(CFLAGS) -D_GNU_SOURCE -MMD -MP -c $< -o $@
 
 %.o : %.c ebbtest.mk
 	gcc $(CFLAGS) -MMD -MP -c $< -o $@

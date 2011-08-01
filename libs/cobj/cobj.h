@@ -20,6 +20,9 @@
   typedef struct name ## _obj name; \
   typedef name * name ## Ref;	    \
   struct name ## _obj
+
+#define CObjectDefine(name)			\
+  struct name ## _obj
       
 /* #define COBJ_CALL(o,f, ...) (CObjFtable(o)->f(o, ##__VA_ARGS__)) */
 

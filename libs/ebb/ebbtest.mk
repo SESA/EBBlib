@@ -1,9 +1,11 @@
+<<<<<<< HEAD
 IXPDIR=../../../libixp-0.5
 CFLAGS:=-Wall -I$(IXPDIR)/include
 LIBS:=-lpthread -L$(IXPDIR)/lib -lixp
 #CFLAGS := -O4 
-CFLAGS += -g -O2
+CFLAGS += -g 
 SRCS := EBBMgrPrim.c CObjEBBRootShared.c CObjEBB.c \
+	EBBCtrPrimDistributed.c CObjEBBRootMulti.c \
 	sys/defFT.c EBBMemMgrPrim.c EBBCtrPrim.c EBB9PClientPrim.c ebbtest.c \
 	sys/arch/amd64/defFT.S
 OBJS := $(patsubst %.c, %.o, $(filter %.c, $(SRCS)))
