@@ -23,7 +23,7 @@ CObjEBBRootMulti_handleMiss(void *_self, void*obj, EBBLTrans *lt,
   *(void **)obj = rep;
 
   RepListNode *p;
-  EBBMalloc(sizeof(RepListNode), &p);
+  EBBPrimMalloc(sizeof(RepListNode), &p, EBB_MEM_DEFAULT);
   p->rep = rep;
   //FIXME: lock the list
   p->next = self->head;

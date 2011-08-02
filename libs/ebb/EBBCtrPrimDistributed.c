@@ -59,7 +59,7 @@ val(void *_self, uval *v)
 
 static void *createRep(CObjEBBRootMultiRef rootRef) {
   EBBCtrPrimDistributedRef repRef;
-  EBBMalloc(sizeof(*repRef), &repRef);
+  EBBPrimMalloc(sizeof(*repRef), &repRef, EBB_MEM_DEFAULT);
   EBBCtrPrimDistributedSetFT(repRef);
   repRef->theRoot = rootRef;
   repRef->ft->init(repRef);
@@ -75,7 +75,7 @@ EBBCtrPrimDistributedCreate(EBBCtrPrimDistributedId *id)
 {
   EBBRC rc;
   CObjEBBRootMultiRef rootRef;
-  EBBMalloc(sizeof(*rootRef), &rootRef);
+  EBBPrimMalloc(sizeof(*rootRef), &rootRef, EBB_MEM_DEFAULT);
   CObjEBBRootMultiSetFT(rootRef);
   rootRef->ft->init(rootRef, createRep);
 
