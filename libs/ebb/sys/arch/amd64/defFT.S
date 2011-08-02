@@ -8,7 +8,7 @@
  *
  * $Id: defaultFuncs.S,v 1.10 2003/03/27 17:44:35 bob Exp $
  *****************************************************************************/
-
+#include "../../../../base/include.h"
 #include "../../../../arch/amd64/include/arch/fpr.h"
 #include "../../../../arch/amd64/include/arch/asm.h"
 #include "../../../EBBConst.h"

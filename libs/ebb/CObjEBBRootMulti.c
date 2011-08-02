@@ -1,3 +1,4 @@
+#include "../base/include.h"
 #include "../base/types.h"
 #include "../cobj/cobj.h"
 #include "EBBTypes.h"
@@ -40,7 +41,7 @@ CObjEBBRootMulti_init(void *_self, CreateRepFunc func)
 }
 
 RepListNode *
-CObjEBBRootMulti_nextRep(void *_self, RepListNode *curr, void **rep)
+CObjEBBRootMulti_nextRep(void *_self, RepListNode *curr, void *rep)
 {
   CObjEBBRootMultiRef self = _self;
   RepListNode *node;
@@ -51,7 +52,7 @@ CObjEBBRootMulti_nextRep(void *_self, RepListNode *curr, void **rep)
     node = curr->next;
   }
   if (node) {
-    *rep = node->rep;
+    *((void **)rep) = node->rep;
   }
   return node;
 }

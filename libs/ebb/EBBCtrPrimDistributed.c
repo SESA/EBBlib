@@ -1,3 +1,4 @@
+#include "../base/include.h"
 #include "../base/types.h"
 #include "../cobj/cobj.h"
 #include "sys/trans.h" //FIXME: move EBBTransLSys out of this header

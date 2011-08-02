@@ -1,7 +1,7 @@
 #ifndef __EBB_CONSTS_H__
 #define __EBB_CONSTS_H__
 
-#include "lrt/ulnx/EBBConst.h"
+#include __LRTINC(EBBConst.h)
 
 #define EBB_TRANS_PAGE_SIZE (4096)
 #define EBB_TRANS_NUM_PAGES (1024)

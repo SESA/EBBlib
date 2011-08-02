@@ -1,7 +1,7 @@
 #ifndef __EBB_ASSERT_H__
 #define __EBB_ASSERT_H__
 
-#include "lrt/ulnx/EBBAssert.h"
+#include __LRTINC(EBBAssert.h)
 
 #define EBBAssert LRT_EBBAssert
 #define EBBRCAssert(rc) EBBAssert(EBBRC_SUCCESS(rc))

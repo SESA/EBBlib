@@ -12,7 +12,7 @@ CObjInterface(CObjEBBRootMulti)
 {
   CObjImplements(CObjEBBRoot);
   void (*init)(void *_self, CreateRepFunc func);
-  RepListNode *(*nextRep) (void *_self, RepListNode *curr, void **rep);
+  RepListNode *(*nextRep) (void *_self, RepListNode *curr, void *rep);
 };
 
 CObjectDefine(CObjEBBRootMulti)

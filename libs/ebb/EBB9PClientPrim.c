@@ -1,5 +1,6 @@
+#include "../base/include.h"
 #include "../base/types.h"
-#include "../base/lrt/ulnx/lrtio.h"
+#include "../base/lrtio.h"
 #include "../cobj/cobj.h"
 #include "sys/trans.h" //FIXME: move EBBTransLSys out of this header
 #include "CObjEBB.h"

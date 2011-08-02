@@ -2,7 +2,7 @@
 #define __EBB_TYPES_H__
 
 #include "EBBConst.h"
-#include "lrt/ulnx/EBBTypes.h"
+#include __LRTINC(EBBTypes.h)
 
 typedef struct EBBTransStruct EBBTrans;
 typedef EBBTrans EBBLTrans;

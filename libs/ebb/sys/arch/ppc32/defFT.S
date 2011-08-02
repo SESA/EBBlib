@@ -1,3 +1,4 @@
+#include "../../../../base/include.h"
 #include "../../../../arch/ppc32/include/arch/asm.h"
 #include "../../../../arch/ppc32/include/arch/asdef.h"
 #include "../../../EBBConst.h"

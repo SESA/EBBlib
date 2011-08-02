@@ -1,5 +1,6 @@
+#include "../base/include.h"
 #include "../base/types.h"
-#include "../base/lrt/ulnx/lrtio.h"
+#include "../base/lrtio.h"
 #include "../cobj/cobj.h"
 #include "EBBTypes.h"
 #include "CObjEBB.h"
@@ -138,7 +139,7 @@ EBBCtrTest(void)
 }
 
 void
-EBB9PClientTest(char *address)
+EBB9PClientTest(char *address, char *path)
 {
   EBB9PClientId p;
   EBBRC rc;
@@ -146,14 +147,14 @@ EBB9PClientTest(char *address)
   char buf[80];
   sval n;
 
-  EBB_LRT_printf("EBB9PClientTest: BEGIN\n");
+  EBB_LRT_printf("EBB9PClientTest: BEGIN: address=%s path=%s\n", address, path);
 
   EBB9PClientPrimCreate(&p);
 
   rc = EBBCALL(p, mount, address);
   EBBRCAssert(rc);
 
-  rc = EBBCALL(p, open, "/etc/passwd", P9_OREAD, &fd);
+  rc = EBBCALL(p, open, path, P9_OREAD, &fd);
   EBBRCAssert(rc);
 
   rc = EBBCALL(p, read, fd, buf, 80, &n); 
@@ -183,8 +184,10 @@ main (int argc, char **argv)
   
   EBBCtrTest();
 
-  if (argc > 1) 
-    EBB9PClientTest(argv[1]);
+  if (argc == 2) 
+    EBB9PClientTest(argv[1], "/etc/passwd");
+  else if (argc > 2) 
+    EBB9PClientTest(argv[1], argv[2]);
 
   return 0;
 }
