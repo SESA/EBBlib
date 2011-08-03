@@ -13,11 +13,13 @@
 #include "clrBTB.h"
 #include "EBB9PClient.h"
 #include "EBB9PClientPrim.h"
+#include "P9FS.h"
+#include "P9FSPrim.h"
 #include "EBBAssert.h"
 
 #include <pthread.h>
 
-#define EBBCALL(id, method, ...) (EC(id)->method(EB(id), ##__VA_ARGS__))
+#define EBBCALL(id, method, ...) COBJ_EBBCALL(id, method, ##__VA_ARGS__)
 
 pthread_key_t ELKey;
 
@@ -166,6 +168,21 @@ EBB9PClientTest(char *address, char *path)
   EBB_LRT_printf("EBB9PClientTest: END\n");
 }
 
+void 
+P9FSTest(char *address)
+{
+  P9FSid fs;
+  EBBRC rc;
+
+  EBB_LRT_printf("P9FSTest: BEGIN: address=%s\n", address);
+
+  P9FSPrimCreate(&fs);
+
+  rc = EBBCALL(fs, serverloop, address);
+  
+  EBBRCAssert(rc);
+}
+
 int 
 main (int argc, char **argv) 
 {
@@ -188,6 +205,9 @@ main (int argc, char **argv)
     EBB9PClientTest(argv[1], "/etc/passwd");
   else if (argc > 2) 
     EBB9PClientTest(argv[1], argv[2]);
+
+  if (argc > 3) 
+    P9FSTest(argv[3]);
 
   return 0;
 }

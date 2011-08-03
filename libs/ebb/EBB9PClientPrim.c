@@ -16,14 +16,13 @@
 #include "EBB9PClientPrim.h"
 #include "EBBAssert.h"
 
-
 CObject(EBB9PClientPrim) {
   CObjInterface(EBB9PClient) *ft;
   IxpClient *client;  
 };
 
 static EBBRC 
-init(void *_self) 
+EBB9PClientPrim_init(void *_self) 
 { 
   EBB9PClientPrim *self = _self;
 
@@ -33,34 +32,35 @@ init(void *_self)
 }
 
 static EBBRC 
-ismounted(void *_self) 
+EBB9PClientPrim_ismounted(void *_self) 
 {
   EBB9PClientPrim *self = _self;
   return (self->client) ? EBBRC_OK : EBBRC_GENERIC_FAILURE;
 }
 
 static EBBRC 
-mount(void *_self, char *address) 
+EBB9PClientPrim_mount(void *_self, char *address) 
 { 
   EBB9PClientPrim *self = _self;
 
   self->client = ixp_mount(address);
 
-  return ismounted(self);
+  return EBB9PClientPrim_ismounted(self);
 }
 
 static EBBRC 
-unmount(void *_self) 
+EBB9PClientPrim_unmount(void *_self) 
 { 
   return EBBRC_OK; 
 }
 
 static EBBRC
-open(void *_self, char *path, uval8 mode, IxpCFid **fd) 
+EBB9PClientPrim_open(void *_self, char *path, uval8 mode, IxpCFid **fd) 
 { 
   EBB9PClientPrim *self = _self;
 
-  if (!EBBRC_SUCCESS(ismounted(self))) return EBBRC_GENERIC_FAILURE;
+  if (!EBBRC_SUCCESS(EBB9PClientPrim_ismounted(self))) 
+    return EBBRC_GENERIC_FAILURE;
   
   *fd = ixp_open(self->client, path, mode);
 
@@ -71,18 +71,19 @@ open(void *_self, char *path, uval8 mode, IxpCFid **fd)
 }
 
 static EBBRC 
-close(void *_self, IxpCFid *fd, int *rc) 
+EBB9PClientPrim_close(void *_self, IxpCFid *fd, int *rc) 
 { 
   return EBBRC_OK; 
 }
 
 static EBBRC 
-read(void *_self, IxpCFid *fd, void *buf, sval cnt, sval *n)
+EBB9PClientPrim_read(void *_self, IxpCFid *fd, void *buf, sval cnt, sval *n)
 { 
   EBB9PClientPrim *self = _self;
 
 
-  if (!EBBRC_SUCCESS(ismounted(self)) || fd == NULL || cnt < 0)  {
+  if (!EBBRC_SUCCESS(EBB9PClientPrim_ismounted(self)) || 
+      fd == NULL || cnt < 0)  {
     *n = 0;
     return EBBRC_GENERIC_FAILURE;
   }
@@ -95,13 +96,20 @@ read(void *_self, IxpCFid *fd, void *buf, sval cnt, sval *n)
 }
 
 static EBBRC
-write(void *_self, IxpCFid *fd, const void *buf, sval cnt,sval *n)
+EBB9PClientPrim_write(void *_self, IxpCFid *fd, const void *buf, sval cnt,sval *n)
 { 
   return EBBRC_OK; 
 }
 
 CObjInterface(EBB9PClient) EBB9PClientPrim_ftable = {
-  init, mount, unmount, ismounted, open, close, read, write
+  .init      = EBB9PClientPrim_init, 
+  .mount     = EBB9PClientPrim_mount, 
+  .unmount   = EBB9PClientPrim_unmount, 
+  .ismounted = EBB9PClientPrim_ismounted, 
+  .open      = EBB9PClientPrim_open, 
+  .close     = EBB9PClientPrim_close, 
+  .read      = EBB9PClientPrim_read, 
+  .write     = EBB9PClientPrim_write
 };
 
 static inline void 
