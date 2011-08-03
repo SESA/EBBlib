@@ -15,11 +15,14 @@ DEPS := $(patsubst %.S, %.d, $(filter %.S, $(SRCS)))
 
 all: ebbtest
 
-ebbtest: $(OBJS) ebbtest.mk
+ebbtest: $(OBJS) ebbtest.mk $(IXPDIR)/lib/libixp.a
 	gcc $(CFLAGS) $(OBJS) $(LIBS) -o $@
 
 objctest: objctest.m clrBTB.o $(OBJS) sys/arch/amd64/defFT.o
 	gcc-mp-4.4 -fgnu-runtime $(CFLAGS) objctest.m clrBTB.o $(OBJS) -lobjc sys/arch/amd64/defFT.o -o $@ 
+
+$(IXPDIR)/lib/libixp.a:
+	make -C $(IXPDIR)
 
 clrBTB.o: jmps.S clrBTB.S
 	gcc -c clrBTB.S
