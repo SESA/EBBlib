@@ -1,4 +1,4 @@
-IXPDIR=../../../libixp-0.5
+IXPDIR=../libixp-0.5
 CFLAGS:=-Wall -I$(IXPDIR)/include -D SESA_ARCH=$(SESA_ARCH) -D SESA_LRT=$(SESA_LRT)
 LIBS:=-lpthread -L$(IXPDIR)/lib -lixp
 #CFLAGS := -O4 
