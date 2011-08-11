@@ -6,7 +6,7 @@ CFLAGS += -g
 SRCS := EBBMgrPrim.c CObjEBBRootShared.c CObjEBB.c \
 	EBBCtrPrimDistributed.c CObjEBBRootMulti.c \
 	sys/defFT.c EBBMemMgrPrim.c EBBCtrPrim.c EBB9PClientPrim.c \
-	EBB9PFilePrim.c P9FSPrim.c ebbtest.c \
+	EBB9PFilePrim.c P9FSPrim.c CmdMenuPrim.c ebbtest.c \
 	sys/arch/$(SESA_ARCH)/defFT.S
 OBJS := $(patsubst %.c, %.o, $(filter %.c, $(SRCS)))
 OBJS += $(patsubst %.S, %.o, $(filter %.S, $(SRCS)))

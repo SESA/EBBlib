@@ -17,6 +17,7 @@
 #include <ixp.h>
 
 #include "P9FS.h"
+#include "CmdMenu.h"
 #include "P9FSPrim.h"
 #include "EBBAssert.h"
 
@@ -59,6 +60,7 @@ typedef struct {
 
 CObject (P9FSPrim) {
   CObjInterface(P9FS) *ft;
+  char cmdReplyStr[80];
 
   P9FSPrim_finfo *files;
 
@@ -67,6 +69,8 @@ CObject (P9FSPrim) {
   Ixp9Srv p9srv;
   char *message;
   uval id;
+  CmdMenuId cmd;
+  sval cmdRC;  
 };
 
 static P9FSPrim_msg *
@@ -266,7 +270,24 @@ P9FSPrim_read(void *_self, Ixp9Req *r)
     break;
   }
   case QCMD: {
-    r->ofcall.rread.count = 0;
+    uval i=0;
+    bzero(self->cmdReplyStr, 80);
+    sprintf(self->cmdReplyStr, "%ld", self->cmdRC);
+    while (self->cmdReplyStr[i]) i++;
+    if(r->ifcall.tread.offset < i) {
+      if(r->ifcall.tread.offset + r->ifcall.tread.count > i) {
+	r->ofcall.rread.count = i - r->ifcall.tread.offset;
+      } else {
+	r->ofcall.rread.count = r->ifcall.tread.count;
+      }
+      if(!(r->ofcall.rread.data = malloc(r->ofcall.rread.count))) {
+	r->ofcall.rread.count = 0;
+	respond(r, "out of memory");
+	return EBBRC_OK;
+      }
+      memcpy(r->ofcall.rread.data, self->cmdReplyStr+r->ifcall.tread.offset, 
+	     r->ofcall.rread.count);
+    }
     break;
   } 
   }
@@ -279,7 +300,9 @@ P9FSPrim_read(void *_self, Ixp9Req *r)
 static 
 EBBRC P9FSPrim_write(void *_self, Ixp9Req *r)
 {
+  P9FSPrimRef self  = _self;
   P9FSPrim_msg *msg;
+  EBBRC rc;
 
   msg = r->fid->aux;
   
@@ -297,7 +320,9 @@ EBBRC P9FSPrim_write(void *_self, Ixp9Req *r)
   }
   case QCMD: {
     r->ofcall.rwrite.count = r->ifcall.twrite.count;
-    write(1, r->ifcall.twrite.data, r->ofcall.rwrite.count);
+    rc = EBBCALL(self->cmd, doCmd, r->ifcall.twrite.data, r->ifcall.twrite.count,
+		 &(self->cmdRC));
+    EBBRCAssert(rc);
     break;
   }
   }
@@ -352,12 +377,14 @@ P9FSPrimSetFT(P9FSPrimRef o)
 
 
 static void
-P9FSPrim_init(P9FSPrimRef rep)
+P9FSPrim_init(P9FSPrimRef rep, CmdMenuId cmd)
 {
-  rep->files   = Files;
-  rep->id      = 0;
-  rep->message = NULL;
-
+  rep->files    = Files;
+  rep->id       = 0;
+  rep->message  = NULL;
+  rep->cmd      = cmd;
+  rep->cmdRC    = 0;
+  
   rep->p9srv.open   = p9fs_ebb_open;
   rep->p9srv.clunk  = p9fs_ebb_clunk;
   rep->p9srv.walk   = p9fs_ebb_walk;
@@ -370,7 +397,7 @@ P9FSPrim_init(P9FSPrimRef rep)
 
 
 EBBRC
-P9FSPrimCreate(P9FSid *id)
+P9FSPrimCreate(P9FSid *id, CmdMenuId cmd)
 {
   EBBRC rc;  
   P9FSPrimRef repRef;
@@ -382,7 +409,7 @@ P9FSPrimCreate(P9FSid *id)
   CObjEBBRootSharedSetFT(rootRef);
   P9FSPrimSetFT(repRef);
   
-  P9FSPrim_init(repRef);
+  P9FSPrim_init(repRef, cmd);
   rootRef->ft->init(rootRef, repRef);
   
   rc = EBBAllocPrimId(id);

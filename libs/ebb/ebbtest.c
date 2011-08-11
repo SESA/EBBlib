@@ -14,6 +14,8 @@
 #include "EBB9PClient.h"
 #include "EBB9PClientPrim.h"
 #include "P9FS.h"
+#include "CmdMenu.h"
+#include "CmdMenuPrim.h"
 #include "P9FSPrim.h"
 #include "EBBAssert.h"
 
@@ -172,11 +174,15 @@ void
 P9FSTest(char *address)
 {
   P9FSid fs;
+  CmdMenuId menu;
+
   EBBRC rc;
 
   EBB_LRT_printf("P9FSTest: BEGIN: address=%s\n", address);
 
-  P9FSPrimCreate(&fs);
+  CmdMenuPrimCreate(&menu);
+
+  P9FSPrimCreate(&fs, menu);
 
   rc = EBBCALL(fs, serverloop, address);
   
