@@ -98,7 +98,19 @@ EBB9PClientPrim_read(void *_self, IxpCFid *fd, void *buf, sval cnt, sval *n)
 static EBBRC
 EBB9PClientPrim_write(void *_self, IxpCFid *fd, const void *buf, sval cnt,sval *n)
 { 
-  return EBBRC_OK; 
+  EBB9PClientPrim *self = _self;
+
+  if (!EBBRC_SUCCESS(EBB9PClientPrim_ismounted(self)) || 
+      fd == NULL || cnt < 0)  {
+    *n = 0;
+    return EBBRC_GENERIC_FAILURE;
+  }
+
+  *n = ixp_write(fd, buf, cnt);
+
+  if (*n != cnt)
+    EBB_LRT_printf("cannot write file/directory '%p': %s\n", fd, ixp_errbuf());
+  return (*n == cnt) ? EBBRC_OK : EBBRC_GENERIC_FAILURE;
 }
 
 CObjInterface(EBB9PClient) EBB9PClientPrim_ftable = {

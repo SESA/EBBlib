@@ -41,5 +41,8 @@ jmps.S:
 %.o: %.S ebbtest.mk
 	gcc $(CFLAGS) -MMD -MP -c $< -o $@
 
+EBBObj.o: EBBObj.H EBBObj.c
+	g++ $(CFLAGS) -c EBBObj.c -o EBBObj.o
+
 clean:
 	-rm $(wildcard $(OBJS) $(DEPS) ebbtest)

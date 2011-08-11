@@ -269,6 +269,10 @@ P9FSPrim_read(void *_self, Ixp9Req *r)
     }
     break;
   }
+  case QCMD: {
+    r->ofcall.rread.count = 0;
+    break;
+  } 
   }
   
   respond(r, NULL);
@@ -279,7 +283,6 @@ P9FSPrim_read(void *_self, Ixp9Req *r)
 static 
 EBBRC P9FSPrim_write(void *_self, Ixp9Req *r)
 {
-  P9FSPrimRef self  = _self;
   P9FSPrim_msg *msg;
   EBB9PClientId p;
   IxpCFid *fd;
