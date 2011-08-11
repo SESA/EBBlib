@@ -265,6 +265,10 @@ P9FSPrim_read(void *_self, Ixp9Req *r)
     }
     break;
   }
+  case QCMD: {
+    r->ofcall.rread.count = 0;
+    break;
+  } 
   }
   
   respond(r, NULL);
