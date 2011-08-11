@@ -3,6 +3,9 @@
  * See LICENSE file for license details.
  */
 
+#ifndef __IXP_H__
+#define __IXP_H__
+
 #include <stdarg.h>
 #include <sys/types.h>
 #include <sys/select.h>
@@ -702,3 +705,4 @@ char*	ixp_smprint(const char*, ...);
 uint	ixp_strlcat(char*, const char*, uint);
 uint	ixp_tokenize(char**, uint len, char*, char);
 
+#endif
