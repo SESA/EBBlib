@@ -33,7 +33,7 @@ static void p9fs_ebb_read(Ixp9Req *r);
 static void p9fs_ebb_write(Ixp9Req *r);
 static void p9fs_ebb_wstat(Ixp9Req *r);
 
-typedef enum {QNONE=-1, QROOT=0, QIDENT, QMSG, QMAX} qpath;
+typedef enum {QNONE=-1, QROOT=0, QIDENT, QMSG, QCMD, QMAX} qpath;
 
 typedef struct {
   char *name;
@@ -46,7 +46,8 @@ typedef struct {
 P9FSPrim_finfo Files[QMAX] = {
 	{"", QNONE, P9_QTDIR, 0500|P9_DMDIR, 0},
 	{"id", QROOT, P9_QTFILE, 0400, 0},
-	{"ebbs", QROOT, P9_QTFILE, 0600, 0}
+	{"ebbs", QROOT, P9_QTFILE, 0600, 0},
+	{"cmd", QROOT, P9_QTFILE, 0600, 0}
 };
 
 typedef struct {
@@ -274,7 +275,6 @@ P9FSPrim_read(void *_self, Ixp9Req *r)
 static 
 EBBRC P9FSPrim_write(void *_self, Ixp9Req *r)
 {
-  P9FSPrimRef self  = _self;
   P9FSPrim_msg *msg;
 
   msg = r->fid->aux;
@@ -289,6 +289,11 @@ EBBRC P9FSPrim_write(void *_self, Ixp9Req *r)
     }
     memcpy(msg->data, r->ifcall.twrite.data, r->ofcall.rwrite.count);
     msg->size = r->ofcall.rwrite.count;
+    break;
+  }
+  case QCMD: {
+    r->ofcall.rwrite.count = r->ifcall.twrite.count;
+    write(1, r->ifcall.twrite.data, r->ofcall.rwrite.count);
     break;
   }
   }
