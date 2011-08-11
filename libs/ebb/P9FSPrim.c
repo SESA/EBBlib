@@ -321,10 +321,11 @@ EBBRC P9FSPrim_write(void *_self, Ixp9Req *r)
       rc = EBBCALL(p, mount, token);
       EBBRCAssert(rc);
       
-      rc = EBBCALL(p, open, "/tmp/ebbtest/stdout", P9_OWRITE, &fd);
+      rc = EBBCALL(p, open, "/tmp/ebbtest/stdout", 
+		   P9_OWRITE | P9_OAPPEND, &fd);
       EBBRCAssert(rc);
       
-      rc = EBBCALL(p, write, fd, "Hello World!\n", 14, &n);
+      rc = EBBCALL(p, write, fd, "Hello World!\n", 13, &n);
       EBBRCAssert(rc);
     }
     break;
