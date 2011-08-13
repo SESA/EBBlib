@@ -12,6 +12,10 @@
 #include "CObjEBBRoot.h"
 #include "CObjEBBRootShared.h"
 
+#include "EBB9PClient.h"
+#include "EBB9PClientPrim.h"
+
+
 #define IXP_NO_P9_
 #define IXP_P9_STRUCTS
 #include <ixp.h>
@@ -304,6 +308,7 @@ EBBRC P9FSPrim_write(void *_self, Ixp9Req *r)
   P9FSPrim_msg *msg;
   EBBRC rc;
 
+
   msg = r->fid->aux;
   
   switch(r->fid->qid.path){
@@ -319,9 +324,10 @@ EBBRC P9FSPrim_write(void *_self, Ixp9Req *r)
     break;
   }
   case QCMD: {
+    if(!r->ifcall.twrite.data || r->ifcall.twrite.data[0] == 0) break;
     r->ofcall.rwrite.count = r->ifcall.twrite.count;
-    rc = EBBCALL(self->cmd, doCmd, r->ifcall.twrite.data, r->ifcall.twrite.count,
-		 &(self->cmdRC));
+    rc = EBBCALL(self->cmd, doCmd, r->ifcall.twrite.data, 
+		 r->ifcall.twrite.count, &(self->cmdRC));
     EBBRCAssert(rc);
     break;
   }
