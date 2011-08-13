@@ -11,6 +11,7 @@ CObjInterface(EBB9PClient) {
   EBBRC (*unmount)   (void *_self);
   EBBRC (*ismounted) (void *_self);
   EBBRC (*open)      (void *_self, char *path, uval8 mode, IxpCFid **fd);
+  EBBRC (*create)    (void *_self, char *path, uint perm, uval8 mode, IxpCFid **fd);
   EBBRC (*close)     (void *_self, IxpCFid *fd, int *rc);
   EBBRC (*read)      (void *_self, IxpCFid *fd, void *buf, sval cnt, 
 		      sval *n);

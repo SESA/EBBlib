@@ -20,7 +20,7 @@ usage(void) {
 	fprintf(stderr,
 		   "usage: %1$s [-a <address>] {create | read | ls [-ld] | remove | write | append} <file>\n"
 		   "       %1$s [-a <address>] xwrite <file> <data>\n"
-		   "       %1$s -v\n", argv0);
+		   "       %s -v\n", argv0);
 	exit(1);
 }
 

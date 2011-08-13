@@ -51,6 +51,9 @@ EBB9PClientPrim_mount(void *_self, char *address)
 static EBBRC 
 EBB9PClientPrim_unmount(void *_self) 
 { 
+  EBB9PClientPrim *self = _self;
+
+  ixp_unmount(self->client);
   return EBBRC_OK; 
 }
 
@@ -70,9 +73,29 @@ EBB9PClientPrim_open(void *_self, char *path, uval8 mode, IxpCFid **fd)
   return (*fd != NULL) ? EBBRC_OK : EBBRC_GENERIC_FAILURE;
 }
 
+
+static EBBRC
+EBB9PClientPrim_create(void *_self, char *path, uint perm, uval8 mode, IxpCFid **fd) 
+{ 
+  EBB9PClientPrim *self = _self;
+
+  if (!EBBRC_SUCCESS(EBB9PClientPrim_ismounted(self)))
+    return EBBRC_GENERIC_FAILURE;
+  
+  *fd = ixp_create(self->client, path, perm, mode);
+
+  if (*fd == NULL)
+    EBB_LRT_printf("Can't create file '%s': %s\n", path, ixp_errbuf());
+  
+  return (*fd != NULL) ? EBBRC_OK : EBBRC_GENERIC_FAILURE;
+}
+
 static EBBRC 
 EBB9PClientPrim_close(void *_self, IxpCFid *fd, int *rc) 
 { 
+  *rc = ixp_close(fd);
+  EBBAssert(*rc == 1);
+
   return EBBRC_OK; 
 }
 
@@ -80,7 +103,6 @@ static EBBRC
 EBB9PClientPrim_read(void *_self, IxpCFid *fd, void *buf, sval cnt, sval *n)
 { 
   EBB9PClientPrim *self = _self;
-
 
   if (!EBBRC_SUCCESS(EBB9PClientPrim_ismounted(self)) || 
       fd == NULL || cnt < 0)  {
@@ -119,6 +141,7 @@ CObjInterface(EBB9PClient) EBB9PClientPrim_ftable = {
   .unmount   = EBB9PClientPrim_unmount, 
   .ismounted = EBB9PClientPrim_ismounted, 
   .open      = EBB9PClientPrim_open, 
+  .create    = EBB9PClientPrim_create,
   .close     = EBB9PClientPrim_close, 
   .read      = EBB9PClientPrim_read, 
   .write     = EBB9PClientPrim_write

@@ -111,6 +111,12 @@ enum {	P9_OREAD	= 0,	/* open for read */
 	P9_OAPPEND	= 0x4000	/* or'ed in, append only */
 };
 
+/* JA: HACK */
+enum {
+  P9_SEEK_SET = 0,
+  P9_SEEK_CUR = 1
+};
+
 /* bits in Qid.type */
 enum {	P9_QTDIR	= 0x80,	/* type bit for directories */
 	P9_QTAPPEND	= 0x40,	/* type bit for append only files */
@@ -637,6 +643,7 @@ IxpClient*	ixp_mountfd(int);
 IxpClient*	ixp_nsmount(const char*);
 IxpCFid*	ixp_open(IxpClient*, const char*, uchar);
 IxpStat*	ixp_stat(IxpClient*, const char*);
+vlong           ixp_seek(IxpCFid*, vlong, long); 
 
 /* convert.c */
 void ixp_pu8(IxpMsg*, uchar*);

@@ -13,6 +13,8 @@
 #include "clrBTB.h"
 #include "EBB9PClient.h"
 #include "EBB9PClientPrim.h"
+#include "EBBFile.h"
+#include "EBB9PFilePrim.h"
 #include "P9FS.h"
 #include "CmdMenu.h"
 #include "CmdMenuPrim.h"
@@ -146,6 +148,7 @@ void
 EBB9PClientTest(char *address, char *path)
 {
   EBB9PClientId p;
+  EBBFileId f1, f2, f3;
   EBBRC rc;
   IxpCFid  *fd;
   char buf[80];
@@ -163,10 +166,34 @@ EBB9PClientTest(char *address, char *path)
 
   rc = EBBCALL(p, read, fd, buf, 80, &n); 
   EBBRCAssert(rc);
-
-  buf[79] = 0;
+  
+  if (n==80) n=79;
+  buf[n] = 0;
   EBB_LRT_printf("%s\n", buf);
   
+
+  EBB9PFilePrimCreate(p, &f1);
+  EBB9PFilePrimCreate(p, &f2);
+  EBB9PFilePrimCreate(p, &f3);
+
+  rc = EBBCALL(f1, open, "/tmp/stdout", EBBFILE_OWRITE | EBBFILE_OCREATE, 0777);
+  EBBRCAssert(rc);
+  rc = EBBCALL(f1, write, "stdout", 6, &n);
+  EBBRCAssert(rc);
+
+  rc = EBBCALL(f2, open, "/tmp/stderr", EBBFILE_OWRITE | EBBFILE_OCREATE, 0777);
+  EBBRCAssert(rc);
+  rc = EBBCALL(f2, write, "stderr", 6, &n);
+  EBBRCAssert(rc);
+
+  rc = EBBCALL(f3, open, "/tmp/stdin", EBBFILE_OREAD | EBBFILE_OCREATE, 0777);
+  EBBRCAssert(rc);
+  rc = EBBCALL(f3, read, buf, 80, &n);
+  EBBRCAssert(rc);
+
+  EBB_LRT_printf("read: rc=%ld, n=%ld buf=:\n", rc, n);
+  if (n) write(1, buf, n);
+
   EBB_LRT_printf("EBB9PClientTest: END\n");
 }
 

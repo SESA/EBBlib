@@ -554,6 +554,20 @@ ixp_pread(IxpCFid *f, void *buf, long count, vlong offset) {
 	return n;
 }
 
+vlong 
+ixp_seek(IxpCFid *f, vlong offset, long whence) {
+  vlong rc;
+
+  thread->lock(&f->iolock);
+
+    if (whence == P9_SEEK_SET) f->offset = offset;
+    else if (whence == P9_SEEK_CUR) f->offset += offset;
+    rc = f->offset;
+
+  thread->unlock(&f->iolock);
+  return rc;
+}
+
 static long
 _pwrite(IxpCFid *f, const void *buf, long count, vlong offset) {
 	Fcall fcall;

@@ -33,7 +33,7 @@ EBBRC CmdMenuPrim_doCmd(void *_self, char *cmdbuf, uval n, sval *rc)
   EBB_LRT_printf("%s: _self=%p, cmdbuf=%p, n=%ld, rc=%p:\n", __func__, 
 		 _self, cmdbuf, n, rc);
   EBB_LRT_write(1, cmdbuf, n);
-  *rc = 0;
+  *rc = 10;
   return EBBRC_OK;
 }
 
