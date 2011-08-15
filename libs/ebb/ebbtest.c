@@ -148,7 +148,6 @@ void
 EBB9PClientTest(char *address, char *path)
 {
   EBB9PClientId p;
-  EBBFileId f1, f2, f3;
   EBBRC rc;
   IxpCFid  *fd;
   char buf[80];
@@ -171,30 +170,6 @@ EBB9PClientTest(char *address, char *path)
   buf[n] = 0;
   EBB_LRT_printf("%s\n", buf);
   
-#if 0
-  EBB9PFilePrimCreate(p, &f1);
-  EBB9PFilePrimCreate(p, &f2);
-  EBB9PFilePrimCreate(p, &f3);
-
-  rc = EBBCALL(f1, open, "/tmp/stdout", EBBFILE_OWRITE | EBBFILE_OCREATE, 0777);
-  EBBRCAssert(rc);
-  rc = EBBCALL(f1, write, "stdout", 6, &n);
-  EBBRCAssert(rc);
-
-  rc = EBBCALL(f2, open, "/tmp/stderr", EBBFILE_OWRITE | EBBFILE_OCREATE, 0777);
-  EBBRCAssert(rc);
-  rc = EBBCALL(f2, write, "stderr", 6, &n);
-  EBBRCAssert(rc);
-
-  rc = EBBCALL(f3, open, "/tmp/stdin", EBBFILE_OREAD | EBBFILE_OCREATE, 0777);
-  EBBRCAssert(rc);
-  rc = EBBCALL(f3, read, buf, 80, &n);
-  EBBRCAssert(rc);
-
-  EBB_LRT_printf("read: rc=%ld, n=%ld buf=:\n", rc, n);
-  if (n) write(1, buf, n);
-#endif
-
   EBB_LRT_printf("EBB9PClientTest: END\n");
 }
 

@@ -16,7 +16,7 @@
 #include "EBB9PClient.h"
 #include "EBB9PClientPrim.h"
 #include "EBBFile.h"
-
+#include "EBB9PFilePrim.h"
 #include "CmdMenu.h"
 #include "CmdMenuPrim.h"
 
@@ -28,6 +28,12 @@ char prompt[] = "9PConsole <9PAddress>\n";
 
 CObject(CmdMenuPrim) {
   CObjInterface(CmdMenu) *ft;
+  char feaddr[80];
+  char feprefix[80];
+  char nodeid[80];
+  uval feaddrlen;
+  uval feprefixlen;
+  uval nodeidlen;
   EBBFileId stdin;
   EBBFileId stdout;
   EBBFileId stderr;
@@ -64,56 +70,71 @@ bufParse(char *src, uval sl, char *dest, uval dl, char sep)
 }
 
 static sval
-CmdMenuPrim_doConnect(CmdMenuPrimRef *self, char *buf, uval len)
+CmdMenuPrim_doConnect(CmdMenuPrimRef self, char *buf, uval len)
 {
-  char addr[80], prefix[80], nodeid[80];
-  uval n;
+  EBB9PClientId p;
+  EBBRC rc;
+  char tmp[80];
+  sval n;
 
-  addr[0] = prefix[0] = nodeid[0] = 0;
+  self->feaddr[0] = self->feprefix[0] = self->nodeid[0] = 0;
 
-  n = bufParse(buf, len, addr, 80, ' ');
+  n = bufParse(buf, len, self->feaddr, 80, ' ');
   len -= n; buf += n;
+  self->feaddrlen = n;
   if (len==0) return -1;
   
-  n = bufParse(buf, len, prefix, 80, ' ');
+  n = bufParse(buf, len, self->feprefix, 80, ' ');
   len -= n; buf += n;
+  self->feprefixlen = n;
   if (len==0) return -1;
 
-  n = bufParse(buf, len, nodeid, 80, ' ');
+  n = bufParse(buf, len, self->nodeid, 80, ' ');
   len -= n; buf += n;
+  self->nodeidlen = n;
 
-  EBB_LRT_printf("%s, connect %s %s %s\n", __func__,
-		 addr, prefix, nodeid);
+  EBB_LRT_printf("%s: connect %s %s %s\n", __func__,
+		 self->feaddr, self->feprefix, self->nodeid);
+
+  EBB9PClientPrimCreate(&p);
+
+  rc = EBBCALL(p, mount, self->feaddr);
+  EBBRCAssert(rc);
+
+  EBB9PFilePrimCreate(p, &self->stdin);
+  EBB9PFilePrimCreate(p, &self->stdout);
+  EBB9PFilePrimCreate(p, &self->stderr);
+
+  bufParse(self->feprefix, self->feprefixlen, tmp, 80, 0);
+  bufParse("/stdout", 7, &tmp[self->feprefixlen], 80 - self->feprefixlen, 0);
+
+  EBB_LRT_printf("%s: opening %s\n", __func__, tmp);
+  rc = EBBCALL(self->stdout, open, tmp, EBBFILE_OWRITE | EBBFILE_OCREATE, 0777);
+  EBBRCAssert(rc);
+  rc = EBBCALL(self->stdout, write, self->nodeid, self->nodeidlen, &n);
+  EBBRCAssert(rc);
+
+#if 0
+  rc = EBBCALL(f2, open, "/tmp/stderr", EBBFILE_OWRITE | EBBFILE_OCREATE, 0777);
+  EBBRCAssert(rc);
+  rc = EBBCALL(f2, write, "stderr", 6, &n);
+  EBBRCAssert(rc);
+
+  rc = EBBCALL(f3, open, "/tmp/stdin", EBBFILE_OREAD | EBBFILE_OCREATE, 0777);
+  EBBRCAssert(rc);
+  rc = EBBCALL(f3, read, buf, 80, &n);
+  EBBRCAssert(rc);
+
+  EBB_LRT_printf("read: rc=%ld, n=%ld buf=:\n", rc, n);
+  if (n) write(1, buf, n);
+#endif
 
   return 1;
 }
 
-#if 0 
-  char *token, *saveptr;
-
-    EBB9PClientId p;
-    IxpCFid *fd;
-    sval n;
-    EBBRC rc;
-
-    // replace this with the new File code
-    // updating member fields appropriately.
-    token = strtok_r(NULL, ":", &saveptr);
-    EBB9PClientPrimCreate(&p);
-    
-    rc = EBBCALL(p, mount, token);
-    EBBRCAssert(rc);
-    
-    rc = EBBCALL(p, open, "/tmp/ebbtest/stdout", 
-		 P9_OWRITE | P9_OAPPEND, &fd);
-    EBBRCAssert(rc);
-    
-    rc = EBBCALL(p, write, fd, "Hello World!\n", 13, &n);
-    EBBRCAssert(rc);
-#endif
 
 static sval
-CmdMenuPrim_doRun(CmdMenuPrimRef *self, char *buf, uval len)
+CmdMenuPrim_doRun(CmdMenuPrimRef self, char *buf, uval len)
 {
   return -1;
 }
@@ -121,7 +142,7 @@ CmdMenuPrim_doRun(CmdMenuPrimRef *self, char *buf, uval len)
 static 
 EBBRC CmdMenuPrim_doCmd(void *_self, char *cmdbuf, uval n, sval *rc)
 {
-  CmdMenuPrimRef *self = _self;
+  CmdMenuPrimRef self = _self;
  
   EBB_LRT_printf("%s: _self=%p, cmdbuf=%p, n=%ld, rc=%p:\n", __func__, 
 		 _self, cmdbuf, n, rc);
