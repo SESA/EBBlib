@@ -37,18 +37,60 @@ static uval
 bufEq(char *b1, char *b2, uval len)
 {
   uval i=0;  
-  while (i<len && b1[i] == b2[i]) i++;
+
+  while (i<len) { 
+    if (b1[i] != b2[i]) break;  
+    i++;
+  }
+
   return (i==len);
 }
 
-static void 
-CmdMenuPrim_doConnect(char *buf, uval len)
+static uval
+bufParse(char *src, uval sl, char *dest, uval dl, char sep)
 {
+  uval i=0;
+
+  while (i<sl && i<dl) {
+    dest[i] = src[i];
+    if (dest[i]==sep) {
+      dest[i] = 0;
+      i++;
+      break;
+    } 
+    i++;
+  }
+  return i;
+}
+
+static sval
+CmdMenuPrim_doConnect(CmdMenuPrimRef *self, char *buf, uval len)
+{
+  char addr[80], prefix[80], nodeid[80];
+  uval n;
+
+  addr[0] = prefix[0] = nodeid[0] = 0;
+
+  n = bufParse(buf, len, addr, 80, ' ');
+  len -= n; buf += n;
+  if (len==0) return -1;
+  
+  n = bufParse(buf, len, prefix, 80, ' ');
+  len -= n; buf += n;
+  if (len==0) return -1;
+
+  n = bufParse(buf, len, nodeid, 80, ' ');
+  len -= n; buf += n;
+
+  EBB_LRT_printf("%s, connect %s %s %s\n", __func__,
+		 addr, prefix, nodeid);
+
+  return 1;
+}
+
+#if 0 
   char *token, *saveptr;
 
-  token = strtok_r(buf, ":", &saveptr);
-  if(strcmp(token, "connect") == 0) {
-#if 0 
     EBB9PClientId p;
     IxpCFid *fd;
     sval n;
@@ -69,22 +111,30 @@ CmdMenuPrim_doConnect(char *buf, uval len)
     rc = EBBCALL(p, write, fd, "Hello World!\n", 13, &n);
     EBBRCAssert(rc);
 #endif
-  }
-  
-}
 
+static sval
+CmdMenuPrim_doRun(CmdMenuPrimRef *self, char *buf, uval len)
+{
+  return -1;
+}
 
 static 
 EBBRC CmdMenuPrim_doCmd(void *_self, char *cmdbuf, uval n, sval *rc)
 {
+  CmdMenuPrimRef *self = _self;
+ 
   EBB_LRT_printf("%s: _self=%p, cmdbuf=%p, n=%ld, rc=%p:\n", __func__, 
 		 _self, cmdbuf, n, rc);
-  EBB_LRT_write(1, cmdbuf, n);
 
-
-  if (n > 8 && bufEq(cmdbuf, "connect:", 8)) CmdMenuPrim_doConnect(cmdbuf, n);
-
-  *rc = 10;
+  if ((n > 2 && bufEq(cmdbuf, "c ", 2)))            
+    *rc = CmdMenuPrim_doConnect(self, &cmdbuf[2], n);
+  else if ((n > 8 && bufEq(cmdbuf, "connect ", 8))) 
+    *rc = CmdMenuPrim_doConnect(self, &cmdbuf[8], n);
+  else if ((n > 2 && bufEq(cmdbuf, "r ", 2)))       
+    *rc = CmdMenuPrim_doRun(self, &cmdbuf[2], n);
+  else if ((n > 4 && bufEq(cmdbuf, "run ", 4)))     
+    *rc = CmdMenuPrim_doRun(self, &cmdbuf[4], n);
+       
   return EBBRC_OK;
 }
 

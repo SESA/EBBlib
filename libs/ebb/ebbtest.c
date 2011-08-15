@@ -171,7 +171,7 @@ EBB9PClientTest(char *address, char *path)
   buf[n] = 0;
   EBB_LRT_printf("%s\n", buf);
   
-
+#if 0
   EBB9PFilePrimCreate(p, &f1);
   EBB9PFilePrimCreate(p, &f2);
   EBB9PFilePrimCreate(p, &f3);
@@ -193,6 +193,7 @@ EBB9PClientTest(char *address, char *path)
 
   EBB_LRT_printf("read: rc=%ld, n=%ld buf=:\n", rc, n);
   if (n) write(1, buf, n);
+#endif
 
   EBB_LRT_printf("EBB9PClientTest: END\n");
 }
@@ -234,6 +235,7 @@ main (int argc, char **argv)
   
   EBBCtrTest();
 
+#if 0
   if (argc == 2) 
     EBB9PClientTest(argv[1], "/etc/passwd");
   else if (argc > 2) 
@@ -241,6 +243,9 @@ main (int argc, char **argv)
 
   if (argc > 3) 
     P9FSTest(argv[3]);
+#endif
+
+  P9FSTest(argv[1]);
 
   return 0;
 }
