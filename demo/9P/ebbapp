@@ -42,7 +42,12 @@ declare -x nodedir
 
 function usage
 {
-  printf "USAGE: $(basename $0) [-h] [-v] [-a appid] [-i <frontend ip>] <nodeip>\n" > /dev/stderr
+  echo "USAGE: $(basename $0) [-h] [-v] [-a appid] [-i <frontend ip>]" \
+       "<nodeip> 
+         -h help
+         -v verbose
+         -a existing appid: if specified node will be added
+         -i explicit ip address of frontend to be used" > /dev/stderr
   exit -1
 }
 
