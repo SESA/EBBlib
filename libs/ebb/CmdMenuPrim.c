@@ -66,6 +66,8 @@ bufParse(char *src, uval sl, char *dest, uval dl, char sep)
     } 
     i++;
   }
+  // FIXME: null terminate length boundaries reached
+  //        cases
   return i;
 }
 
@@ -81,17 +83,17 @@ CmdMenuPrim_doConnect(CmdMenuPrimRef self, char *buf, uval len)
 
   n = bufParse(buf, len, self->feaddr, 80, ' ');
   len -= n; buf += n;
-  self->feaddrlen = n;
+  self->feaddrlen = n-1;
   if (len==0) return -1;
   
   n = bufParse(buf, len, self->feprefix, 80, ' ');
   len -= n; buf += n;
-  self->feprefixlen = n;
+  self->feprefixlen = n-1;
   if (len==0) return -1;
 
-  n = bufParse(buf, len, self->nodeid, 80, ' ');
+  n = bufParse(buf, len, self->nodeid, 80, '\n');
   len -= n; buf += n;
-  self->nodeidlen = n;
+  self->nodeidlen = n-1;
 
   EBB_LRT_printf("%s: connect %s %s %s\n", __func__,
 		 self->feaddr, self->feprefix, self->nodeid);
@@ -106,28 +108,25 @@ CmdMenuPrim_doConnect(CmdMenuPrimRef self, char *buf, uval len)
   EBB9PFilePrimCreate(p, &self->stderr);
 
   bufParse(self->feprefix, self->feprefixlen, tmp, 80, 0);
-  bufParse("/stdout", 7, &tmp[self->feprefixlen], 80 - self->feprefixlen, 0);
 
-  EBB_LRT_printf("%s: opening %s\n", __func__, tmp);
+  // including terminating 0 in length passed to bufParse
+  bufParse("/stdout", 8, &tmp[self->feprefixlen], 80 - self->feprefixlen, 0);
   rc = EBBCALL(self->stdout, open, tmp, EBBFILE_OWRITE | EBBFILE_OCREATE, 0777);
   EBBRCAssert(rc);
   rc = EBBCALL(self->stdout, write, self->nodeid, self->nodeidlen, &n);
   EBBRCAssert(rc);
 
-#if 0
-  rc = EBBCALL(f2, open, "/tmp/stderr", EBBFILE_OWRITE | EBBFILE_OCREATE, 0777);
+  bufParse("/stderr", 8, &tmp[self->feprefixlen], 80 - self->feprefixlen, 0);
+  rc = EBBCALL(self->stderr, open, tmp, EBBFILE_OWRITE | EBBFILE_OCREATE, 0777);
   EBBRCAssert(rc);
-  rc = EBBCALL(f2, write, "stderr", 6, &n);
-  EBBRCAssert(rc);
-
-  rc = EBBCALL(f3, open, "/tmp/stdin", EBBFILE_OREAD | EBBFILE_OCREATE, 0777);
-  EBBRCAssert(rc);
-  rc = EBBCALL(f3, read, buf, 80, &n);
+  rc = EBBCALL(self->stderr, write, self->nodeid, self->nodeidlen, &n);
   EBBRCAssert(rc);
 
-  EBB_LRT_printf("read: rc=%ld, n=%ld buf=:\n", rc, n);
-  if (n) write(1, buf, n);
-#endif
+  bufParse("/stdin", 7, &tmp[self->feprefixlen], 80 - self->feprefixlen, 0);
+  rc = EBBCALL(self->stdin, open, tmp, EBBFILE_OREAD | EBBFILE_OCREATE, 0777);
+  EBBRCAssert(rc);
+  rc = EBBCALL(self->stdin, read, buf, 80, &n);
+  EBBRCAssert(rc);
 
   return 1;
 }

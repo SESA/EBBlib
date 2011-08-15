@@ -1,0 +1,11 @@
+You need to put ufs and ixpc in a bin directory whereever you
+put this directory (or set EBBAPP_BASEDIR to).
+
+USAGE: ebbapp [-h] [-v] [-a appid] [-i <frontend ip>] <nodeip>
+
+For the moment assumes that you have a worker node booted with
+a reachable ip address specified on the command line.
+
+Need to integrate with node allocation and eventually support 
+other addresses than tcp addressed nodes
+

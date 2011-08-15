@@ -10,9 +10,8 @@
 #
 #####
 
-declare verbose=1
-
-declare -x -r BASEDIR="$(pwd)"
+# Global configuration settings
+declare -x -r BASEDIR="${EBBAPP_BASEDIR:-$(dirname $(type -p -a ebbapp))}"
 declare -x -r LOCKDIR=${BASEDIR}/locks
 declare -x -r P9CMD="$BASEDIR/bin/ixpc" 
 declare -x -r P9SRV="$BASEDIR/bin/ufs"
@@ -20,10 +19,10 @@ declare -x -r EBBFSPORT=12345
 declare -x -r NODEIDFILE=${BASEDIR}/NodeId
 declare -x -r NODEIDSTART=1
 declare -x -r NODEIDEND=1000000
-
 #declare -x -r SINGLESERVER=12345
 
 # Global Variables
+declare -x -i verbose=0
 # app/server/frontend info
 declare -x appid
 declare -x appip
@@ -43,7 +42,7 @@ declare -x nodedir
 
 function usage
 {
-  printf "USAGE: $0 [-a appid] [-i <frontend ip>] <nodeip>\n" > /dev/stderr
+  printf "USAGE: $(basename $0) [-h] [-v] [-a appid] [-i <frontend ip>] <nodeip>\n" > /dev/stderr
   exit -1
 }
 
@@ -78,7 +77,7 @@ function genport
 
 function killchildren 
 {
-  echo "killchildren : $1"
+  VERBOSE "killchildren : $1"
   ppid=$1
   if [[ -z $ppid ]]
   then
@@ -89,7 +88,7 @@ function killchildren
   do
     if [[ -n $pid ]]
     then
-      echo "killing $pid"
+      VERBOSE "killing $pid"
       kill -9 $pid > /dev/null 2>&1
     fi
   done
@@ -300,11 +299,12 @@ function processArgs
   local    origargs="$@"
   local -i optcount=0
   
-  while getopts "a:i:h" OPT; do 
+  while getopts "a:i:vh" OPT; do 
     case $OPT in
       ("h") usage; exit -1;;
       ("a") appid="$OPTARG"; (( optcount+=2 ));;
-      ("i") appip="$OPTARG"; (( optcount+=2));;
+      ("i") appip="$OPTARG"; (( optcount+=2 ));;
+      ("v") verbose=1;(( optcount+=1 ));;
     esac
   done
 
@@ -355,6 +355,21 @@ function startServer
   echo "$apppid" > $appdir/pid
 }
 
+function sanitycheck
+{
+    if [[ ! -x $P9CMD ]]; then
+	ERROR "Cannot find $P9CMD"
+    fi
+
+    if [[ ! -x $P9SRV ]]; then
+	ERROR "Cannot find $P9SRV"
+    fi
+
+    if ! type -a lockfile > /dev/null 2>&1; then
+       ERROR "Cannot fine lockfile in your path"
+    fi
+}
+
 # main()
 trap cleanup SIGHUP 
 trap cleanup SIGTRAP 
@@ -365,6 +380,8 @@ trap cleanup SIGINT
 trap cleanup SIGABRT 
 trap "" EXIT
 trap "" SIGTERM
+
+sanitycheck
  
 processArgs $@
 
@@ -377,6 +394,7 @@ VERBOSE "nodeid=${nodeid} nodeip=${nodeip} nodeport=${nodeport} nodeaddr=${nodea
 
 connectToNode
 
-(( appstart == 1 )) && fg %%
+(( appstart == 1 )) && wait
 
+VERBOSE "ebbapp $appid terminated"
 cleanup
