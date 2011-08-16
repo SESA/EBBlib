@@ -80,7 +80,7 @@ EBBCtrPrimDistributedCreate(EBBCtrPrimDistributedId *id)
   CObjEBBRootMultiSetFT(rootRef);
   rootRef->ft->init(rootRef, createRep);
 
-  rc = EBBAllocPrimId(id);
+  rc = EBBAllocLocalPrimId(id);
   //  EBBRCAssert(rc);
 
   rc = CObjEBBBind(*id, rootRef);

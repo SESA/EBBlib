@@ -170,7 +170,7 @@ EBB9PClientPrimCreate(EBB9PClientId *id)
   repRef->ft->init(repRef);
   rootRef->ft->init(rootRef, repRef);
   
-  rc = EBBAllocPrimId(id);
+  rc = EBBAllocLocalPrimId(id);
   EBBRCAssert(rc);
 
   rc = CObjEBBBind(*id, rootRef); 

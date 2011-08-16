@@ -15,9 +15,16 @@ extern void EBBMgrPrimInit(void);
 
 //FIXME: JA fix typing here on id
 static inline EBBRC
-EBBAllocPrimId(void *id)
+EBBAllocLocalPrimId(void *id)
 {
-  return EC(theEBBMgrPrimId)->AllocId(EB(theEBBMgrPrimId), 
+  return EC(theEBBMgrPrimId)->AllocLocalId(EB(theEBBMgrPrimId), 
+				      id);
+}
+
+static inline EBBRC
+EBBAllocGlobalPrimId(void *id)
+{
+  return EC(theEBBMgrPrimId)->AllocGlobalId(EB(theEBBMgrPrimId), 
 				      id);
 }
 

@@ -70,7 +70,7 @@ EBBMemMgrPrimInit()
   // pass it along for it's init
   rootRef->ft->init(rootRef, &theRep);
 
-  rc = EBBAllocPrimId(&theEBBMemMgrPrimId);
+  rc = EBBAllocLocalPrimId(&theEBBMemMgrPrimId);
   //  EBBRCAssert(rc);
 
   rc = CObjEBBBind(theEBBMemMgrPrimId, rootRef); 

@@ -1,17 +1,37 @@
 #include "../base/include.h"
 #include "../cobj/cobj.h"
 #include "sys/trans.h" //FIXME: move EBBTransLSys out of this header
+#include "../base/lrtio.h"
 #include "EBBTypes.h"
 #include "CObjEBB.h"
 #include "EBBMgrPrim.h"
 #include "EBBAssert.h"
+#include "EBB9PClient.h"
 
 #define panic() (*(uval *)0)
 
+extern uval EBBNodeId;
+
 static EBBRC
-AllocId (void *_self, void **id) {
+AllocLocalId (void *_self, void **id) {
   EBBMgrPrimRef self = (EBBMgrPrimRef)_self;
-  *id = (void *)EBBIdAlloc(self->lsys);
+  *id = (void *)EBBIdAllocLocal(self->lsys);
+  return EBBRC_OK;
+}
+
+static EBBRC
+AllocGlobalId (void *_self, void **id) {
+  EBBMgrPrimRef self = (EBBMgrPrimRef)_self;
+  if (isGlobalSetup(self->lsys)) {
+    if (EBBNodeId != 0) {
+      SetupGlobal(self->lsys, EBBNodeId);
+    } else {
+      *id = NULL;
+      return EBBRC_GENERIC_FAILURE;
+    }
+  }
+
+  *id = (void *)EBBIdAllocGlobal(self->lsys);
   return EBBRC_OK;
 }
 
@@ -37,7 +57,7 @@ UnBindId (void *_self, EBBId id, EBBMissFunc *mf, EBBMissArg *arg) {
 }
 
 static CObjInterface(EBBMgrPrim) EBBMgrPrim_ftable = {
-  AllocId, FreeId, BindId, UnBindId
+  AllocLocalId, AllocGlobalId, FreeId, BindId, UnBindId
 };
 
 //FIXME: have to statically allocate these because there is
@@ -55,13 +75,18 @@ static void EBBMgrPrimRepInit (EBBLTrans *lt, EBBMgrPrimRef ref,
 			EBBTransGSys gsys) {
   int numGTransPerEL;
   numGTransPerEL = gsys.pages * EBB_TRANS_PAGE_SIZE / 
-    sizeof(EBBGTrans) / EBB_TRANS_MAX_ELS;
+    sizeof(EBBGTrans) / EBB_TRANS_MAX_ELS / EBB_TRANS_MAX_NODES;
   ref->lsys = &EBBMgrPrimLTrans[EBBMyEL()];
-  ref->lsys->gTable = &gsys.gTable[numGTransPerEL * EBBMyEL()];
-  ref->lsys->lTable = EBBGTransToLTrans(ref->lsys->gTable);
-  ref->lsys->free = NULL;
-  ref->lsys->numAllocated = 0;
-  ref->lsys->size = numGTransPerEL;
+  ref->lsys->localGTable = &gsys.gTable[numGTransPerEL * EBBMyEL()];
+  ref->lsys->localLTable = EBBGTransToLTrans(ref->lsys->localGTable);
+  ref->lsys->localFree = NULL;
+  ref->lsys->localNumAllocated = 0;
+  ref->lsys->localSize = numGTransPerEL;
+  ref->lsys->globalGTable = NULL;
+  ref->lsys->globalLTable = NULL;
+  ref->lsys->globalFree = NULL;
+  ref->lsys->globalNumAllocated = 0;
+  ref->lsys->globalSize = 0;
   ref->ft = &EBBMgrPrim_ftable;
 }
 
@@ -75,13 +100,24 @@ static EBBRC EBBMgrPrimMF (void *_self, EBBLTrans *lt,
   return EBBRC_OK;
 }
 
-//FIXME: Kludge, hide behind some interface for other systems
-#include <stdio.h>
+/* static EBBRC EBBMgrPrimERRMF (void *_self, EBBLTrans *lt, */
+/* 			      FuncNum fnum, EBBMissArg arg) { */
+/*   EBB_LRT_printf("ERROR: unbound object invoked with self: %p, lt: %p," */
+/* 	 "fnum: %ld, arg: %ld\n", _self, lt, fnum, arg); */
+/*   return EBBRC_GENERIC_FAILURE; */
+/* } */
+extern EBB9PClientId the9PClient;
 
 static EBBRC EBBMgrPrimERRMF (void *_self, EBBLTrans *lt,
 			      FuncNum fnum, EBBMissArg arg) {
-  printf("ERROR: unbound object invoked with self: %p, lt: %p,"
-	 "fnum: %ld, arg: %ld\n", _self, lt, fnum, arg);
+  if (isLocalEBB(EBBLTransToGTrans(lt))) {
+    EBB_LRT_printf("ERROR: gtable miss on a local-only EBB\n");
+  } else if (!the9PClient) {
+    EBB_LRT_printf("ERROR: gtable miss on a global EBB but not connected!\n");
+  } else {
+    EBB_LRT_printf("gtable miss on a global EBB: unimplemented\n");
+  }
+
   return EBBRC_GENERIC_FAILURE;
 }
 
@@ -98,7 +134,7 @@ void EBBMgrPrimInit () {
   EBBId id;
 
   EBB_Trans_Mem_Init();
-  gsys.pages = 1;
+  gsys.pages = EBB_TRANS_NUM_PAGES;
   EBB_Trans_Mem_Alloc_Pages(gsys.pages, (uval8 **)&gsys.gTable);
   theERRMF = EBBMgrPrimERRMF;
   initGTable(gsys.gTable, gsys.pages);
@@ -109,7 +145,7 @@ void EBBMgrPrimInit () {
   EBBIdBind((EBBId)theEBBMgrPrimId, EBBMgrPrimMF, (EBBMissArg)&gsys);
   
   // do an alloc to account for manual binding 
-  rc = EBBAllocPrimId(&id);
+  rc = EBBAllocLocalPrimId(&id);
 
   EBBRCAssert(rc);
   EBBAssert(id == (EBBId)theEBBMgrPrimId);

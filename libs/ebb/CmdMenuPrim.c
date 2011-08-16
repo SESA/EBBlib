@@ -71,6 +71,9 @@ bufParse(char *src, uval sl, char *dest, uval dl, char sep)
   return i;
 }
 
+EBB9PClientId the9PClient = NULL;
+uval EBBNodeId = 0;
+
 static sval
 CmdMenuPrim_doConnect(CmdMenuPrimRef self, char *buf, uval len)
 {
@@ -127,6 +130,8 @@ CmdMenuPrim_doConnect(CmdMenuPrimRef self, char *buf, uval len)
   EBBRCAssert(rc);
   rc = EBBCALL(self->stdin, read, buf, 80, &n);
   EBBRCAssert(rc);
+
+  the9PClient = p;
 
   return 1;
 }

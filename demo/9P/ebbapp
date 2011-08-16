@@ -371,7 +371,7 @@ function sanitycheck
     fi
 
     if ! type -a lockfile > /dev/null 2>&1; then
-       ERROR "Cannot fine lockfile in your path"
+       ERROR "Cannot find lockfile in your path"
     fi
 }
 

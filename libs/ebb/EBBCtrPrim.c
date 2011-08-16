@@ -77,7 +77,7 @@ setup(EBBCtrPrimRef repRef, CObjEBBRootSharedRef rootRef, EBBCtrPrimId *id)
   // pass it along for it's init
   rootRef->ft->init(rootRef, repRef);
 
-  rc = EBBAllocPrimId(id);
+  rc = EBBAllocLocalPrimId(id);
   EBBRCAssert(rc);
 
   rc = CObjEBBBind(*id, rootRef); 
