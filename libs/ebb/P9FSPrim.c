@@ -418,7 +418,7 @@ P9FSPrimCreate(P9FSid *id, CmdMenuId cmd)
   P9FSPrim_init(repRef, cmd);
   rootRef->ft->init(rootRef, repRef);
   
-  rc = EBBAllocPrimId(id);
+  rc = EBBAllocLocalPrimId(id);
   EBBRCAssert(rc);
 
   rc = CObjEBBBind(*id, rootRef); 

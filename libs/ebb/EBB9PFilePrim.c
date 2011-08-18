@@ -144,7 +144,7 @@ EBB9PFilePrimCreate(EBB9PClientId cid, EBBFileId *id)
 
   rootRef->ft->init(rootRef, repRef);
   
-  rc = EBBAllocPrimId(id);
+  rc = EBBAllocLocalPrimId(id);
   EBBRCAssert(rc);
 
   rc = CObjEBBBind(*id, rootRef); 

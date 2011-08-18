@@ -13,6 +13,8 @@
 #include "CObjEBBRootShared.h"
 #include "EBBAssert.h"
 
+#include "EBBCtr.h"
+#include "EBBCtrPrim.h"
 #include "EBB9PClient.h"
 #include "EBB9PClientPrim.h"
 #include "EBBFile.h"
@@ -132,6 +134,7 @@ CmdMenuPrim_doConnect(CmdMenuPrimRef self, char *buf, uval len)
   EBBRCAssert(rc);
 
   the9PClient = p;
+  EBBNodeId = self->nodeid;
 
   return 1;
 }
@@ -140,6 +143,9 @@ CmdMenuPrim_doConnect(CmdMenuPrimRef self, char *buf, uval len)
 static sval
 CmdMenuPrim_doRun(CmdMenuPrimRef self, char *buf, uval len)
 {
+  EBBCtrPrimId ctr;
+  EBBAllocGlobalPrimId(&ctr);
+  
   return -1;
 }
 
@@ -189,7 +195,7 @@ extern EBBRC CmdMenuPrimCreate(CmdMenuId *id)
   
   rootRef->ft->init(rootRef, repRef);
   
-  rc = EBBAllocPrimId(id);
+  rc = EBBAllocLocalPrimId(id);
   EBBRCAssert(rc);
 
   rc = CObjEBBBind(*id, rootRef); 

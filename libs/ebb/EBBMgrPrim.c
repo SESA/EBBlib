@@ -22,7 +22,7 @@ AllocLocalId (void *_self, void **id) {
 static EBBRC
 AllocGlobalId (void *_self, void **id) {
   EBBMgrPrimRef self = (EBBMgrPrimRef)_self;
-  if (isGlobalSetup(self->lsys)) {
+  if (!isGlobalSetup(self->lsys)) {
     if (EBBNodeId != 0) {
       SetupGlobal(self->lsys, EBBNodeId);
     } else {

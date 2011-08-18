@@ -34,11 +34,11 @@ EBBMgrPrimTest(void)
   EBBRC rc;
 
   EBB_LRT_printf("0: EBBId_DREF(theEBBMgrPrimId)=%p: ", EBBId_DREF(theEBBMgrPrimId));
-  rc = EBBAllocPrimId(&id1);
+  rc = EBBAllocLocalPrimId(&id1);
   EBB_LRT_printf("rc = %ld id1=%p\n", rc, id1);
 
   EBB_LRT_printf("1: EBBId_DREF(theEBBMgrPrimId)=%p: ", EBBId_DREF(theEBBMgrPrimId));
-  rc = EBBAllocPrimId(&id2);
+  rc = EBBAllocLocalPrimId(&id2);
   EBB_LRT_printf("rc = %ld id2=%p\n", rc, id2);
 }
 

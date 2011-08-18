@@ -152,7 +152,7 @@ static inline uval isGlobalSetup(EBBTransLSys *sys) {
 
 static inline void SetupGlobal(EBBTransLSys *sys, uval nodeId) {
   uval numGTransPerEL;
-  numGTransPerEL = gsys.pages * EBB_TRANS_PAGE_SIZE / 
+  numGTransPerEL = EBB_TRANS_NUM_PAGES * EBB_TRANS_PAGE_SIZE / 
     sizeof(EBBGTrans) / EBB_TRANS_MAX_ELS / EBB_TRANS_MAX_NODES;
   
   //FIXME: assuming gsys.pages = EBB_TRANS_NUM_PAGES
@@ -162,6 +162,11 @@ static inline void SetupGlobal(EBBTransLSys *sys, uval nodeId) {
 		       EBB_TRANS_PAGE_SIZE * 
 		       EBB_TRANS_NUM_PAGES / EBB_TRANS_MAX_NODES +
 		       numGTransPerEL * EBBMyEL() * sizeof(EBBGTrans)];
+  sys->globalLTable = EBBGTransToLTrans(sys->globalGTable);
+  sys->globalFree = NULL;
+  sys->globalNumAllocated = 0;
+  sys->globalSize = numGTransPerEL;
+}
   
     
 static inline EBBId EBBIdAllocGlobal(EBBTransLSys *sys) {
