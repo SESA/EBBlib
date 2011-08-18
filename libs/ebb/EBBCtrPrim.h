@@ -13,6 +13,7 @@ EBBCtrPrimSetFT(EBBCtrPrimRef o) { o->ft = &EBBCtrPrim_ftable; }
 
 typedef EBBCtrPrimRef *EBBCtrPrimId;
 extern EBBRC EBBCtrPrimSharedCreate(EBBCtrPrimId *id);
+extern EBBRC EBBCtrPrimGlobalSharedCreate(EBBCtrPrimId *id);
 
 
 #endif

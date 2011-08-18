@@ -84,6 +84,7 @@ struct EBBTransStruct {
     uval v3;
     EBBGTrans *next; 
   };
+  uval v4; //FIXME: padding - there was a bug without this
 };
 
 static inline EBBId EBBLTransToId(EBBLTrans *lt) {
@@ -158,7 +159,7 @@ static inline void SetupGlobal(EBBTransLSys *sys, uval nodeId) {
   //FIXME: assuming gsys.pages = EBB_TRANS_NUM_PAGES
   //I can't possibly get this right
   sys->globalGTable = (EBBGTrans *)
-    EBB_Trans_Mem.GMem[nodeId * 
+    &EBB_Trans_Mem.GMem[nodeId * 
 		       EBB_TRANS_PAGE_SIZE * 
 		       EBB_TRANS_NUM_PAGES / EBB_TRANS_MAX_NODES +
 		       numGTransPerEL * EBBMyEL() * sizeof(EBBGTrans)];

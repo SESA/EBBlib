@@ -114,3 +114,33 @@ EBBCtrPrimSharedCreate(EBBCtrPrimId *id)
 
   return setup(repRef, rootRef, id);
 }
+
+EBBRC
+EBBCtrPrimGlobalSharedCreate(EBBCtrPrimId *id)
+{
+  EBBCtrPrimRef repRef;
+  CObjEBBRootSharedRef rootRef;
+
+  //Allocate a root and rep via Primitive Allocator
+  EBBPrimMalloc(sizeof(*repRef), &repRef, EBB_MEM_DEFAULT);
+  EBBPrimMalloc(sizeof(*rootRef), &rootRef, EBB_MEM_DEFAULT);
+
+  EBBRC rc;
+  // setup function tables
+  CObjEBBRootSharedSetFT(rootRef);
+  EBBCtrPrimSetFT(repRef);
+
+  // setup my representative and root
+  repRef->ft->init(repRef);
+  // shared root knows about only one rep so we 
+  // pass it along for it's init
+  rootRef->ft->init(rootRef, repRef);
+
+  rc = EBBAllocGlobalPrimId(id);
+  EBBRCAssert(rc);
+
+  rc = CObjEBBBind(*id, rootRef); 
+  EBBRCAssert(rc);
+
+  return rc;
+}

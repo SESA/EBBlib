@@ -220,7 +220,7 @@ main (int argc, char **argv)
     P9FSTest(argv[3]);
 #endif
 
-  P9FSTest(argv[1]);
+  P9FSTest("tcp!*!12345");
 
   return 0;
 }

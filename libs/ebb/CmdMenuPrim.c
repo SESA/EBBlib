@@ -134,7 +134,7 @@ CmdMenuPrim_doConnect(CmdMenuPrimRef self, char *buf, uval len)
   EBBRCAssert(rc);
 
   the9PClient = p;
-  EBBNodeId = self->nodeid;
+  EBBNodeId = atol(self->nodeid);
 
   return 1;
 }
@@ -143,10 +143,16 @@ CmdMenuPrim_doConnect(CmdMenuPrimRef self, char *buf, uval len)
 static sval
 CmdMenuPrim_doRun(CmdMenuPrimRef self, char *buf, uval len)
 {
+  //Feel free to comment this out, just using it to test the global EBB stuff
   EBBCtrPrimId ctr;
-  EBBAllocGlobalPrimId(&ctr);
-  
-  return -1;
+  uval v;
+  EBBCtrPrimGlobalSharedCreate(&ctr);
+  EBBCALL(ctr,val,&v);
+  EBB_LRT_printf("global counter val = %ld\n",v);
+  EBBCALL(ctr,inc);
+  EBBCALL(ctr,val,&v);
+  EBB_LRT_printf("global counter val = %ld\n",v);
+  return EBBRC_OK;
 }
 
 static 
@@ -157,6 +163,7 @@ EBBRC CmdMenuPrim_doCmd(void *_self, char *cmdbuf, uval n, sval *rc)
   EBB_LRT_printf("%s: _self=%p, cmdbuf=%p, n=%ld, rc=%p:\n", __func__, 
 		 _self, cmdbuf, n, rc);
 
+  //I think here you need to decrement n when you send it to the next function
   if ((n > 2 && bufEq(cmdbuf, "c ", 2)))            
     *rc = CmdMenuPrim_doConnect(self, &cmdbuf[2], n);
   else if ((n > 8 && bufEq(cmdbuf, "connect ", 8))) 
