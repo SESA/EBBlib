@@ -10,7 +10,6 @@
 #include "CObjEBBUtils.h"
 #include "CObjEBBRoot.h"
 #include "CObjEBBRootShared.h"
-#include "CObjEBBRootGlobalShared.h"
 #include "EBBCtr.h"
 #include "EBBCtrPrim.h"
 #include "EBBAssert.h"
@@ -198,7 +197,7 @@ EBBCtrPrimGlobalSharedCreate(EBBCtrPrimId *id)
   EBBRCAssert(rc);
 
   rc = EBBBindGlobalPrimId(*id, EBBCtrPrimGlobalShared_localMF,
-			   repRef, EBBCtrPrimGlobalShared_globalMF); 
+			   (EBBMissArg)repRef, EBBCtrPrimGlobalShared_globalMF); 
   EBBRCAssert(rc);
 
   return rc;
