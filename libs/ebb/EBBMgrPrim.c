@@ -114,8 +114,11 @@ static EBBRC EBBMgrPrimERRMF (void *_self, EBBLTrans *lt,
     EBB_LRT_printf("ERROR: gtable miss on a local-only EBB\n");
   } else if (!the9PClient) {
     EBB_LRT_printf("ERROR: gtable miss on a global EBB but not connected!\n");
+  } else if (getLTransNodeId(lt) == EBBNodeId) {
+    EBB_LRT_printf("ERROR: gtable miss on a global EBB but we are the home node!\n");
   } else {
     EBB_LRT_printf("gtable miss on a global EBB: unimplemented\n");
+    //call the home node, which should return an EBBMissFunc to handle this call
   }
 
   return EBBRC_GENERIC_FAILURE;

@@ -208,6 +208,11 @@ static inline EBBId EBBIdAllocLocal(EBBTransLSys *sys) {
   return NULL;
 }    
 
+static inline uval getLTransNodeId(EBBLTrans *lt) {
+  uval val = (((uval)lt) - ((uval)EBB_Trans_Mem.LMem)) /
+    (EBB_TRANS_PAGE_SIZE * EBB_TRANS_NUM_PAGES / EBB_TRANS_MAX_NODES);
+}
+
 //FIXME: assuming gsys.pages = EBB_TRANS_NUM_PAGES
 //this is probably wrong with some +/- 1 issue
 static inline uval isLocalEBB(EBBGTrans *gt) {
@@ -215,6 +220,8 @@ static inline uval isLocalEBB(EBBGTrans *gt) {
     &EBB_Trans_Mem.GMem[EBB_TRANS_PAGE_SIZE * EBB_TRANS_NUM_PAGES /
 			EBB_TRANS_MAX_NODES];
 }
+
+
 
 static inline void EBBIdFree(EBBTransLSys *sys, EBBId id) {
   EBBGTrans *free = EBBIdToGTrans(id);
