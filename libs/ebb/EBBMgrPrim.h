@@ -7,6 +7,8 @@ CObjInterface(EBBMgrPrim) {
 
 CObject(EBBMgrPrim) {
   CObjInterface(EBBMgrPrim) *ft;
+  //JA Hack
+  void *myRoot;
   EBBTransLSys *lsys;
 };
 

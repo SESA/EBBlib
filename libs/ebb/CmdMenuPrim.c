@@ -26,14 +26,23 @@
 
 char prompt[] = "9PConsole <9PAddress>\n";
 
+#define STRLEN 160
+
 CObject(CmdMenuPrim) {
   CObjInterface(CmdMenu) *ft;
-  char feaddr[80];
-  char feprefix[80];
-  char nodeid[80];
+  char feaddr[STRLEN];
   uval feaddrlen;
+  char feprefix[STRLEN];
   uval feprefixlen;
+  char appid[STRLEN];
+  uval appidlen;
+  char nodespath[STRLEN];
+  uval nodespathlen;
+  char nodeid[STRLEN];
   uval nodeidlen;
+  char mynodepath[STRLEN];
+  uval mynodepathlen;
+
   EBBFileId stdin;
   EBBFileId stdout;
   EBBFileId stderr;
@@ -76,27 +85,43 @@ CmdMenuPrim_doConnect(CmdMenuPrimRef self, char *buf, uval len)
 {
   EBB9PClientId p;
   EBBRC rc;
-  char tmp[80];
+  char tmp[STRLEN];
   sval n;
 
-  self->feaddr[0] = self->feprefix[0] = self->nodeid[0] = 0;
+  self->feaddr[0] = self->feprefix[0] = self->appid[0] = 0;
+  self->nodespath[0] = self->nodeid[0] = self->mynodepath[0] = 0;
 
-  n = bufParse(buf, len, self->feaddr, 80, ' ');
+  n = bufParse(buf, len, self->feaddr, STRLEN, ' ');
   len -= n; buf += n;
   self->feaddrlen = n-1;
   if (len==0) return -1;
   
-  n = bufParse(buf, len, self->feprefix, 80, ' ');
+  n = bufParse(buf, len, self->feprefix, STRLEN, ' ');
   len -= n; buf += n;
   self->feprefixlen = n-1;
   if (len==0) return -1;
 
-  n = bufParse(buf, len, self->nodeid, 80, '\n');
+  n = bufParse(buf, len, self->appid, STRLEN, ' ');
+  len -= n; buf += n;
+  self->appidlen = n-1;
+
+  n = bufParse(buf, len, self->nodespath, STRLEN, ' ');
+  len -= n; buf += n;
+  self->nodespathlen = n-1;
+
+  n = bufParse(buf, len, self->mynodepath, STRLEN, ' ');
+  len -= n; buf += n;
+  self->mynodepathlen = n-1;
+
+  n = bufParse(buf, len, self->nodeid, STRLEN, '\n');
   len -= n; buf += n;
   self->nodeidlen = n-1;
 
-  EBB_LRT_printf("%s: connect %s %s %s\n", __func__,
-		 self->feaddr, self->feprefix, self->nodeid);
+
+  EBB_LRT_printf("%s: connect %s %s %s %s %s %s\n", __func__,
+		 self->feaddr, self->feprefix, 
+		 self->appid, self->nodespath, 
+		 self->mynodepath, self->nodeid);
 
   EBB9PClientPrimCreate(&p);
 
@@ -107,25 +132,34 @@ CmdMenuPrim_doConnect(CmdMenuPrimRef self, char *buf, uval len)
   EBB9PFilePrimCreate(p, &self->stdout);
   EBB9PFilePrimCreate(p, &self->stderr);
 
-  bufParse(self->feprefix, self->feprefixlen, tmp, 80, 0);
+  bufParse(self->mynodepath, self->mynodepathlen, tmp, STRLEN, 0);
 
   // including terminating 0 in length passed to bufParse
-  bufParse("/stdout", 8, &tmp[self->feprefixlen], 80 - self->feprefixlen, 0);
-  rc = EBBCALL(self->stdout, open, tmp, EBBFILE_OWRITE | EBBFILE_OCREATE, 0777);
+  bufParse("/stdout", 8, &tmp[self->mynodepathlen], 
+	   STRLEN - self->mynodepathlen,
+	   0);
+  rc = EBBCALL(self->stdout, open, tmp, 
+	       EBBFILE_OWRITE | EBBFILE_OCREATE, 0777);
   EBBRCAssert(rc);
-  rc = EBBCALL(self->stdout, write, self->nodeid, self->nodeidlen, &n);
-  EBBRCAssert(rc);
-
-  bufParse("/stderr", 8, &tmp[self->feprefixlen], 80 - self->feprefixlen, 0);
-  rc = EBBCALL(self->stderr, open, tmp, EBBFILE_OWRITE | EBBFILE_OCREATE, 0777);
-  EBBRCAssert(rc);
-  rc = EBBCALL(self->stderr, write, self->nodeid, self->nodeidlen, &n);
+  rc = EBBCALL(self->stdout, write, self->nodeid, 
+	       self->nodeidlen, &n);
   EBBRCAssert(rc);
 
-  bufParse("/stdin", 7, &tmp[self->feprefixlen], 80 - self->feprefixlen, 0);
-  rc = EBBCALL(self->stdin, open, tmp, EBBFILE_OREAD | EBBFILE_OCREATE, 0777);
+  bufParse("/stderr", 8, &tmp[self->mynodepathlen], 
+	   STRLEN - self->mynodepathlen, 0);
+  rc = EBBCALL(self->stderr, open, tmp, 
+	       EBBFILE_OWRITE | EBBFILE_OCREATE, 0777);
   EBBRCAssert(rc);
-  rc = EBBCALL(self->stdin, read, buf, 80, &n);
+  rc = EBBCALL(self->stderr, write, 
+	       self->nodeid, self->nodeidlen, &n);
+  EBBRCAssert(rc);
+
+  bufParse("/stdin", 7, &tmp[self->mynodepathlen], 
+	   STRLEN - self->mynodepathlen, 0);
+  rc = EBBCALL(self->stdin, open, tmp, 
+	       EBBFILE_OREAD | EBBFILE_OCREATE, 0777);
+  EBBRCAssert(rc);
+  rc = EBBCALL(self->stdin, read, buf, STRLEN, &n);
   EBBRCAssert(rc);
 
   return 1;
@@ -147,13 +181,13 @@ EBBRC CmdMenuPrim_doCmd(void *_self, char *cmdbuf, uval n, sval *rc)
 		 _self, cmdbuf, n, rc);
 
   if ((n > 2 && bufEq(cmdbuf, "c ", 2)))            
-    *rc = CmdMenuPrim_doConnect(self, &cmdbuf[2], n);
+    *rc = CmdMenuPrim_doConnect(self, &cmdbuf[2], n-2);
   else if ((n > 8 && bufEq(cmdbuf, "connect ", 8))) 
-    *rc = CmdMenuPrim_doConnect(self, &cmdbuf[8], n);
+    *rc = CmdMenuPrim_doConnect(self, &cmdbuf[8], n-8);
   else if ((n > 2 && bufEq(cmdbuf, "r ", 2)))       
-    *rc = CmdMenuPrim_doRun(self, &cmdbuf[2], n);
+    *rc = CmdMenuPrim_doRun(self, &cmdbuf[2], n-2);
   else if ((n > 4 && bufEq(cmdbuf, "run ", 4)))     
-    *rc = CmdMenuPrim_doRun(self, &cmdbuf[4], n);
+    *rc = CmdMenuPrim_doRun(self, &cmdbuf[4], n-4);
        
   return EBBRC_OK;
 }
@@ -180,8 +214,7 @@ extern EBBRC CmdMenuPrimCreate(CmdMenuId *id)
   
   CObjEBBRootSharedSetFT(rootRef);
   CmdMenuPrimSetFT(repRef);
-  
-  
+    
   rootRef->ft->init(rootRef, repRef);
   
   rc = EBBAllocPrimId(id);

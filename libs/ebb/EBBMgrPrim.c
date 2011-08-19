@@ -1,12 +1,35 @@
 #include "../base/include.h"
+#include "../base/lrtio.h"
 #include "../cobj/cobj.h"
 #include "sys/trans.h" //FIXME: move EBBTransLSys out of this header
 #include "EBBTypes.h"
 #include "CObjEBB.h"
+#include "CObjEBBRoot.h"
 #include "EBBMgrPrim.h"
+#include "CObjEBBUtils.h"
 #include "EBBAssert.h"
 
+// JA KLUDGE
+#define MAXNODES 1024
+
 #define panic() (*(uval *)0)
+
+struct BootInfo {
+  uval8 raw[4096];
+  uval nodeId;
+};
+
+struct MessageMgr {
+#if 0
+  EBBFile node[MAXNODES];
+  EBB9PClientId feId;
+#endif
+};
+
+typedef struct EBBTransGSysStruct {
+  EBBGTrans *gTable;
+  uval pages;
+} EBBTransGSys;
 
 static EBBRC
 AllocId (void *_self, void **id) {
@@ -36,35 +59,120 @@ UnBindId (void *_self, EBBId id, EBBMissFunc *mf, EBBMissArg *arg) {
   return EBBRC_OK;
 }
 
-static CObjInterface(EBBMgrPrim) EBBMgrPrim_ftable = {
-  AllocId, FreeId, BindId, UnBindId
-};
+#if 0
+static EBBRC
+EBBMgrPrim_InitMessageMgr(void *self, char *addr)
+{
+  struct MessageSys *msys;
+  // alloc message struct
 
-//FIXME: have to statically allocate these because there is
-//       no memory manager
-EBBMgrPrim EBBMgrPrimLObjs[EBB_TRANS_MAX_ELS];
-EBBTransLSys EBBMgrPrimLTrans[EBB_TRANS_MAX_ELS];
+  rc = EBBPrimMalloc(sizeof(struct MessageSys), &msys, EBB_MEM_DEFAULT); 
+  EBBRCAssert(rc);
 
-typedef struct EBBTransGSysStruct {
-  EBBGTrans *gTable;
-  uval pages;
-} EBBTransGSys;
+  rc = EBB9PClientPrimCreate(&(msys->feId));
+  EBBRCAssert(rc);
 
+  rc = EBBCALL(msys->feId, mount, addr);
+  EBBRCAssert(rc);
 
-static void EBBMgrPrimRepInit (EBBLTrans *lt, EBBMgrPrimRef ref,
-			EBBTransGSys gsys) {
-  int numGTransPerEL;
-  numGTransPerEL = gsys.pages * EBB_TRANS_PAGE_SIZE / 
-    sizeof(EBBGTrans) / EBB_TRANS_MAX_ELS;
-  ref->lsys = &EBBMgrPrimLTrans[EBBMyEL()];
-  ref->lsys->gTable = &gsys.gTable[numGTransPerEL * EBBMyEL()];
-  ref->lsys->lTable = EBBGTransToLTrans(ref->lsys->gTable);
-  ref->lsys->free = NULL;
-  ref->lsys->numAllocated = 0;
-  ref->lsys->size = numGTransPerEL;
-  ref->ft = &EBBMgrPrim_ftable;
+  self->msys = msys;
+  return EBBRC_OK;
+}
+#endif
+
+static EBBRC
+EBBMgrPrim_MessageNode(void *self, uval nodeid, char *buf, uval len)
+{
+#if 0
+  EBBMgrPrim *self = _self;
+  EBBFile node;
+  if (self->msys == NULL) return EBBRC_GENERIC_FAILURE;
+  if (self->msys.node[nodeid] == NULLID) {
+    // get address of node via fe (open node path)
+  }
+  node=self->msys.node[nodeid];
+  return EBB_CALL(node, write, buf, len, *len);
+#endif
+  return EBBRC_OK;
 }
 
+static CObjInterface(EBBMgrPrim) EBBMgrPrim_ftable = {
+  .AllocId = AllocId, 
+  .FreeId = FreeId, 
+  .BindId = BindId, 
+  .UnBindId = UnBindId, 
+  .MessageNode = EBBMgrPrim_MessageNode
+};
+
+static EBBRC EBBMgrPrimERRMF (void *_self, EBBLTrans *lt,
+			      FuncNum fnum, EBBMissArg arg) {
+  EBB_LRT_printf("ERROR: unbound object invoked with self: %p, lt: %p,"
+		 "fnum: %ld, arg: %ld\n", _self, lt, fnum, arg);
+  return EBBRC_GENERIC_FAILURE;
+}
+
+CObjInterface(EBBMgrPrimRoot) 
+{
+  CObjImplements(CObjEBBRoot);
+  void (*init)(void *_self);
+};
+
+CObject(EBBMgrPrimRoot) 
+{
+  CObjInterface(EBBMgrPrimRoot) *ft;
+  EBBMgrPrim reps[EBB_TRANS_MAX_ELS];
+  EBBTransLSys EBBMgrPrimLTrans[EBB_TRANS_MAX_ELS];
+  EBBTransGSys gsys;  
+};
+
+static uval
+EBBMgrPrimRoot_handleMiss(void *_self, void *obj, EBBLTrans *lt,
+				 FuncNum fnum)
+{
+  EBBMgrPrimRootRef self = _self;
+  EBBMgrPrimRef rep;
+  int numGTransPerEL;
+ 
+  numGTransPerEL = self->gsys.pages * EBB_TRANS_PAGE_SIZE / 
+    sizeof(EBBGTrans) / EBB_TRANS_MAX_ELS;
+
+  rep = &(self->reps[EBBMyEL()]);
+
+  rep->lsys = &(self->EBBMgrPrimLTrans[EBBMyEL()]);
+  rep->lsys->gTable = &(self->gsys.gTable[numGTransPerEL * EBBMyEL()]);
+  rep->lsys->lTable = EBBGTransToLTrans(rep->lsys->gTable);
+  rep->lsys->free = NULL;
+  rep->lsys->numAllocated = 0;
+  rep->lsys->size = numGTransPerEL;
+  rep->ft = &EBBMgrPrim_ftable;
+
+  *(void **)obj = rep;
+  return EBBRC_OK;
+}
+
+static void
+EBBMgrPrimRoot_init(void *_self)
+{
+  EBBMgrPrimRootRef self = _self;
+
+  EBB_Trans_Mem_Init();
+  self->gsys.pages = 1;
+  EBB_Trans_Mem_Alloc_Pages(self->gsys.pages, (uval8 **)&self->gsys.gTable);
+  theERRMF = EBBMgrPrimERRMF;
+  initGTable(self->gsys.gTable, self->gsys.pages);
+  initAllLTables(EBBGTransToId(self->gsys.gTable), self->gsys.pages);
+}
+
+
+static CObjInterface(EBBMgrPrimRoot) EBBMgrPrimRoot_ftable = {
+  { .handleMiss = EBBMgrPrimRoot_handleMiss },
+  .init = EBBMgrPrimRoot_init
+};
+				     
+//FIXME: have to statically allocate these because there is
+//       no memory manager
+
+#if 0
 static EBBRC EBBMgrPrimMF (void *_self, EBBLTrans *lt,
 		    FuncNum fnum, EBBMissArg arg) {
   EBBTransGSys gsys = *(EBBTransGSys *)arg;
@@ -74,44 +182,34 @@ static EBBRC EBBMgrPrimMF (void *_self, EBBLTrans *lt,
   *(EBBMgrPrimRef *)_self = ref;
   return EBBRC_OK;
 }
+#endif
 
-//FIXME: Kludge, hide behind some interface for other systems
-#include <stdio.h>
-
-static EBBRC EBBMgrPrimERRMF (void *_self, EBBLTrans *lt,
-			      FuncNum fnum, EBBMissArg arg) {
-  printf("ERROR: unbound object invoked with self: %p, lt: %p,"
-	 "fnum: %ld, arg: %ld\n", _self, lt, fnum, arg);
-  return EBBRC_GENERIC_FAILURE;
-}
-
-
-static EBBTransGSys gsys;
-
-EBBMissFunc theERRMF;
-struct EBB_Trans_Mem EBB_Trans_Mem;
-
+// declarations of externals
 EBBMgrPrimRef *theEBBMgrPrimId;
 
 void EBBMgrPrimInit () {
+  static EBBMgrPrimRoot theEBBMgrPrimRoot = { .ft = &EBBMgrPrimRoot_ftable };
   EBBRC rc;
   EBBId id;
 
-  EBB_Trans_Mem_Init();
-  gsys.pages = 1;
-  EBB_Trans_Mem_Alloc_Pages(gsys.pages, (uval8 **)&gsys.gTable);
-  theERRMF = EBBMgrPrimERRMF;
-  initGTable(gsys.gTable, gsys.pages);
-  initAllLTables(EBBGTransToId(gsys.gTable), gsys.pages);
+
+  theEBBMgrPrimRoot.ft->init(&theEBBMgrPrimRoot);
 
   // manually binding the EBBMgrPrim in
-  theEBBMgrPrimId = (EBBMgrPrimRef *)EBBGTransToId(gsys.gTable);
-  EBBIdBind((EBBId)theEBBMgrPrimId, EBBMgrPrimMF, (EBBMissArg)&gsys);
-  
+  theEBBMgrPrimId = (EBBMgrPrimRef *)
+    EBBGTransToId(theEBBMgrPrimRoot.gsys.gTable);
+
+  EBBIdBind((EBBId) theEBBMgrPrimId, 
+	    CObjEBBMissFunc,                
+	    (EBBMissArg)&theEBBMgrPrimRoot);
+
   // do an alloc to account for manual binding 
   rc = EBBAllocPrimId(&id);
 
   EBBRCAssert(rc);
   EBBAssert(id == (EBBId)theEBBMgrPrimId);
-
 }
+
+// FIXME: MISC external declartions
+EBBMissFunc theERRMF;
+struct EBB_Trans_Mem EBB_Trans_Mem;
