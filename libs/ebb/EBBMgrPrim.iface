@@ -2,4 +2,5 @@ EBBRC (*AllocLocalId) (void *_self, void **id);
 EBBRC (*AllocGlobalId) (void *_self, void **id);
 EBBRC (*FreeId) (void *_self, EBBId id);
 EBBRC (*BindId) (void *_self, EBBId id, EBBMissFunc mf, EBBMissArg arg);
+EBBRC (*BindGlobalId) (void *_self, EBBId id, EBBMissFunc mf, EBBMissArg arg, EBBMissFunc globalMF);
 EBBRC (*UnBindId) (void *_self, EBBId id, EBBMissFunc *mf, EBBMissArg *arg);

@@ -84,7 +84,10 @@ struct EBBTransStruct {
     uval v3;
     EBBGTrans *next; 
   };
-  uval v4; //FIXME: padding - there was a bug without this
+  union {
+    uval v4; //FIXME: padding - there was a bug without this
+    EBBMissFunc globalMF;
+  };
 };
 
 static inline EBBId EBBLTransToId(EBBLTrans *lt) {
@@ -211,6 +214,7 @@ static inline EBBId EBBIdAllocLocal(EBBTransLSys *sys) {
 static inline uval getLTransNodeId(EBBLTrans *lt) {
   uval val = (((uval)lt) - ((uval)EBB_Trans_Mem.LMem)) /
     (EBB_TRANS_PAGE_SIZE * EBB_TRANS_NUM_PAGES / EBB_TRANS_MAX_NODES);
+  return val;
 }
 
 //FIXME: assuming gsys.pages = EBB_TRANS_NUM_PAGES
@@ -254,6 +258,14 @@ static inline void EBBIdBind(EBBId id, EBBMissFunc mf,
   EBBGTrans *gt = EBBIdToGTrans(id);
   gt->mf = mf;
   gt->arg = arg;
+}
+
+static inline void EBBIdBindGlobal(EBBId id, EBBMissFunc mf,
+				   EBBMissArg arg, EBBMissFunc globalMF) {
+  EBBGTrans *gt = EBBIdToGTrans(id);
+  gt->mf = mf;
+  gt->arg = arg;
+  gt->globalMF = globalMF;
 }
 
 static inline void EBBIdUnBind(EBBId id, EBBMissFunc *mf,

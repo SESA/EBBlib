@@ -35,6 +35,14 @@ EBBBindPrimId(void *id, EBBMissFunc mf, EBBMissArg arg)
 				     (EBBId)id, mf, arg);
 }
 
+static inline EBBRC
+EBBBindGlobalPrimId(void *id, EBBMissFunc mf,
+		    EBBMissArg arg, EBBMissFunc globalMF)
+{  
+  return EC(theEBBMgrPrimId)->BindGlobalId(EB(theEBBMgrPrimId), 
+				     (EBBId)id, mf, arg, globalMF);
+}
+
 
 
 #endif

@@ -10,6 +10,7 @@
 #include "CObjEBBUtils.h"
 #include "CObjEBBRoot.h"
 #include "CObjEBBRootShared.h"
+#include "CObjEBBRootGlobalShared.h"
 #include "EBBCtr.h"
 #include "EBBCtrPrim.h"
 #include "EBBAssert.h"
@@ -59,8 +60,51 @@ val(void *_self, uval *v)
   return EBBRC_OK;
 }
 
+//////////////////////////////////////////////////
+//BEGIN FUNCTIONS
+//////////////////////////////////////////////////
+PRIVATE EBBRC
+proxy_init(void *_self) 
+{
+  EBBCtrPrimRef self = _self;
+  //This is a nop
+  return EBBRC_OK;
+}
+
+PRIVATE EBBRC 
+proxy_inc(void *_self) 
+{
+  EBBCtrPrimRef self = _self;
+  //function-ship
+  return EBBRC_OK;
+}
+
+PRIVATE EBBRC 
+proxy_dec(void *_self) 
+{
+  EBBCtrPrimRef self = _self;
+  //function-ship
+  return EBBRC_OK;
+}
+
+PRIVATE EBBRC
+proxy_val(void *_self, uval *v)
+{
+  EBBCtrPrimRef self = _self;
+  //function-ship
+  return EBBRC_OK;
+}
+
+/////////////////////////////////////////////////
+//END PROXY FUNCTIONS
+/////////////////////////////////////////////////
+
 CObjInterface(EBBCtr) EBBCtrPrim_ftable = {
   init, inc, dec, val
+};
+
+CObjInterface(EBBCtr) EBBCtrPrim_proxyftable = {
+  proxy_init, proxy_inc, proxy_dec, proxy_val
 };
 
 static EBBRC 
@@ -115,31 +159,46 @@ EBBCtrPrimSharedCreate(EBBCtrPrimId *id)
   return setup(repRef, rootRef, id);
 }
 
+static EBBRC
+EBBCtrPrimGlobalShared_localMF(void *_self, EBBLTrans *lt, FuncNum fnum,
+			       EBBMissArg arg) {
+  EBBCtrPrimRef repRef = (EBBCtrPrimRef)arg;
+  EBBCacheObj(lt, repRef);
+  *(void **)_self = repRef;
+  return EBBRC_OK;
+}
+
+static EBBRC
+EBBCtrPrimGlobalShared_globalMF(void *_self, EBBLTrans *lt, FuncNum fnum,
+			       EBBMissArg arg) {
+  EBBCtrPrimRef repRef;
+  EBBPrimMalloc(sizeof(*repRef), &repRef, EBB_MEM_DEFAULT);
+  repRef->ft = &EBBCtrPrim_proxyftable;
+  EBBCacheObj(lt, repRef);
+  *(void **)_self = repRef;
+  return EBBRC_OK;
+}
+
 EBBRC
 EBBCtrPrimGlobalSharedCreate(EBBCtrPrimId *id)
 {
   EBBCtrPrimRef repRef;
-  CObjEBBRootSharedRef rootRef;
 
   //Allocate a root and rep via Primitive Allocator
   EBBPrimMalloc(sizeof(*repRef), &repRef, EBB_MEM_DEFAULT);
-  EBBPrimMalloc(sizeof(*rootRef), &rootRef, EBB_MEM_DEFAULT);
 
   EBBRC rc;
   // setup function tables
-  CObjEBBRootSharedSetFT(rootRef);
   EBBCtrPrimSetFT(repRef);
 
   // setup my representative and root
   repRef->ft->init(repRef);
-  // shared root knows about only one rep so we 
-  // pass it along for it's init
-  rootRef->ft->init(rootRef, repRef);
 
   rc = EBBAllocGlobalPrimId(id);
   EBBRCAssert(rc);
 
-  rc = CObjEBBBind(*id, rootRef); 
+  rc = EBBBindGlobalPrimId(*id, EBBCtrPrimGlobalShared_localMF,
+			   repRef, EBBCtrPrimGlobalShared_globalMF); 
   EBBRCAssert(rc);
 
   return rc;

@@ -50,6 +50,13 @@ BindId (void *_self, EBBId id, EBBMissFunc mf, EBBMissArg arg) {
 }
 
 static EBBRC
+BindGlobalId (void *_self, EBBId id, EBBMissFunc mf, EBBMissArg arg,
+	      EBBMissFunc globalMF) {
+  EBBIdBindGlobal(id, mf, arg, globalMF);
+  return EBBRC_OK;
+}
+
+static EBBRC
 UnBindId (void *_self, EBBId id, EBBMissFunc *mf, EBBMissArg *arg) {
   //  EBBMgrPrimRef self = (EBBMgrPrimRef)_self;
   EBBIdUnBind(id, mf, arg);
@@ -57,7 +64,7 @@ UnBindId (void *_self, EBBId id, EBBMissFunc *mf, EBBMissArg *arg) {
 }
 
 static CObjInterface(EBBMgrPrim) EBBMgrPrim_ftable = {
-  AllocLocalId, AllocGlobalId, FreeId, BindId, UnBindId
+  AllocLocalId, AllocGlobalId, FreeId, BindId, BindGlobalId, UnBindId
 };
 
 //FIXME: have to statically allocate these because there is
