@@ -52,7 +52,7 @@ CObjInterface(EBBMgrPrimRoot)
 		     uval nodespathlen);
   EBBRC (*MsgNode) (void *_self, uval nodeid, MsgHandler h, 
 		    uval a0, uval a1, uval a2, uval a3, 
-		    uval a4, uval a5, uval a6, uval a7); 
+		    uval a4, uval a5, uval a6, uval a7, uval *rcode); 
 };
 
 CObject(EBBMgrPrimRoot) 
@@ -127,12 +127,23 @@ EBBMgrPrim_InitMessageMgr(void *_self, EBBId id, char *nodespath, uval pathlen)
 
 static EBBRC
 EBBMgrPrim_MessageNode(void *_self, uval nodeid, MsgHandler h, uval a0, uval a1, uval a2, 
-                      uval a3, uval a4, uval a5, uval a6, uval a7)
+		       uval a3, uval a4, uval a5, uval a6, uval a7, uval *rc)
 {
   EBBMgrPrimRef self = _self;
   EBBMgrPrimRootRef root = self->myRoot;
 
-  return root->ft->MsgNode(root, nodeid, h, a0, a1, a2, a3, a4, a5, a6, a7);
+  return root->ft->MsgNode(root, nodeid, h, a0, a1, a2, a3, a4, a5, a6, a7, rc);
+}
+
+static EBBRC
+EBBMgrPrim_HandleMsg(void *_self, void *data, uval len, uval *rc)
+{
+  struct MsgMgrMsg *msg = data;
+
+  EBBAssert(len == sizeof(struct MsgMgrMsg));
+  
+  return msg->h(msg->a0, msg->a1, msg->a2, msg->a3, 
+		msg->a4, msg->a5, msg->a6, msg->a7, rc);
 }
 
 static CObjInterface(EBBMgrPrim) EBBMgrPrim_ftable = {
@@ -143,7 +154,8 @@ static CObjInterface(EBBMgrPrim) EBBMgrPrim_ftable = {
   .BindGlobalId = BindGlobalId,
   .UnBindId = UnBindId, 
   .MessageNode = EBBMgrPrim_MessageNode,
-  .InitMessageMgr = EBBMgrPrim_InitMessageMgr
+  .InitMessageMgr = EBBMgrPrim_InitMessageMgr,
+  .HandleMsg = EBBMgrPrim_HandleMsg
 };
 
 static EBBRC EBBMgrPrimERRMF (void *_self, EBBLTrans *lt,
@@ -225,7 +237,7 @@ EBBMgrPrimRoot_initMsgMgr(void *_self, EBBId id, char *nodespath, uval pathlen)
 
 static EBBRC 
 EBBMgrPrimRoot_MsgNode(void *_self, uval nodeid, MsgHandler h, uval a0, uval a1, uval a2, 
-                      uval a3, uval a4, uval a5, uval a6, uval a7)
+		       uval a3, uval a4, uval a5, uval a6, uval a7, uval *rcode)
 {
   EBBMgrPrimRootRef self = _self;
   EBB9PClientId feId = self->mmgr.fe;
@@ -233,6 +245,7 @@ EBBMgrPrimRoot_MsgNode(void *_self, uval nodeid, MsgHandler h, uval a0, uval a1,
   EBBRC rc;
   char tmp[STRLEN];
   sval n;
+  struct MsgMgrMsg msg;
 
   if (MsgAvailable == 0 ||  feId == 0 || nodeid > MAXNODES) return EBBRC_GENERIC_FAILURE;
 
@@ -265,14 +278,29 @@ EBBMgrPrimRoot_MsgNode(void *_self, uval nodeid, MsgHandler h, uval a0, uval a1,
       return rc;
     }
     EBB9PFilePrimCreate(node,&(self->mmgr.node[nodeid]));
-    rc = EBBCALL(self->mmgr.node[nodeid], open, "/cmd", EBBFILE_ORDWR, 0);
+    rc = EBBCALL(self->mmgr.node[nodeid], open, "/msg", EBBFILE_ORDWR, 0);
     if (!EBBRC_SUCCESS(rc)) {
 	// JA FIXME: LEAK OBJECTS
 	return rc;
     }
   }
-  rc = EBBCALL(self->mmgr.node[nodeid], write, "hello", 5, &n);
-  return EBBRC_OK;
+
+  // marshall
+  msg.h = h;
+  msg.a0 = a0; msg.a1 = a1; msg.a2 = a2; msg.a3 = a3;  
+  msg.a4 = a4; msg.a5 = a5; msg.a6 = a6; msg.a7 = a7;
+
+  rc = EBBCALL(self->mmgr.node[nodeid], write, &msg, sizeof(msg), &n);
+
+  EBBRCAssert(rc);
+  EBBAssert(n == sizeof(msg));
+
+  rc = EBBCALL(self->mmgr.node[nodeid], pread, rcode, sizeof(*rcode), 0, &n);
+
+  EBBRCAssert(rc);
+  EBBAssert(n == sizeof(*rcode));
+
+  return rc;
 }
 
 static CObjInterface(EBBMgrPrimRoot) EBBMgrPrimRoot_ftable = {

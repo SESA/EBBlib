@@ -60,7 +60,7 @@ EBB9PFilePrim_open(void *_self, char *path, uval mode, uval perm)
 }
 
 static EBBRC 
-EBB9PFilePrim_close(void *_self, uval *rc) 
+EBB9PFilePrim_close(void *_self, sval *rc) 
 { 
   EBB9PFilePrim *self = _self;
   EBBRC ebbrc;
@@ -82,6 +82,20 @@ EBB9PFilePrim_read(void *_self, void *buf, sval cnt, sval *n)
   VERBOSE_PR("%s: read\n", __func__);
 
   rc = EBBCALL(self->cid, read, self->fd, buf, cnt, n);
+  EBBRCAssert(rc);
+
+  return EBBRC_OK; 
+}
+
+static EBBRC 
+EBB9PFilePrim_pread(void *_self, void *buf, sval cnt, sval offset, sval *n)
+{ 
+  EBB9PFilePrim *self = _self;
+  EBBRC rc;
+
+  VERBOSE_PR("%s: pread\n", __func__);
+
+  rc = EBBCALL(self->cid, pread, self->fd, buf, cnt, offset, n);
   EBBRCAssert(rc);
 
   return EBBRC_OK; 
@@ -116,6 +130,7 @@ CObjInterface(EBBFile) EBB9PFilePrim_ftable = {
   .open  = EBB9PFilePrim_open, 
   .close = EBB9PFilePrim_close, 
   .read  = EBB9PFilePrim_read, 
+  .pread  = EBB9PFilePrim_pread, 
   .write = EBB9PFilePrim_write,
   .seek  = EBB9PFilePrim_seek
 };

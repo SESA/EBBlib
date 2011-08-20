@@ -7,6 +7,7 @@ CObjInterface(EBBFile) {
   EBBRC (*open)  (void *_self, char *path, uval mode, uval perm);
   EBBRC (*close) (void *_self, sval *rc);
   EBBRC (*read)  (void *_self, void *buf, sval cnt, sval *n);
+  EBBRC (*pread)  (void *_self, void *buf, sval cnt, sval offset, sval *n);
   EBBRC (*write) (void *_self, const void *buf, sval cnt, sval *n);
   EBBRC (*seek)  (void *_self, sval offset, uval whence, sval *rc);
 };

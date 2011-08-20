@@ -92,7 +92,7 @@ EBB9PClientPrim_create(void *_self, char *path, uint perm, uval8 mode, IxpCFid *
 }
 
 static EBBRC 
-EBB9PClientPrim_close(void *_self, IxpCFid *fd, int *rc) 
+EBB9PClientPrim_close(void *_self, IxpCFid *fd, sval *rc) 
 { 
   *rc = ixp_close(fd);
   EBBAssert(*rc == 1);
@@ -112,6 +112,24 @@ EBB9PClientPrim_read(void *_self, IxpCFid *fd, void *buf, sval cnt, sval *n)
   }
   
   *n = ixp_read(fd, buf, cnt);
+
+  if (*n==-1)
+    EBB_LRT_printf("cannot read file/directory '%p': %s\n", fd, ixp_errbuf());
+  return (*n != -1) ? EBBRC_OK : EBBRC_GENERIC_FAILURE;
+}
+
+static EBBRC 
+EBB9PClientPrim_pread(void *_self, IxpCFid *fd, void *buf, sval cnt, sval offset, sval *n)
+{ 
+  EBB9PClientPrim *self = _self;
+
+  if (!EBBRC_SUCCESS(EBB9PClientPrim_ismounted(self)) || 
+      fd == NULL || cnt < 0)  {
+    *n = 0;
+    return EBBRC_GENERIC_FAILURE;
+  }
+  
+  *n = ixp_pread(fd, buf, cnt, offset);
 
   if (*n==-1)
     EBB_LRT_printf("cannot read file/directory '%p': %s\n", fd, ixp_errbuf());
@@ -145,6 +163,7 @@ CObjInterface(EBB9PClient) EBB9PClientPrim_ftable = {
   .create    = EBB9PClientPrim_create,
   .close     = EBB9PClientPrim_close, 
   .read      = EBB9PClientPrim_read, 
+  .pread     = EBB9PClientPrim_pread,
   .write     = EBB9PClientPrim_write
 };
 

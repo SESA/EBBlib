@@ -181,11 +181,13 @@ CmdMenuPrim_doConnect(CmdMenuPrimRef self, char *buf, uval len)
 
 EBBRC
 testMsgHandler(uval arg0, uval arg1, uval arg2, uval arg3,
-	      uval arg4, uval arg5, uval arg6, uval arg7)
+	       uval arg4, uval arg5, uval arg6, uval arg7, 
+	       uval *rcode)
 {
   EBB_LRT_printf("%s: called with %ld %ld %ld %ld %ld %ld %ld %ld\n",
 		 __func__, 
 		 arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7);
+  *rcode = (uval)0xdeadbeefdeadbeef;
   return EBBRC_OK;
 }
 
@@ -197,33 +199,34 @@ CmdMenuPrim_doRun(CmdMenuPrimRef self, char *buf, uval len)
   EBBCtrPrimId ctr;
   uval v;
   EBBRC rc;
-  
-  rc = EBBMessageNode(2, testMsgHandler);
-  EBB_LRT_printf("%s, MsgNode: rc=%ld\n", __func__, rc);
+  uval rcode;
 
-  rc = EBBMessageNode1(2, testMsgHandler, 1);
-  EBB_LRT_printf("%s, MsgNode 1: rc=%ld\n", __func__, rc);
+  rc = EBBMessageNode(2, testMsgHandler, &rcode);
+  EBB_LRT_printf("%s, MsgNode: rc=%ld rcode=0x%lx\n", __func__, rc, rcode);
 
-  rc = EBBMessageNode2(2, testMsgHandler, 1, 2);
-  EBB_LRT_printf("%s, MsgNode 2: rc=%ld\n", __func__, rc);
+  rc = EBBMessageNode1(2, testMsgHandler, 1, &rcode);
+  EBB_LRT_printf("%s, MsgNode: rc=%ld rcode=0x%lx\n", __func__, rc, rcode);
 
-  rc = EBBMessageNode3(2, testMsgHandler, 1, 2, 3);
-  EBB_LRT_printf("%s, MsgNode 3: rc=%ld\n", __func__, rc);
+  rc = EBBMessageNode2(2, testMsgHandler, 1, 2, &rcode);
+  EBB_LRT_printf("%s, MsgNode: rc=%ld rcode=0x%lx\n", __func__, rc, rcode);
 
-  rc = EBBMessageNode4(2, testMsgHandler, 1, 2, 3, 4);
-  EBB_LRT_printf("%s, MsgNode 4: rc=%ld\n", __func__, rc);
+  rc = EBBMessageNode3(2, testMsgHandler, 1, 2, 3, &rcode);
+  EBB_LRT_printf("%s, MsgNode: rc=%ld rcode=0x%lx\n", __func__, rc, rcode);
 
-  rc = EBBMessageNode5(2, testMsgHandler, 1, 2, 3, 4, 5);
-  EBB_LRT_printf("%s, MsgNode 5: rc=%ld\n", __func__, rc);
+  rc = EBBMessageNode4(2, testMsgHandler, 1, 2, 3, 4, &rcode);
+  EBB_LRT_printf("%s, MsgNode: rc=%ld rcode=0x%lx\n", __func__, rc, rcode);
 
-  rc = EBBMessageNode6(2, testMsgHandler, 1, 2, 3, 4, 5, 6);
-  EBB_LRT_printf("%s, MsgNode 6: rc=%ld\n", __func__, rc);
+  rc = EBBMessageNode5(2, testMsgHandler, 1, 2, 3, 4, 5, &rcode);
+  EBB_LRT_printf("%s, MsgNode: rc=%ld rcode=0x%lx\n", __func__, rc, rcode);
 
-  rc = EBBMessageNode7(2, testMsgHandler, 1, 2, 3, 4, 5, 6, 7);
-  EBB_LRT_printf("%s, MsgNode 7: rc=%ld\n", __func__, rc);
+  rc = EBBMessageNode6(2, testMsgHandler, 1, 2, 3, 4, 5, 6, &rcode);
+  EBB_LRT_printf("%s, MsgNode: rc=%ld rcode=0x%lx\n", __func__, rc, rcode);
 
-  rc = EBBMessageNode8(2, testMsgHandler, 1, 2, 3, 4, 5, 6, 7, 8);
-  EBB_LRT_printf("%s, MsgNode 8: rc=%ld\n", __func__, rc);
+  rc = EBBMessageNode7(2, testMsgHandler, 1, 2, 3, 4, 5, 6, 7, &rcode);
+  EBB_LRT_printf("%s, MsgNode: rc=%ld rcode=0x%lx\n", __func__, rc, rcode);
+
+  rc = EBBMessageNode8(2, testMsgHandler, 1, 2, 3, 4, 5, 6, 7, 8, &rcode);
+  EBB_LRT_printf("%s, MsgNode: rc=%ld rcode=0x%lx\n", __func__, rc, rcode);
 
 #if 0
   EBBCtrPrimGlobalSharedCreate(&ctr);
@@ -236,7 +239,7 @@ CmdMenuPrim_doRun(CmdMenuPrimRef self, char *buf, uval len)
   return EBBRC_OK;
 }
 
-static sval
+static EBBRC
 CmdMenuPrim_do9pr(CmdMenuPrimRef self, char *buf, uval len)
 {
   EBB9PClientId p;
@@ -275,6 +278,7 @@ CmdMenuPrim_do9pr(CmdMenuPrimRef self, char *buf, uval len)
   EBB_LRT_printf("%s\n", rbuf);
   
   EBB_LRT_printf("%s: END\n", __func__);
+  return EBBRC_OK;
 }
 
 static 

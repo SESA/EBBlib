@@ -46,97 +46,106 @@ EBBBindGlobalPrimId(void *id, EBBMissFunc mf,
 }
 
 static inline EBBRC
-EBBMessageNode(uval nodeid, MsgHandler h)
+EBBMessageNode(uval nodeid, MsgHandler h, uval *rcode)
 {
   return EC(theEBBMgrPrimId)->MessageNode(EB(theEBBMgrPrimId), 
 					  nodeid, h, 
 					  0, 0, 0, 0,
-					  0, 0, 0, 0);
+					  0, 0, 0, 0,
+					  rcode);
 }
 
 static inline EBBRC
-EBBMessageNode1(uval nodeid, MsgHandler h, uval a0)
+EBBMessageNode1(uval nodeid, MsgHandler h, uval a0, uval *rcode)
 {
   return EC(theEBBMgrPrimId)->MessageNode(EB(theEBBMgrPrimId), 
 					  nodeid, h, 
 					  a0, 0, 0, 0,
-					  0, 0, 0, 0);
+					  0, 0, 0, 0,
+					  rcode);
     
 }
 
 static inline EBBRC
-EBBMessageNode2(uval nodeid, MsgHandler h, uval a0, uval a1)
+EBBMessageNode2(uval nodeid, MsgHandler h, uval a0, uval a1, uval *rcode)
 {
   return EC(theEBBMgrPrimId)->MessageNode(EB(theEBBMgrPrimId), 
 					  nodeid, h, 
 					  a0, a1, 0 ,0,
-					  0, 0, 0, 0);
+					  0, 0, 0, 0, 
+					  rcode);
 
     
 }
 
 static inline EBBRC
-EBBMessageNode3(uval nodeid, MsgHandler h, uval a0, uval a1, uval a2) 
+EBBMessageNode3(uval nodeid, MsgHandler h, uval a0, uval a1, uval a2, uval *rcode) 
 {
   return EC(theEBBMgrPrimId)->MessageNode(EB(theEBBMgrPrimId), 
 					  nodeid, h, 
 					  a0, a1, a2, 0,
-					  0, 0, 0, 0);
+					  0, 0, 0, 0,
+					  rcode);
     
 }
 
 static inline EBBRC
 EBBMessageNode4(uval nodeid, MsgHandler h, uval a0, uval a1, uval a2, 
-		uval a3)
+		uval a3, uval *rcode)
 {
   return EC(theEBBMgrPrimId)->MessageNode(EB(theEBBMgrPrimId), 
 					  nodeid, h, 
 					  a0, a1, a2, a3,
-					  0, 0, 0, 0);
+					  0, 0, 0, 0,
+					  rcode);
     
 }
 
 static inline EBBRC
 EBBMessageNode5(uval nodeid, MsgHandler h, uval a0, uval a1, uval a2, 
-		uval a3, uval a4)
+		uval a3, uval a4, uval *rcode)
 {
   return EC(theEBBMgrPrimId)->MessageNode(EB(theEBBMgrPrimId), 
 					  nodeid, h, 
 					  a0, a1, a2, a3,
-					  a4, 0, 0, 0);
+					  a4, 0, 0, 0,
+					  rcode);
     
 }
 
 static inline EBBRC
 EBBMessageNode6(uval nodeid, MsgHandler h, uval a0, uval a1, uval a2, 
-		uval a3, uval a4, uval a5)
+		uval a3, uval a4, uval a5, uval *rcode)
 {
   return EC(theEBBMgrPrimId)->MessageNode(EB(theEBBMgrPrimId), 
 					  nodeid, h, 
 					  a0, a1, a2, a3,
-					  a4, a5, 0, 0);
+					  a4, a5, 0, 0,
+					  rcode);
     
 }
 
 static inline EBBRC
 EBBMessageNode7(uval nodeid, MsgHandler h, uval a0, uval a1, uval a2, 
-		uval a3, uval a4, uval a5, uval a6)
+		uval a3, uval a4, uval a5, uval a6, uval *rcode)
 {
   return EC(theEBBMgrPrimId)->MessageNode(EB(theEBBMgrPrimId), 
 					  nodeid, h, 
 					  a0, a1, a2, a3,
-					  a4, a5, a6, 0);
+					  a4, a5, a6, 0,
+					  rcode);
     
 }
 
 static inline EBBRC
 EBBMessageNode8(uval nodeid, MsgHandler h, uval a0, uval a1, uval a2, 
-		uval a3, uval a4, uval a5, uval a6, uval a7)
+		uval a3, uval a4, uval a5, uval a6, uval a7, uval *rcode)
 {
   return EC(theEBBMgrPrimId)->MessageNode(EB(theEBBMgrPrimId), 
 					  nodeid, h, 
 					  a0, a1, a2, a3,
-					  a4, a5, a6, a7);
+					  a4, a5, a6, a7,
+					  rcode);
     
 }
 
