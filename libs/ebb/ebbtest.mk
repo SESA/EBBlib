@@ -11,7 +11,7 @@ SRCS := EBBMgrPrim.c CObjEBBRootShared.c CObjEBB.c \
 OBJS := $(patsubst %.c, %.o, $(filter %.c, $(SRCS)))
 OBJS += $(patsubst %.S, %.o, $(filter %.S, $(SRCS)))
 DEPS := $(patsubst %.c, %.d, $(filter %.c, $(SRCS)))
-DEPS := $(patsubst %.S, %.d, $(filter %.S, $(SRCS)))
+DEPS += $(patsubst %.S, %.d, $(filter %.S, $(SRCS)))
 
 all: ebbtest
 
