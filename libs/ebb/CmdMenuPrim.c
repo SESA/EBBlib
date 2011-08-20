@@ -282,28 +282,32 @@ CmdMenuPrim_do9pr(CmdMenuPrimRef self, char *buf, uval len)
 }
 
 static 
-EBBRC CmdMenuPrim_doCmd(void *_self, char *cmdbuf, uval n, sval *rc)
+EBBRC CmdMenuPrim_doCmd(void *_self, char *cmdbuf, uval n, 
+			char *rtndata, uval *rdlen)
 {
   CmdMenuPrimRef self = _self;
- 
-  EBB_LRT_printf("%s: _self=%p, cmdbuf=%p, n=%ld, rc=%p:\n", __func__, 
-		 _self, cmdbuf, n, rc);
+  uval rc;
+
+  EBB_LRT_printf("%s: _self=%p, cmdbuf=%p, n=%ld, rtndata=%p rdlen=%ld:\n",
+		 __func__,  _self, cmdbuf, n, rtndata, *rdlen);
 
   //I think here you need to decrement n when you send it to the next function
   if ((n > 2 && bufEq(cmdbuf, "c ", 2)))            
-    *rc = CmdMenuPrim_doConnect(self, &cmdbuf[2], n-2);
+    rc = CmdMenuPrim_doConnect(self, &cmdbuf[2], n-2);
   else if ((n > 8 && bufEq(cmdbuf, "connect ", 8))) 
-    *rc = CmdMenuPrim_doConnect(self, &cmdbuf[8], n-8);
+    rc = CmdMenuPrim_doConnect(self, &cmdbuf[8], n-8);
   else if ((n > 2 && bufEq(cmdbuf, "r ", 2)))       
-    *rc = CmdMenuPrim_doRun(self, &cmdbuf[2], n-2);
+    rc = CmdMenuPrim_doRun(self, &cmdbuf[2], n-2);
   else if ((n > 4 && bufEq(cmdbuf, "run ", 4)))     
-    *rc = CmdMenuPrim_doRun(self, &cmdbuf[4], n-4);
+    rc = CmdMenuPrim_doRun(self, &cmdbuf[4], n-4);
   else if ((n > 4 && bufEq(cmdbuf, "9pr ", 4))) 
-    *rc = CmdMenuPrim_do9pr(self, &cmdbuf[4], n-4);
+    rc = CmdMenuPrim_do9pr(self, &cmdbuf[4], n-4);
   else  {
     cmdbuf[n]=0;
     EBB_LRT_printf("%s: unknown command %s\n", __func__, cmdbuf);
+    rc = -1;
   }
+  *rdlen -= snprintf(rtndata, *rdlen, "%ld", rc);
   return EBBRC_OK;
 }
 

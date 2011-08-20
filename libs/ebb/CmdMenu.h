@@ -2,7 +2,7 @@
 #define __EBB_CMDMENU_H__
 
 CObjInterface(CmdMenu) {
-  EBBRC (*doCmd)  (void *_self, char *cmdbuf, uval n, sval *rc);
+  EBBRC (*doCmd)  (void *_self, char *cmdbuf, uval n, char *rtndata, uval *rdlen);
 };
 
 CObject(CmdMenu) {

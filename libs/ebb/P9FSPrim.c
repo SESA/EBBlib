@@ -25,6 +25,7 @@
 #include "CmdMenu.h"
 #include "P9FSPrim.h"
 #include "EBBAssert.h"
+#include "MsgMgr.h"
 
 #include __LRTINC(misc.h)
 
@@ -39,7 +40,7 @@ static void p9fs_ebb_read(Ixp9Req *r);
 static void p9fs_ebb_write(Ixp9Req *r);
 static void p9fs_ebb_wstat(Ixp9Req *r);
 
-typedef enum {QNONE=-1, QROOT=0, QIDENT, QCMD, QMSG, QMAX} qpath;
+typedef enum {QNONE=-1, QROOT=0, QCMD, QMSG, QMAX} qpath;
 
 typedef struct {
   char *name;
@@ -51,65 +52,34 @@ typedef struct {
 
 P9FSPrim_finfo Files[QMAX] = {
 	{"", QNONE, P9_QTDIR, 0500|P9_DMDIR, 0},
-	{"id", QROOT, P9_QTFILE, 0400, 0},
 	{"cmd", QROOT, P9_QTFILE, 0600, 0},
 	{"msg", QROOT, P9_QTFILE, 0600, 0}
 };
 
-typedef struct {
-    int id;
-    int size;
-    char *data;
-} P9FSPrim_msg;
+#define MAXCMDDATA 4096
 
+struct CmdData {
+  uval len;
+  char data[MAXCMDDATA];
+};
 
 CObject (P9FSPrim) {
   CObjInterface(P9FS) *ft;
-  char cmdReplyStr[80];
-
   P9FSPrim_finfo *files;
-
-  P9FSPrim_msg msg;
-
   Ixp9Srv p9srv;
-  char *message;
-  uval id;
   CmdMenuId cmd;
-  sval cmdRC;  
-  uval msgRC;
 };
-
-static P9FSPrim_msg *
-newmsg(P9FSPrimRef self)
-{
-  int len;
-  P9FSPrim_msg *msg;
-  
-  len = strlen(self->message);
-  if(!(msg = malloc(sizeof(P9FSPrim_msg))) || !(msg->data = malloc(len)))
-    return NULL;
-  memcpy(msg->data, self->message, len);
-  msg->size = len;
-  msg->id = self->id++;
-  
-  return msg;
-}
 
 static EBBRC 
 P9FSPrim_attach(void *_self, Ixp9Req *r)
 {
   P9FSPrimRef self  = _self;
-  P9FSPrim_msg *msg = NULL;
 
   EBB_LRT_printf("%s: START\n", __func__);  
   r->fid->qid.type = self->files[QROOT].type;
   r->fid->qid.path = QROOT;
+  r->fid->aux = NULL;
   r->ofcall.rattach.qid = r->fid->qid;
-  if(!(msg = newmsg(self))) {
-    respond(r, "out of memory");
-    return EBBRC_OK;
-  }
-  r->fid->aux = msg;
   respond(r, NULL);
 
   return EBBRC_OK;
@@ -153,6 +123,25 @@ static EBBRC
 P9FSPrim_open(void *_self, Ixp9Req *r)
 {
   EBB_LRT_printf("%s: START\n", __func__);
+  if (r->fid->qid.path == QMSG) {
+    r->fid->aux =  malloc(sizeof(struct MsgMgrReply));
+    if (r->fid->aux == NULL) {
+      respond(r, "out of memory");
+      return EBBRC_OK;
+    }
+    EBB_LRT_printf("%s: QMSG: +malloc MsgMgrReply: %p\n",
+		   __func__, r->fid->aux);
+    bzero(r->fid->aux, sizeof(struct MsgMgrReply));
+  } else if (r->fid->qid.path == QCMD) {
+    r->fid->aux =  malloc(sizeof(struct CmdData));
+    if (r->fid->aux == NULL) {
+      respond(r, "out of memory");
+      return EBBRC_OK;
+    }
+    EBB_LRT_printf("%s: QCMD: +malloc CmdData: %p\n",
+		   __func__, r->fid->aux);
+    bzero(r->fid->aux, sizeof(struct CmdData));
+  }
   respond(r, NULL);
   return EBBRC_OK;
 }
@@ -161,19 +150,32 @@ static EBBRC
 P9FSPrim_clunk(void *_self, Ixp9Req *r)
 {
   EBB_LRT_printf("%s: START\n", __func__);
+  if (r->fid->qid.path == QMSG && r->fid->aux) {
+    EBB_LRT_printf("%s: QMSG: -free MsgMgrReply: %p\n",
+		   __func__, r->fid->aux);
+    free(r->fid->aux);
+  } else if (r->fid->qid.path == QCMD && r->fid->aux) {
+    EBB_LRT_printf("%s: QCMD: -free MsgMgrReply: %p\n",
+		   __func__, r->fid->aux);
+    free(r->fid->aux);
+  }
   respond(r, NULL);
   return EBBRC_OK;
 }
 
 static void
-dostat(P9FSPrimRef self, IxpStat *st, int path)
+dostat(P9FSPrimRef self, IxpStat *st, int path, void *aux)
 {
   st->type = self->files[path].type;
   st->qid.type = self->files[path].type;
   st->qid.path = path;
   st->mode = self->files[path].mode;
   st->name = self->files[path].name;
-  st->length = 0;
+  if (path == QMSG) st->length = sizeof(struct MsgMgrReply);
+  else if (path == QCMD && aux) {
+    struct CmdData *cdata = aux;
+    st->length = (cdata) ? cdata->len : 0;
+  } else st->length = 0;
   st->uid = st->gid = st->muid = "";
 }
 
@@ -184,12 +186,9 @@ P9FSPrim_stat(void *_self, Ixp9Req *r)
   IxpStat st = {0};
   IxpMsg m;
   char buf[512];
-  P9FSPrim_msg *msg;
   
   EBB_LRT_printf("%s: START\n", __func__);
-  dostat(self, &st, r->fid->qid.path);
-  msg = r->fid->aux;
-  st.length = msg->size;
+  dostat(self, &st, r->fid->qid.path, r->fid->aux);
   m = ixp_message(buf, sizeof(buf), MsgPack);
   ixp_pstat(&m, &st);
   r->ofcall.rstat.nstat = ixp_sizeof_stat(&st);
@@ -209,9 +208,7 @@ P9FSPrim_read(void *_self, Ixp9Req *r)
 {
   P9FSPrimRef self  = _self;
   char buf[512];
-  P9FSPrim_msg *msg;
-  int n;
-
+  
   EBB_LRT_printf("%s: START\n", __func__);  
   if(self->files[r->fid->qid.path].type & P9_QTDIR){
     IxpStat st = {0};
@@ -228,7 +225,7 @@ P9FSPrim_read(void *_self, Ixp9Req *r)
     }
     for(i = 0; i < QMAX; ++i){
       if(self->files[i].parent == r->fid->qid.path){
-	dostat(self, &st, i);
+	dostat(self, &st, i, NULL);
 	ixp_pstat(&m, &st);
 	r->ofcall.rread.count += ixp_sizeof_stat(&st);
       }
@@ -243,35 +240,14 @@ P9FSPrim_read(void *_self, Ixp9Req *r)
     return EBBRC_OK;
   }
   
-  msg = r->fid->aux;
-  
   switch(r->fid->qid.path) {
-  case QIDENT: {
-    sprintf(buf, "%11d ", msg->id);
-    if(r->ifcall.tread.offset <  11) {
-      n = strlen(buf);
-      if(r->ifcall.tread.offset + r->ifcall.tread.count >  11) {
-	r->ofcall.rread.count =  11 - r->ifcall.tread.offset;
-      } else {
-	r->ofcall.rread.count = r->ifcall.tread.count;
-      }
-      if(!(r->ofcall.rread.data = malloc(r->ofcall.rread.count))) {
-	r->ofcall.rread.count = 0;
-	respond(r, "out of memory");
-	return EBBRC_OK;
-      }
-      memcpy(r->ofcall.rread.data, buf, r->ofcall.rread.count);
-    }
-    break;
-  }
   case QCMD: {
-    uval i=0;
-    bzero(self->cmdReplyStr, 80);
-    sprintf(self->cmdReplyStr, "%ld", self->cmdRC);
-    while (self->cmdReplyStr[i]) i++;
-    if(r->ifcall.tread.offset < i) {
-      if(r->ifcall.tread.offset + r->ifcall.tread.count > i) {
-	r->ofcall.rread.count = i - r->ifcall.tread.offset;
+    struct CmdData *cdata = r->fid->aux;
+    assert(cdata);
+    if(r->ifcall.tread.offset < cdata->len) {
+      if(r->ifcall.tread.offset + r->ifcall.tread.count 
+	 > cdata->len) {
+	r->ofcall.rread.count = cdata->len - r->ifcall.tread.offset;
       } else {
 	r->ofcall.rread.count = r->ifcall.tread.count;
       }
@@ -280,13 +256,15 @@ P9FSPrim_read(void *_self, Ixp9Req *r)
 	respond(r, "out of memory");
 	return EBBRC_OK;
       }
-      memcpy(r->ofcall.rread.data, self->cmdReplyStr+r->ifcall.tread.offset, 
+      memcpy(r->ofcall.rread.data, cdata->data + r->ifcall.tread.offset, 
 	     r->ofcall.rread.count);
     }
     break;
   } 
   case QMSG: {
-    uval i=sizeof(self->msgRC);
+    struct MsgMgrReply *reply = r->fid->aux;
+    assert(reply);
+    uval i=sizeof(struct MsgMgrReply);
     if(r->ifcall.tread.offset < i) {
       if(r->ifcall.tread.offset + r->ifcall.tread.count > i) {
 	r->ofcall.rread.count = i - r->ifcall.tread.offset;
@@ -298,7 +276,7 @@ P9FSPrim_read(void *_self, Ixp9Req *r)
 	respond(r, "out of memory");
 	return EBBRC_OK;
       }
-      memcpy(r->ofcall.rread.data, ((char *)&(self->msgRC)) + r->ifcall.tread.offset, 
+      memcpy(r->ofcall.rread.data, ((char *)reply) + r->ifcall.tread.offset, 
 	     r->ofcall.rread.count);
     }
     break;
@@ -314,26 +292,35 @@ static
 EBBRC P9FSPrim_write(void *_self, Ixp9Req *r)
 {
   P9FSPrimRef self  = _self;
-  P9FSPrim_msg *msg;
   EBBRC rc;
 
   EBB_LRT_printf("%s: START\n", __func__);
-  msg = r->fid->aux;
-  
   switch(r->fid->qid.path){
   case QCMD: {
+    struct CmdData *cdata = r->fid->aux;
+    assert(cdata);
+
     if(!r->ifcall.twrite.data || r->ifcall.twrite.data[0] == 0) break;
+
     r->ofcall.rwrite.count = r->ifcall.twrite.count;
+    cdata->len = sizeof(cdata->data);
     rc = EBBCALL(self->cmd, doCmd, r->ifcall.twrite.data, 
-		 r->ifcall.twrite.count, &(self->cmdRC));
+		 r->ifcall.twrite.count, cdata->data, &(cdata->len));
+
     EBBRCAssert(rc);
     break;
   }
   case QMSG: {
+    struct MsgMgrReply *reply = r->fid->aux;
+    assert(reply);
+
     if(!r->ifcall.twrite.data || r->ifcall.twrite.data[0] == 0) break;
+
     r->ofcall.rwrite.count = r->ifcall.twrite.count;
+
     rc = EBBCALL(theEBBMgrPrimId, HandleMsg, r->ifcall.twrite.data, 
-		 r->ifcall.twrite.count, &(self->msgRC));
+		 r->ifcall.twrite.count, reply);
+
     EBBRCAssert(rc);
     break;
   }
@@ -354,7 +341,6 @@ P9FSPrim_wstat(void *_self, Ixp9Req *r)
 static EBBRC 
 P9FSPrim_serverloop(void *_self, char *address)
 {
-  static char *msg = "Hello World!\n";
   P9FSPrimRef self  = _self;
   IxpServer srv = {0};
   uval fd;
@@ -363,8 +349,6 @@ P9FSPrim_serverloop(void *_self, char *address)
   if (fd<0) return EBBRC_GENERIC_FAILURE;
   ixp_listen(&srv, fd, &(self->p9srv), serve_9pcon, NULL);
 
-  self->message = msg;
-  
   (void)ixp_serverloop(&srv);
   
   return EBBRC_OK;
@@ -393,12 +377,8 @@ static void
 P9FSPrim_init(P9FSPrimRef rep, CmdMenuId cmd)
 {
   rep->files    = Files;
-  rep->id       = 0;
-  rep->message  = NULL;
   rep->cmd      = cmd;
-  rep->cmdRC    = 0;
-  rep->msgRC    = 0;
-
+  
   rep->p9srv.open   = p9fs_ebb_open;
   rep->p9srv.clunk  = p9fs_ebb_clunk;
   rep->p9srv.walk   = p9fs_ebb_walk;
