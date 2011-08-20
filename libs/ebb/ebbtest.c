@@ -4,6 +4,7 @@
 #include "../cobj/cobj.h"
 #include "EBBTypes.h"
 #include "CObjEBB.h"
+#include "MsgMgr.h"
 #include "EBBMgrPrim.h"
 #include "EBBMemMgr.h"
 #include "EBBMemMgrPrim.h"
@@ -34,11 +35,11 @@ EBBMgrPrimTest(void)
   EBBRC rc;
 
   EBB_LRT_printf("0: EBBId_DREF(theEBBMgrPrimId)=%p: ", EBBId_DREF(theEBBMgrPrimId));
-  rc = EBBAllocPrimId(&id1);
+  rc = EBBAllocLocalPrimId(&id1);
   EBB_LRT_printf("rc = %ld id1=%p\n", rc, id1);
 
   EBB_LRT_printf("1: EBBId_DREF(theEBBMgrPrimId)=%p: ", EBBId_DREF(theEBBMgrPrimId));
-  rc = EBBAllocPrimId(&id2);
+  rc = EBBAllocLocalPrimId(&id2);
   EBB_LRT_printf("rc = %ld id2=%p\n", rc, id2);
 }
 
@@ -164,9 +165,7 @@ EBB9PClientTest(char *address, char *path)
   EBBRCAssert(rc);
 
   rc = EBBCALL(p, read, fd, buf, 80, &n); 
-  EBBRCAssert(rc);
-  
-  if (n==80) n=79;
+  EBBRCAssert(rc);  
   buf[n] = 0;
   EBB_LRT_printf("%s\n", buf);
   
@@ -210,9 +209,12 @@ main (int argc, char **argv)
   
   EBBCtrTest();
 
+
+  if (argc == 3) {
+    EBB9PClientTest(argv[1], argv[2]);
+    return 0;
+  }
 #if 0
-  if (argc == 2) 
-    EBB9PClientTest(argv[1], "/etc/passwd");
   else if (argc > 2) 
     EBB9PClientTest(argv[1], argv[2]);
 
@@ -220,7 +222,7 @@ main (int argc, char **argv)
     P9FSTest(argv[3]);
 #endif
 
-  P9FSTest(argv[1]);
+  P9FSTest("tcp!*!12345");
 
   return 0;
 }

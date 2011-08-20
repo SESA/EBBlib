@@ -5,6 +5,7 @@
 #include "sys/trans.h" //FIXME: move EBBTransLSys out of this header
 #include "CObjEBB.h"
 #include "EBBTypes.h"
+#include "MsgMgr.h"
 #include "EBBMgrPrim.h"
 #include "EBBMemMgr.h"
 #include "EBBMemMgrPrim.h"
@@ -59,7 +60,7 @@ EBB9PFilePrim_open(void *_self, char *path, uval mode, uval perm)
 }
 
 static EBBRC 
-EBB9PFilePrim_close(void *_self, int *rc) 
+EBB9PFilePrim_close(void *_self, uval *rc) 
 { 
   EBB9PFilePrim *self = _self;
   EBBRC ebbrc;
@@ -144,7 +145,7 @@ EBB9PFilePrimCreate(EBB9PClientId cid, EBBFileId *id)
 
   rootRef->ft->init(rootRef, repRef);
   
-  rc = EBBAllocPrimId(id);
+  rc = EBBAllocLocalPrimId(id);
   EBBRCAssert(rc);
 
   rc = CObjEBBBind(*id, rootRef); 

@@ -84,6 +84,10 @@ struct EBBTransStruct {
     uval v3;
     EBBGTrans *next; 
   };
+  union {
+    uval v4; //FIXME: padding - there was a bug without this
+    EBBMissFunc globalMF;
+  };
 };
 
 static inline EBBId EBBLTransToId(EBBLTrans *lt) {
@@ -109,35 +113,129 @@ static inline EBBLTrans * EBBGTransToLTrans(EBBGTrans *gt) {
   return EBBIdToLTrans(EBBGTransToId(gt));
 }
 
+/* struct EBBTransLSysStruct { */
+/*   EBBGTrans *gTable; */
+/*   EBBLTrans *lTable; */
+/*   EBBGTrans *free; */
+/*   uval numAllocated; */
+/*   uval size; //number of EBBGTrans in our portion of the gTable */
+/* }; */
+
+/* static inline EBBId EBBIdAlloc(EBBTransLSys *sys) { */
+/*   EBBGTrans *ret = sys->free; */
+/*   if(ret != NULL) { */
+/*     ret->next = (EBBGTrans *)-1; */
+/*     sys->free = sys->free->next; */
+/*     return EBBGTransToId(ret); */
+/*   } */
+/*   int i; */
+/*   for (i = 0; i < sys->size; i++) { */
+/*     if((uval)sys->gTable[i].next != -1) { */
+/*       sys->gTable[i].next = (EBBGTrans *)-1; */
+/*       return EBBGTransToId(&sys->gTable[i]); */
+/*     } */
+/*   } */
+/*   return NULL; */
+/* } */
 struct EBBTransLSysStruct {
-  EBBGTrans *gTable;
-  EBBLTrans *lTable;
-  EBBGTrans *free;
-  uval numAllocated;
-  uval size; //number of EBBGTrans in our portion of the gTable
+  EBBGTrans *localGTable; //our portion of the gtable for allocating local ebbs
+  EBBLTrans *localLTable;
+  EBBGTrans *localFree;
+  uval localNumAllocated;
+  uval localSize;
+  EBBGTrans *globalGTable; //our portion of the gtable for allocating global ebbs
+  EBBLTrans *globalLTable;
+  EBBGTrans *globalFree;
+  uval globalNumAllocated;
+  uval globalSize;
 };
 
-static inline EBBId EBBIdAlloc(EBBTransLSys *sys) {
-  EBBGTrans *ret = sys->free;
+static inline uval isGlobalSetup(EBBTransLSys *sys) {
+  return !!sys->globalGTable;
+}
+
+static inline void SetupGlobal(EBBTransLSys *sys, uval nodeId) {
+  uval numGTransPerEL;
+  numGTransPerEL = EBB_TRANS_NUM_PAGES * EBB_TRANS_PAGE_SIZE / 
+    sizeof(EBBGTrans) / EBB_TRANS_MAX_ELS / EBB_TRANS_MAX_NODES;
+  
+  //FIXME: assuming gsys.pages = EBB_TRANS_NUM_PAGES
+  //I can't possibly get this right
+  sys->globalGTable = (EBBGTrans *)
+    &EBB_Trans_Mem.GMem[nodeId * 
+		       EBB_TRANS_PAGE_SIZE * 
+		       EBB_TRANS_NUM_PAGES / EBB_TRANS_MAX_NODES +
+		       numGTransPerEL * EBBMyEL() * sizeof(EBBGTrans)];
+  sys->globalLTable = EBBGTransToLTrans(sys->globalGTable);
+  sys->globalFree = NULL;
+  sys->globalNumAllocated = 0;
+  sys->globalSize = numGTransPerEL;
+}
+  
+    
+static inline EBBId EBBIdAllocGlobal(EBBTransLSys *sys) {
+  EBBGTrans *ret = sys->globalFree;
   if(ret != NULL) {
     ret->next = (EBBGTrans *)-1;
-    sys->free = sys->free->next;
+    sys->globalFree = sys->globalFree->next;
+    sys->globalNumAllocated++;
     return EBBGTransToId(ret);
   }
   int i;
-  for (i = 0; i < sys->size; i++) {
-    if((uval)sys->gTable[i].next != -1) {
-      sys->gTable[i].next = (EBBGTrans *)-1;
-      return EBBGTransToId(&sys->gTable[i]);
+  for (i = 0; i < sys->globalSize; i++) {
+    if((uval)sys->globalGTable[i].next != -1) {
+      sys->globalGTable[i].next = (EBBGTrans *)-1;
+      sys->globalNumAllocated++;
+      return EBBGTransToId(&sys->globalGTable[i]);
     }
   }
   return NULL;
+}    
+
+static inline EBBId EBBIdAllocLocal(EBBTransLSys *sys) {
+  EBBGTrans *ret = sys->localFree;
+  if(ret != NULL) {
+    ret->next = (EBBGTrans *)-1;
+    sys->localFree = sys->localFree->next;
+    sys->localNumAllocated++;
+    return EBBGTransToId(ret);
+  }
+  int i;
+  for (i = 0; i < sys->localSize; i++) {
+    if((uval)sys->localGTable[i].next != -1) {
+      sys->localGTable[i].next = (EBBGTrans *)-1;
+      sys->localNumAllocated++;
+      return EBBGTransToId(&sys->localGTable[i]);
+    }
+  }
+  return NULL;
+}    
+
+static inline uval getLTransNodeId(EBBLTrans *lt) {
+  uval val = (((uval)lt) - ((uval)EBB_Trans_Mem.LMem)) /
+    (EBB_TRANS_PAGE_SIZE * EBB_TRANS_NUM_PAGES / EBB_TRANS_MAX_NODES);
+  return val;
 }
-    
+
+//FIXME: assuming gsys.pages = EBB_TRANS_NUM_PAGES
+//this is probably wrong with some +/- 1 issue
+static inline uval isLocalEBB(EBBGTrans *gt) {
+  return ((void *) gt < (void *)
+	  &EBB_Trans_Mem.GMem[EBB_TRANS_PAGE_SIZE * EBB_TRANS_NUM_PAGES /
+			      EBB_TRANS_MAX_NODES]);
+}
+
+
+
 static inline void EBBIdFree(EBBTransLSys *sys, EBBId id) {
   EBBGTrans *free = EBBIdToGTrans(id);
-  free->next = sys->free;
-  sys->free = free;
+  if(isLocalEBB(free)) {
+    free->next = sys->localFree;
+    sys->localFree = free;
+  } else {
+    free->next = sys->globalFree;
+    sys->globalFree = free;
+  }
 }
 
 static inline void EBBSetLTrans(EBBLTrans *lt,
@@ -162,6 +260,14 @@ static inline void EBBIdBind(EBBId id, EBBMissFunc mf,
   gt->arg = arg;
 }
 
+static inline void EBBIdBindGlobal(EBBId id, EBBMissFunc mf,
+				   EBBMissArg arg, EBBMissFunc globalMF) {
+  EBBGTrans *gt = EBBIdToGTrans(id);
+  gt->mf = mf;
+  gt->arg = arg;
+  gt->globalMF = globalMF;
+}
+
 static inline void EBBIdUnBind(EBBId id, EBBMissFunc *mf,
 			       EBBMissArg *arg) {
   EBBGTrans *gt = EBBIdToGTrans(id);
@@ -179,7 +285,7 @@ static inline void EBBIdUnBind(EBBId id, EBBMissFunc *mf,
 static void initLTable(EBBLTrans *lt, uval pages) {
   EBBLTrans *iter;
   for (iter = lt; 
-       iter < (&lt[EBB_TRANS_PAGE_SIZE * pages]);
+       ((void *)iter) < (void *)((&((char *)lt)[EBB_TRANS_PAGE_SIZE * pages]));
        iter++) {
     EBBSetLTrans(iter, EBBDefFT);
   }

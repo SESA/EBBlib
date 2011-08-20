@@ -4,6 +4,7 @@
 #include "sys/trans.h" //FIXME: move EBBTransLSys out of this header
 #include "CObjEBB.h"
 #include "EBBTypes.h"
+#include "MsgMgr.h"
 #include "EBBMgrPrim.h"
 #include "EBBMemMgr.h"
 #include "EBBMemMgrPrim.h"
@@ -80,7 +81,7 @@ EBBCtrPrimDistributedCreate(EBBCtrPrimDistributedId *id)
   CObjEBBRootMultiSetFT(rootRef);
   rootRef->ft->init(rootRef, createRep);
 
-  rc = EBBAllocPrimId(id);
+  rc = EBBAllocLocalPrimId(id);
   //  EBBRCAssert(rc);
 
   rc = CObjEBBBind(*id, rootRef);

@@ -247,7 +247,19 @@ function connectToNode
    then
        alive=-1
        VERBOSE "$nodeid: $nodeip is up"
-       echo "c ${appaddr} ${appdir} ${appid} ${appdir}/nodes ${nodedir} ${nodeid}" | $P9CMD -a "${nodeaddr}" write cmd
+       VERBOSE "sending bootinfo"
+#       cat ${nodedir}/BootInfo > /dev/tcp/${nodeip}/$BOOTINFOPORT
+       VERBOSE "sending connect"
+       cnt=100
+       while ! echo "c ${appaddr} ${appdir} ${appid} ${appdir}/nodes ${nodedir} ${nodeid}" | $P9CMD -a "${nodeaddr}" write cmd
+       do
+        echo "connect failed ... will try again"
+	sleep 10
+	(( cnt-- ))
+        if (( cnt == 0 )); then
+            ERROR "failed to connect to $nodeid"
+        fi
+       done	
        cnt=100
        VERBOSE "$nodeid: waiting stdout, err and in to appear ..."
        while (( cnt > 0 )); do
@@ -299,7 +311,7 @@ function processArgs
     appport=${appid%%.*}    
   fi
   appaddr="tcp!${appip}!${appport}"
-  appdir=${BASEDIR}/$appid
+  appdir=${BASEDIR}/apps/$appid
   appnodeidfile=${appdir}/NodeId
   
   nodeaddr="tcp!${nodeip}!${nodeport}"
@@ -320,8 +332,9 @@ function setupNodeDir
   then
       ERROR "Not able to create $nodedir"
   fi
-  echo "$nodeip" > $nodedir/ip
-  echo "$nodeaddr" > $nodedir/addr
+  echo -n "$nodeid" > $nodedir/id
+  echo -n "$nodeip" > $nodedir/phyId
+  echo -n "$nodeaddr" > $nodedir/p9addr
 }
 
 function startServer
@@ -329,6 +342,12 @@ function startServer
   (cd $appdir && exec $P9SRV -p $appport -s) &
   apppid=$(jobs -p %%) 
   echo "$apppid" > $appdir/pid
+}
+
+function createBootInfo
+{
+  dd if=/dev/zero of=${nodedir}/BootInfo bs=1 count=4096
+  echo "${appid} ${appip} ${appport} ${appaddr} ${appdir}${nodeid} ${nodeip} ${nodeport} ${nodeaddr} ${nodedir}" | dd of=${nodedir}/BootInfo conv=nocreat,notrunc  
 }
 
 function sanitycheck
@@ -342,7 +361,7 @@ function sanitycheck
     fi
 
     if ! type -a lockfile > /dev/null 2>&1; then
-       ERROR "Cannot fine lockfile in your path"
+       ERROR "Cannot find lockfile in your path"
     fi
 }
 
@@ -371,6 +390,8 @@ setupNodeDir
 
 VERBOSE "appid=${appid} appip=${appip} appport=${appport} appaddr=${appaddr} appdir=${appdir} appstart=${appstart} apppid=${apppid}"   
 VERBOSE "nodeid=${nodeid} nodeip=${nodeip} nodeport=${nodeport} nodeaddr=${nodeaddr} nodedir=${nodedir}"
+
+createBootInfo
 
 connectToNode
 

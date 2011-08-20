@@ -5,6 +5,7 @@
 #include "sys/trans.h" //FIXME: move EBBTransLSys out of this header
 #include "CObjEBB.h"
 #include "EBBTypes.h"
+#include "MsgMgr.h"
 #include "EBBMgrPrim.h"
 #include "EBBMemMgr.h"
 #include "EBBMemMgrPrim.h"
@@ -98,7 +99,8 @@ P9FSPrim_attach(void *_self, Ixp9Req *r)
 {
   P9FSPrimRef self  = _self;
   P9FSPrim_msg *msg = NULL;
-  
+
+  EBB_LRT_printf("%s: START\n", __func__);  
   r->fid->qid.type = self->files[QROOT].type;
   r->fid->qid.path = QROOT;
   r->ofcall.rattach.qid = r->fid->qid;
@@ -119,7 +121,8 @@ P9FSPrim_walk(void *_self, Ixp9Req *r)
   char buf[512];
   qpath cwd;
   int i, j;
-  
+ 
+  EBB_LRT_printf("%s: START\n", __func__); 
   cwd = r->fid->qid.path;
   r->ofcall.rwalk.nwqid = 0;
   for(i = 0; i < r->ifcall.twalk.nwname; ++i){
@@ -148,6 +151,7 @@ P9FSPrim_walk(void *_self, Ixp9Req *r)
 static EBBRC 
 P9FSPrim_open(void *_self, Ixp9Req *r)
 {
+  EBB_LRT_printf("%s: START\n", __func__);
   respond(r, NULL);
   return EBBRC_OK;
 }
@@ -155,8 +159,9 @@ P9FSPrim_open(void *_self, Ixp9Req *r)
 static EBBRC 
 P9FSPrim_clunk(void *_self, Ixp9Req *r)
 {
+  EBB_LRT_printf("%s: START\n", __func__);
   respond(r, NULL);
- return EBBRC_OK;
+  return EBBRC_OK;
 }
 
 static void
@@ -180,6 +185,7 @@ P9FSPrim_stat(void *_self, Ixp9Req *r)
   char buf[512];
   P9FSPrim_msg *msg;
   
+  EBB_LRT_printf("%s: START\n", __func__);
   dostat(self, &st, r->fid->qid.path);
   msg = r->fid->aux;
   st.length = msg->size;
@@ -204,7 +210,8 @@ P9FSPrim_read(void *_self, Ixp9Req *r)
   char buf[512];
   P9FSPrim_msg *msg;
   int n;
-  
+
+  EBB_LRT_printf("%s: START\n", __func__);  
   if(self->files[r->fid->qid.path].type & P9_QTDIR){
     IxpStat st = {0};
     IxpMsg m;
@@ -308,7 +315,7 @@ EBBRC P9FSPrim_write(void *_self, Ixp9Req *r)
   P9FSPrim_msg *msg;
   EBBRC rc;
 
-
+  EBB_LRT_printf("%s: START\n", __func__);
   msg = r->fid->aux;
   
   switch(r->fid->qid.path){
@@ -340,6 +347,7 @@ EBBRC P9FSPrim_write(void *_self, Ixp9Req *r)
 static EBBRC 
 P9FSPrim_wstat(void *_self, Ixp9Req *r)
 {
+  EBB_LRT_printf("%s: START\n", __func__);
   respond(r, NULL); /* pretend it worked */
   return EBBRC_OK;
 }
@@ -418,7 +426,7 @@ P9FSPrimCreate(P9FSid *id, CmdMenuId cmd)
   P9FSPrim_init(repRef, cmd);
   rootRef->ft->init(rootRef, repRef);
   
-  rc = EBBAllocPrimId(id);
+  rc = EBBAllocLocalPrimId(id);
   EBBRCAssert(rc);
 
   rc = CObjEBBBind(*id, rootRef); 
@@ -491,3 +499,4 @@ p9fs_ebb_wstat(Ixp9Req *r)
   P9FSid id = (P9FSid) r->srv->aux;
   EBBCALL(id, wstat, r);
 }
+

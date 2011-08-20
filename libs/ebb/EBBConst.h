@@ -3,6 +3,7 @@
 
 #include __LRTINC(EBBConst.h)
 
+#define EBB_TRANS_MAX_NODES (1024)
 #define EBB_TRANS_PAGE_SIZE (4096)
 #define EBB_TRANS_NUM_PAGES (1024)
 #define EBB_TRANS_MAX_ELS LRT_TRANS_MAX_ELS

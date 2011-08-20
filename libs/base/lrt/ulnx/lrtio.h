@@ -7,12 +7,7 @@
 #define EBB_LRT_printf printf
 #define EBB_LRT_write  write
 
-#if 0
-typedef struct in_addr  LrtNodeId;
-typedef struct sin_port LrtNodeAddr;
-
-lrt_write_node(LrtNodeId id, LrtNodeAddr addr, char *buf, uval *len);
-lrt_read_node(LrtNodeId id, LrtNodeAddr addr, char *buf, uval *len);
-#endif
+int
+EBB_LRT_getBootInfoPage(char *, int *size);
 
 #endif

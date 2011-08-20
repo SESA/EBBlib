@@ -3,6 +3,7 @@
 #include "../cobj/cobj.h"
 #include "EBBTypes.h"
 #include "CObjEBB.h"
+#include "MsgMgr.h"
 #include "EBBMgrPrim.h"
 #include "CObjEBBUtils.h"
 #include "CObjEBBRoot.h"
@@ -70,7 +71,7 @@ EBBMemMgrPrimInit()
   // pass it along for it's init
   rootRef->ft->init(rootRef, &theRep);
 
-  rc = EBBAllocPrimId(&theEBBMemMgrPrimId);
+  rc = EBBAllocLocalPrimId(&theEBBMemMgrPrimId);
   //  EBBRCAssert(rc);
 
   rc = CObjEBBBind(theEBBMemMgrPrimId, rootRef); 

@@ -5,6 +5,7 @@
 #include "sys/trans.h" //FIXME: move EBBTransLSys out of this header
 #include "CObjEBB.h"
 #include "EBBTypes.h"
+#include "MsgMgr.h"
 #include "EBBMgrPrim.h"
 #include "EBBMemMgr.h"
 #include "EBBMemMgrPrim.h"
@@ -13,6 +14,8 @@
 #include "CObjEBBRootShared.h"
 #include "EBBAssert.h"
 
+#include "EBBCtr.h"
+#include "EBBCtrPrim.h"
 #include "EBB9PClient.h"
 #include "EBB9PClientPrim.h"
 #include "EBBFile.h"
@@ -69,16 +72,23 @@ bufParse(char *src, uval sl, char *dest, uval dl, char sep)
   while (i<sl && i<dl) {
     dest[i] = src[i];
     if (dest[i]==sep) {
+      // replace the separator with a null
       dest[i] = 0;
       i++;
       break;
     } 
     i++;
   }
-  // FIXME: null terminate length boundaries reached
-  //        cases
+  // regardless null terminate
+  // we truncate to destination to null terminate
+  if (i>=dl) dest[dl-1]=0;
+  else dest[i]=0;
+
   return i;
 }
+
+EBB9PClientId the9PClient = NULL;
+uval EBBNodeId = 0;
 
 static sval
 CmdMenuPrim_doConnect(CmdMenuPrimRef self, char *buf, uval len)
@@ -162,14 +172,109 @@ CmdMenuPrim_doConnect(CmdMenuPrimRef self, char *buf, uval len)
   rc = EBBCALL(self->stdin, read, buf, STRLEN, &n);
   EBBRCAssert(rc);
 
+  EBBCALL(theEBBMgrPrimId, InitMessageMgr, (EBBId) p, self->nodespath, self->nodespathlen);
+
+  EBBNodeId = atol(self->nodeid);
+
   return 1;
+}
+
+EBBRC
+testMsgHandler(uval arg0, uval arg1, uval arg2, uval arg3,
+	      uval arg4, uval arg5, uval arg6, uval arg7)
+{
+  EBB_LRT_printf("%s: called with %ld %ld %ld %ld %ld %ld %ld %ld\n",
+		 __func__, 
+		 arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7);
+  return EBBRC_OK;
 }
 
 
 static sval
 CmdMenuPrim_doRun(CmdMenuPrimRef self, char *buf, uval len)
 {
-  return -1;
+  //Feel free to comment this out, just using it to test the global EBB stuff
+  EBBCtrPrimId ctr;
+  uval v;
+  EBBRC rc;
+  
+  rc = EBBMessageNode(2, testMsgHandler);
+  EBB_LRT_printf("%s, MsgNode: rc=%ld\n", __func__, rc);
+
+  rc = EBBMessageNode1(2, testMsgHandler, 1);
+  EBB_LRT_printf("%s, MsgNode 1: rc=%ld\n", __func__, rc);
+
+  rc = EBBMessageNode2(2, testMsgHandler, 1, 2);
+  EBB_LRT_printf("%s, MsgNode 2: rc=%ld\n", __func__, rc);
+
+  rc = EBBMessageNode3(2, testMsgHandler, 1, 2, 3);
+  EBB_LRT_printf("%s, MsgNode 3: rc=%ld\n", __func__, rc);
+
+  rc = EBBMessageNode4(2, testMsgHandler, 1, 2, 3, 4);
+  EBB_LRT_printf("%s, MsgNode 4: rc=%ld\n", __func__, rc);
+
+  rc = EBBMessageNode5(2, testMsgHandler, 1, 2, 3, 4, 5);
+  EBB_LRT_printf("%s, MsgNode 5: rc=%ld\n", __func__, rc);
+
+  rc = EBBMessageNode6(2, testMsgHandler, 1, 2, 3, 4, 5, 6);
+  EBB_LRT_printf("%s, MsgNode 6: rc=%ld\n", __func__, rc);
+
+  rc = EBBMessageNode7(2, testMsgHandler, 1, 2, 3, 4, 5, 6, 7);
+  EBB_LRT_printf("%s, MsgNode 7: rc=%ld\n", __func__, rc);
+
+  rc = EBBMessageNode8(2, testMsgHandler, 1, 2, 3, 4, 5, 6, 7, 8);
+  EBB_LRT_printf("%s, MsgNode 8: rc=%ld\n", __func__, rc);
+
+#if 0
+  EBBCtrPrimGlobalSharedCreate(&ctr);
+  EBBCALL(ctr,val,&v);
+  EBB_LRT_printf("global counter val = %ld\n",v);
+  EBBCALL(ctr,inc);
+  EBBCALL(ctr,val,&v);
+  EBB_LRT_printf("global counter val = %ld\n",v);
+#endif
+  return EBBRC_OK;
+}
+
+static sval
+CmdMenuPrim_do9pr(CmdMenuPrimRef self, char *buf, uval len)
+{
+  EBB9PClientId p;
+  EBBRC rc;
+  IxpCFid  *fd;
+  char rbuf[STRLEN];
+  char addr[STRLEN];
+  char path[STRLEN];
+  uval addrlen;
+  uval pathlen;
+  sval n;
+
+  n = bufParse(buf, len, addr, STRLEN, ' ');
+  len -= n; buf += n;
+  addrlen = n-1;
+  if (len==0) return -1;
+
+  n = bufParse(buf, len, path, STRLEN, '\n');
+  len -= n; buf += n;
+  pathlen = n-1;
+
+
+  EBB_LRT_printf("%s: BEGIN: address=%s path=%s|\n", __func__, addr, path);
+
+  EBB9PClientPrimCreate(&p);
+
+  rc = EBBCALL(p, mount, addr);
+  EBBRCAssert(rc);
+
+  rc = EBBCALL(p, open, path, P9_OREAD, &fd);
+  EBBRCAssert(rc);
+
+  rc = EBBCALL(p, read, fd, rbuf, STRLEN, &n); 
+  EBBRCAssert(rc);  
+  rbuf[n] = 0;
+  EBB_LRT_printf("%s\n", rbuf);
+  
+  EBB_LRT_printf("%s: END\n", __func__);
 }
 
 static 
@@ -180,6 +285,7 @@ EBBRC CmdMenuPrim_doCmd(void *_self, char *cmdbuf, uval n, sval *rc)
   EBB_LRT_printf("%s: _self=%p, cmdbuf=%p, n=%ld, rc=%p:\n", __func__, 
 		 _self, cmdbuf, n, rc);
 
+  //I think here you need to decrement n when you send it to the next function
   if ((n > 2 && bufEq(cmdbuf, "c ", 2)))            
     *rc = CmdMenuPrim_doConnect(self, &cmdbuf[2], n-2);
   else if ((n > 8 && bufEq(cmdbuf, "connect ", 8))) 
@@ -188,7 +294,12 @@ EBBRC CmdMenuPrim_doCmd(void *_self, char *cmdbuf, uval n, sval *rc)
     *rc = CmdMenuPrim_doRun(self, &cmdbuf[2], n-2);
   else if ((n > 4 && bufEq(cmdbuf, "run ", 4)))     
     *rc = CmdMenuPrim_doRun(self, &cmdbuf[4], n-4);
-       
+  else if ((n > 4 && bufEq(cmdbuf, "9pr ", 4))) 
+    *rc = CmdMenuPrim_do9pr(self, &cmdbuf[4], n-4);
+  else  {
+    cmdbuf[n]=0;
+    EBB_LRT_printf("%s: unknown command %s\n", __func__, cmdbuf);
+  }
   return EBBRC_OK;
 }
 
@@ -217,7 +328,7 @@ extern EBBRC CmdMenuPrimCreate(CmdMenuId *id)
     
   rootRef->ft->init(rootRef, repRef);
   
-  rc = EBBAllocPrimId(id);
+  rc = EBBAllocLocalPrimId(id);
   EBBRCAssert(rc);
 
   rc = CObjEBBBind(*id, rootRef); 
