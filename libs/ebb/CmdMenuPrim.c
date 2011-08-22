@@ -195,6 +195,17 @@ testMsgHandler(uval arg0, uval arg1, uval arg2, uval arg3,
 static sval
 CmdMenuPrim_doRun(CmdMenuPrimRef self, char *buf, uval len)
 {
+  char tmpbuf[80];
+  EBBCtrPrimId ctr;
+  sval n;
+
+  if ((len > 9 && bufEq(buf, "ctr_create", 10))) {
+    EBBCtrPrimGlobalSharedCreate(&ctr);
+    EBB_LRT_printf("%p\n", *ctr);
+    sprintf(tmpbuf, "%p", *ctr);
+    EBBCALL(self->stdout, write, buf, 17, &n);
+  }
+#if 0
   //Feel free to comment this out, just using it to test the global EBB stuff
   EBBCtrPrimId ctr;
   uval v;
@@ -227,6 +238,7 @@ CmdMenuPrim_doRun(CmdMenuPrimRef self, char *buf, uval len)
 
   rc = EBBMessageNode8(2, testMsgHandler, 1, 2, 3, 4, 5, 6, 7, 8, &rcode);
   EBB_LRT_printf("%s, MsgNode: rc=%ld rcode=0x%lx\n", __func__, rc, rcode);
+#endif
 
 #if 0
   EBBCtrPrimGlobalSharedCreate(&ctr);
