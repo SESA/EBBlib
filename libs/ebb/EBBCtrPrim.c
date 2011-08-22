@@ -1,5 +1,6 @@
 #include "../base/include.h"
 #include "../base/types.h"
+#include "../base/lrtio.h"
 #include "../cobj/cobj.h"
 #include "sys/trans.h" //FIXME: move EBBTransLSys out of this header
 #include "CObjEBB.h"
@@ -172,7 +173,11 @@ static EBBRC
 EBBCtrPrimGlobalShared_globalMF(void *_self, EBBLTrans *lt, FuncNum fnum,
 			       EBBMissArg arg) {
   EBBCtrPrimRef repRef;
-  EBBPrimMalloc(sizeof(*repRef), &repRef, EBB_MEM_DEFAULT);
+/*   EBBPrimMalloc(sizeof(*repRef), &repRef, EBB_MEM_DEFAULT); */
+  static EBBCtrPrim theRep;
+  EBB_LRT_printf("EBBCtr global MF called!\n");
+  repRef = &theRep;
+
   repRef->ft = &EBBCtrPrim_proxyftable;
   EBBCacheObj(lt, repRef);
   *(void **)_self = repRef;

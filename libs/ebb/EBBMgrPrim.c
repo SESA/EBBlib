@@ -160,8 +160,20 @@ static CObjInterface(EBBMgrPrim) EBBMgrPrim_ftable = {
   .HandleMsg = EBBMgrPrim_HandleMsg
 };
 
+EBBRC
+globalMissHandler(uval arg0, uval arg1, uval arg2, uval arg3,
+		  uval arg4, uval arg5, uval arg6, uval arg7,
+		  uval *rcode) {
+  EBBId id = (EBBId)arg0;
+  EBB_LRT_printf("global miss received with id = %lX\n", (uval)id);
+  EBBGTrans *gt = EBBIdToGTrans(id);
+  *rcode = (uval)gt->globalMF;
+  return EBBRC_OK;
+}
+
 static EBBRC EBBMgrPrimERRMF (void *_self, EBBLTrans *lt,
 			      FuncNum fnum, EBBMissArg arg) {
+  EBBMissFunc mf;
   if (isLocalEBB(EBBLTransToGTrans(lt))) {
     EBB_LRT_printf("ERROR: gtable miss on a local-only EBB\n");
   } else if (!MsgAvailable) {
@@ -169,8 +181,11 @@ static EBBRC EBBMgrPrimERRMF (void *_self, EBBLTrans *lt,
   } else if (getLTransNodeId(lt) == EBBNodeId) {
     EBB_LRT_printf("ERROR: gtable miss on a global EBB but we are the home node!\n");
   } else {
-    EBB_LRT_printf("gtable miss on a global EBB: unimplemented\n");
     //call the home node, which should return an EBBMissFunc to handle this call
+    uval nodeId = getLTransNodeId(lt);
+    EBB_LRT_printf("gtable miss, home node at %ld\n", nodeId);
+    EBBMessageNode1(nodeId, globalMissHandler, EBBLTransToId(lt),&mf);
+    return mf(_self, lt, fnum, arg);
   }
 
   return EBBRC_GENERIC_FAILURE;

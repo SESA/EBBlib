@@ -205,20 +205,21 @@ CmdMenuPrim_doRun(CmdMenuPrimRef self, char *buf, uval len)
 
   if ((len > 9 && bufEq(buf, "ctr_create", 10))) {
     EBBCtrPrimGlobalSharedCreate(&ctr);
-    EBB_LRT_printf("%lX\n", (uval)*ctr);
-    sprintf(tmpbuf, "%lX\n", (uval)*ctr);
+    EBB_LRT_printf("%lX\n", (uval)ctr);
+    sprintf(tmpbuf, "%lX\n", (uval)ctr);
     EBBCALL(self->stdout, write, tmpbuf, strlen(tmpbuf), &n);
-  } else if ((len > 7 && bufEq(buf, "ctr_inc", 7))) {
-    buf += 7;
+  } else if ((len > 7 && bufEq(buf, "ctr_inc ", 7))) {
+    buf += 8;
     EBB_LRT_printf("%s\n", buf);
-    sscanf(buf, "%lX", (uval *)ctr);
+    sscanf(buf, "%lX", (uval *)&ctr);
+    EBB_LRT_printf("%lX\n", (uval)ctr);
     EBBCALL(ctr, inc);
-  } else if ((len > 7 && bufEq(buf, "ctr_val", 7))) {
-    buf += 7;
+  } else if ((len > 7 && bufEq(buf, "ctr_val ", 7))) {
+    buf += 8;
     EBB_LRT_printf("%s\n", buf);
-    sscanf(buf, "%lX", (uval *)ctr);
+    sscanf(buf, "%lX", (uval *)&ctr);
     EBBCALL(ctr, val, &val);
-    sprintf(tmpbuf, "ctr: %lX, value = %ld\n", (uval)*ctr, val);
+    sprintf(tmpbuf, "ctr: %lX, value = %ld\n", (uval)ctr, val);
     EBBCALL(self->stdout, write, tmpbuf, strlen(tmpbuf), &n);
   }
     
