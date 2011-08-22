@@ -207,7 +207,7 @@ CmdMenuPrim_doRun(CmdMenuPrimRef self, char *buf, uval len)
     EBBCtrPrimGlobalSharedCreate(&ctr);
     EBB_LRT_printf("%lX\n", (uval)*ctr);
     sprintf(tmpbuf, "%lX\n", (uval)*ctr);
-    EBBCALL(self->stdout, write, tmpbuf, 17, &n);
+    EBBCALL(self->stdout, write, tmpbuf, strlen(tmpbuf), &n);
   } else if ((len > 7 && bufEq(buf, "ctr_inc", 7))) {
     buf += 7;
     EBB_LRT_printf("%s\n", buf);
