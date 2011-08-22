@@ -20,6 +20,8 @@
 
 #include "ebbtest.h"
 
+#define EBBCALL(id, method, ...) COBJ_EBBCALL(id, method, ##__VA_ARGS__)
+
 #ifdef EBB_TEST
 #define PRIVATE
 #else
@@ -62,12 +64,27 @@ val(void *_self, uval *v)
 }
 
 //////////////////////////////////////////////////
-//BEGIN FUNCTIONS
+//BEGIN PROXY FUNCTIONS
 //////////////////////////////////////////////////
+
+//DS HACK: using these via msg infrastructure
+static EBBRC
+inc_id(EBBCtrPrimId id)
+{
+  EBB_LRT_printf("calling inc on %lX\n", (uval)id);
+  return EBBCALL(id, inc);
+}
+
+/* static EBBRC */
+/* val_id(EBBCtrPrimId id, uval *v) */
+/* { */
+/*   return EBBCALL(id, val, v); */
+/* } */
+
 PRIVATE EBBRC
 proxy_init(void *_self) 
 {
-  //  EBBCtrPrimRef self = _self;
+  //EBBCtrPrimRef self = _self;
   //This is a nop
   return EBBRC_OK;
 }
@@ -75,8 +92,10 @@ proxy_init(void *_self)
 PRIVATE EBBRC 
 proxy_inc(void *_self) 
 {
-  //EBBCtrPrimRef self = _self;
-  //function-ship
+  EBBCtrPrimRef self = _self;
+  uval ret;
+  //FIXME: this is a horrible hack just for the demo, sorry
+  EBBMessageNode1(1, (MsgHandler)inc_id, self->id, &ret);
   return EBBRC_OK;
 }
 
@@ -179,6 +198,7 @@ EBBCtrPrimGlobalShared_globalMF(void *_self, EBBLTrans *lt, FuncNum fnum,
   repRef = &theRep;
 
   repRef->ft = &EBBCtrPrim_proxyftable;
+  repRef->id = EBBLTransToId(lt);
   EBBCacheObj(lt, repRef);
   *(void **)_self = repRef;
   return EBBRC_OK;

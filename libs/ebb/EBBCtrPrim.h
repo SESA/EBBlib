@@ -1,9 +1,13 @@
 #ifndef __EBB_CTR_PRIM_H__
 #define __EBB_CTR_PRIM_H__
 
-CObject(EBBCtrPrim) {
+CObject(EBBCtrPrim);
+typedef EBBCtrPrimRef *EBBCtrPrimId;
+
+CObjectDefine(EBBCtrPrim) {
   CObjInterface(EBBCtr) *ft;
   uval v;
+  EBBCtrPrimId id;
 };
 
 extern CObjInterface(EBBCtr) EBBCtrPrim_ftable;
@@ -11,7 +15,6 @@ extern CObjInterface(EBBCtr) EBBCtrPrim_ftable;
 static inline void 
 EBBCtrPrimSetFT(EBBCtrPrimRef o) { o->ft = &EBBCtrPrim_ftable; }
 
-typedef EBBCtrPrimRef *EBBCtrPrimId;
 extern EBBRC EBBCtrPrimSharedCreate(EBBCtrPrimId *id);
 extern EBBRC EBBCtrPrimGlobalSharedCreate(EBBCtrPrimId *id);
 
