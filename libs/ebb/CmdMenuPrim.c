@@ -154,6 +154,9 @@ CmdMenuPrim_doConnect(CmdMenuPrimRef self, char *buf, uval len)
   rc = EBBCALL(self->stdout, write, self->nodeid, 
 	       self->nodeidlen, &n);
   EBBRCAssert(rc);
+  rc = EBBCALL(self->stdout, write, "\n", 
+	       1, &n);
+  EBBRCAssert(rc);
 
   bufParse("/stderr", 8, &tmp[self->mynodepathlen], 
 	   STRLEN - self->mynodepathlen, 0);
@@ -198,13 +201,27 @@ CmdMenuPrim_doRun(CmdMenuPrimRef self, char *buf, uval len)
   char tmpbuf[80];
   EBBCtrPrimId ctr;
   sval n;
+  uval val;
 
   if ((len > 9 && bufEq(buf, "ctr_create", 10))) {
     EBBCtrPrimGlobalSharedCreate(&ctr);
-    EBB_LRT_printf("%p\n", *ctr);
-    sprintf(tmpbuf, "%p", *ctr);
-    EBBCALL(self->stdout, write, buf, 17, &n);
+    EBB_LRT_printf("%lX\n", (uval)*ctr);
+    sprintf(tmpbuf, "%lX\n", (uval)*ctr);
+    EBBCALL(self->stdout, write, tmpbuf, 17, &n);
+  } else if ((len > 7 && bufEq(buf, "ctr_inc", 7))) {
+    buf += 7;
+    EBB_LRT_printf("%s\n", buf);
+    sscanf(buf, "%lX", (uval *)ctr);
+    EBBCALL(ctr, inc);
+  } else if ((len > 7 && bufEq(buf, "ctr_val", 7))) {
+    buf += 7;
+    EBB_LRT_printf("%s\n", buf);
+    sscanf(buf, "%lX", (uval *)ctr);
+    EBBCALL(ctr, val, &val);
+    sprintf(tmpbuf, "ctr: %lX, value = %ld\n", (uval)*ctr, val);
+    EBBCALL(self->stdout, write, tmpbuf, strlen(tmpbuf), &n);
   }
+    
 #if 0
   //Feel free to comment this out, just using it to test the global EBB stuff
   EBBCtrPrimId ctr;
