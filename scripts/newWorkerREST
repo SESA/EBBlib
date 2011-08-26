@@ -1,0 +1,24 @@
+#!/bin/bash
+#set -x
+#Script for acquiring a new VM from the development vcloud at VMWare 
+
+namespaces='-N vcloud=http://www.vmware.com/vcloud/v1.5 -N ovf=http://schemas.dmtf.org/ovf/envelope/1 -N rasd=http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_ResourceAllocationSettingData'
+
+authHeader=`curl -s -I -k --user dschatzberg@Development https://vcloud.eng.vmware.com/api/login | grep x-vcloud-authorization`
+org=`curl -s -k --header "$authHeader" https://vcloud.eng.vmware.com/api/org | xmlstarlet sel $namespaces -t -m /vcloud:OrgList/vcloud:Org -v "@href"`
+#catalog=`curl -s -k --header "$authHeader" $org | xmlstarlet sel $namespaces -t -m /vcloud:Org/vcloud:Link -i "@name='Development Catalog'" -v "@href"`
+vdc=`curl -s -k --header "$authHeader" $org | xmlstarlet sel $namespaces -t -m /vcloud:Org/vcloud:Link -i "@name='CM-Development-AllocationPool'" -v "@href"`
+VApp=`curl -s -k --header "$authHeader" $vdc | xmlstarlet sel $namespaces -t -m /vcloud:Vdc/vcloud:ResourceEntities/vcloud:ResourceEntity -i "@type='application/vnd.vmware.vcloud.vApp+xml'" -i "@name='SESA'" -v "@href"`
+workerVApp=`curl -s -k --header "$authHeader" $vdc | xmlstarlet sel $namespaces -t -m /vcloud:Vdc/vcloud:ResourceEntities/vcloud:ResourceEntity -i "@type='application/vnd.vmware.vcloud.vApp+xml'" -i "@name='SESA-worker'" -v "@href"`
+
+node=`printf "%03d" \`cat nodes\``
+#here we would recompose the VApp with the workerVApp, adding the new worker
+newWorker=`curl -s -k --header "$authHeader" $VApp | xmlstarlet sel $namespaces -t -m /vcloud:VApp/vcloud:Children/vcloud:Vm -i "@name='SESA-worker$node'" -v "@href"`
+newWorkerPowerOn=`curl -s -k --header "$authHeader" $newWorker | xmlstarlet sel $namespaces -t -m /vcloud:Vm/vcloud:Link -i "@rel='power:powerOn'" -v "@href"`
+curl -s -k --header "$authHeader" -X POST $newWorkerPowerOn > /dev/null 2>&1
+newWorkerIp=`curl -s -k --header "$authHeader" $newWorker | xmlstarlet sel $namespaces -t -v "/vcloud:Vm/ovf:VirtualHardwareSection/ovf:Item/rasd:Connection/@vcloud:ipAddress"`
+#At this point we have the IP Address of the newWorker that we have just powered on
+#Would do a ping loop to see it come up and then execute ebbapp at it
+
+let node=node+1
+echo $node > nodes

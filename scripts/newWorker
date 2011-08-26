@@ -1,0 +1,31 @@
+#!/bin/bash
+#set -x
+
+node=`cat /scratch/workers/nodes`
+vmrun clone ~/vmware/SESA-frontend/SESA-frontend.vmx /scratch/workers/SESA-worker$node.vmx linked
+vmrun start /scratch/workers/SESA-worker$node.vmx nogui > /dev/null 2>&1
+macaddr=`grep 'generatedAddress = ' /scratch/workers/SESA-worker$node.vmx`
+macaddr=${macaddr:30:17}
+sleep 20
+fping -c 1 -g 172.16.148.1/24 &> /dev/null
+ipaddr=`cat /proc/net/arp | grep $macaddr`
+ipaddr=${ipaddr%% *vmnet8}
+if [ -z "$ipaddr" ]; then
+   echo "Failed to get VM IP address" > /dev/stderr
+   exit -1
+fi
+echo $ipaddr
+
+xterm -bg black -fg yellow -e "ssh -ttt -o StrictHostKeyChecking=no sesa@$ipaddr /home/sesa/EBBlib/libs/ebb/ebbtest" &
+#ssh -ttt -o StrictHostKeyChecking=no sesa@$ipaddr /home/sesa/EBBlib/libs/ebb/ebbtest &> /dev/null &
+sleep 5
+if [ -z "$EBBAPP" ]; then
+#   ebbapp -v -i 172.16.148.1 $ipaddr > /dev/null 2>&1 
+   xterm -bg black -fg orange -e "ebbapp -v -i 172.16.148.1 $ipaddr; bash" &
+else
+#   ebbapp -v -a $EBBAPP -i 172.16.148.1 $ipaddr > /dev/null 2>&1 
+   xterm -bg black -fg orange -e "ebbapp -v -a $EBBAPP -i 172.16.148.1 $ipaddr; bash" &
+fi
+
+let "node += 1"
+echo $node > /scratch/workers/nodes
