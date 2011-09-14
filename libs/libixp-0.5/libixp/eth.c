@@ -91,7 +91,7 @@ initRecv(net_handle* hnd, char* iface) {
   struct ifreq req;
   int i, ifindex, n;
   /*Create raw ethernet socket*/
-  if((hnd->fd = socket(PF_PACKET, SOCK_RAW, htons(MY_ETH_PROTOCOL))) == -1)
+  if((hnd->fd = socket(AF_PACKET, SOCK_RAW, htons(MY_ETH_PROTOCOL))) == -1)
     diep("socket()");
   /*Get interface index*/
   memset(&req,0,sizeof(req));
