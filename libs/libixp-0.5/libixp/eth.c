@@ -24,6 +24,7 @@
 /* authors and should not be interpreted as representing official policies, either expressed */
 /* or implied, of Boston University */
 
+#include <arpa/inet.h> /* for htons */
 #include <sys/ioctl.h>
 #include <net/if.h>
 #include <sys/socket.h>
@@ -34,6 +35,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "../include/raweth.h"
+
+#define ETH_PAYLOAD_LEN (ETH_FRAME_LEN - sizeof(struct ethhdr))
 
 /* TODO: maybe find a better place for this? wasn't defined elsewhere, but it's used here. */
 int min(int a, int b){
@@ -56,11 +59,11 @@ void initSend(net_handle* hnd, char *iface, unsigned char *dest_mac) {
   struct ifreq req;
   int i, ifindex;
    /*Create raw ethernet socket*/
-  if((hnd->fd = socket(PF_PACKET, SOCK_RAW, htons(MY_ETH_PROTOCOL))) == -1)
+  if((hnd->fd = socket(AF_PACKET, SOCK_RAW, htons(MY_ETH_PROTOCOL))) == -1)
     diep("socket()");
    /*Get interface index*/
   memset(&req,0,sizeof(req));
-   strncpy(req.ifr_name,iface,IFNAMSIZ);
+  strncpy(req.ifr_name,iface,IFNAMSIZ);
   if(ioctl(hnd->fd, SIOCGIFINDEX, &req) == -1)
     diep("SIOCGIFINDEX");
   ifindex = req.ifr_ifindex;
@@ -159,13 +162,17 @@ recvFrame(net_handle* hnd, void *data, int len) {
 //Also attactches a header the size of an int with the data's size.
 //If the data is too large to fit into one frame, this function splits
 //it up into many frames and sends them one at a time.
+//FIXME: using an int is a bad idea - it will cause problems when machines with
+//different sizeof(int) try to communicate.
+//FIXME: we don't seem to be using htonl and friends for the aformentioned extra header,
+//this will cause endianness problems.
 int sendWrapper(net_handle* send_hnd, void * data, int size) {
   int count_size = size;
   int* tmp = NULL;
   int* ptr = calloc(1, size);
   int* top_frame = ptr;
   do {
-    int payload_size = min(count_size,(1500 - sizeof(int)));
+    int payload_size = min(count_size,(ETH_PAYLOAD_LEN - sizeof(int)));
     if(tmp == NULL) {
       tmp = mempcpy(ptr, &size, sizeof(int));
     }
@@ -187,10 +194,10 @@ void*
 recvWrapper(net_handle* recv_hnd, int * size) {
   
   //Points to the header which points to the overall size of the data.
-  int* header = calloc(1,1500);
+  int* header = calloc(1,ETH_PAYLOAD_LEN);
   void* beginning_of_data = header + 1;
   void* body = header + 1;
-  recvFrame(recv_hnd,header, 1500);
+  recvFrame(recv_hnd,header, ETH_PAYLOAD_LEN);
 
   //Keeps track of how much more of the data we have yet to parse
   int count_size = *header;
@@ -199,15 +206,15 @@ recvWrapper(net_handle* recv_hnd, int * size) {
 
   //If the data was too large to fit into a single frame, this  resizes the
   //memory that was allocated.
-  if (*header > (1500 - sizeof(int))) {
+  if (*header > (ETH_PAYLOAD_LEN - sizeof(int))) {
     //Will point to the last point in the newly allocated space.
     beginning_of_data = calloc(1,*header);
-    end_of_data = mempcpy(beginning_of_data, body, 1500);
+    end_of_data = mempcpy(beginning_of_data, body, ETH_PAYLOAD_LEN);
   }
 
   //Keeps track of the size of the payload we recieve. It's maximum size is
-  //1500 bytes.
-  int payload_size = min(*header, 1500 - sizeof(int));
+  //ETH_PAYLOAD_LEN bytes.
+  int payload_size = min(*header, ETH_PAYLOAD_LEN - sizeof(int));
 
   //Updates length of count_size to reflect how much is left of the data.
   count_size -= payload_size;
@@ -216,11 +223,11 @@ recvWrapper(net_handle* recv_hnd, int * size) {
     header = end_of_data;
     header--;
     body = header;
-    recvFrame(recv_hnd, header, min(1500, count_size));
+    recvFrame(recv_hnd, header, min(ETH_PAYLOAD_LEN, count_size));
     //Updates payload size to reflect the new frame.
-    payload_size = min(1500 - sizeof(int), count_size);
+    payload_size = min(ETH_PAYLOAD_LEN - sizeof(int), count_size);
     //Updates the location of the end of the data.
-    end_of_data = header + min(1500/sizeof(int) - 1, count_size/sizeof(int) - 1);
+    end_of_data = header + min(ETH_PAYLOAD_LEN/sizeof(int) - 1, count_size/sizeof(int) - 1);
     count_size -= payload_size;
   }
   return beginning_of_data;

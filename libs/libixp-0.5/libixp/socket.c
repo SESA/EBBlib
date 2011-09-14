@@ -2,6 +2,7 @@
  * Copyright ©2004-2006 Anselm R. Garbe <garbeam at gmail dot com>
  * See LICENSE file for license details.
  */
+#include <ctype.h> /* for isxdigit */
 #include <errno.h>
 #include <netdb.h>
 #include <netinet/in.h>
@@ -85,6 +86,7 @@ read_mac(char *address, unsigned char *dest){
 			return -1;
 		dest[i] = xdigit(*address++);
 	}
+	return 0;
 }
 
 static int

@@ -91,7 +91,7 @@ void*	lookupkey(Intmap*, ulong);
 
 /* fdshadow.c */
 ssize_t ixp_shadowread(int fd, void *buf, size_t count);
-ssize_t ixp_shadowwrite(int fd, void *buf, size_t count);
+ssize_t ixp_shadowwrite(int fd, const void *buf, size_t count);
 void	ixp_shadowregister(int fd, void *hnd);
 
 /* mux.c */
