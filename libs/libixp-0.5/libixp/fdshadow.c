@@ -30,7 +30,7 @@ ssize_t ixp_shadowwrite(int fd, const void *buf, size_t count) {
 	ensure_fdshadow_init();
 	net_handle *hnd = lookupkey(&fdshadow, fd);
 	if (!hnd)
-		return read(fd, buf, count);
+		return write(fd, buf, count);
 	sendWrapper(hnd, buf, count);
 	return count;
 }

@@ -84,7 +84,7 @@ read_mac(char *address, unsigned char *dest){
 		dest[i] = xdigit(*address++) * 16;
 		if(!isxdigit(*address))
 			return -1;
-		dest[i] = xdigit(*address++);
+		dest[i] += xdigit(*address++);
 	}
 	return 0;
 }
