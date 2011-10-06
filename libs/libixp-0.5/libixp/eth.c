@@ -24,7 +24,7 @@
 /* authors and should not be interpreted as representing official policies, either expressed */
 /* or implied, of Boston University */
 
-#include <arpa/inet.h> /* for htons */
+#include <arpa/inet.h>
 #include <sys/ioctl.h>
 #include <net/if.h>
 #include <sys/socket.h>
@@ -35,13 +35,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "../include/raweth.h"
+#include "../include/ixp_local.h"
 
-#define ETH_PAYLOAD_LEN (ETH_FRAME_LEN - sizeof(struct ethhdr))
-
-/* TODO: maybe find a better place for this? wasn't defined elsewhere, but it's used here. */
-int min(int a, int b){
-  return (a < b)? a : b;
-}
 
 /* Shortens error checking */
 void diep(char* s) {
@@ -118,7 +113,7 @@ initRecv(net_handle* hnd, char* iface) {
 
 /*
  * Takes an already initialized net_handle and sends the passed in
- * payload
+ * payload/mem
  */
 void 
 sendFrame(net_handle* hnd, void *data, int len) {
@@ -157,82 +152,46 @@ recvFrame(net_handle* hnd, void *data, int len) {
   free(buffer);
 }
 
+EthFD *EthFD_init(net_handle *hnd) {
+	EthFD *ret = emalloc(sizeof(EthFD));
+	ret->hnd = hnd;
+	ret->bytesleft_thisframe = 0;
+	ret->bytesleft_total = 0;
+	return ret;
+}
     
-//Takes a bound net_handle and sends data passed into the function.
-//Also attactches a header the size of an int with the data's size.
-//If the data is too large to fit into one frame, this function splits
-//it up into many frames and sends them one at a time.
-//FIXME: using an int is a bad idea - it will cause problems when machines with
-//different sizeof(int) try to communicate.
-//FIXME: we don't seem to be using htonl and friends for the aformentioned extra header,
-//this will cause endianness problems.
-int sendWrapper(net_handle* send_hnd, void * data, int size) {
-  int count_size = size;
-  int* tmp = NULL;
-  int* ptr = calloc(1, size);
-  int* top_frame = ptr;
-  do {
-    int payload_size = min(count_size,(ETH_PAYLOAD_LEN - sizeof(int)));
-    if(tmp == NULL) {
-      tmp = mempcpy(ptr, &size, sizeof(int));
-    }
-    tmp = mempcpy(tmp, data + (size - count_size), payload_size);
-    count_size -= payload_size;
-    sendFrame(send_hnd, top_frame, payload_size+4);
-    top_frame = tmp;
-  } while(count_size > 0);
-  free(ptr);
-  return 0;
+
+ssize_t ethSend(EthFD *ethfd, char *buf, size_t len) {
+	ssize_t len_left = len;
+	char payload[ETH_PAYLOAD_LEN];
+	do {
+		uint32_t size_header = htonl(len);
+		int this_cpy = (len_left < ETH_PAYLOAD_LEN - sizeof(uint32_t))? len_left : ETH_PAYLOAD_LEN - sizeof(uint32_t);
+		memcpy(payload, &size_header, sizeof(uint32_t));
+		memcpy(payload + sizeof(uint32_t), buf, this_cpy);
+		len_left -= this_cpy;
+		buf += this_cpy;
+		sendFrame(ethfd->hnd, payload, this_cpy + sizeof(uint32_t));
+	}while(len_left > 0);
+	return len;
 }
 
-//Takes packages sent via ethernet. If the data is too large to fit into a 
-//single ethernet frame, this function will combine several packages to make a 
-//single structure of data.
-//Takes in net_handle and a pointer to an int where the function will store the
-//size of the pacakge in bytes. Returns the location to the top of the package.
-void*
-recvWrapper(net_handle* recv_hnd, int * size) {
-  
-  //Points to the header which points to the overall size of the data.
-  int* header = calloc(1,ETH_PAYLOAD_LEN);
-  void* beginning_of_data = header + 1;
-  void* body = header + 1;
-  recvFrame(recv_hnd,header, ETH_PAYLOAD_LEN);
-
-  //Keeps track of how much more of the data we have yet to parse
-  int count_size = *header;
-  *size = *header;
-  void* end_of_data;
-
-  //If the data was too large to fit into a single frame, this  resizes the
-  //memory that was allocated.
-  if (*header > (ETH_PAYLOAD_LEN - sizeof(int))) {
-    //Will point to the last point in the newly allocated space.
-    beginning_of_data = calloc(1,*header);
-    end_of_data = mempcpy(beginning_of_data, body, ETH_PAYLOAD_LEN);
-  }
-
-  //Keeps track of the size of the payload we recieve. It's maximum size is
-  //ETH_PAYLOAD_LEN bytes.
-  int payload_size = min(*header, ETH_PAYLOAD_LEN - sizeof(int));
-
-  //Updates length of count_size to reflect how much is left of the data.
-  count_size -= payload_size;
-  //If there is still more data we are expecting...
-  while(count_size > 0) {
-    header = end_of_data;
-    header--;
-    body = header;
-    recvFrame(recv_hnd, header, min(ETH_PAYLOAD_LEN, count_size));
-    //Updates payload size to reflect the new frame.
-    payload_size = min(ETH_PAYLOAD_LEN - sizeof(int), count_size);
-    //Updates the location of the end of the data.
-    end_of_data = header + min(ETH_PAYLOAD_LEN/sizeof(int) - 1, count_size/sizeof(int) - 1);
-    count_size -= payload_size;
-  }
-  return beginning_of_data;
+ssize_t ethRecv(EthFD *ethfd, char *buf, size_t len) {
+	ssize_t len_left = len;
+	do {
+		if(ethfd->bytesleft_thisframe == 0) {
+			recvFrame(ethfd->hnd, ethfd->buf, ETH_PAYLOAD_LEN);
+			ethfd->bytesleft_total = ntohl(*(uint32_t*)ethfd->buf);
+			ethfd->bytesleft_thisframe = (ethfd->bytesleft_total < ETH_PAYLOAD_LEN - sizeof(uint32_t))? ethfd->bytesleft_total : ETH_PAYLOAD_LEN - sizeof(uint32_t);
+		}
+		int this_cpy = (len_left > ethfd->bytesleft_thisframe)? ethfd->bytesleft_thisframe : len_left;
+		memcpy(buf, ethfd->buf + ETH_PAYLOAD_LEN - ethfd->bytesleft_thisframe, this_cpy);
+		ethfd->bytesleft_thisframe -= this_cpy;
+		ethfd->bytesleft_total -= this_cpy;
+		len_left -= this_cpy;
+	}while(len_left > 0 && ethfd->bytesleft_total > 0);
+	return len;
 }
-
 
 void 
 closeHandle(net_handle* hnd) {

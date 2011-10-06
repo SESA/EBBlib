@@ -510,7 +510,7 @@ serve_9pcon(IxpConn *c) {
 	Ixp9Conn *pc;
 	int fd;
 
-	fd = accept(c->fd, nil, nil);
+	fd = ixp_shadowaccept(c->fd, nil, nil);
 	if(fd < 0)
 		return;
 

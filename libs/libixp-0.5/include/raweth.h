@@ -41,16 +41,28 @@
 #define EXIT_CODE 0xFFFFFFFF
 #define START_CODE 0xFFFFFFFE
 
+#define ETH_PAYLOAD_LEN (ETH_FRAME_LEN - sizeof(struct ethhdr))
+
 typedef struct net_handle_s {
   struct sockaddr_ll socket_address;
   int fd;
   unsigned char src_mac[ETH_ALEN];
 } net_handle;
 
+typedef struct{
+	net_handle *hnd;
+	char buf[ETH_PAYLOAD_LEN];
+	int bytesleft_thisframe;
+	int bytesleft_total;
+} EthFD;
+
+EthFD *EthFD_init(net_handle *hnd);
+
 void initSend(net_handle* hnd, char *iface, unsigned char *dest_mac);
 void initRecv(net_handle* hnd, char* iface);
-int sendWrapper(net_handle* send_hnd, void * data, int size);
-void *recvWrapper(net_handle* recv_hnd, int * size);
+ssize_t ethSend(EthFD *ethfd, char *buf, size_t len);
+ssize_t ethRecv(EthFD *ethfd, char *buf, size_t len);
+
 
 #endif
 

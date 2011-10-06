@@ -1,4 +1,6 @@
 #include <unistd.h>
+#include <sys/types.h>
+#include <sys/socket.h>
 #include "ixp_local.h"
 #include "raweth.h"
 
@@ -15,27 +17,33 @@ static void ensure_fdshadow_init(void){
 	have_fdshadow_init = 1;
 }
 
+int ixp_shadowaccept(int sockfd, struct sockaddr *addr, socklen_t *addrlen) {
+	ensure_fdshadow_init();
+	EthFD *ethfd = lookupkey(&fdshadow, sockfd);
+	if(!ethfd)
+		return accept(sockfd, addr, addrlen);
+	return sockfd;
+}
+
 ssize_t ixp_shadowread(int fd, void *buf, size_t count){
 	ensure_fdshadow_init();
-	void *recvbuf;
-	net_handle *hnd = lookupkey(&fdshadow, fd);
-	if(!hnd) /* not an ethernet socket. use the syscall. */
+	EthFD *ethfd = lookupkey(&fdshadow, fd);
+	if(!ethfd) /* not an ethernet socket. use the syscall. */
 		return read(fd, buf, count);
-	recvbuf = recvWrapper(hnd, &count);
-	memcpy(buf, recvbuf, count);
-	return count;
+	return ethRecv(ethfd, buf, count);
+		
 }
 
 ssize_t ixp_shadowwrite(int fd, const void *buf, size_t count) {
 	ensure_fdshadow_init();
-	net_handle *hnd = lookupkey(&fdshadow, fd);
-	if (!hnd)
+	EthFD *ethfd = lookupkey(&fdshadow, fd);
+	if (!ethfd)
 		return write(fd, buf, count);
-	sendWrapper(hnd, buf, count);
-	return count;
+	return ethSend(ethfd, buf, count);
 }
 
 void ixp_shadowregister(int fd, void *hnd) {
 	ensure_fdshadow_init();
-	insertkey(&fdshadow, fd, hnd);
+	EthFD *ethfd = EthFD_init(hnd);
+	insertkey(&fdshadow, fd, ethfd);
 }
