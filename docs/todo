@@ -1,0 +1,17 @@
+Discussions to be promoted into TODO items once we have decided on them:
+o how do we want to return errors.  Proposal, we adopt 1/2 of what K42
+  did, i.e., an error is negative space.  With an error we have three
+  values:
+  1. a generic error that comes from unix
+  2. a class specific error that can be responded to
+  3. a relatively unique system wide number that is ored in to the
+     error
+o what do we want the makefile, configuration model to look like???
+o unit testing model
+
+Naming conventions:
+o most things are EBBs, so lets not bother with "EBB" at the beginning
+  of name
+o We will capitalize first letter of a name that is a class
+
+
