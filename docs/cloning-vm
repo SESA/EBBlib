@@ -1,0 +1,37 @@
+o In fusion, go to windows, click on VM, and say show in finder, then
+  duplicate it.
+o open the VM from fusion
+o when you try to run it, fusion will ask if you moved the VM, or
+  copied it. If you tell copy, a new mac address will be generated
+  (and UUID).
+o you can also create a new mac address by clicking on advanced
+  options under networking, and say generate a new mac address
+o grab the mac address and modify the DHCP service in fusion:
+/Library/Preferences/VMware Fusion/vmnet8/dhcpd.conf
+by adding something like this:
+host lsesa1 {
+        hardware ethernet 00:50:56:34:7B:57;
+        fixed-address 172.16.33.11;
+}
+Where:
+  o lsesa1 is name of new machine, and the mac address is that of the
+  new VM, and the IP address is the one you are assigning to it. Make
+  sure that the IP address is in the same subnet as the other victims
+
+o You might need to go into your networking options, and change the
+network back to a NAT network, for some reason it changed to a host
+only network for me. 
+o You might want to add something like the following to your
+.ssh/config file
+Host lsesa1
+	Hostname 172.16.33.11
+	User sesa
+Modify your /etc/hosts file all your clients to have something like
+this:
+172.16.33.1 lhost lhost.local
+172.16.33.10 lsesa0 lsesa0.local
+172.16.33.11 lsesa1 lsesa1.local
+172.16.33.12 lsesa2 lsesa2.local
+172.16.33.13 lsesa3 lsesa3.local
+172.16.33.14 lsesa4 lsesa4.local
+
