@@ -17,6 +17,10 @@
 /*								*/
 /* ************************************************************ */
 
+/* DS: I find this to be wrong, x86-64 stack is 16 byte aligned at */
+/* fuction entry so adding a spare 8 bytes causes an alignment */
+/* problem */
+
 /* On the X86-64, the stack is 8-byte aligned, and kept that way
  * by all stack operations.  The fxsave/fxrstor instructions save
  * all the floating point registers at one time (512 bytes
@@ -52,25 +56,21 @@
  * the following macros to save and restore them.
  */
 
-#define FPR_SAVE_AREA_SIZE   (65*8)    /* one extra 8-byte space */
+#define FPR_SAVE_AREA_SIZE   (64*8)
 
 /* save floating point registers in area pointed to by ptr.
    reg is a spare register for computation */
 
 #define SAVE_FLOAT_(ptr,reg)								\
 	mov	ptr,reg;			/* copy of pointer to compute on */ 	\
-	add	$8,reg;				/* if 8, move to 16; if 16, move to 8 */\
-	andq	$0xfffffffffffffff0,reg;	/* take back to 16-byte alignment */	\
 	fwait;										\
 	fxsave	(reg);				/* save floating point registers */
 
 #define RESTORE_FLOAT_(ptr,reg)			  					    \
 	mov	ptr,reg;			/* copy of pointer to compute on */	    \
-	add	$8,reg;				/* if 8, advance to 16; if 16, move to 8 */ \
-	andq	$0xfffffffffffffff0,reg;	/* take back to 16-byte alignment */        \
 	fxrstor	(reg); 	 			/* restore fp registers */
 
-
+//DS: Haven't touched this but likely buggy
 #define COPY_FLOAT_SAVES_TO_STACK(psReg)					\
 	leaq    -FPR_SAVE_AREA_SIZE(%rsp),%rsp; /* reserve space on stack for fpr */	 \
 	pushq	%rdi;  				/* save registers we use for move */	 \
