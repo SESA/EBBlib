@@ -1,3 +1,9 @@
+When you are done, key things to remember:
+o your host will be "lhost" to all the vms
+o you will have mounted your /User directory from mac on all the VMs as /User, 
+o VMs will be called lsesa0, lsesa1, lsesa2...
+
+
 Directions for getting a new machine:
 o Go to VMware.com, download fusion
   vmware fusion, install, trial
@@ -19,7 +25,8 @@ o on client, (note, for everything do as sudo)
 o set up fixed IP addresses everywhere:
   o For Fusion version 4, go to:
    /Library/Preferences/VMware\ Fusion/
-  o modify vmnet8 which is the local natted network
+  o modify vmnet8 which is the local natted network, in 
+/Library/Preferences/VMware Fusion/vmnet8/dhcpd.conf
   o Note, in everything below, replace 172.16.XX with your isolated subnet
 Add the following:
 --------------------
@@ -30,8 +37,7 @@ host lsesa0 {
 --------------------
 o Where you can get the correct mac address for your client by doing an
   ifconfig on it or looking at the vmx file.  
-o you will need to restart the dhcp service from vmware, or reboot at
-  this point.
+o if you quit and restat fusion, it will restart the dhcp service. 
 o add new client to your .ssh/config file, e.g.;
 --------------------
 Host lsesa0

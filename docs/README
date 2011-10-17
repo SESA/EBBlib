@@ -1,5 +1,7 @@
 Files in this directory:
+o README - this file, gives an overview of everything in this directory
+o todo - a start of a list of things for us to discuss, debate... add to jobjar
+o jobjar - a start of a jobjar, tasks we can assign to people
 o linux-vm - directions for creating a linux vm on VMware Fusion with our 
   standard environment
-o jobjar - a start of a jobjar, tasks we can assign to people
-o todo - a start of a list of things for us to discuss, debate... add to jobjar
+o cloning-vm - directions on fusion for cloning your vm
