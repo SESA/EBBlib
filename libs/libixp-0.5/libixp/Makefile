@@ -7,8 +7,6 @@ TARG =	libixp
 OBJ =	client    \
 	convert   \
 	error     \
-	eth       \
-	fdshadow  \
 	intmap    \
 	message   \
 	request   \
@@ -22,3 +20,4 @@ OBJ =	client    \
 	util
 
 include ${ROOT}/mk/lib.mk
+

@@ -2,7 +2,6 @@
  * Copyright ©2004-2006 Anselm R. Garbe <garbeam at gmail dot com>
  * See LICENSE file for license details.
  */
-#include <ctype.h> /* for isxdigit */
 #include <errno.h>
 #include <netdb.h>
 #include <netinet/in.h>
@@ -16,7 +15,6 @@
 #include <sys/un.h>
 #include <unistd.h>
 #include "ixp_local.h"
-#include "raweth.h"
 
 /* Note: These functions modify the strings that they are passed.
  *   The lookup function duplicates the original string, so it is
@@ -48,69 +46,6 @@ get_port(char *addr) {
 		return nil;
 	}
 	return s;
-}
-
-/* converts c (which must be a hexidecimal digit ([0-9A-Za-z]) or the results
- * are undefined) to it's value in as a number. */
-static unsigned char
-xdigit(char c){
-	if (c <= '9' && c >= '0')
-		return c - '0';
-	else if (c <= 'f' && c >= 'a')
-		return c - 'a' + 10;
-	else
-		return c - 'A' + 10;
-}
-
-/* dest must have length ETH_ALEN. read_mac then parses address as a mac address according to these rules:
- * 1. colons are skipped.
- * 2. if a non-hexidecimal character is encountered (other than colon) it is
- * an error.
- * 3. the rest of the characters are interpreted as hexidecimal digits in the
- * mac address.
- * 
- * in the event of an error, read_mac will return -1, otherwise it will return
- * 0, and dest will be filled out as initSend expects. (see eth.c included
- * above)
- */ 
-static int
-read_mac(char *address, unsigned char *dest){
-	int i;
-	for (i = 0; i < ETH_ALEN; i++) {
-		while(*address == ':')
-			address++;
-		if(!isxdigit(*address))
-			return -1;
-		dest[i] = xdigit(*address++) * 16;
-		if(!isxdigit(*address))
-			return -1;
-		dest[i] += xdigit(*address++);
-	}
-	return 0;
-}
-
-static int
-dial_eth(char *address) {
-	unsigned char dest_mac[ETH_ALEN];
-	net_handle *handle;
-	char *macstr = strchr(address, '!');
-	if(macstr == NULL)
-		return -1;
-	*macstr++ = '\0';
-	if(read_mac(macstr, dest_mac) == -1)
-		return -1;
-	handle = emalloc(sizeof(net_handle));
-	initSend(handle, address, dest_mac);
-	ixp_shadowregister(handle->fd, handle);
-	return handle->fd;
-}
-
-static int
-announce_eth(char *address){
-	net_handle *handle = emalloc(sizeof(net_handle));
-	initRecv(handle, address);
-	ixp_shadowregister(handle->fd, handle);
-	return handle->fd;
 }
 
 static int
@@ -279,12 +214,10 @@ struct addrtab {
 } dtab[] = {
 	{"tcp", dial_tcp},
 	{"unix", dial_unix},
-	{"eth", dial_eth},
 	{0, 0}
 }, atab[] = {
 	{"tcp", announce_tcp},
 	{"unix", announce_unix},
-	{"eth", announce_eth},
 	{0, 0}
 };
 
