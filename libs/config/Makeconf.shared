@@ -1,0 +1,3 @@
+# specify the search path for source files 
+#vpath %.C	$(BUILDDIR):$(SRCDIR)/ebb/
+VPATH=$(SRCDIR)/ebb/

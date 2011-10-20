@@ -1,0 +1,9 @@
+.EXPORT_ALL_VARIABLES:
+
+-include Makeconf.local
+-include $(SRCDIR)/config/Makeconf.shared
+
+all:
+	@$(MAKE) -f $(SRCDIR)/Makefile $@
+
+clean:

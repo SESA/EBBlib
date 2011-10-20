@@ -1,0 +1,3 @@
+SESA_LRT=ulnx 
+SESA_ARCH=amd64
+BUILDDIR = $(CURDIR)
