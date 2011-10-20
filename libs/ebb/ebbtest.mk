@@ -58,5 +58,6 @@ jmps.S:
 EBBObj.o: EBBObj.H EBBObj.c
 	g++ $(CFLAGS) -c EBBObj.c -o EBBObj.o
 
-clean:
+clean::
+	@echo "make clean in ebbtest.mk"
 	-rm $(wildcard $(OBJS) $(DEPS) ebbtest)

@@ -7,3 +7,4 @@ all:
 	@$(MAKE) -f $(SRCDIR)/Makefile $@
 
 clean:
+	@$(MAKE) -f $(SRCDIR)/Makefile $@

@@ -69,6 +69,8 @@ ifeq ($(strip $(SRCDIR)), )
 #SRCDIR not defined, we must be in the source tree
 -include ebb/ebbtest.mk
 else
+clean::
+	make -C $(IXPDIR) clean
 -include $(SRCDIR)/ebb/ebbtest.mk
 endif
 
