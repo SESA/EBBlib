@@ -69,7 +69,10 @@ static void *createRep(CObjEBBRootMultiRef rootRef) {
 }
 
 CObjInterface(EBBCtr) EBBCtrPrimDistributed_ftable = {
-  init, inc, dec, val
+  .init = init, 
+  .inc = inc, 
+  .dec = dec, 
+  .val = val
 };
 
 EBBRC
