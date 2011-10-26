@@ -44,22 +44,6 @@ extern struct EBB_Trans_Mem {
   uval8 *free;  // pointer to next available range of GMem
 } EBB_Trans_Mem;
 
-static void EBB_Trans_Mem_Init(void) {
-  EBB_Trans_Mem.free = EBB_Trans_Mem.GMem;
-}  
-// could also do initial mapping here if memory is
-// is not actually static reservation
-
-static void EBB_Trans_Mem_Alloc_Pages(uval num_pages, uval8 **pages) {
-  if (&(EBB_Trans_Mem.free[EBB_TRANS_PAGE_SIZE * num_pages]) >
-      &(EBB_Trans_Mem.GMem[EBB_TRANS_PAGE_SIZE * EBB_TRANS_NUM_PAGES])) {
-    *pages = NULL;
-  } else {
-    *pages = EBB_Trans_Mem.free;
-    EBB_Trans_Mem.free = EBB_Trans_Mem.free + (EBB_TRANS_PAGE_SIZE * num_pages);
-  }
-}
-
 typedef EBBRC (*EBBFunc) (void *);
 typedef EBBFunc *EBBFuncTable;
 
@@ -280,34 +264,4 @@ static inline void EBBIdUnBind(EBBId id, EBBMissFunc *mf,
   EBBIdBind(id, theERRMF, 0);
 }
 
-//initialize the portion of ltable from lt
-// to the specified number of pages
-static void initLTable(EBBLTrans *lt, uval pages) {
-  EBBLTrans *iter;
-  for (iter = lt; 
-       ((void *)iter) < (void *)((&((char *)lt)[EBB_TRANS_PAGE_SIZE * pages]));
-       iter++) {
-    EBBSetLTrans(iter, EBBDefFT);
-  }
-}
-
-//init all ltables from lt to the specified number of pages
-//id must be the first id allocated
-static void initAllLTables(EBBId id, uval pages) {
-  int i;
-  for (i = 0; i < EBB_TRANS_MAX_ELS; i++) {
-    initLTable(EBBIdToSpecificLTrans(id, i), pages);
-  }
-}
-
-// FIXME: JA think there is a bug here.  We should be calcing NUM explicity
-static void initGTable(EBBGTrans *gt, uval pages) {
-  EBBGTrans *iter;
-  for (iter = gt;
-       iter < (EBBGTrans *)((uval)gt + pages * EBB_TRANS_PAGE_SIZE);
-       iter++) {
-    EBBIdBind(EBBGTransToId(iter), theERRMF, 0);
-  }
-}
-  
 #endif
