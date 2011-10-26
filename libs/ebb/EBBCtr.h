@@ -1,14 +1,15 @@
 #ifndef __EBB_CTR_H__
 #define __EBB_CTR_H__
 
+CObject(EBBCtr);
+
 CObjInterface(EBBCtr) {
-  EBBRC (*init) (void *_self);
-  EBBRC (*inc)  (void *_self);
-  EBBRC (*dec)  (void *_self);
-  EBBRC (*val)  (void *_self, uval *v);
+  EBBRC (*inc)  (EBBCtrRef _self);
+  EBBRC (*dec)  (EBBCtrRef _self);
+  EBBRC (*val)  (EBBCtrRef _self, uval *v);
 };
 
-CObject(EBBCtr) {
+CObjectDefine(EBBCtr) {
   CObjInterface(EBBCtr) *ft;
 };
 

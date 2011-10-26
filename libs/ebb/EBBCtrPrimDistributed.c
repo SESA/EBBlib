@@ -36,36 +36,28 @@ EBBCtrPrimDistributedSetFT(EBBCtrPrimDistributedRef o)
 
 typedef EBBCtrPrimDistributedRef *EBBCtrPrimDistributedId;
 
-static EBBRC
-init(void *_self)
-{
-  EBBCtrPrimDistributedRef self = _self;
-  self->localValue = 0;
-  return EBBRC_OK;
-}
-
 static EBBRC 
-inc(void *_self) 
+EBBCtrPrimDistributed_inc(EBBCtrRef _self) 
 {
-  EBBCtrPrimDistributedRef self = _self;
+  EBBCtrPrimDistributedRef self = (EBBCtrPrimDistributedRef)_self;
   //gcc built-in atomics
   __sync_fetch_and_add(&self->localValue,1);
   return EBBRC_OK;
 }
 
 static EBBRC 
-dec(void *_self) 
+EBBCtrPrimDistributed_dec(EBBCtrRef _self) 
 {
-  EBBCtrPrimDistributedRef self = _self;
+  EBBCtrPrimDistributedRef self = (EBBCtrPrimDistributedRef)_self;
   //gcc builtin atomics
   __sync_fetch_and_sub(&self->localValue,1);
   return EBBRC_OK;
 }
 
 static EBBRC
-val(void *_self, uval *v)
+EBBCtrPrimDistributed_val(EBBCtrRef _self, uval *v)
 {
-  EBBCtrPrimDistributedRef self = _self;
+  EBBCtrPrimDistributedRef self = (EBBCtrPrimDistributedRef)_self;
   uval val = 0;
   RepListNode *node;
   EBBCtrPrimDistributedRef rep = NULL;
@@ -77,20 +69,20 @@ val(void *_self, uval *v)
   return EBBRC_OK;
 }
 
-static void *createRep(CObjEBBRootMultiRef rootRef) {
+static void *
+EBBCtrPrimDistributed_createRep(CObjEBBRootMultiRef rootRef) {
   EBBCtrPrimDistributedRef repRef;
   EBBPrimMalloc(sizeof(*repRef), &repRef, EBB_MEM_DEFAULT);
   EBBCtrPrimDistributedSetFT(repRef);
   repRef->theRoot = rootRef;
-  repRef->ft->init(repRef);
+  repRef->localValue = 0;
   return repRef;
 }
 
 CObjInterface(EBBCtr) EBBCtrPrimDistributed_ftable = {
-  .init = init, 
-  .inc = inc, 
-  .dec = dec, 
-  .val = val
+  .inc = EBBCtrPrimDistributed_inc, 
+  .dec = EBBCtrPrimDistributed_dec, 
+  .val = EBBCtrPrimDistributed_val
 };
 
 EBBRC
@@ -100,7 +92,7 @@ EBBCtrPrimDistributedCreate(EBBCtrId *id)
   CObjEBBRootMultiRef rootRef;
   EBBPrimMalloc(sizeof(*rootRef), &rootRef, EBB_MEM_DEFAULT);
   CObjEBBRootMultiSetFT(rootRef);
-  rootRef->ft->init(rootRef, createRep);
+  rootRef->ft->init(rootRef, EBBCtrPrimDistributed_createRep);
 
   rc = EBBAllocLocalPrimId(id);
   //  EBBRCAssert(rc);

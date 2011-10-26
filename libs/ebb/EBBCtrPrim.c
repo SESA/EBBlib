@@ -44,7 +44,7 @@ EBBCtrPrimSetFT(EBBCtrPrimRef o) { o->ft = &EBBCtrPrim_ftable; }
 
 // Representative Code
 PRIVATE EBBRC
-init(void *_self) 
+EBBCtrPrim_init(void *_self) 
 {
   EBBCtrPrimRef self = _self;
   self->v = 0;
@@ -52,27 +52,27 @@ init(void *_self)
 }
 
 PRIVATE EBBRC 
-inc(void *_self) 
+EBBCtrPrim_inc(EBBCtrRef _self) 
 {
-  EBBCtrPrimRef self = _self;
+  EBBCtrPrimRef self = (EBBCtrPrimRef)_self;
   //gcc built-in atomics
   __sync_fetch_and_add(&self->v,1);
   return EBBRC_OK;
 }
 
 PRIVATE EBBRC 
-dec(void *_self) 
+EBBCtrPrim_dec(EBBCtrRef _self) 
 {
-  EBBCtrPrimRef self = _self;
+  EBBCtrPrimRef self = (EBBCtrPrimRef)_self;
   //gcc builtin atomics
   __sync_fetch_and_sub(&self->v,1);
   return EBBRC_OK;
 }
 
 PRIVATE EBBRC
-val(void *_self, uval *v)
+EBBCtrPrim_val(EBBCtrRef _self, uval *v)
 {
-  EBBCtrPrimRef self = _self;
+  EBBCtrPrimRef self = (EBBCtrPrimRef)_self;
   *v = self->v;
   return EBBRC_OK;
 }
@@ -86,7 +86,7 @@ static EBBRC
 inc_id(EBBCtrPrimId id)
 {
   EBB_LRT_printf("calling inc on %lX\n", (uval)id);
-  return EBBCALL(id, inc);
+  return EBBCALL((EBBCtrId)id, inc);
 }
 
 /* static EBBRC */
@@ -96,7 +96,7 @@ inc_id(EBBCtrPrimId id)
 /* } */
 
 PRIVATE EBBRC
-proxy_init(void *_self) 
+proxy_init(EBBCtrRef _self) 
 {
   //EBBCtrPrimRef self = _self;
   //This is a nop
@@ -104,17 +104,17 @@ proxy_init(void *_self)
 }
 
 PRIVATE EBBRC 
-proxy_inc(void *_self) 
+proxy_inc(EBBCtrRef _self) 
 {
-  EBBCtrPrimRef self = _self;
+  EBBCtrPrimRef self = (EBBCtrPrimRef)_self;
   uval ret;
   //FIXME: this is a horrible hack just for the demo, sorry
-  EBBMessageNode1(1, (MsgHandler)inc_id, self->id, &ret);
+  EBBMessageNode1(1, (MsgHandler)inc_id, (uval)self->id, &ret);
   return EBBRC_OK;
 }
 
 PRIVATE EBBRC 
-proxy_dec(void *_self) 
+proxy_dec(EBBCtrRef _self) 
 {
   //EBBCtrPrimRef self = _self;
   //function-ship
@@ -122,7 +122,7 @@ proxy_dec(void *_self)
 }
 
 PRIVATE EBBRC
-proxy_val(void *_self, uval *v)
+proxy_val(EBBCtrRef _self, uval *v)
 {
   //EBBCtrPrimRef self = _self;
   //function-ship
@@ -134,15 +134,19 @@ proxy_val(void *_self, uval *v)
 /////////////////////////////////////////////////
 
 CObjInterface(EBBCtr) EBBCtrPrim_ftable = {
-  init, inc, dec, val
+  .inc = EBBCtrPrim_inc, 
+  .dec = EBBCtrPrim_dec, 
+  .val = EBBCtrPrim_val
 };
 
 CObjInterface(EBBCtr) EBBCtrPrim_proxyftable = {
-  proxy_init, proxy_inc, proxy_dec, proxy_val
+  .inc = proxy_inc, 
+  .dec = proxy_dec, 
+  .val = proxy_val
 };
 
 static EBBRC 
-setup(EBBCtrPrimRef repRef, CObjEBBRootSharedRef rootRef, EBBCtrPrimId *id)
+setup(EBBCtrPrimRef repRef, CObjEBBRootSharedRef rootRef, EBBCtrId *id)
 {
   EBBRC rc;
   // setup function tables
@@ -150,7 +154,7 @@ setup(EBBCtrPrimRef repRef, CObjEBBRootSharedRef rootRef, EBBCtrPrimId *id)
   EBBCtrPrimSetFT(repRef);
 
   // setup my representative and root
-  repRef->ft->init(repRef);
+  EBBCtrPrim_init(repRef);
   // shared root knows about only one rep so we 
   // pass it along for it's init
   rootRef->ft->init(rootRef, repRef);
@@ -167,7 +171,7 @@ setup(EBBCtrPrimRef repRef, CObjEBBRootSharedRef rootRef, EBBCtrPrimId *id)
 // Statically declared root and rep... this does
 // not therefore account for memory locality 
 EBBRC
-EBBCtrPrimStaticSharedCreate(EBBCtrPrimId *id)
+EBBCtrPrimStaticSharedCreate(EBBCtrId *id)
 {
   static EBBCtrPrim theRep;
   static CObjEBBRootShared theRoot;
@@ -212,7 +216,7 @@ EBBCtrPrimGlobalShared_globalMF(void *_self, EBBLTrans *lt, FuncNum fnum,
   repRef = &theRep;
 
   repRef->ft = &EBBCtrPrim_proxyftable;
-  repRef->id = EBBLTransToId(lt);
+  repRef->id = (EBBCtrPrimId)EBBLTransToId(lt);
   EBBCacheObj(lt, repRef);
   *(void **)_self = repRef;
   return EBBRC_OK;
@@ -231,7 +235,7 @@ EBBCtrPrimGlobalSharedCreate(EBBCtrId *id)
   EBBCtrPrimSetFT(repRef);
 
   // setup my representative and root
-  repRef->ft->init(repRef);
+  EBBCtrPrim_init(repRef);
 
   rc = EBBAllocGlobalPrimId(id);
   EBBRCAssert(rc);

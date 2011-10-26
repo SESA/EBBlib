@@ -184,7 +184,8 @@ static EBBRC EBBMgrPrimERRMF (void *_self, EBBLTrans *lt,
     //call the home node, which should return an EBBMissFunc to handle this call
     uval nodeId = getLTransNodeId(lt);
     EBB_LRT_printf("gtable miss, home node at %ld\n", nodeId);
-    EBBMessageNode1(nodeId, globalMissHandler, EBBLTransToId(lt),&mf);
+    EBBMessageNode1(nodeId, globalMissHandler, (uval)EBBLTransToId(lt),
+		    (uval *)&mf);
     return mf(_self, lt, fnum, arg);
   }
 
