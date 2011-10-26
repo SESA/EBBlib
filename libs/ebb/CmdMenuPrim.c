@@ -199,7 +199,7 @@ static sval
 CmdMenuPrim_doRun(CmdMenuPrimRef self, char *buf, uval len)
 {
   char tmpbuf[80];
-  EBBCtrPrimId ctr;
+  EBBCtrId ctr;
   sval n;
   uval val;
 

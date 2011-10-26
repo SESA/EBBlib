@@ -22,6 +22,20 @@
 
 #define EBBCALL(id, method, ...) COBJ_EBBCALL(id, method, ##__VA_ARGS__)
 
+CObject(EBBCtrPrim);
+typedef EBBCtrPrimRef *EBBCtrPrimId;
+
+CObjectDefine(EBBCtrPrim) {
+  CObjInterface(EBBCtr) *ft;
+  uval v;
+  EBBCtrPrimId id;
+};
+
+extern CObjInterface(EBBCtr) EBBCtrPrim_ftable;
+
+static inline void 
+EBBCtrPrimSetFT(EBBCtrPrimRef o) { o->ft = &EBBCtrPrim_ftable; }
+
 #ifdef EBB_TEST
 #define PRIVATE
 #else
@@ -167,7 +181,7 @@ EBBCtrPrimStaticSharedCreate(EBBCtrPrimId *id)
 
 
 EBBRC
-EBBCtrPrimSharedCreate(EBBCtrPrimId *id)
+EBBCtrPrimSharedCreate(EBBCtrId *id)
 {
   EBBCtrPrimRef repRef;
   CObjEBBRootSharedRef rootRef;
@@ -205,7 +219,7 @@ EBBCtrPrimGlobalShared_globalMF(void *_self, EBBLTrans *lt, FuncNum fnum,
 }
 
 EBBRC
-EBBCtrPrimGlobalSharedCreate(EBBCtrPrimId *id)
+EBBCtrPrimGlobalSharedCreate(EBBCtrId *id)
 {
   EBBCtrPrimRef repRef;
 

@@ -18,6 +18,24 @@
 
 #include "ebbtest.h"
 
+#include "CObjEBBRootMulti.h"
+
+CObject(EBBCtrPrimDistributed) {
+  CObjInterface(EBBCtr) *ft;
+  uval localValue;
+  CObjEBBRootMultiRef theRoot;
+};
+
+extern CObjInterface(EBBCtr) EBBCtrPrimDistributed_ftable;
+
+static inline void
+EBBCtrPrimDistributedSetFT(EBBCtrPrimDistributedRef o)
+{
+  o->ft = &EBBCtrPrimDistributed_ftable;
+}
+
+typedef EBBCtrPrimDistributedRef *EBBCtrPrimDistributedId;
+
 static EBBRC
 init(void *_self)
 {
@@ -76,7 +94,7 @@ CObjInterface(EBBCtr) EBBCtrPrimDistributed_ftable = {
 };
 
 EBBRC
-EBBCtrPrimDistributedCreate(EBBCtrPrimDistributedId *id)
+EBBCtrPrimDistributedCreate(EBBCtrId *id)
 {
   EBBRC rc;
   CObjEBBRootMultiRef rootRef;

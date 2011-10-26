@@ -8,4 +8,10 @@ CObjInterface(EBBCtr) {
   EBBRC (*val)  (void *_self, uval *v);
 };
 
+CObject(EBBCtr) {
+  CObjInterface(EBBCtr) *ft;
+};
+
+typedef EBBCtrRef *EBBCtrId;
+
 #endif

@@ -58,8 +58,7 @@ EBBMemMgrPrimTest(void)
 void 
 EBBCtrTest(void)
 {
-  EBBCtrPrimId c;
-  EBBCtrPrimDistributedId c2;
+  EBBCtrId c, c2;
   EBBRC rc;
   uval v;
 
