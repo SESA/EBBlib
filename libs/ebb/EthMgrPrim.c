@@ -102,7 +102,7 @@ EthMgrPrimCreate(EthMgrId *id)
 
   rootRef->ft->init(rootRef, repRef);
   
-  rc = EBBAllocLocalPrimId(id);
+  rc = EBBAllocPrimId(id);
   EBBRCAssert(rc);
 
   rc = CObjEBBBind(*id, rootRef); 
@@ -112,7 +112,7 @@ EthMgrPrimCreate(EthMgrId *id)
   EBBPrimMalloc(sizeof(*rootRef), &rootRef, EBB_MEM_DEFAULT);
   CObjEBBRootSharedSetFT(rootRef);
   rootRef->ft->init(rootRef, &(repRef->evHdlr));
-  rc = EBBAllocLocalPrimId(&(repRef->hdlrId));
+  rc = EBBAllocPrimId(&(repRef->hdlrId));
   EBBRCAssert(rc);
   rc = CObjEBBBind(repRef->hdlrId, rootRef);
   EBBRCAssert(rc);

@@ -422,7 +422,7 @@ EBBEventMgrPrimImpInit(void)
   // pass it along for it's init
   rootRef->ft->init(rootRef, &theRep);
 
-  rc = EBBAllocLocalPrimId(&theEBBEventMgrPrimId);
+  rc = EBBAllocPrimId(&theEBBEventMgrPrimId);
   //  EBBRCAssert(rc);
 
   rc = CObjEBBBind(theEBBEventMgrPrimId, rootRef); 
@@ -472,7 +472,7 @@ CreateTestHandler()
   // pass it along for it's init
   rootRef->ft->init(rootRef, &theRep);
 
-  rc = EBBAllocLocalPrimId(&handlerId);
+  rc = EBBAllocPrimId(&handlerId);
   //  EBBRCAssert(rc);
 
   rc = CObjEBBBind(handlerId, rootRef); 

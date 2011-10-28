@@ -95,9 +95,9 @@ CObject(EBBMgrPrimRoot)
 };
 
 static EBBRC
-AllocLocalId (void *_self, void **id) {
+AllocId (void *_self, void **id) {
   EBBMgrPrimRef self = (EBBMgrPrimRef)_self;
-  *id = (void *)EBBIdAllocLocal(self->lsys);
+  *id = (void *)EBBIdAlloc(self->lsys);
   return EBBRC_OK;
 }
 
@@ -123,32 +123,17 @@ UnBindId (void *_self, EBBId id, EBBMissFunc *mf, EBBMissArg *arg) {
 }
 
 static CObjInterface(EBBMgrPrim) EBBMgrPrim_ftable = {
-  .AllocLocalId = AllocLocalId, 
+  .AllocId = AllocId, 
   .FreeId = FreeId, 
   .BindId = BindId, 
   .UnBindId = UnBindId, 
 };
 
-EBBRC
-globalMissHandler(uval arg0, uval arg1, uval arg2, uval arg3,
-		  uval arg4, uval arg5, uval arg6, uval arg7,
-		  uval *rcode) {
-  EBBId id = (EBBId)arg0;
-  EBB_LRT_printf("global miss received with id = %lX\n", (uval)id);
-  EBBGTrans *gt = EBBIdToGTrans(id);
-  *rcode = (uval)gt->globalMF;
-  return EBBRC_OK;
-}
-
 static EBBRC EBBMgrPrimERRMF (void *_self, EBBLTrans *lt,
 			      FuncNum fnum, EBBMissArg arg) {
-#if 0
-  if (isLocalEBB(EBBLTransToGTrans(lt))) {
-    EBB_LRT_printf("ERROR: gtable miss on a local-only EBB\n");
-  } else if (getLTransNodeId(lt) == EBBNodeId) {
-    EBB_LRT_printf("ERROR: gtable miss on a global EBB but we are the home node!\n");
-  } 
-#endif
+  
+  EBB_LRT_printf("%s: _self=%p: lt=%p fnum=%p arg=%p", __func__, 
+		 _self, lt, (void *)fnum, (void *)arg);
   return EBBRC_GENERIC_FAILURE;
 }
 
@@ -166,16 +151,11 @@ EBBMgrPrimRoot_handleMiss(void *_self, void *obj, EBBLTrans *lt,
   rep = &(self->reps[EBBMyEL()]);
 
   rep->lsys = &(self->EBBMgrPrimLTrans[EBBMyEL()]);
-  rep->lsys->localGTable = &(self->gsys.gTable[numGTransPerEL * EBBMyEL()]);
-  rep->lsys->localLTable = EBBGTransToLTrans(rep->lsys->localGTable);
-  rep->lsys->localFree = NULL;
-  rep->lsys->localNumAllocated = 0;
-  rep->lsys->localSize = numGTransPerEL;
-  rep->lsys->globalGTable = NULL;
-  rep->lsys->globalLTable = NULL;
-  rep->lsys->globalFree = NULL;
-  rep->lsys->globalNumAllocated = 0;
-  rep->lsys->globalSize = 0;
+  rep->lsys->gTable = &(self->gsys.gTable[numGTransPerEL * EBBMyEL()]);
+  rep->lsys->lTable = EBBGTransToLTrans(rep->lsys->gTable);
+  rep->lsys->free= NULL;
+  rep->lsys->numAllocated = 0;
+  rep->lsys->size = numGTransPerEL;
   rep->myRoot = self;
   rep->ft = &EBBMgrPrim_ftable;
   
@@ -256,13 +236,13 @@ void EBBMgrPrimInit() {
 	    (EBBMissArg)&theEBBMgrPrimRoot);
 
   // do an alloc to account for manual binding 
-  rc = EBBAllocLocalPrimId(&id);
+  rc = EBBAllocPrimId(&id);
 
   EBBRCAssert(rc);
   EBBAssert(id == (EBBId)theEBBMgrPrimId);
 
   // do an alloc to account for manual binding 
-  rc = EBBAllocLocalPrimId(&NULLId);
+  rc = EBBAllocPrimId(&NULLId);
 
   EBBRCAssert(rc);
 
