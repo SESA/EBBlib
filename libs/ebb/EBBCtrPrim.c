@@ -5,7 +5,6 @@
 #include "sys/trans.h" //FIXME: move EBBTransLSys out of this header
 #include "CObjEBB.h"
 #include "EBBTypes.h"
-#include "MsgMgr.h"
 #include "EBBMgrPrim.h"
 #include "EBBMemMgr.h"
 #include "EBBMemMgrPrim.h"
@@ -18,7 +17,6 @@
 
 #include "stdio.h"
 
-#include "ebbtest.h"
 
 #define EBBCALL(id, method, ...) COBJ_EBBCALL(id, method, ##__VA_ARGS__)
 
@@ -36,11 +34,7 @@ extern CObjInterface(EBBCtr) EBBCtrPrim_ftable;
 static inline void 
 EBBCtrPrimSetFT(EBBCtrPrimRef o) { o->ft = &EBBCtrPrim_ftable; }
 
-#ifdef EBB_TEST
-#define PRIVATE
-#else
 #define PRIVATE static
-#endif
 
 // Representative Code
 PRIVATE EBBRC
@@ -77,72 +71,10 @@ EBBCtrPrim_val(EBBCtrRef _self, uval *v)
   return EBBRC_OK;
 }
 
-//////////////////////////////////////////////////
-//BEGIN PROXY FUNCTIONS
-//////////////////////////////////////////////////
-
-//DS HACK: using these via msg infrastructure
-static EBBRC
-inc_id(EBBCtrPrimId id)
-{
-  EBB_LRT_printf("calling inc on %lX\n", (uval)id);
-  return EBBCALL((EBBCtrId)id, inc);
-}
-
-/* static EBBRC */
-/* val_id(EBBCtrPrimId id, uval *v) */
-/* { */
-/*   return EBBCALL(id, val, v); */
-/* } */
-
-PRIVATE EBBRC
-proxy_init(EBBCtrRef _self) 
-{
-  //EBBCtrPrimRef self = _self;
-  //This is a nop
-  return EBBRC_OK;
-}
-
-PRIVATE EBBRC 
-proxy_inc(EBBCtrRef _self) 
-{
-  EBBCtrPrimRef self = (EBBCtrPrimRef)_self;
-  uval ret;
-  //FIXME: this is a horrible hack just for the demo, sorry
-  EBBMessageNode1(1, (MsgHandler)inc_id, (uval)self->id, &ret);
-  return EBBRC_OK;
-}
-
-PRIVATE EBBRC 
-proxy_dec(EBBCtrRef _self) 
-{
-  //EBBCtrPrimRef self = _self;
-  //function-ship
-  return EBBRC_OK;
-}
-
-PRIVATE EBBRC
-proxy_val(EBBCtrRef _self, uval *v)
-{
-  //EBBCtrPrimRef self = _self;
-  //function-ship
-  return EBBRC_OK;
-}
-
-/////////////////////////////////////////////////
-//END PROXY FUNCTIONS
-/////////////////////////////////////////////////
-
 CObjInterface(EBBCtr) EBBCtrPrim_ftable = {
   .inc = EBBCtrPrim_inc, 
   .dec = EBBCtrPrim_dec, 
   .val = EBBCtrPrim_val
-};
-
-CObjInterface(EBBCtr) EBBCtrPrim_proxyftable = {
-  .inc = proxy_inc, 
-  .dec = proxy_dec, 
-  .val = proxy_val
 };
 
 static EBBRC 
@@ -197,52 +129,3 @@ EBBCtrPrimSharedCreate(EBBCtrId *id)
   return setup(repRef, rootRef, id);
 }
 
-static EBBRC
-EBBCtrPrimGlobalShared_localMF(void *_self, EBBLTrans *lt, FuncNum fnum,
-			       EBBMissArg arg) {
-  EBBCtrPrimRef repRef = (EBBCtrPrimRef)arg;
-  EBBCacheObj(lt, repRef);
-  *(void **)_self = repRef;
-  return EBBRC_OK;
-}
-
-static EBBRC
-EBBCtrPrimGlobalShared_globalMF(void *_self, EBBLTrans *lt, FuncNum fnum,
-			       EBBMissArg arg) {
-  EBBCtrPrimRef repRef;
-/*   EBBPrimMalloc(sizeof(*repRef), &repRef, EBB_MEM_DEFAULT); */
-  static EBBCtrPrim theRep;
-  EBB_LRT_printf("EBBCtr global MF called!\n");
-  repRef = &theRep;
-
-  repRef->ft = &EBBCtrPrim_proxyftable;
-  repRef->id = (EBBCtrPrimId)EBBLTransToId(lt);
-  EBBCacheObj(lt, repRef);
-  *(void **)_self = repRef;
-  return EBBRC_OK;
-}
-
-EBBRC
-EBBCtrPrimGlobalSharedCreate(EBBCtrId *id)
-{
-  EBBCtrPrimRef repRef;
-
-  //Allocate a root and rep via Primitive Allocator
-  EBBPrimMalloc(sizeof(*repRef), &repRef, EBB_MEM_DEFAULT);
-
-  EBBRC rc;
-  // setup function tables
-  EBBCtrPrimSetFT(repRef);
-
-  // setup my representative and root
-  EBBCtrPrim_init(repRef);
-
-  rc = EBBAllocGlobalPrimId(id);
-  EBBRCAssert(rc);
-
-  rc = EBBBindGlobalPrimId(*id, EBBCtrPrimGlobalShared_localMF,
-			   (EBBMissArg)repRef, EBBCtrPrimGlobalShared_globalMF); 
-  EBBRCAssert(rc);
-
-  return rc;
-}

@@ -67,11 +67,11 @@ create_build::
 # must execute in subdirs after the ones in this directory makefile
 ifeq ($(strip $(SRCDIR)), )
 #SRCDIR not defined, we must be in the source tree
--include ebb/ebbtest.mk
+-include ebb/ebb.mk
 else
 clean::
 	make -C $(IXPDIR) clean
--include $(SRCDIR)/ebb/ebbtest.mk
+-include $(SRCDIR)/ebb/ebb.mk
 endif
 
 ######################################################################

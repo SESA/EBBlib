@@ -1,3 +1,24 @@
+/******************************************************************************
+* Copyright (C) 2011 by Project SESA, Boston University
+*
+* Permission is hereby granted, free of charge, to any person obtaining a copy
+* of this software and associated documentation files (the "Software"), to deal
+* in the Software without restriction, including without limitation the rights
+* to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+* copies of the Software, and to permit persons to whom the Software is
+* furnished to do so, subject to the following conditions:
+*
+* The above copyright notice and this permission notice shall be included in
+* all copies or substantial portions of the Software.
+*
+* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+* IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+* FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+* AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+* LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+* OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+* THE SOFTWARE.
+*****************************************************************************/
 #include "../base/include.h"
 #include "../base/lrtio.h"
 #include "../cobj/cobj.h"
@@ -5,15 +26,9 @@
 #include "EBBTypes.h"
 #include "CObjEBB.h"
 #include "CObjEBBRoot.h"
-#include "MsgMgr.h"
 #include "EBBMgrPrim.h"
 #include "CObjEBBUtils.h"
 #include "EBBAssert.h"
-#include "EBB9PClient.h"
-#include "EBB9PClientPrim.h"
-#include "EBBFile.h"
-#include "EBB9PFilePrim.h"
-#include "BootInfo.h"
 #include __LRTINC(misc.h)
 
 //initialize the portion of ltable from lt
@@ -57,33 +72,18 @@ static void initGTable(EBBGTrans *gt, uval pages) {
 
 #define panic() (*(uval *)0)
 
+void *NULLId;
 
 typedef struct EBBTransGSysStruct {
   EBBGTrans *gTable;
   uval pages;
 } EBBTransGSys;
 
-extern uval EBBNodeId;
-
-static uval MsgAvailable;
-
-struct MessageMgr {
-  EBB9PClientId fe;
-  char nodespath[STRLEN];
-  uval nodespathlen;
-  EBBFileId p9addr;
-  EBBFileId node[MAXNODES];
-};
 
 CObjInterface(EBBMgrPrimRoot) 
 {
   CObjImplements(CObjEBBRoot);
   void (*init)(void *_self);
-  void (*initMsgMgr)(void *_self, EBBId id, char *nodespath, 
-		     uval nodespathlen);
-  EBBRC (*MsgNode) (void *_self, uval nodeid, MsgHandler h, 
-		    uval a0, uval a1, uval a2, uval a3, 
-		    uval a4, uval a5, uval a6, uval a7, uval *rcode); 
 };
 
 CObject(EBBMgrPrimRoot) 
@@ -92,29 +92,12 @@ CObject(EBBMgrPrimRoot)
   EBBMgrPrim reps[EBB_TRANS_MAX_ELS];
   EBBTransLSys EBBMgrPrimLTrans[EBB_TRANS_MAX_ELS];
   EBBTransGSys gsys;  
-  struct BootInfo binfo;
-  struct MessageMgr mmgr;
 };
 
 static EBBRC
 AllocLocalId (void *_self, void **id) {
   EBBMgrPrimRef self = (EBBMgrPrimRef)_self;
   *id = (void *)EBBIdAllocLocal(self->lsys);
-  return EBBRC_OK;
-}
-static EBBRC
-AllocGlobalId (void *_self, void **id) {
-  EBBMgrPrimRef self = (EBBMgrPrimRef)_self;
-  if (!isGlobalSetup(self->lsys)) {
-    if (EBBNodeId != 0) {
-      SetupGlobal(self->lsys, EBBNodeId);
-    } else {
-      *id = NULL;
-      return EBBRC_GENERIC_FAILURE;
-    }
-  }
-
-  *id = (void *)EBBIdAllocGlobal(self->lsys);
   return EBBRC_OK;
 }
 
@@ -133,62 +116,17 @@ BindId (void *_self, EBBId id, EBBMissFunc mf, EBBMissArg arg) {
 }
 
 static EBBRC
-BindGlobalId (void *_self, EBBId id, EBBMissFunc mf, EBBMissArg arg,
-	      EBBMissFunc globalMF) {
-  EBBIdBindGlobal(id, mf, arg, globalMF);
-  return EBBRC_OK;
-}
-
-static EBBRC
 UnBindId (void *_self, EBBId id, EBBMissFunc *mf, EBBMissArg *arg) {
   //  EBBMgrPrimRef self = (EBBMgrPrimRef)_self;
   EBBIdUnBind(id, mf, arg);
   return EBBRC_OK;
 }
 
-static  EBBRC
-EBBMgrPrim_InitMessageMgr(void *_self, EBBId id, char *nodespath, uval pathlen) 
-{
-  EBBMgrPrimRef self = _self;
-  EBBMgrPrimRootRef root = self->myRoot;
-
-  root->ft->initMsgMgr(root, id, nodespath, pathlen);
-  return EBBRC_OK;
-}
-
-static EBBRC
-EBBMgrPrim_MessageNode(void *_self, uval nodeid, MsgHandler h, uval a0, uval a1, uval a2, 
-		       uval a3, uval a4, uval a5, uval a6, uval a7, uval *rc)
-{
-  EBBMgrPrimRef self = _self;
-  EBBMgrPrimRootRef root = self->myRoot;
-
-  return root->ft->MsgNode(root, nodeid, h, a0, a1, a2, a3, a4, a5, a6, a7, rc);
-}
-
-static EBBRC
-EBBMgrPrim_HandleMsg(void *_self, void *data, uval len,
-		     struct MsgMgrReply *reply)
-{
-  struct MsgMgrMsg *msg = data;
-  
-  EBBAssert(len == sizeof(struct MsgMgrMsg));
-  
-  return msg->h(msg->a0, msg->a1, msg->a2, msg->a3, 
-		msg->a4, msg->a5, msg->a6, msg->a7, 
-		&(reply->rc));
-}
-
 static CObjInterface(EBBMgrPrim) EBBMgrPrim_ftable = {
   .AllocLocalId = AllocLocalId, 
-  .AllocGlobalId = AllocGlobalId,
   .FreeId = FreeId, 
   .BindId = BindId, 
-  .BindGlobalId = BindGlobalId,
   .UnBindId = UnBindId, 
-  .MessageNode = EBBMgrPrim_MessageNode,
-  .InitMessageMgr = EBBMgrPrim_InitMessageMgr,
-  .HandleMsg = EBBMgrPrim_HandleMsg
 };
 
 EBBRC
@@ -204,22 +142,13 @@ globalMissHandler(uval arg0, uval arg1, uval arg2, uval arg3,
 
 static EBBRC EBBMgrPrimERRMF (void *_self, EBBLTrans *lt,
 			      FuncNum fnum, EBBMissArg arg) {
-  EBBMissFunc mf;
+#if 0
   if (isLocalEBB(EBBLTransToGTrans(lt))) {
     EBB_LRT_printf("ERROR: gtable miss on a local-only EBB\n");
-  } else if (!MsgAvailable) {
-    EBB_LRT_printf("ERROR: gtable miss on a global EBB but not connected!\n");
   } else if (getLTransNodeId(lt) == EBBNodeId) {
     EBB_LRT_printf("ERROR: gtable miss on a global EBB but we are the home node!\n");
-  } else {
-    //call the home node, which should return an EBBMissFunc to handle this call
-    uval nodeId = getLTransNodeId(lt);
-    EBB_LRT_printf("gtable miss, home node at %ld\n", nodeId);
-    EBBMessageNode1(nodeId, globalMissHandler, (uval)EBBLTransToId(lt),
-		    (uval *)&mf);
-    return mf(_self, lt, fnum, arg);
-  }
-
+  } 
+#endif
   return EBBRC_GENERIC_FAILURE;
 }
 
@@ -284,101 +213,13 @@ EBBMgrPrimRoot_init(void *_self)
   theERRMF = EBBMgrPrimERRMF;
   initGTable(self->gsys.gTable, self->gsys.pages);
   initAllLTables(EBBGTransToId(self->gsys.gTable), self->gsys.pages);
-  bzero(&(self->binfo), sizeof(self->binfo));
-  bzero(&(self->mmgr), sizeof(self->mmgr));
-  MsgAvailable = 0;
 }
 
-static void
-EBBMgrPrimRoot_initMsgMgr(void *_self, EBBId id, char *nodespath, uval pathlen) 
-{
-  EBBMgrPrimRootRef self = _self;
-  if (MsgAvailable) return;
-  self->mmgr.fe = (EBB9PClientId) id;
-  self->mmgr.nodespathlen = (pathlen < STRLEN) ? pathlen : STRLEN;
-  // JA KLUDGE --- I am getting lazy
-  memcpy(self->mmgr.nodespath, nodespath, self->mmgr.nodespathlen);
-  MsgAvailable = 1;
-}
 
-static EBBRC 
-EBBMgrPrimRoot_MsgNode(void *_self, uval nodeid, MsgHandler h,
-		       uval a0, uval a1, uval a2, 
-		       uval a3, uval a4, uval a5, uval a6, uval a7, 
-		       uval *rcode)
-{
-  EBBMgrPrimRootRef self = _self;
-  EBB9PClientId feId = self->mmgr.fe;
-  EBB9PClientId node;
-  EBBRC rc;
-  char tmp[STRLEN];
-  sval n;
-  struct MsgMgrMsg msg;
-  struct MsgMgrReply reply;
-
-  if (MsgAvailable == 0 ||  feId == 0 || nodeid > MAXNODES) return EBBRC_GENERIC_FAILURE;
-
-  if (self->mmgr.node[nodeid] == 0) {
-    // TRANSLATE nodeid into a "physical id" in this case a 9p id
-    EBB_LRT_printf("%s: nodespathlen=%ld nodespath=%s\n" , 
-		   __func__, self->mmgr.nodespathlen, self->mmgr.nodespath);
-    if (self->mmgr.p9addr==0) EBB9PFilePrimCreate(feId, &(self->mmgr.p9addr));
-    // JA KLUDGE GETTING REALLY LAZY
-    snprintf(tmp, STRLEN, "%s/%ld/p9addr", self->mmgr.nodespath, nodeid);
-    EBB_LRT_printf("%s: target node path: %s\n", __func__, tmp);
-    rc = EBBCALL(self->mmgr.p9addr, open, tmp, EBBFILE_OREAD, 0);
-    if (!EBBRC_SUCCESS(rc)) {
-	// JA FIXME: LEAK OBJECTS
-	return rc;
-    }
-    rc = EBBCALL(self->mmgr.p9addr, read, tmp, STRLEN, &n);
-    if (!EBBRC_SUCCESS(rc)) {
-	// JA FIXME: LEAK OBJECTS
-	return rc;
-    }
-    if (n<=STRLEN) tmp[n]=0;
-    EBBCALL(self->mmgr.p9addr, close, &n);
-    EBB_LRT_printf("%s: target node %ld 9p address: %s\n", __func__, nodeid, 
-		   tmp);
-    EBB9PClientPrimCreate(&node);
-    rc = EBBCALL(node, mount, tmp);
-    if (!EBBRC_SUCCESS(rc)) {
-	// JA FIXME: LEAK OBJECTS
-      return rc;
-    }
-    EBB9PFilePrimCreate(node,&(self->mmgr.node[nodeid]));
-    rc = EBBCALL(self->mmgr.node[nodeid], open, "/msg", EBBFILE_ORDWR, 0);
-    if (!EBBRC_SUCCESS(rc)) {
-	// JA FIXME: LEAK OBJECTS
-	return rc;
-    }
-  }
-
-  // marshall
-  msg.h = h;
-  msg.a0 = a0; msg.a1 = a1; msg.a2 = a2; msg.a3 = a3;  
-  msg.a4 = a4; msg.a5 = a5; msg.a6 = a6; msg.a7 = a7;
-
-  rc = EBBCALL(self->mmgr.node[nodeid], write, &msg, sizeof(msg), &n);
-
-  EBBRCAssert(rc);
-  EBBAssert(n == sizeof(msg));
-
-  rc = EBBCALL(self->mmgr.node[nodeid], pread, &reply, sizeof(reply), 0, &n);
-
-  EBBRCAssert(rc);
-  EBBAssert(n == sizeof(reply));
-
-  *rcode = reply.rc;
-
-  return rc;
-}
 
 static CObjInterface(EBBMgrPrimRoot) EBBMgrPrimRoot_ftable = {
   { .handleMiss = EBBMgrPrimRoot_handleMiss },
   .init = EBBMgrPrimRoot_init,
-  .initMsgMgr = EBBMgrPrimRoot_initMsgMgr,
-  .MsgNode = EBBMgrPrimRoot_MsgNode
 };
 				     
 //FIXME: have to statically allocate these because there is
@@ -397,7 +238,7 @@ static EBBRC EBBMgrPrimMF (void *_self, EBBLTrans *lt,
 #endif
 
 // declarations of externals
-EBBMgrPrimRef *theEBBMgrPrimId;
+EBBMgrPrimId theEBBMgrPrimId;
 
 void EBBMgrPrimInit() {
   static EBBMgrPrimRoot theEBBMgrPrimRoot = { .ft = &EBBMgrPrimRoot_ftable };
@@ -407,7 +248,7 @@ void EBBMgrPrimInit() {
   theEBBMgrPrimRoot.ft->init(&theEBBMgrPrimRoot);
 
   // manually binding the EBBMgrPrim in
-  theEBBMgrPrimId = (EBBMgrPrimRef *)
+  theEBBMgrPrimId = (EBBMgrPrimId)
     EBBGTransToId(theEBBMgrPrimRoot.gsys.gTable);
 
   EBBIdBind((EBBId) theEBBMgrPrimId, 
@@ -419,6 +260,12 @@ void EBBMgrPrimInit() {
 
   EBBRCAssert(rc);
   EBBAssert(id == (EBBId)theEBBMgrPrimId);
+
+  // do an alloc to account for manual binding 
+  rc = EBBAllocLocalPrimId(&NULLId);
+
+  EBBRCAssert(rc);
+
 }
 
 // FIXME: MISC external declartions

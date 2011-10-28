@@ -59,7 +59,7 @@ CObjEBBRootMulti_nextRep(void *_self, RepListNode *curr, void *rep)
 
 
 CObjInterface(CObjEBBRootMulti) CObjEBBRootMulti_ftable = {
-  { CObjEBBRootMulti_handleMiss },
-  CObjEBBRootMulti_init,
-  CObjEBBRootMulti_nextRep
+  { .handleMiss = CObjEBBRootMulti_handleMiss },
+  .init = CObjEBBRootMulti_init,
+  .nextRep = CObjEBBRootMulti_nextRep
 };

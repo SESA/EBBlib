@@ -3,7 +3,6 @@
 #include "../cobj/cobj.h"
 #include "EBBTypes.h"
 #include "CObjEBB.h"
-#include "MsgMgr.h"
 #include "EBBMgrPrim.h"
 #include "CObjEBBUtils.h"
 #include "CObjEBBRoot.h"
@@ -16,7 +15,7 @@
 static uval8 theMemory[MEMSIZE];
 
 static EBBRC
-init(void *_self)
+EBBMemMgrPrim_init(void *_self)
 {
   EBBMemMgrPrimRef self = _self;
   self->mem = theMemory;
@@ -27,7 +26,7 @@ init(void *_self)
 //just grab from the beginning of the memory and move
 //the pointer forward until we run out
 static EBBRC
-alloc(void *_self, uval size, void *mem, EBB_MEM_POOL pool)
+EBBMemMgrPrim_alloc(void *_self, uval size, void *mem, EBB_MEM_POOL pool)
 {
   EBBMemMgrPrimRef self = _self;
   if (size > self->len) {
@@ -42,13 +41,16 @@ alloc(void *_self, uval size, void *mem, EBB_MEM_POOL pool)
 
 //freeing is a nop in this implementation
 static EBBRC
-free(void *_self, void *mem) {
+EBBMemMgrPrim_free(void *_self, void *mem) {
   return EBBRC_OK;
 }
 
 CObjInterface(EBBMemMgr) EBBMemMgrPrim_ftable = {
-  init, alloc, free
+  .init = EBBMemMgrPrim_init, 
+  .alloc = EBBMemMgrPrim_alloc, 
+  .free = EBBMemMgrPrim_free
 };
+
 
 EBBMemMgrPrimRef *theEBBMemMgrPrimId;
 
