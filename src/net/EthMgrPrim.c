@@ -21,6 +21,7 @@
 
 #include <core/lrt/pic.h>
 #include <net/lrt/ethlib.h>
+#include <strings.h>
 
 #define VERBOSE_PR(...) ( EBB_LRT_printf(__VA_ARGS__) )
 

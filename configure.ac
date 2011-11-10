@@ -3,7 +3,7 @@
 
 AC_PREREQ(2.61)
 AC_INIT([EBBLib],[0.1],[sesa@lists.xstack.org])
-AM_INIT_AUTOMAKE([-Wall -Werror foreign subdir-objects])
+AM_INIT_AUTOMAKE([foreign subdir-objects -Wall -Werror ])
 AC_CONFIG_SRCDIR([src/EBBStart.c])
 AC_CONFIG_HEADER([src/config.h])
 
@@ -11,6 +11,7 @@ AC_DEFINE(LRT_ULNX, [], [Set to indicate that we are running the userland Linux 
 
 # Checks for programs.
 AC_PROG_CC
+AM_PROG_CC_C_O
 AM_PROG_AS
 
 # Checks for libraries.
