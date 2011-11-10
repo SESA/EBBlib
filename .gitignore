@@ -11,3 +11,4 @@ install
 /src/config.h.in
 /build*/
 /tmp/
+/compile

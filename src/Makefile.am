@@ -17,6 +17,7 @@ ebbtest_SOURCES += lrt/assert.h core/EBBMgrPrim.h core/EventMgrPrim.h
 ebbtest_SOURCES += core/EventMgrPrimImp.h core/MemMgr.h core/sys/defFT.h
 ebbtest_SOURCES += core/MemMgrPrim.h core/lrt/pic.h net/lrt/ethlib.h
 ebbtest_SOURCES += net/EthTypeMgr.h net/EthMgr.h net/EthMgrPrim.h
+ebbtest_SOURCES += core/cobj/CObjEBBUtils.h
 
 #LRT conditional
 ebbtest_SOURCES += core/lrt/ulnx/pic.c lrt/ulnx/lrt_start.c
