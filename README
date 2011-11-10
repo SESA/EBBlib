@@ -1,7 +1,7 @@
 System independent library to support Elastic Building Blocks
 
 To build - 
-run autoreconf --install
+autoreconf --install
 mkdir <build directory>
 cd <build directory>
 run the configure script
