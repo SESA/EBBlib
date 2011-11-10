@@ -4,11 +4,7 @@ install
 /aclocal.m4
 /autom4te.cache/
 /configure
-/depcomp
-/install-sh
-/missing
 /src/Makefile.in
 /src/config.h.in
 /build*/
 /tmp/
-/compile
