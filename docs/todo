@@ -1,5 +1,19 @@
+We will do this project based on series of staged objectives.  We
+first describe the objects in each phase, then have a list of specific
+projects. 
+
+Possible order to prioritize work:
+1. get distributed counter within a multi-core node
+2. distributed counter across nodes
+3. bare metal environment, to demonstrate elasticity, fast boot
+4. simple elastic multi-node expermits (e.g., hash table) with control
+   plane on cloud platform
+5. Real application
+
+
 Discussions to be promoted into jobjar items once we have decided on them:
 -------------------------------------------------------------------------
+Style:
 o how do we want to return errors.  Proposal, we adopt 1/2 of what K42
   did, i.e., an error is negative space.  With an error we have three
   values:
@@ -7,26 +21,46 @@ o how do we want to return errors.  Proposal, we adopt 1/2 of what K42
   2. a class specific error that can be responded to
   3. a relatively unique system wide number that is ored in to the
      error
+o fixing types, uval... 
+o making EBB definitions consistent, 
+
+Infrastructure:
 o unit testing model
-o get counter example working again
+
+l0 & lrt evolution:
 o C++
-o bare metal environment
-  o look at openboot
-  o bare metal on xen
+o bare metal environment on x86 & PPC
+  (look at openboot, bare metal on xen)
+  o debugging environment for bare metal
+  o network drivers for BG
+  o interfaces that can be paravirtualized
+o get L4 environment going??? do we want this, do we want Linux,
+  MacOS, windows?
+o port to blue gene
+
+Cross node:
 o message passing cross node
 o extend EBB miss to work over messages
 o ethernet support
 o get distributed counter example across nodes
-o port to blue gene
-o start on medical example
-o management plane, front end working programatically against blue
+
+o management plane, 
+  1) monitors ourselves, determins when we need to scale up... when
+  nodes failed
+  2) front end working programatically against blue
   gene and vcloud  
+
+l2 functionlaity & iteration:
 o enabled mode programming model:
   o threads
   o blocking locks
 o proper implementation of memory allocator
-o port over scientific applications
 o ulinux cludge for per-processor mappings for translation table
   (i.e., allocate per-processor memory).   
+
+application:
+o port over scientific applications
+o start on medical example
+
 
 

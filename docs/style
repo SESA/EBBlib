@@ -2,3 +2,4 @@ Naming conventions:
 o most things are EBBs, so lets not bother with "EBB" at the beginning
   of name
 o We will capitalize first letter of a name that is a class
+
