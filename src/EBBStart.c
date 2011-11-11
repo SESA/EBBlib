@@ -29,7 +29,7 @@ kludge(void)
   EBBMgrPrimInit();
   rc = EBBMemMgrPrimInit();
   EBBRCAssert(rc);
-  rc = EBBEventMgrPrimImpInit();
+  rc = EventMgrPrimImpInit();
   EBBRCAssert(rc);
   EBB_LRT_printf("%s: about to call init eth\n", __func__);
   EthMgrPrimCreate(&ethmgr);
@@ -52,7 +52,7 @@ ipihdlr(void)
 void
 EBBStart(void)
 {
-  /* Three main EBB's are EBBMgrPrim, EBBEventMgrPrim EBBMemMgrPrim    */
+  /* Three main EBB's are EBBMgrPrim, EventMgrPrim EBBMemMgrPrim    */
   /* There creation and initialization are interdependent and requires */
   /* fancy footwork */
 

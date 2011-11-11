@@ -12,7 +12,7 @@ struct EthernetHeader {
 CObjInterface(EthMgr) {
   EBBRC (*init)  (void *_self);
   EBBRC (*bind)  (void *_self, uval16 type, EthTypeMgrId id);
-  CObjImplements(EBBEventHandler);
+  CObjImplements(EventHandler);
 };
 
 CObject(EthMgr) {

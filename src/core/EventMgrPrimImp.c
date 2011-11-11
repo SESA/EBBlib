@@ -31,25 +31,25 @@
  */ 
 
 typedef struct  {
-  EBBEventHandlerId id;
+  EventHandlerId id;
 } HandlerInfoStruc;
 
 #define MAXEVENTS 256
 
-CObject(EBBEventMgrPrimImp){
-  CObjInterface(EBBEventMgrPrim) *ft;
+CObject(EventMgrPrimImp){
+  CObjInterface(EventMgrPrim) *ft;
   HandlerInfoStruc handlerInfo[MAXEVENTS];
 };
 
 static void
-repInit(EBBEventMgrPrimImpRef rep)
+repInit(EventMgrPrimImpRef rep)
 {
   uval i;
 
   for (i=0; i<MAXEVENTS; i++) rep->handlerInfo[i].id=NULLId;
 }
 
-EBBEventMgrPrimImp theRep;
+EventMgrPrimImp theRep;
 
 // define vector functions that map vectors to events
 // each function call's the appropriate handler installed
@@ -59,7 +59,10 @@ EBBEventMgrPrimImp theRep;
 #define VFUNC(i)					\
 static void vf##i(void)		    		        \
 {							\
-  EBBCALL(theRep.handlerInfo[i].id, handleEvent);	\
+  EventHandlerId handler;                            \
+  EBBCALL(theEventMgrPrimId, getHandler, i,  &handler); \
+  EBBAssert(handler != NULL);                            \
+  EBBCALL(handler, handleEvent);	                \
 }		
 
 VFUNC(0);
@@ -349,12 +352,21 @@ vfunc vfTbl[MAXEVENTS] = {
   vf250, vf251, vf252, vf253, vf254, vf255
 };
 
+
+static EBBRC
+EventMgrPrim_getHandler(void *_self, uval eventNo, EventHandlerId *handler)
+{
+  EventMgrPrimImpRef self = _self;
+  *handler = self->handlerInfo[eventNo].id;
+  return EBBRC_OK;
+}
+
 static EBBRC
 EventMgrPrim_registerHandler(void *_self, uval eventNo, 
-			     EBBEventHandlerId handler, 
+			     EventHandlerId handler, 
 			     uval isrc)
 {
-  EBBEventMgrPrimImpRef self = _self;
+  EventMgrPrimImpRef self = _self;
 
   if ( (eventNo >= MAXEVENTS) || (eventNo<0) ){
     return EBBRC_BADPARAMETER;
@@ -387,32 +399,33 @@ EventMgrPrim_allocEventNo(void *_self, uval *eventNoPtr)
   return EBBRC_OK;
 }
 
-CObjInterface(EBBEventMgrPrim) EBBEventMgrPrimImp_ftable = {
+CObjInterface(EventMgrPrim) EventMgrPrimImp_ftable = {
+  .getHandler = EventMgrPrim_getHandler,
   .registerHandler = EventMgrPrim_registerHandler, 
   .allocEventNo = EventMgrPrim_allocEventNo, 
 };
 
 static void
-EBBEventMgrPrimSetFT(EBBEventMgrPrimImpRef o)
+EventMgrPrimSetFT(EventMgrPrimImpRef o)
 {
-  o->ft = &EBBEventMgrPrimImp_ftable;
+  o->ft = &EventMgrPrimImp_ftable;
 }
 
-EBBEventMgrPrimId theEBBEventMgrPrimId;
+EventMgrPrimId theEventMgrPrimId;
 
 EBBRC
-EBBEventMgrPrimImpInit(void)
+EventMgrPrimImpInit(void)
 {
   EBBRC rc;
   static CObjEBBRootShared theRoot;
-  EBBEventMgrPrimImpRef repRef = &theRep;
+  EventMgrPrimImpRef repRef = &theRep;
   CObjEBBRootSharedRef rootRef = &theRoot;
 
   EBBAssert(MAXEVENTS > lrt_pic_numvec());
 
   // setup function tables
   CObjEBBRootSharedSetFT(rootRef);
-  EBBEventMgrPrimSetFT(repRef);
+  EventMgrPrimSetFT(repRef);
 
   // setup my representative and root
   repInit(repRef);
@@ -420,12 +433,18 @@ EBBEventMgrPrimImpInit(void)
   // pass it along for it's init
   rootRef->ft->init(rootRef, &theRep);
 
-  rc = EBBAllocPrimId(&theEBBEventMgrPrimId);
+  rc = EBBAllocPrimId(&theEventMgrPrimId);
   //  EBBRCAssert(rc);
 
-  rc = CObjEBBBind(theEBBEventMgrPrimId, rootRef); 
+  rc = CObjEBBBind(theEventMgrPrimId, rootRef); 
   //  EBBRCAssert(rc);
   return EBBRC_OK;
+};
+
+EvntLoc 
+EventMgrPrim_GetMyEL()
+{
+  return lrt_pic_myid;
 };
 
 #if 0
@@ -443,26 +462,26 @@ EventHandler_init(void *_self)
 };
 
 
-static CObjInterface(EBBEventHandler) EBBEventHandler_ftable = {
+static CObjInterface(EventHandler) EventHandler_ftable = {
   .handleEvent = EventHandler_handleEvent,
   .init = EventHandler_init
 };
 
 
 // change to dynamically allocate this
-static EBBEventHandlerId
+static EventHandlerId
 CreateTestHandler()
 {
   EBBRC rc;
-  static EBBEventHandler theRep;
-  EBBEventHandlerRef repRef = &theRep;
+  static EventHandler theRep;
+  EventHandlerRef repRef = &theRep;
   static CObjEBBRootShared theRoot;
   CObjEBBRootSharedRef rootRef = &theRoot;
-  EBBEventHandlerId handlerId; 
+  EventHandlerId handlerId; 
 
   // setup function tables
   CObjEBBRootSharedSetFT(rootRef);
-  repRef->ft = &EBBEventHandler_ftable;
+  repRef->ft = &EventHandler_ftable;
 
   // setup my representative and root
   repRef->ft->init(repRef);
@@ -480,14 +499,14 @@ CreateTestHandler()
 }
 
 /* move to a seperate file eventually, should not be imp specific */
-void EBBEventMgrPrimImpTest(void) 
+void EventMgrPrimImpTest(void) 
 {
-  EBBEventHandlerId handlerId;
+  EventHandlerId handlerId;
   int eventNo;
 
   handlerId = CreateTestHandler();
 
-  EBBCALL(theEBBEventMgrPrimId, allocEventNo, &eventNo);
-  EBBCALL(theEBBEventMgrPrimId, registerHandler, eventNo, handlerId);
+  EBBCALL(theEventMgrPrimId, allocEventNo, &eventNo);
+  EBBCALL(theEventMgrPrimId, registerHandler, eventNo, handlerId);
 }
 #endif

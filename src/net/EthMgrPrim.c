@@ -29,14 +29,14 @@
 #define NUMETHTYPES (1<<(sizeof(uval16) * 8))
 
 CObject(EvHdlr) {
-  CObjInterface(EBBEventHandler) *ft;
+  CObjInterface(EventHandler) *ft;
 }; 
 
 CObject(EthMgrPrim) {
   CObjInterface(EthMgr) *ft;
   EthTypeMgrId typeMgrs[NUMETHTYPES];
   CObjectDefine(EvHdlr) evHdlr;
-  EBBEventHandlerId hdlrId;
+  EventHandlerId hdlrId;
   uval ev;
   uval rcnt;
 };
@@ -78,7 +78,7 @@ static inline void
 EthMgrPrimSetFT(EthMgrPrimRef o) 
 { 
   o->ft = &EthMgrPrim_ftable; 
-  o->evHdlr.ft = &(EthMgrPrim_ftable.EBBEventHandler_if);
+  o->evHdlr.ft = &(EthMgrPrim_ftable.EventHandler_if);
 }
 
 
@@ -116,13 +116,13 @@ EthMgrPrimCreate(EthMgrId *id)
   rc = CObjEBBBind(repRef->hdlrId, rootRef);
   EBBRCAssert(rc);
  
-  rc = EBBCALL(theEBBEventMgrPrimId, allocEventNo, &(repRef->ev));
+  rc = EBBCALL(theEventMgrPrimId, allocEventNo, &(repRef->ev));
   EBBRCAssert(rc);
 
   rc = ethlib_nic_init("eth1", &nicisrc);
   EBBRCAssert(rc);
 
-  rc = EBBCALL(theEBBEventMgrPrimId, registerHandler, repRef->ev, 
+  rc = EBBCALL(theEventMgrPrimId, registerHandler, repRef->ev, 
 	       repRef->hdlrId, nicisrc);
   EBBRCAssert(rc);
   
