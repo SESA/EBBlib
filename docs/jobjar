@@ -3,7 +3,6 @@ Things we have agreed on:
 o finish the initialization code, so that on next stage message to same
   core on core 0, from first exception to turn to first message,
   go to a boot object, check comments in ebbstart.c
-o move src up in the tree
 o get counter example working again
 o put interface around locks in core
 o put in license on all files

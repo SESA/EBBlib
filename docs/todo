@@ -2,13 +2,17 @@ We will do this project based on series of staged objectives.  We
 first describe the objects in each phase, then have a list of specific
 projects. 
 
+Goal here to get baseline results at each stage
 Possible order to prioritize work:
 1. get distributed counter within a multi-core node
+   o elasticity within a node
+   o hash table...
 2. distributed counter across nodes
 3. bare metal environment, to demonstrate elasticity, fast boot
 4. simple elastic multi-node expermits (e.g., hash table) with control
    plane on cloud platform
-5. Real application
+5. non-exception
+6. Real application
 
 
 Discussions to be promoted into jobjar items once we have decided on them:

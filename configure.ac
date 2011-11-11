@@ -5,8 +5,8 @@ AC_PREREQ(2.61)
 AC_INIT([EBBLib],[0.1],[sesa@lists.xstack.org])
 AC_CONFIG_AUX_DIR([build-aux])
 AM_INIT_AUTOMAKE([foreign subdir-objects -Wall -Werror ])
-AC_CONFIG_SRCDIR([src/EBBStart.c])
-AC_CONFIG_HEADER([src/config.h])
+AC_CONFIG_SRCDIR([EBBStart.c])
+AC_CONFIG_HEADER([config.h])
 
 AC_DEFINE(LRT_ULNX, [], [Set to indicate that we are running the userland Linux low-level runtime])
 
@@ -35,6 +35,5 @@ AC_SEARCH_LIBS([pcap_freealldevs], [pcap], [],
 				 [AC_MSG_FAILURE([Pcap library missing])])
 AC_CHECK_FUNCS([bzero dup2 gethostbyname memset socket strerror])
 
-AC_CONFIG_FILES([Makefile
-		 src/Makefile])
+AC_CONFIG_FILES([Makefile])
 AC_OUTPUT
