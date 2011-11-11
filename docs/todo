@@ -1,4 +1,5 @@
-Discussions to be promoted into TODO items once we have decided on them:
+Discussions to be promoted into jobjar items once we have decided on them:
+-------------------------------------------------------------------------
 o how do we want to return errors.  Proposal, we adopt 1/2 of what K42
   did, i.e., an error is negative space.  With an error we have three
   values:
@@ -6,12 +7,26 @@ o how do we want to return errors.  Proposal, we adopt 1/2 of what K42
   2. a class specific error that can be responded to
   3. a relatively unique system wide number that is ored in to the
      error
-o what do we want the makefile, configuration model to look like???
 o unit testing model
-
-Naming conventions:
-o most things are EBBs, so lets not bother with "EBB" at the beginning
-  of name
-o We will capitalize first letter of a name that is a class
+o get counter example working again
+o C++
+o bare metal environment
+  o look at openboot
+  o bare metal on xen
+o message passing cross node
+o extend EBB miss to work over messages
+o ethernet support
+o get distributed counter example across nodes
+o port to blue gene
+o start on medical example
+o management plane, front end working programatically against blue
+  gene and vcloud  
+o enabled mode programming model:
+  o threads
+  o blocking locks
+o proper implementation of memory allocator
+o port over scientific applications
+o ulinux cludge for per-processor mappings for translation table
+  (i.e., allocate per-processor memory).   
 
 

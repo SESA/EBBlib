@@ -1,3 +1,2 @@
 Things we have agreed on:
 ------------------------
-o start to support multiple targets by creating scripts that create target tree and Makefile that specify VPATH...
