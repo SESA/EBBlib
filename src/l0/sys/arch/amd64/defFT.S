@@ -11,7 +11,7 @@
 #include <config.h>
 #include <arch/amd64/fpr.h>
 #include <arch/amd64/asm.h>
-#include <core/const.h>
+#include <l0/const.h>
 	
 CODE_ENTRY(defaultFuncCommon)
 	FRAME_ENTER()

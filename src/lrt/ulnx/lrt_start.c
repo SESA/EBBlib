@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <types.h>
-#include <core/lrt/pic.h>
+#include <l0/lrt/pic.h>
 
 
 extern void EBBStart(void);

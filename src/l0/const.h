@@ -1,7 +1,7 @@
 #ifndef __EBB_CONSTS_H__
 #define __EBB_CONSTS_H__
 
-#include <core/lrt/const.h>
+#include <l0/lrt/const.h>
 
 #define EBB_TRANS_MAX_NODES (1024)
 #define EBB_TRANS_PAGE_SIZE (4096)

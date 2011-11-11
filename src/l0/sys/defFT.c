@@ -1,7 +1,7 @@
 #include <config.h>
 #include <types.h>
-#include <core/sys/trans.h>
-#include <core/sys/defFT.h>
+#include <l0/sys/trans.h>
+#include <l0/sys/defFT.h>
 
 //takes the function table pointer and function number and
 //invokes the miss handler then

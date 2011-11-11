@@ -1,10 +1,10 @@
 #include <config.h>
 #include <types.h>
-#include <core/types.h>
-#include <core/cobj/cobj.h>
-#include <core/cobj/CObjEBB.h>
-#include <core/cobj/CObjEBBRoot.h>
-#include <core/cobj/CObjEBBRootShared.h>
+#include <l0/types.h>
+#include <l0/cobj/cobj.h>
+#include <l0/cobj/CObjEBB.h>
+#include <l0/cobj/CObjEBBRoot.h>
+#include <l0/cobj/CObjEBBRootShared.h>
 
 //What you want to do here is install theRep into the EBBLTrans
 //then set obj to point to theRep (obj is really of type Object **)

@@ -33,8 +33,8 @@
 #define __EBB_TRANS_H__
 
 #include <types.h>
-#include <core/types.h>
-#include <core/const.h>
+#include <l0/types.h>
+#include <l0/const.h>
 
 //FIXME: All Trans Mem is statically allocated
 extern struct EBB_Trans_Mem {

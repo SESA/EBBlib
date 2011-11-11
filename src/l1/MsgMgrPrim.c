@@ -1,15 +1,15 @@
 #include <config.h>
 #include <types.h>
 #include <lrt/io.h>
-#include <core/lrt/pic.h>
+#include <l0/lrt/pic.h>
 #include <lrt/assert.h>
-#include <core/cobj/cobj.h>
-#include <core/types.h>
-#include <core/cobj/CObjEBB.h>
-#include <core/EBBMgrPrim.h>
-#include <core/MemMgr.h> 
-#include <core/MemMgrPrim.h>
-#include <core/EventMgrPrim.h>
+#include <l0/cobj/cobj.h>
+#include <l0/types.h>
+#include <l0/cobj/CObjEBB.h>
+#include <l0/EBBMgrPrim.h>
+#include <l0/MemMgr.h> 
+#include <l0/MemMgrPrim.h>
+#include <l0/EventMgrPrim.h>
 
 #include <l1/MsgMgr.h>
 #include <l1/MsgMgrPrim.h>

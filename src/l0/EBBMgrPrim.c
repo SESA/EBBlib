@@ -22,13 +22,13 @@
 
 #include <config.h>
 #include <lrt/io.h>
-#include <core/cobj/cobj.h>
-#include <core/sys/trans.h> //FIXME: move EBBTransLSys out of this header
-#include <core/types.h>
-#include <core/cobj/CObjEBB.h>
-#include <core/cobj/CObjEBBRoot.h>
-#include <core/EBBMgrPrim.h>
-#include <core/cobj/CObjEBBUtils.h>
+#include <l0/cobj/cobj.h>
+#include <l0/sys/trans.h> //FIXME: move EBBTransLSys out of this header
+#include <l0/types.h>
+#include <l0/cobj/CObjEBB.h>
+#include <l0/cobj/CObjEBBRoot.h>
+#include <l0/EBBMgrPrim.h>
+#include <l0/cobj/CObjEBBUtils.h>
 #include <lrt/assert.h>
 
 //initialize the portion of ltable from lt

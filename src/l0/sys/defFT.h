@@ -1,7 +1,7 @@
 #ifndef __DEFFT_H__
 #define __DEFFT_H__
 
-#include <core/types.h>
+#include <l0/types.h>
 
 #define DEFAULT_FUNC_DEC(OP) \
   extern EBBRC EBBDefFunc_ ## OP (void *, ...);

@@ -1,9 +1,9 @@
 #include <config.h>
 #include <types.h>
-#include <core/cobj/cobj.h>
-#include <core/types.h>
-#include <core/cobj/CObjEBB.h>
-#include <core/cobj/CObjEBBRoot.h>
+#include <l0/cobj/cobj.h>
+#include <l0/types.h>
+#include <l0/cobj/CObjEBB.h>
+#include <l0/cobj/CObjEBBRoot.h>
 
 EBBRC 
 CObjEBBMissFunc(void *_self, EBBLTrans *lt, FuncNum fnum, EBBMissArg arg)

@@ -2,7 +2,7 @@
 #define __LRT_PIC_H__
 
 #ifdef LRT_ULNX
-#include <core/lrt/ulnx/pic.h>
+#include <l0/lrt/ulnx/pic.h>
 #endif
 
 #endif

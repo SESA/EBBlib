@@ -12,7 +12,7 @@
 #include <pthread.h>
 
 #include <types.h>
-#include <core/lrt/ulnx/pic.h>
+#include <l0/lrt/ulnx/pic.h>
 
 extern lrt_pic_handler EBBstart;
 

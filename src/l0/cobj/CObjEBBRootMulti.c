@@ -1,12 +1,12 @@
 #include <config.h>
 #include <types.h>
-#include <core/cobj/cobj.h>
-#include <core/types.h>
-#include <core/cobj/CObjEBB.h>
-#include <core/cobj/CObjEBBRoot.h>
-#include <core/cobj/CObjEBBRootMulti.h>
-#include <core/MemMgr.h>
-#include <core/MemMgrPrim.h>
+#include <l0/cobj/cobj.h>
+#include <l0/types.h>
+#include <l0/cobj/CObjEBB.h>
+#include <l0/cobj/CObjEBBRoot.h>
+#include <l0/cobj/CObjEBBRootMulti.h>
+#include <l0/MemMgr.h>
+#include <l0/MemMgrPrim.h>
 
 struct RepListNode_s {
   void *rep;

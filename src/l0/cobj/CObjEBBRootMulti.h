@@ -1,7 +1,7 @@
 #ifndef __COBJ_EBB_ROOT_MULTI_H__
 #define __COBJ_EBB_ROOT_MULTI_H__
 
-#include <core/cobj/CObjEBBRoot.h>
+#include <l0/cobj/CObjEBBRoot.h>
 
 CObject(CObjEBBRootMulti);
 

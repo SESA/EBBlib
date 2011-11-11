@@ -1,25 +1,25 @@
 #include <config.h>
 #include <types.h>
 #include <lrt/io.h>
-#include <core/cobj/cobj.h>
-#include <core/sys/trans.h> //FIXME: move EBBTransLSys out of this header
-#include <core/cobj/CObjEBB.h>
-#include <core/types.h>
+#include <l0/cobj/cobj.h>
+#include <l0/sys/trans.h> //FIXME: move EBBTransLSys out of this header
+#include <l0/cobj/CObjEBB.h>
+#include <l0/types.h>
 #include <lrt/assert.h>
-#include <core/EBBMgrPrim.h>
-#include <core/MemMgr.h>
-#include <core/MemMgrPrim.h>
-#include <core/EventMgrPrim.h>
-#include <core/EventMgrPrimImp.h>
-#include <core/cobj/CObjEBBUtils.h>
-#include <core/cobj/CObjEBBRoot.h>
-#include <core/cobj/CObjEBBRootShared.h>
+#include <l0/EBBMgrPrim.h>
+#include <l0/MemMgr.h>
+#include <l0/MemMgrPrim.h>
+#include <l0/EventMgrPrim.h>
+#include <l0/EventMgrPrimImp.h>
+#include <l0/cobj/CObjEBBUtils.h>
+#include <l0/cobj/CObjEBBRoot.h>
+#include <l0/cobj/CObjEBBRootShared.h>
 
 #include <net/EthTypeMgr.h>
 #include <net/EthMgr.h>
 #include <net/EthMgrPrim.h>
 
-#include <core/lrt/pic.h>
+#include <l0/lrt/pic.h>
 #include <net/lrt/ethlib.h>
 #include <strings.h>
 

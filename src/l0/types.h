@@ -1,8 +1,8 @@
 #ifndef __CORE_TYPES_H__
 #define __CORE_TYPES_H__
 
-#include <core/const.h>
-#include <core/lrt/types.h>
+#include <l0/const.h>
+#include <l0/lrt/types.h>
 
 typedef struct EBBTransStruct EBBTrans;
 typedef EBBTrans EBBLTrans;

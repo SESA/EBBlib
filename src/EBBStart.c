@@ -1,17 +1,17 @@
 #include <config.h>
 #include <types.h>
 #include <lrt/io.h>
-#include <core/lrt/pic.h>
+#include <l0/lrt/pic.h>
 #include <lrt/assert.h>
 
-#include <core/cobj/cobj.h>
-#include <core/types.h>
-#include <core/cobj/CObjEBB.h>
-#include <core/EBBMgrPrim.h>
-#include <core/MemMgr.h> 
-#include <core/MemMgrPrim.h>
-#include <core/EventMgrPrim.h>
-#include <core/EventMgrPrimImp.h>
+#include <l0/cobj/cobj.h>
+#include <l0/types.h>
+#include <l0/cobj/CObjEBB.h>
+#include <l0/EBBMgrPrim.h>
+#include <l0/MemMgr.h> 
+#include <l0/MemMgrPrim.h>
+#include <l0/EventMgrPrim.h>
+#include <l0/EventMgrPrimImp.h>
 #include <net/EthTypeMgr.h>
 #include <net/EthMgr.h>
 #include <net/EthMgrPrim.h>
@@ -56,11 +56,11 @@ EBBStart(void)
   /* There creation and initialization are interdependent and requires */
   /* fancy footwork */
 
-  // put code here to get preboot versions of core EBBs ready
+  // put code here to get preboot versions of l0 EBBs ready
 
   // then invoke a method of BootInfo object on first message
   // this object should gather boot information (sysfacts and boot args)
-  // and then get full blown primitive core EBBS up (perhaps by a hot swap)
+  // and then get full blown primitive l0 EBBS up (perhaps by a hot swap)
 #if 0
   EBB_LRT_printf("%s: ADD REST OF INIT CODE HERE!\n", __func__);
   LRT_EBBAssert(0);

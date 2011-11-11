@@ -1,14 +1,14 @@
 #include <config.h>
 #include <types.h>
-#include <core/cobj/cobj.h>
-#include <core/types.h>
-#include <core/cobj/CObjEBB.h>
-#include <core/EBBMgrPrim.h>
-#include <core/cobj/CObjEBBUtils.h>
-#include <core/cobj/CObjEBBRoot.h>
-#include <core/cobj/CObjEBBRootShared.h>
-#include <core/MemMgr.h>
-#include <core/MemMgrPrim.h>
+#include <l0/cobj/cobj.h>
+#include <l0/types.h>
+#include <l0/cobj/CObjEBB.h>
+#include <l0/EBBMgrPrim.h>
+#include <l0/cobj/CObjEBBUtils.h>
+#include <l0/cobj/CObjEBBRoot.h>
+#include <l0/cobj/CObjEBBRootShared.h>
+#include <l0/MemMgr.h>
+#include <l0/MemMgrPrim.h>
 
 #define MEMSIZE (1 << 20)
 

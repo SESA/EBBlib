@@ -1,18 +1,18 @@
 #include <config.h>
 #include <string.h>
 #include <types.h>
-#include <core/cobj/cobj.h>
+#include <l0/cobj/cobj.h>
 #include <lrt/io.h>
-#include <core/types.h>
+#include <l0/types.h>
 #include <lrt/assert.h>
-#include <core/cobj/CObjEBB.h>
-#include <core/EBBMgrPrim.h>
-#include <core/cobj/CObjEBBUtils.h>
-#include <core/cobj/CObjEBBRoot.h>
-#include <core/cobj/CObjEBBRootShared.h>
-#include <core/EventMgrPrim.h>
-#include <core/EventMgrPrimImp.h>
-#include <core/lrt/pic.h>
+#include <l0/cobj/CObjEBB.h>
+#include <l0/EBBMgrPrim.h>
+#include <l0/cobj/CObjEBBUtils.h>
+#include <l0/cobj/CObjEBBRoot.h>
+#include <l0/cobj/CObjEBBRootShared.h>
+#include <l0/EventMgrPrim.h>
+#include <l0/EventMgrPrimImp.h>
+#include <l0/lrt/pic.h>
 
 
 
