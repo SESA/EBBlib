@@ -32,7 +32,7 @@
 #include <signal.h>
 #include <pthread.h>
 
-#include <types.h>
+#include <stdint.h>
 #include <l0/lrt/ulnx/pic.h>
 
 extern lrt_pic_handler EBBstart;
@@ -70,10 +70,10 @@ struct VecDesc {
 struct Pic {
   struct VecDesc vecs[NUM_VEC];
   fd_set fdset;
-  uval free;
-  uval numlpics;
-  uval lpiccnt;
-  uval lock;
+  uintptr_t free;
+  uintptr_t numlpics;
+  uintptr_t lpiccnt;
+  uintptr_t lock;
   int maxfd;
 } pic;
 
@@ -82,16 +82,16 @@ struct LPic {
   struct timespec periodic;
   lrt_pic_set mymask;
   lrt_pic_id id;
-  uval aux;
-  uval ipiStatus;
-  uval resetStatus;
+  uintptr_t aux;
+  uintptr_t ipiStatus;
+  uintptr_t resetStatus;
 } lpics[LRT_PIC_MAX_PICS];
 
 
-static uval
+static uintptr_t
 lock(void)
 {
-  uval rc=0;
+  uintptr_t rc=0;
   
   while (!rc) {
     rc = __sync_bool_compare_and_swap(&(pic.lock), 0, 1);
@@ -127,13 +127,13 @@ wakeupall(void)
 }
 
 void
-lrt_pic_enable(uval vec)
+lrt_pic_enable(uintptr_t vec)
 {
   lrt_pic_set_add(pic.vecs[vec].set, lrt_pic_myid);
 }
 
 void
-lrt_pic_disable(uval vec)
+lrt_pic_disable(uintptr_t vec)
 {
   if (vec != RST_VEC) lrt_pic_set_remove(pic.vecs[vec].set, lrt_pic_myid);
 }
@@ -151,24 +151,24 @@ lrt_pic_disableipi(void)
 }
 
 
-uval 
+uintptr_t 
 lrt_pic_firstvec(void) 
 { 
   return 0; 
 }
 
-uval 
+uintptr_t 
 lrt_pic_numvec(void) 
 { 
   return NUM_MAPPABLE_VEC; 
 }
     
-sval
-lrt_pic_init(uval numlpics, lrt_pic_handler h)
+intptr_t
+lrt_pic_init(uintptr_t numlpics, lrt_pic_handler h)
 {
   int fd[FIRST_VECFD];
   int i=0;
-  uval id;
+  uintptr_t id;
   struct sigaction sa;
   sigset_t blockset;
 
@@ -237,7 +237,7 @@ lrt_pic_init(uval numlpics, lrt_pic_handler h)
 
   // record this the thread id of this thread as lpic 
   lrt_pic_set_add(lpics[lrt_pic_myid].mymask, lrt_pic_myid);
-  lpics[lrt_pic_myid].aux = (uval)pthread_self();
+  lpics[lrt_pic_myid].aux = (uintptr_t)pthread_self();
   // start up threads for any other lpics
   for (id=lrt_pic_firstid+1; id<=lrt_pic_lastid; id++) {
     if (pthread_create((pthread_t *)(&lpics[id].aux), 
@@ -257,18 +257,18 @@ lrt_pic_init(uval numlpics, lrt_pic_handler h)
   return 1;
 }
 
-sval
-lrt_pic_allocvec(uval *vec)
+intptr_t
+lrt_pic_allocvec(uintptr_t *vec)
 {
-  uval rtn;
-  uval i;
-  sval rc=-1;
+  uintptr_t rtn;
+  uintptr_t i;
+  intptr_t rc=-1;
 
   lock();
 
   for (i=0, rtn=pic.free; i<NUM_MAPPABLE_VEC; i++) {
     if (pic.vecs[rtn].h == NULL) {
-      pic.vecs[rtn].h = (lrt_pic_handler)((uval)-1);
+      pic.vecs[rtn].h = (lrt_pic_handler)((uintptr_t)-1);
       pic.free++;
       if (pic.free >= NUM_MAPPABLE_VEC) pic.free=0;
       *vec = rtn;
@@ -285,7 +285,7 @@ lrt_pic_allocvec(uval *vec)
 
 }
 
-sval 
+intptr_t 
 lrt_pic_mapipi(lrt_pic_handler h)
 {
 
@@ -293,7 +293,7 @@ lrt_pic_mapipi(lrt_pic_handler h)
   return 1;
 }
 
-sval 
+intptr_t 
 lrt_pic_mapreset(lrt_pic_handler h)
 {
 
@@ -302,7 +302,7 @@ lrt_pic_mapreset(lrt_pic_handler h)
 }
 
 
-sval
+intptr_t
 lrt_pic_ipi(lrt_pic_id target)
 {
   if (target>lrt_pic_lastid) return -1;
@@ -312,7 +312,7 @@ lrt_pic_ipi(lrt_pic_id target)
   return 1;
 }
 
-sval
+intptr_t
 lrt_pic_reset()
 {
   lpics[lrt_pic_myid].resetStatus = 1;
@@ -333,8 +333,8 @@ lrt_pic_ackipi(void)
 //        3: no need to wakeupall can wakeup only affected lpics
 //    Perhaps just provide two interfaces for common cases of this, 'on' and 
 //    'all': lrt_pic_mapvec, lrt_pic_mapvec_on, lrt_pic_mapvec_all
-sval
-lrt_pic_mapvec(lrt_pic_src s, uval vec, lrt_pic_handler h)
+intptr_t
+lrt_pic_mapvec(lrt_pic_src s, uintptr_t vec, lrt_pic_handler h)
 {
   int i;
   int sfd = (int)s;
@@ -360,7 +360,7 @@ lrt_pic_mapvec(lrt_pic_src s, uval vec, lrt_pic_handler h)
 }
 
 static void
-bind_proc(uval p)
+bind_proc(uintptr_t p)
 {
 #if 0
   cpu_set_t mask;
@@ -379,7 +379,7 @@ bind_proc(uval p)
 // one loop for each local pic
 // each pic will wake up on any interrupt occurring but only dispatches
 // the handler if the interrupt includes the pic id of the loop in its pic set
-sval 
+intptr_t 
 lrt_pic_loop(lrt_pic_id myid)
 {
   fd_set rfds, efds;
@@ -479,7 +479,7 @@ ipihdlr(void)
 int
 main(int argc, char **argv)
 {
-  uval cores=1;
+  uintptr_t cores=1;
 
   if (argc>1) cores=atoi(argv[1]);
   lrt_pic_init(cores, ipihdlr);

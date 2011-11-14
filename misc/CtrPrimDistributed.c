@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  */
 #include <config.h>
-#include <types.h>
+#include <stdint.h>
 #include <l0/cobj/cobj.h>
 #include <l0/sys/trans.h> //FIXME: move EBBTransLSys out of this header
 #include <l0/cobj/CObjEBB.h>
@@ -36,7 +36,7 @@
 
 CObject(EBBCtrPrimDistributed) {
   CObjInterface(EBBCtr) *ft;
-  uval localValue;
+  uintptr_t localValue;
   CObjEBBRootMultiRef theRoot;
 };
 
@@ -69,10 +69,10 @@ EBBCtrPrimDistributed_dec(EBBCtrRef _self)
 }
 
 static EBBRC
-EBBCtrPrimDistributed_val(EBBCtrRef _self, uval *v)
+EBBCtrPrimDistributed_val(EBBCtrRef _self, uintptr_t *v)
 {
   EBBCtrPrimDistributedRef self = (EBBCtrPrimDistributedRef)_self;
-  uval val = 0;
+  uintptr_t val = 0;
   RepListNode *node;
   EBBCtrPrimDistributedRef rep = NULL;
   for (node = self->theRoot->ft->nextRep(self->theRoot, 0, &rep);

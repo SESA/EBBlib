@@ -32,7 +32,7 @@
 
 //initialize the portion of ltable from lt
 // to the specified number of pages
-static void initLTable(EBBLTrans *lt, uval pages) {
+static void initLTable(EBBLTrans *lt, uintptr_t pages) {
   EBBLTrans *iter;
   for (iter = lt; 
        ((void *)iter) < (void *)((&((char *)lt)[EBB_TRANS_PAGE_SIZE * pages]));
@@ -43,7 +43,7 @@ static void initLTable(EBBLTrans *lt, uval pages) {
 
 //init all ltables from lt to the specified number of pages
 //id must be the first id allocated
-static void initAllLTables(EBBId id, uval pages) {
+static void initAllLTables(EBBId id, uintptr_t pages) {
   int i;
   for (i = 0; i < EBB_TRANS_MAX_ELS; i++) {
     initLTable(EBBIdToSpecificLTrans(id, i), pages);
@@ -51,10 +51,10 @@ static void initAllLTables(EBBId id, uval pages) {
 }
 
 // FIXME: JA think there is a bug here.  We should be calcing NUM explicity
-static void initGTable(EBBGTrans *gt, uval pages) {
+static void initGTable(EBBGTrans *gt, uintptr_t pages) {
   EBBGTrans *iter;
   for (iter = gt;
-       iter < (EBBGTrans *)((uval)gt + pages * EBB_TRANS_PAGE_SIZE);
+       iter < (EBBGTrans *)((uintptr_t)gt + pages * EBB_TRANS_PAGE_SIZE);
        iter++) {
     EBBIdBind(EBBGTransToId(iter), theERRMF, 0);
   }
@@ -69,13 +69,13 @@ static void initGTable(EBBGTrans *gt, uval pages) {
 
 #define STRLEN 160
 
-#define panic() (*(uval *)0)
+#define panic() (*(uintptr_t *)0)
 
 void *NULLId;
 
 typedef struct EBBTransGSysStruct {
   EBBGTrans *gTable;
-  uval pages;
+  uintptr_t pages;
 } EBBTransGSys;
 
 
@@ -136,7 +136,7 @@ static EBBRC EBBMgrPrimERRMF (void *_self, EBBLTrans *lt,
   return EBBRC_GENERIC_FAILURE;
 }
 
-static uval
+static uintptr_t
 EBBMgrPrimRoot_handleMiss(void *_self, void *obj, EBBLTrans *lt,
 				 FuncNum fnum)
 {
@@ -169,7 +169,7 @@ static void EBB_Trans_Mem_Init(void) {
 // could also do initial mapping here if memory is
 // is not actually static reservation
 
-static void EBB_Trans_Mem_Alloc_Pages(uval num_pages, uval8 **pages) {
+static void EBB_Trans_Mem_Alloc_Pages(uintptr_t num_pages, uint8_t **pages) {
   if (&(EBB_Trans_Mem.free[EBB_TRANS_PAGE_SIZE * num_pages]) >
       &(EBB_Trans_Mem.GMem[EBB_TRANS_PAGE_SIZE * EBB_TRANS_NUM_PAGES])) {
     *pages = NULL;
@@ -188,7 +188,7 @@ EBBMgrPrimRoot_init(void *_self)
 
   EBB_Trans_Mem_Init();
   self->gsys.pages = EBB_TRANS_NUM_PAGES;
-  EBB_Trans_Mem_Alloc_Pages(self->gsys.pages, (uval8 **)&self->gsys.gTable);
+  EBB_Trans_Mem_Alloc_Pages(self->gsys.pages, (uint8_t **)&self->gsys.gTable);
   theERRMF = EBBMgrPrimERRMF;
   initGTable(self->gsys.gTable, self->gsys.pages);
   initAllLTables(EBBGTransToId(self->gsys.gTable), self->gsys.pages);

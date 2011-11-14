@@ -26,7 +26,7 @@
 #include <assert.h>
 #include <pthread.h>
 
-#include <types.h>
+#include <stdint.h>
 #include <l0/lrt/pic.h>
 
 #define PCAP_DEFAULT_SNAPLEN 1500
@@ -43,16 +43,16 @@ void packet_callback(unsigned char *Args,
 
 
 // fixme with real args
-sval
+intptr_t
 ethlib_nic_readpkt(void) {
   pcap_dispatch(hdl, 1, (void *) packet_callback, NULL);
   return 1;
 }
 
-sval
+intptr_t
 ethlib_nic_init(char *dev, lrt_pic_src *s)
 {
-  uval i;
+  uintptr_t i;
   char errbuf[PCAP_ERRBUF_SIZE];
   pcap_if_t *devs, *d;
  

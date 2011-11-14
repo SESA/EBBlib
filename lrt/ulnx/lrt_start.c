@@ -22,7 +22,7 @@
 #include <config.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <types.h>
+#include <stdint.h>
 #include <l0/lrt/pic.h>
 
 
@@ -53,7 +53,7 @@ void lrt_start(void)
 int
 main(int argc, char **argv)
 {
-  uval cores=1;
+  uintptr_t cores=1;
 
   fprintf(stderr, "%s: start!\n", __func__);
   if (argc>1) cores=atoi(argv[1]);

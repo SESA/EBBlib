@@ -21,7 +21,7 @@
  */
 #include <config.h>
 #include <string.h>
-#include <types.h>
+#include <stdint.h>
 #include <l0/cobj/cobj.h>
 #include <lrt/io.h>
 #include <l0/types.h>
@@ -65,7 +65,7 @@ CObject(EventMgrPrimImp){
 static void
 repInit(EventMgrPrimImpRef rep)
 {
-  uval i;
+  uintptr_t i;
 
   for (i=0; i<MAXEVENTS; i++) rep->handlerInfo[i].id=NULLId;
 }
@@ -375,7 +375,7 @@ vfunc vfTbl[MAXEVENTS] = {
 
 
 static EBBRC
-EventMgrPrim_getHandler(void *_self, uval eventNo, EventHandlerId *handler)
+EventMgrPrim_getHandler(void *_self, uintptr_t eventNo, EventHandlerId *handler)
 {
   EventMgrPrimImpRef self = _self;
   *handler = self->handlerInfo[eventNo].id;
@@ -383,9 +383,9 @@ EventMgrPrim_getHandler(void *_self, uval eventNo, EventHandlerId *handler)
 }
 
 static EBBRC
-EventMgrPrim_registerHandler(void *_self, uval eventNo, 
+EventMgrPrim_registerHandler(void *_self, uintptr_t eventNo, 
 			     EventHandlerId handler, 
-			     uval isrc)
+			     uintptr_t isrc)
 {
   EventMgrPrimImpRef self = _self;
 
@@ -414,7 +414,7 @@ EventMgrPrim_registerHandler(void *_self, uval eventNo,
 }
 
 static EBBRC 
-EventMgrPrim_allocEventNo(void *_self, uval *eventNoPtr)
+EventMgrPrim_allocEventNo(void *_self, uintptr_t *eventNoPtr)
 {
   if (lrt_pic_allocvec(eventNoPtr)<0) return EBBRC_OUTOFRESOURCES;
   return EBBRC_OK;

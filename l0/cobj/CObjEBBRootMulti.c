@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  */
 #include <config.h>
-#include <types.h>
+#include <stdint.h>
 #include <l0/cobj/cobj.h>
 #include <l0/types.h>
 #include <l0/cobj/CObjEBB.h>
@@ -34,7 +34,7 @@ struct RepListNode_s {
   RepListNode *next;
 };
 
-uval
+uintptr_t
 CObjEBBRootMulti_handleMiss(void *_self, void*obj, EBBLTrans *lt,
 			    FuncNum fnum)
 {

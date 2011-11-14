@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  */
 #include <config.h>
-#include <types.h>
+#include <stdint.h>
 #include <lrt/io.h>
 #include <l0/cobj/cobj.h>
 #include <l0/sys/trans.h> //FIXME: move EBBTransLSys out of this header
@@ -48,7 +48,7 @@
 
 #define EBBCALL(id, method, ...) COBJ_EBBCALL(id, method, ##__VA_ARGS__)
 
-#define NUMETHTYPES (1<<(sizeof(uval16) * 8))
+#define NUMETHTYPES (1<<(sizeof(uint16_t) * 8))
 
 CObject(EvHdlr) {
   CObjInterface(EventHandler) *ft;
@@ -59,8 +59,8 @@ CObject(EthMgrPrim) {
   EthTypeMgrId typeMgrs[NUMETHTYPES];
   CObjectDefine(EvHdlr) evHdlr;
   EventHandlerId hdlrId;
-  uval ev;
-  uval rcnt;
+  uintptr_t ev;
+  uintptr_t rcnt;
 };
 
 
@@ -71,13 +71,13 @@ EthMgrPrim_init(void *_self)
 }
 
 static EBBRC
-EthMgrPrim_bind(void *_self, uval16 type, EthTypeMgrId id)
+EthMgrPrim_bind(void *_self, uint16_t type, EthTypeMgrId id)
 {
   return EBBRC_GENERIC_FAILURE;
 }
 
 #define ContainingCOPtr(addr, ctype, field) \
-  ((EthMgrPrim *)(((uval)addr) - (__builtin_offsetof(ctype, field))))
+  ((EthMgrPrim *)(((uintptr_t)addr) - (__builtin_offsetof(ctype, field))))
   
 static EBBRC 
 EthMgrPrim_handleEvent(void *_self)

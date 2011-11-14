@@ -26,9 +26,9 @@
 
 extern pthread_key_t ELKey;
 
-static inline uval LRTEBBMyEL(void) {
+static inline uintptr_t LRTEBBMyEL(void) {
 /*   return 0; */
-  return (uval)pthread_getspecific(ELKey);
+  return (uintptr_t)pthread_getspecific(ELKey);
 }
 
 #endif

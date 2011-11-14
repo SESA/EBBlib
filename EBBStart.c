@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  */
 #include <config.h>
-#include <types.h>
+#include <stdint.h>
 #include <lrt/io.h>
 #include <l0/lrt/pic.h>
 #include <lrt/assert.h>

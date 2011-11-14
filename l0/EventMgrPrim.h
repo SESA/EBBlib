@@ -40,12 +40,12 @@ typedef EventHandlerRef *EventHandlerId;
 
 CObjInterface(EventMgrPrim) {
   // get handler, possibly on this core, needed to dispatch interupt
-  EBBRC (*getHandler) (void *_self, uval eventNo, EventHandlerId *handler); 
+  EBBRC (*getHandler) (void *_self, uintptr_t eventNo, EventHandlerId *handler); 
 
-  EBBRC (*registerHandler) (void *_self, uval eventNo,
+  EBBRC (*registerHandler) (void *_self, uintptr_t eventNo,
 			    EventHandlerId handler, 
-			    uval isrc);
-  EBBRC (*allocEventNo) (void *_self, uval *eventNoPtr);
+			    uintptr_t isrc);
+  EBBRC (*allocEventNo) (void *_self, uintptr_t *eventNoPtr);
 };
 
 CObject(EventMgrPrim) {
@@ -63,7 +63,7 @@ extern EventMgrPrimId theEventMgrPrimId;
  * so its clear that its the EL of the current core and not
  * the EL of the rep of the EventMgr
  */
-typedef uval EvntLoc;
+typedef uintptr_t EvntLoc;
 extern EvntLoc  EventMgrPrim_GetMyEL();
 
 #endif

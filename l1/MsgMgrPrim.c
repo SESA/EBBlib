@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  */
 #include <config.h>
-#include <types.h>
+#include <stdint.h>
 #include <lrt/io.h>
 #include <l0/lrt/pic.h>
 #include <lrt/assert.h>
@@ -46,7 +46,7 @@ typedef long LockType;
 static void
 spinLock(LockType *lk)
 {
-  uval rc = 0;
+  uintptr_t rc = 0;
   while (!rc) {
     rc = __sync_bool_compare_and_swap(lk, 0, 1);
   }
@@ -64,14 +64,14 @@ int SendIPIEvent(EvntLoc el){return lrt_pic_ipi(el);};
 
 typedef struct MsgStore_struc {
   struct MsgStore_struc *next;
-  uval numargs;
-  uval args[MAXARGS];
+  uintptr_t numargs;
+  uintptr_t args[MAXARGS];
 } MsgStore;
 
 
 CObject(MsgMgrPrim) {
   CObjInterface(MsgMgr) *ft;
-  uval eventLoc;
+  uintptr_t eventLoc;
   LockType mml;
   MsgStore *msgqueue; 
   // FIXME: abstract at event mgr
@@ -83,7 +83,7 @@ CObject(MsgMgrPrim) {
 static EBBRC
 MsgMgrPrim_enqueueMsg(MsgMgrPrimRef target, MsgStore *msg)
 {
-  uval queueempty = 1;
+  uintptr_t queueempty = 1;
   spinLock(&target->mml);
   if (target->msgqueue != NULL) {
     queueempty = 0;
@@ -137,7 +137,7 @@ MsgMgrPrim_msg0(MsgMgrRef _self, EvntLoc loc, MsgHandlerId id)
 }
 
 static EBBRC 
-MsgMgrPrim_msg1(MsgMgrRef _self, EvntLoc loc, MsgHandlerId id, uval a1)
+MsgMgrPrim_msg1(MsgMgrRef _self, EvntLoc loc, MsgHandlerId id, uintptr_t a1)
 {
   MsgMgrPrimRef self = (MsgMgrPrimRef)_self;
   MsgStore *msg;  
@@ -156,7 +156,7 @@ MsgMgrPrim_msg1(MsgMgrRef _self, EvntLoc loc, MsgHandlerId id, uval a1)
 }
 
 static EBBRC 
-MsgMgrPrim_msg2(MsgMgrRef _self, EvntLoc loc, MsgHandlerId id, uval a1, uval a2)
+MsgMgrPrim_msg2(MsgMgrRef _self, EvntLoc loc, MsgHandlerId id, uintptr_t a1, uintptr_t a2)
 {
   MsgMgrPrimRef self = (MsgMgrPrimRef)_self;
   MsgStore *msg;  
@@ -177,7 +177,7 @@ MsgMgrPrim_msg2(MsgMgrRef _self, EvntLoc loc, MsgHandlerId id, uval a1, uval a2)
 
 static EBBRC 
 MsgMgrPrim_msg3(MsgMgrRef _self, EvntLoc loc, MsgHandlerId id, 
-		uval a1, uval a2, uval a3)
+		uintptr_t a1, uintptr_t a2, uintptr_t a3)
 {
   MsgMgrPrimRef self = (MsgMgrPrimRef)_self;
   MsgStore *msg;  

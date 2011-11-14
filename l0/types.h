@@ -34,7 +34,7 @@ typedef EBBTrans *EBBId;
 
 typedef struct EBBTransLSysStruct EBBTransLSys;
 
-typedef sval EBBRC;
+typedef intptr_t EBBRC;
 typedef enum { 
   EBBRC_GENERIC_FAILURE = -1, 
   EBBRC_BADPARAMETER = -2,
@@ -43,8 +43,8 @@ typedef enum {
 } EBBRC_STDVALS;
 #define EBBRC_SUCCESS(rc) ( rc >= 0 )
 
-typedef uval FuncNum;
-typedef uval EBBMissArg;
+typedef uintptr_t FuncNum;
+typedef uintptr_t EBBMissArg;
 
 //first arg is the address of the EBBRep that will be executed
 //second arg is the local table pointer so that a rep can be installed
@@ -58,16 +58,16 @@ static inline void EBBCacheObj(EBBLTrans *lt, void *obj) {
   *((void **)lt) = obj; 
 }
 
-static inline uval EBBMyEL() {
+static inline uintptr_t EBBMyEL() {
   return LRTEBBMyEL();
 }
 
-static inline uval EBBMyLTransIndex() {
+static inline uintptr_t EBBMyLTransIndex() {
   return EBBMyEL();
 }
 
-static inline EBBLTrans * EBBIdToSpecificLTrans(EBBId id, uval i) {
-  return (EBBLTrans *)((uval)id + i *
+static inline EBBLTrans * EBBIdToSpecificLTrans(EBBId id, uintptr_t i) {
+  return (EBBLTrans *)((uintptr_t)id + i *
 		       EBB_TRANS_PAGE_SIZE * EBB_TRANS_NUM_PAGES);
 }
 

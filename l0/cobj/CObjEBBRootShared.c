@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  */
 #include <config.h>
-#include <types.h>
+#include <stdint.h>
 #include <l0/types.h>
 #include <l0/cobj/cobj.h>
 #include <l0/cobj/CObjEBB.h>
@@ -31,7 +31,7 @@
 //then set obj to point to theRep (obj is really of type Object **)
 //Then simply return EBBRC_OK and the default func will
 //handle the rest. Return any failure code to have the call fail
-uval
+uintptr_t
 CObjEBBRootShared_handleMiss(void *_self, void *obj, EBBLTrans *lt, 
 			     FuncNum fnum)
 {
@@ -42,12 +42,12 @@ CObjEBBRootShared_handleMiss(void *_self, void *obj, EBBLTrans *lt,
 }
 
 //Jonathan's code
-/* uval */
+/* uintptr_t */
 /* CObjEBBRootShared_handleMiss(void *_self, void *obj, EBBLTrans *lt,  */
 /* 			     FuncNum fnum) */
 /* { */
 /*   CObjEBBRootSharedRef self = _self; */
-/*   return (uval)(self->theRep); */
+/*   return (uintptr_t)(self->theRep); */
 /* } */
  
 void

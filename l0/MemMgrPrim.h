@@ -25,7 +25,7 @@
 CObject(EBBMemMgrPrim) {
   CObjInterface(EBBMemMgr) *ft;
   void *mem;
-  uval len;
+  uintptr_t len;
 };
 
 extern CObjInterface(EBBMemMgr) EBBMemMgrPrim_ftable;
@@ -38,7 +38,7 @@ extern EBBRC EBBMemMgrPrimInit(void);
 extern EBBMemMgrPrimRef *theEBBMemMgrPrimId;
 
 static inline EBBRC
-EBBPrimMalloc(uval size, void *mem, EBB_MEM_POOL pool) {
+EBBPrimMalloc(uintptr_t size, void *mem, EBB_MEM_POOL pool) {
   return EC(theEBBMemMgrPrimId)->alloc(EB(theEBBMemMgrPrimId),
 				       size, mem, pool);
 }

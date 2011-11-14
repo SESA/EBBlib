@@ -22,16 +22,16 @@
  * THE SOFTWARE.
  */
 
-#include <types.h>
+#include <stdint.h>
 #include <l0/types.h>
 #include <l0/const.h>
 
 //FIXME: All Trans Mem is statically allocated
 extern struct EBB_Trans_Mem {
-  uval8 GMem [EBB_TRANS_PAGE_SIZE * EBB_TRANS_NUM_PAGES];
-  uval8 LMem [EBB_TRANS_PAGE_SIZE * EBB_TRANS_NUM_PAGES *
+  uint8_t GMem [EBB_TRANS_PAGE_SIZE * EBB_TRANS_NUM_PAGES];
+  uint8_t LMem [EBB_TRANS_PAGE_SIZE * EBB_TRANS_NUM_PAGES *
 	      EBB_TRANS_MAX_ELS];
-  uval8 *free;  // pointer to next available range of GMem
+  uint8_t *free;  // pointer to next available range of GMem
 } EBB_Trans_Mem;
 
 typedef EBBRC (*EBBFunc) (void *);
@@ -44,35 +44,35 @@ extern EBBMissFunc theERRMF;
 
 struct EBBTransStruct {
   union {
-    uval v1;
+    uintptr_t v1;
     EBBFuncTable *obj; //as a local entry
     EBBMissFunc mf; //as a global entry
   };
   union {
-    uval v2;
+    uintptr_t v2;
     EBBFuncTable ftable; //as a local entry (by default)
     EBBMissArg arg; //as a global entry
   };
   //FIXME: used for a free list, probably should be separate
   union {
-    uval v3;
+    uintptr_t v3;
     EBBGTrans *next; 
   };
 };
 
 static inline EBBId EBBLTransToId(EBBLTrans *lt) {
-  return (EBBId)((uval)lt - EBBMyLTransIndex() *
+  return (EBBId)((uintptr_t)lt - EBBMyLTransIndex() *
 		 EBB_TRANS_PAGE_SIZE * EBB_TRANS_NUM_PAGES);
 }
 
 static inline EBBGTrans * EBBIdToGTrans(EBBId id) {
-  return (EBBGTrans *)((uval)id - (uval)EBB_Trans_Mem.LMem +
-		       (uval)EBB_Trans_Mem.GMem);
+  return (EBBGTrans *)((uintptr_t)id - (uintptr_t)EBB_Trans_Mem.LMem +
+		       (uintptr_t)EBB_Trans_Mem.GMem);
 }
 
 static inline EBBId EBBGTransToId(EBBGTrans *gt) {
-  return (EBBId)((uval)gt - (uval)EBB_Trans_Mem.GMem +
-		 (uval)EBB_Trans_Mem.LMem);
+  return (EBBId)((uintptr_t)gt - (uintptr_t)EBB_Trans_Mem.GMem +
+		 (uintptr_t)EBB_Trans_Mem.LMem);
 }
 
 static inline EBBGTrans * EBBLTransToGTrans(EBBLTrans *lt) {
@@ -87,8 +87,8 @@ struct EBBTransLSysStruct {
   EBBGTrans *gTable; //our portion of the gtable for allocating local ebbs
   EBBLTrans *lTable;
   EBBGTrans *free;
-  uval numAllocated;
-  uval size;
+  uintptr_t numAllocated;
+  uintptr_t size;
 };
 
 static inline EBBId EBBIdAlloc(EBBTransLSys *sys) {
@@ -101,7 +101,7 @@ static inline EBBId EBBIdAlloc(EBBTransLSys *sys) {
   }
   int i;
   for (i = 0; i < sys->size; i++) {
-    if((uval)sys->gTable[i].next != -1) {
+    if((uintptr_t)sys->gTable[i].next != -1) {
       sys->gTable[i].next = (EBBGTrans *)-1;
       sys->numAllocated++;
       return EBBGTransToId(&sys->gTable[i]);
@@ -110,8 +110,8 @@ static inline EBBId EBBIdAlloc(EBBTransLSys *sys) {
   return NULL;
 }    
 
-static inline uval getLTransNodeId(EBBLTrans *lt) {
-  uval val = (((uval)lt) - ((uval)EBB_Trans_Mem.LMem)) /
+static inline uintptr_t getLTransNodeId(EBBLTrans *lt) {
+  uintptr_t val = (((uintptr_t)lt) - ((uintptr_t)EBB_Trans_Mem.LMem)) /
     (EBB_TRANS_PAGE_SIZE * EBB_TRANS_NUM_PAGES / EBB_TRANS_MAX_NODES);
   return val;
 }

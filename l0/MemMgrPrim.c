@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  */
 #include <config.h>
-#include <types.h>
+#include <stdint.h>
 #include <l0/cobj/cobj.h>
 #include <l0/types.h>
 #include <l0/cobj/CObjEBB.h>
@@ -33,7 +33,7 @@
 
 #define MEMSIZE (1 << 20)
 
-static uval8 theMemory[MEMSIZE];
+static uint8_t theMemory[MEMSIZE];
 
 static EBBRC
 EBBMemMgrPrim_init(void *_self)
@@ -47,7 +47,7 @@ EBBMemMgrPrim_init(void *_self)
 //just grab from the beginning of the memory and move
 //the pointer forward until we run out
 static EBBRC
-EBBMemMgrPrim_alloc(void *_self, uval size, void *mem, EBB_MEM_POOL pool)
+EBBMemMgrPrim_alloc(void *_self, uintptr_t size, void *mem, EBB_MEM_POOL pool)
 {
   EBBMemMgrPrimRef self = _self;
   if (size > self->len) {

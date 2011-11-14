@@ -22,7 +22,7 @@
  * THE SOFTWARE.
  */
 
-sval ethlib_nic_init(char *dev, lrt_pic_src *s);
-sval ethlib_nic_readpkt(void);
+intptr_t ethlib_nic_init(char *dev, lrt_pic_src *s);
+intptr_t ethlib_nic_readpkt(void);
 
 #endif

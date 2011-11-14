@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  */
 #include <config.h>
-#include <types.h>
+#include <stdint.h>
 #include <lrt/io.h>
 #include <l0/cobj/cobj.h>
 #include <l0/sys/trans.h> //FIXME: move EBBTransLSys out of this header
@@ -44,7 +44,7 @@ typedef EBBCtrPrimRef *EBBCtrPrimId;
 
 CObjectDefine(EBBCtrPrim) {
   CObjInterface(EBBCtr) *ft;
-  uval v;
+  uintptr_t v;
   EBBCtrPrimId id;
 };
 
@@ -83,7 +83,7 @@ EBBCtrPrim_dec(EBBCtrRef _self)
 }
 
 PRIVATE EBBRC
-EBBCtrPrim_val(EBBCtrRef _self, uval *v)
+EBBCtrPrim_val(EBBCtrRef _self, uintptr_t *v)
 {
   EBBCtrPrimRef self = (EBBCtrPrimRef)_self;
   *v = self->v;

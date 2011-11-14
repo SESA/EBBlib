@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  */
 #include <config.h>
-#include <types.h>
+#include <stdint.h>
 #include <l0/sys/trans.h>
 #include <l0/sys/defFT.h>
 

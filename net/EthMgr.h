@@ -25,14 +25,14 @@
 #define ETHERNET_ADDR_LEN 6
 
 struct EthernetHeader {
-  uval8  dest[ETHERNET_ADDR_LEN];
-  uval8  src[ETHERNET_ADDR_LEN];
-  uval16 type;
+  uint8_t  dest[ETHERNET_ADDR_LEN];
+  uint8_t  src[ETHERNET_ADDR_LEN];
+  uint16_t type;
 };
 
 CObjInterface(EthMgr) {
   EBBRC (*init)  (void *_self);
-  EBBRC (*bind)  (void *_self, uval16 type, EthTypeMgrId id);
+  EBBRC (*bind)  (void *_self, uint16_t type, EthTypeMgrId id);
   CObjImplements(EventHandler);
 };
 

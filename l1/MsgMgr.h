@@ -32,9 +32,9 @@ CObject(MsgHandler);
 CObjInterface(MsgHandler) {
   /* routines to handle messages sent to me */
   EBBRC (*msg0) (MsgHandlerRef _self);
-  EBBRC (*msg1) (MsgHandlerRef _self, uval a1);
-  EBBRC (*msg2) (MsgHandlerRef _self, uval a1, uval a2);
-  EBBRC (*msg3) (MsgHandlerRef _self, uval a1, uval a2, uval a3);
+  EBBRC (*msg1) (MsgHandlerRef _self, uintptr_t a1);
+  EBBRC (*msg2) (MsgHandlerRef _self, uintptr_t a1, uintptr_t a2);
+  EBBRC (*msg3) (MsgHandlerRef _self, uintptr_t a1, uintptr_t a2, uintptr_t a3);
 };
 
 CObjectDefine(MsgHandler) {
@@ -56,13 +56,13 @@ CObjInterface(MsgMgr) {
   EBBRC (*msg0) (MsgMgrRef _self, EvntLoc loc, MsgHandlerId id);
 
   EBBRC (*msg1) (MsgMgrRef _self, EvntLoc loc, MsgHandlerId id, 
-		 uval a1);
+		 uintptr_t a1);
 
   EBBRC (*msg2) (MsgMgrRef _self, EvntLoc loc, MsgHandlerId id, 
-		 uval a1, uval a2);
+		 uintptr_t a1, uintptr_t a2);
 
   EBBRC (*msg3) (MsgMgrRef _self, EvntLoc loc, MsgHandlerId id, 
-		 uval a1, uval a2, uval a3);
+		 uintptr_t a1, uintptr_t a2, uintptr_t a3);
 };
 
 CObjectDefine(MsgMgr) {

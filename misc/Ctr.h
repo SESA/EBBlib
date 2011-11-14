@@ -27,7 +27,7 @@ CObject(EBBCtr);
 CObjInterface(EBBCtr) {
   EBBRC (*inc)  (EBBCtrRef _self);
   EBBRC (*dec)  (EBBCtrRef _self);
-  EBBRC (*val)  (EBBCtrRef _self, uval *v);
+  EBBRC (*val)  (EBBCtrRef _self, uintptr_t *v);
 };
 
 CObjectDefine(EBBCtr) {
