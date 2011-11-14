@@ -22,7 +22,7 @@
 /* problem */
 
 /* On the X86-64, the stack is 8-byte aligned, and kept that way
- * by all stack operations.  The fxsave/fxrstor instructions save
+ * by all stack operations.  The fxsave/fxrstor instructions saveg
  * all the floating point registers at one time (512 bytes
  * worth).  It would seem useful to save all the floating pointer
  * registers on the stack at times.  However, the fxsave/fxrstor

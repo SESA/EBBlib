@@ -1,6 +1,5 @@
 #ifndef __ASM_H__
 #define __ASM_H__
-
 /* <<<< include machine independant file - not this machine dependent file >>>> */
 /******************************************************************************
  * K42: (C) Copyright IBM Corp. 2000.
