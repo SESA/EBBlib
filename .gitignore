@@ -8,3 +8,4 @@ install
 /src/config.h.in
 /build*/
 /tmp/
+/config.h.in

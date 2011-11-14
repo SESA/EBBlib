@@ -5,7 +5,7 @@ bin_PROGRAMS = ebbtest
 ebbtest_SOURCES = l0/cobj/CObjEBBRootShared.c l0/cobj/CObjEBBRootMulti.c
 ebbtest_SOURCES += l0/cobj/CObjEBB.c l0/EBBMgrPrim.c EBBStart.c 
 ebbtest_SOURCES += l0/EventMgrPrimImp.c l0/MemMgrPrim.c net/EthMgrPrim.c
-ebbtest_SOURCES += l0/sys/defFT.c 
+ebbtest_SOURCES += l0/sys/defFT.c misc/CtrPrim.c misc/CtrPrimDistributed.c
 
 #headers
 ebbtest_SOURCES += l0/cobj/CObjEBBRootShared.h lrt/io.h l0/sys/trans.h
@@ -17,7 +17,8 @@ ebbtest_SOURCES += lrt/assert.h l0/EBBMgrPrim.h l0/EventMgrPrim.h
 ebbtest_SOURCES += l0/EventMgrPrimImp.h l0/MemMgr.h l0/sys/defFT.h
 ebbtest_SOURCES += l0/MemMgrPrim.h l0/lrt/pic.h net/lrt/ethlib.h
 ebbtest_SOURCES += net/EthTypeMgr.h net/EthMgr.h net/EthMgrPrim.h
-ebbtest_SOURCES += l0/cobj/CObjEBBUtils.h
+ebbtest_SOURCES += l0/cobj/CObjEBBUtils.h misc/Ctr.h misc/CtrPrim.h
+ebbtest_SOURCES += misc/CtrPrimDistributed.h
 
 #LRT conditional
 ebbtest_SOURCES += l0/lrt/ulnx/pic.c lrt/ulnx/lrt_start.c

@@ -15,6 +15,8 @@
 #include <net/EthTypeMgr.h>
 #include <net/EthMgr.h>
 #include <net/EthMgrPrim.h>
+#include <misc/Ctr.h>
+#include <misc/CtrPrim.h>
 
 pthread_key_t ELKey;
 static void 
@@ -22,6 +24,7 @@ kludge(void)
 {
   EBBRC rc;
   EthMgrId ethmgr;
+  EBBCtrId ctr;
 
     EBB_LRT_printf("%s: start\n", __func__);
   pthread_setspecific(ELKey, (void *)lrt_pic_myid);
@@ -33,6 +36,8 @@ kludge(void)
   EBBRCAssert(rc);
   EBB_LRT_printf("%s: about to call init eth\n", __func__);
   EthMgrPrimCreate(&ethmgr);
+  EBBRCAssert(rc);
+  rc = EBBCtrPrimSharedCreate(&ctr);
   EBBRCAssert(rc);
 }
 

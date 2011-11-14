@@ -1,18 +1,17 @@
-#include "../base/include.h"
-#include "../base/types.h"
-#include "../cobj/cobj.h"
-#include "sys/trans.h" //FIXME: move EBBTransLSys out of this header
-#include "CObjEBB.h"
-#include "EBBTypes.h"
-#include "EBBMgrPrim.h"
-#include "EBBMemMgr.h"
-#include "EBBMemMgrPrim.h"
-#include "CObjEBBUtils.h"
-#include "CObjEBBRoot.h"
-#include "CObjEBBRootMulti.h"
-#include "EBBCtr.h"
-#include "EBBCtrPrimDistributed.h"
-#include "CObjEBBRootMulti.h"
+#include <config.h>
+#include <types.h>
+#include <l0/cobj/cobj.h>
+#include <l0/sys/trans.h> //FIXME: move EBBTransLSys out of this header
+#include <l0/cobj/CObjEBB.h>
+#include <l0/types.h>
+#include <l0/EBBMgrPrim.h>
+#include <l0/MemMgr.h>
+#include <l0/MemMgrPrim.h>
+#include <l0/cobj/CObjEBBUtils.h>
+#include <l0/cobj/CObjEBBRoot.h>
+#include <l0/cobj/CObjEBBRootMulti.h>
+#include <misc/Ctr.h>
+#include <misc/CtrPrimDistributed.h>
 
 CObject(EBBCtrPrimDistributed) {
   CObjInterface(EBBCtr) *ft;
