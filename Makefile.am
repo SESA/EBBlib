@@ -18,14 +18,14 @@ ebbtest_SOURCES += l0/EventMgrPrimImp.h l0/MemMgr.h l0/sys/defFT.h
 ebbtest_SOURCES += l0/MemMgrPrim.h l0/lrt/pic.h net/lrt/ethlib.h
 ebbtest_SOURCES += net/EthTypeMgr.h net/EthMgr.h net/EthMgrPrim.h
 ebbtest_SOURCES += l0/cobj/CObjEBBUtils.h misc/Ctr.h misc/CtrPrim.h
-ebbtest_SOURCES += misc/CtrPrimDistributed.h
+ebbtest_SOURCES += misc/CtrPrimDistributed.h l0/const-asm.h l0/lrt/const-asm.h
 
 #LRT conditional
 ebbtest_SOURCES += l0/lrt/ulnx/pic.c lrt/ulnx/lrt_start.c
 ebbtest_SOURCES += net/lrt/ulnx/ethlib.c
 
 #headers
-ebbtest_SOURCES += l0/lrt/ulnx/types.h l0/lrt/ulnx/pic.h
+ebbtest_SOURCES += l0/lrt/ulnx/types.h l0/lrt/ulnx/pic.h l0/lrt/ulnx/const-asm.h
 ebbtest_SOURCES += l0/lrt/ulnx/const.h lrt/ulnx/io.h lrt/ulnx/assert.h
 
 #ARCH conditional

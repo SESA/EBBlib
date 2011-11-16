@@ -1,5 +1,5 @@
-#ifndef __EBB_CONSTS_H__
-#define __EBB_CONSTS_H__
+#ifndef __L0_CONST_ASM_H__
+#define __L0_CONST_ASM_H__
 /*
  * Copyright (C) 2011 by Project SESA, Boston University
  *
@@ -22,13 +22,12 @@
  * THE SOFTWARE.
  */
 
-#include <l0/lrt/const.h>
-#include <l0/const-asm.h>
+#include <l0/lrt/const-asm.h>
 
-enum {EBB_TRANS_MAX_NODES = EBB_TRANS_MAX_NODES_ASM};
-enum {EBB_TRANS_PAGE_SIZE = EBB_TRANS_PAGE_SIZE_ASM};
-enum {EBB_TRANS_NUM_PAGES = EBB_TRANS_NUM_PAGES_ASM};
-enum {EBB_TRANS_MAX_ELS = LRT_TRANS_MAX_ELS};
-enum {EBB_TRANS_MAX_FUNCS = EBB_TRANS_MAX_FUNCS_ASM};
+#define EBB_TRANS_MAX_NODES_ASM (1024)
+#define EBB_TRANS_PAGE_SIZE_ASM (4096)
+#define EBB_TRANS_NUM_PAGES_ASM (1024)
+#define EBB_TRANS_MAX_ELS_ASM (LRT_TRANS_MAX_ELS_ASM)
+#define EBB_TRANS_MAX_FUNCS_ASM (256)
 
 #endif

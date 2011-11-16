@@ -59,7 +59,7 @@ spinUnlock(LockType *lk)
 }
 
 int SendIPIEvent(EvntLoc el){return lrt_pic_ipi(el);};
-#define MAXARGS 3
+enum{MAXARGS = 3};
 /* -- end routines to be implemented */
 
 typedef struct MsgStore_struc {

@@ -22,7 +22,7 @@
  * THE SOFTWARE.
  */
 
-#define ETHERNET_ADDR_LEN 6
+enum {ETHERNET_ADDR_LEN = 6};
 
 struct EthernetHeader {
   uint8_t  dest[ETHERNET_ADDR_LEN];

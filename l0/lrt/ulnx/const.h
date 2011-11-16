@@ -22,7 +22,9 @@
  * THE SOFTWARE.
  */
 
-#define LRT_MAX_VPS (4)
-#define LRT_TRANS_MAX_ELS LRT_MAX_VPS
+#include <l0/lrt/ulnx/const-asm.h>
+
+enum {LRT_MAX_VPS = LRT_MAX_VPS_ASM};
+enum {LRT_TRANS_MAX_ELS = LRT_TRANS_MAX_ELS_ASM};
 
 #endif

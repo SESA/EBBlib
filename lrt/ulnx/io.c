@@ -38,7 +38,7 @@
 typedef int FDType;
 typedef int PortType;
 
-#define LISTENQ 1024
+enum {LISTENQ = 1024};
 
 static int
 net_listen(FDType fd) 

@@ -29,7 +29,7 @@
 #include <stdint.h>
 #include <l0/lrt/pic.h>
 
-#define PCAP_DEFAULT_SNAPLEN 1500
+enum {PCAP_DEFAULT_SNAPLEN = 1500};
 
 pcap_t *hdl;
 

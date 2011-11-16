@@ -45,17 +45,17 @@ __thread lrt_pic_id lrt_pic_myid;
 lrt_pic_id lrt_pic_firstid;
 lrt_pic_id lrt_pic_lastid;
 
-#define NUM_LPICS_CONFIGED 4
+enum {NUM_LPICS_CONFIGED = 4};
 
-#define FIRST_VECFD      16
-#define NUM_MAPPABLE_VEC 15
+enum {FIRST_VECFD = 16};
+enum {NUM_MAPPABLE_VEC = 15};
 // reserve 2 : 1 for ipi and 1 additional
-#define NUM_RES_VEC      2
-#define RES0_VEC        (NUM_MAPPABLE_VEC)
-#define RES1_VEC        (RES0_VEC + 1) 
-#define IPI_VEC         (RES0_VEC)
-#define RST_VEC         (RES1_VEC)
-#define NUM_VEC          (NUM_MAPPABLE_VEC + NUM_RES_VEC) 
+enum {NUM_RES_VEC = 2};
+enum {RES0_VEC = (NUM_MAPPABLE_VEC)};
+enum {RES1_VEC = (RES0_VEC + 1)};
+enum {IPI_VEC = (RES0_VEC)};
+enum {RST_VEC = (RES1_VEC)};
+enum {NUM_VEC = (NUM_MAPPABLE_VEC + NUM_RES_VEC)};
 
 #ifndef FD_COPY
 #define FD_COPY(src,dest) memcpy((dest),(src),sizeof(dest))

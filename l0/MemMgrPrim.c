@@ -31,7 +31,7 @@
 #include <l0/MemMgr.h>
 #include <l0/MemMgrPrim.h>
 
-#define MEMSIZE (1 << 20)
+enum {MEMSIZE = (1 << 20)};
 
 static uint8_t theMemory[MEMSIZE];
 

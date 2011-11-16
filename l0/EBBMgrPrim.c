@@ -65,9 +65,9 @@ static void initGTable(EBBGTrans *gt, uintptr_t pages) {
 #define EBBCALL(id, method, ...) COBJ_EBBCALL(id, method, ##__VA_ARGS__)
 
 // JA KLUDGE
-#define MAXNODES 1024
+enum {MAXNODES = 1024};
 
-#define STRLEN 160
+enum {STRLEN = 160};
 
 #define panic() (*(uintptr_t *)0)
 

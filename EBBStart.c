@@ -47,7 +47,7 @@ kludge(void)
   EthMgrId ethmgr;
   EBBCtrId ctr;
 
-    EBB_LRT_printf("%s: start\n", __func__);
+  EBB_LRT_printf("%s: start\n", __func__);
   pthread_setspecific(ELKey, (void *)lrt_pic_myid);
 
   EBBMgrPrimInit();

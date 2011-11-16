@@ -24,9 +24,9 @@
 
 #include <pthread.h>
 
-#define LRT_PIC_MAX_PICS 128
-#define LRT_PIC_FIRST_PIC_ID 0
-#define LRT_PIC_MAX_PIC_ID (LRT_PIC_MAX_PICS-1)
+enum {LRT_PIC_MAX_PICS = 128};
+enum {LRT_PIC_FIRST_PIC_ID = 0};
+enum {LRT_PIC_MAX_PIC_ID = (LRT_PIC_MAX_PICS-1)};
 
 typedef uintptr_t lrt_pic_id;
 typedef uint64_t lrt_pic_set[LRT_PIC_MAX_PICS/64];

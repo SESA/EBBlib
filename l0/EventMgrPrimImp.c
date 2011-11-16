@@ -55,7 +55,7 @@ typedef struct  {
   EventHandlerId id;
 } HandlerInfoStruc;
 
-#define MAXEVENTS 256
+enum {MAXEVENTS = 256};
 
 CObject(EventMgrPrimImp){
   CObjInterface(EventMgrPrim) *ft;
