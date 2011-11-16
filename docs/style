@@ -4,4 +4,6 @@ o most things are EBBs, so lets not bother with "EBB" at the beginning
 o We will capitalize first letter of a name that is a class
 o Material is divided into layers of functionality:
   10 - layer 0 is the ...
-  
+o Do not #define constants, use enum
+o Put the License at the beginning of every file, after include guard in headers
+o Use the stdint.h types, not val/uval etc.
