@@ -136,7 +136,7 @@ static EBBRC EBBMgrPrimERRMF (void *_self, EBBLTrans *lt,
   return EBBRC_GENERIC_FAILURE;
 }
 
-static uintptr_t
+static EBBRC
 EBBMgrPrimRoot_handleMiss(void *_self, void *obj, EBBLTrans *lt,
 				 FuncNum fnum)
 {

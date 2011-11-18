@@ -1,3 +1,5 @@
+#ifndef __EBB_CTR_PLUS_H__
+#define __EBB_CTR_PLUS_H__
 /*
  * Copyright (C) 2011 by Project SESA, Boston University
  *
@@ -19,45 +21,26 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#include <config.h>
-#include <stdint.h>
-#include <l0/types.h>
-#include <l0/cobj/cobj.h>
-#include <l0/cobj/CObjEBB.h>
-#include <l0/cobj/CObjEBBRoot.h>
-#include <l0/cobj/CObjEBBRootShared.h>
 
-//What you want to do here is install theRep into the EBBLTrans
-//then set obj to point to theRep (obj is really of type Object **)
-//Then simply return EBBRC_OK and the default func will
-//handle the rest. Return any failure code to have the call fail
-EBBRC
-CObjEBBRootShared_handleMiss(void *_self, void *obj, EBBLTrans *lt, 
-			     FuncNum fnum)
-{
-  CObjEBBRootSharedRef self = _self;
-  EBBCacheObj(lt, self->theRep);
-  *(void **)obj = self->theRep;
-  return EBBRC_OK;
-}
+#ifdef __cplusplus
+class CtrPlus;
+typedef CtrPlus **CtrPlusId;
 
-//Jonathan's code
-/* uintptr_t */
-/* CObjEBBRootShared_handleMiss(void *_self, void *obj, EBBLTrans *lt,  */
-/* 			     FuncNum fnum) */
-/* { */
-/*   CObjEBBRootSharedRef self = _self; */
-/*   return (uintptr_t)(self->theRep); */
-/* } */
- 
-void
-CObjEBBRootShared_init(void *_self, void *rep)
-{
-  CObjEBBRootSharedRef self = _self;
-  self->theRep = rep;
-}
-
-CObjInterface(CObjEBBRootShared) CObjEBBRootShared_ftable = {
-  { CObjEBBRootShared_handleMiss },
-  CObjEBBRootShared_init
+class CtrPlus:CPlusEBB {
+  uintptr_t v;
+public:
+  void * operator new(size_t size);
+  void operator delete(void * p, size_t size);
+  virtual EBBRC init( );
+  virtual EBBRC inc( );
+  virtual EBBRC dec( );
+  virtual EBBRC val(uintptr_t &v);
+  static EBBRC Create(CtrPlusId &ctr);
 };
+extern "C" {
+#endif
+  void test_cplus_counter(void);
+#ifdef __cplusplus
+}
+#endif
+#endif

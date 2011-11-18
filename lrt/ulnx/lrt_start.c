@@ -54,7 +54,6 @@ int
 main(int argc, char **argv)
 {
   uintptr_t cores=1;
-
   fprintf(stderr, "%s: start!\n", __func__);
   if (argc>1) cores=atoi(argv[1]);
   lrt_pic_init(cores, lrt_start);

@@ -1,5 +1,5 @@
-#ifndef __EBBMGRPRIM_H__
-#define __EBBMGRPRIM_H__
+#ifndef __CPLUS_EBB_H_
+#define __CPLUS_EBB_H_
 /*
  * Copyright (C) 2011 by Project SESA, Boston University
  *
@@ -22,39 +22,11 @@
  * THE SOFTWARE.
  */
 
-CObjInterface(EBBMgrPrim) {
-  EBBRC (*AllocId) (void *_self, void **id);
-  EBBRC (*FreeId) (void *_self, EBBId id);
-  EBBRC (*BindId) (void *_self, EBBId id, EBBMissFunc mf, EBBMissArg arg);
-  EBBRC (*UnBindId) (void *_self, EBBId id, EBBMissFunc *mf, EBBMissArg *arg);
+class CPlusEBB {
+  // null function so that virtual function table is first
+  virtual EBBRC func0() { return 0; } 
 };
 
-CObject(EBBMgrPrim) {
-  CObjInterface(EBBMgrPrim) *ft;
-  //JA Hack
-  void *myRoot;
-  EBBTransLSys *lsys;
-};
-
-
-extern void *NULLId;
-typedef EBBMgrPrimRef *EBBMgrPrimId;
-extern EBBMgrPrimId theEBBMgrPrimId;
-extern void EBBMgrPrimInit(void);
-
-//FIXME: JA fix typing here on id
-static inline EBBRC
-EBBAllocPrimId(void *id)
-{
-  return EC(theEBBMgrPrimId)->AllocId(EB(theEBBMgrPrimId), (void **)id);
-}
-
-static inline EBBRC
-EBBBindPrimId(void *id, EBBMissFunc mf, EBBMissArg arg)
-{  
-  return EC(theEBBMgrPrimId)->BindId(EB(theEBBMgrPrimId), 
-				     (EBBId)id, mf, arg);
-}
-
+#define CPLUS_EBBCALL(id, method, ...) (EBBId_DREF(id)->method(__VA_ARGS__))
 
 #endif

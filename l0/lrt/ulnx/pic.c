@@ -47,7 +47,11 @@ lrt_pic_id lrt_pic_lastid;
 
 enum {NUM_LPICS_CONFIGED = 4};
 
+#ifdef __APPLE__
+enum {FIRST_VECFD = 128};
+#else
 enum {FIRST_VECFD = 16};
+#endif
 enum {NUM_MAPPABLE_VEC = 15};
 // reserve 2 : 1 for ipi and 1 additional
 enum {NUM_RES_VEC = 2};
@@ -207,7 +211,11 @@ lrt_pic_init(uintptr_t numlpics, lrt_pic_handler h)
   // reserve fds for our vectors
   for (i=0; i<NUM_VEC; i++) {
     pic.vecs[i].fd=dup(fd[0]);
-    if (pic.vecs[i].fd != (FIRST_VECFD+i)) return -1;
+    if (pic.vecs[i].fd != (FIRST_VECFD+i)) {
+      fprintf(stderr, "ERROR: file %s line %d: runtime tromping over fd space\n"
+	      "\tsuggest you increase the FIRST_VECFD\n", __FILE__, __LINE__);
+      return -1;
+    }
   }
    
   // close and free fd's that we allocated to get to

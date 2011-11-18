@@ -19,45 +19,42 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+
 #include <config.h>
 #include <stdint.h>
+#include <lrt/assert.h>
 #include <l0/types.h>
 #include <l0/cobj/cobj.h>
 #include <l0/cobj/CObjEBB.h>
-#include <l0/cobj/CObjEBBRoot.h>
-#include <l0/cobj/CObjEBBRootShared.h>
+#include <l0/EBBMgrPrim.h>
+#include <l0/MemMgr.h>
+#include <l0/MemMgrPrim.h>
 
-//What you want to do here is install theRep into the EBBLTrans
-//then set obj to point to theRep (obj is really of type Object **)
-//Then simply return EBBRC_OK and the default func will
-//handle the rest. Return any failure code to have the call fail
-EBBRC
-CObjEBBRootShared_handleMiss(void *_self, void *obj, EBBLTrans *lt, 
-			     FuncNum fnum)
+#include <l0/cplus/CPlusEBB.H>
+#include <l0/cplus/CPlusEBBRoot.H>
+#include <l0/cplus/CPlusEBBRootShared.H>
+
+/* virtual */ EBBRC
+CPlusEBBRootShared::handleMiss(void **obj, EBBLTrans *lt, FuncNum fnum)
 {
-  CObjEBBRootSharedRef self = _self;
-  EBBCacheObj(lt, self->theRep);
-  *(void **)obj = self->theRep;
+  EBBCacheObj(lt, theRep);
+  *obj = theRep;
   return EBBRC_OK;
 }
 
-//Jonathan's code
-/* uintptr_t */
-/* CObjEBBRootShared_handleMiss(void *_self, void *obj, EBBLTrans *lt,  */
-/* 			     FuncNum fnum) */
-/* { */
-/*   CObjEBBRootSharedRef self = _self; */
-/*   return (uintptr_t)(self->theRep); */
-/* } */
- 
-void
-CObjEBBRootShared_init(void *_self, void *rep)
+void * 
+CPlusEBBRootShared::operator new(size_t size)
 {
-  CObjEBBRootSharedRef self = _self;
-  self->theRep = rep;
+  void *val;
+  EBBRC rc;
+  rc = EBBPrimMalloc(size, &val, EBB_MEM_DEFAULT);
+  EBBRCAssert(rc);
+  return val;
 }
 
-CObjInterface(CObjEBBRootShared) CObjEBBRootShared_ftable = {
-  { CObjEBBRootShared_handleMiss },
-  CObjEBBRootShared_init
-};
+void 
+CPlusEBBRootShared::operator delete(void * p, size_t size)
+{
+  // NYI
+  EBBRCAssert(0);
+}

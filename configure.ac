@@ -13,6 +13,7 @@ AC_DEFINE(LRT_ULNX, [], [Set to indicate that we are running the userland Linux 
 # Checks for programs.
 AC_PROG_CC
 AM_PROG_CC_C_O
+AC_PROG_CXX
 AM_PROG_AS
 
 # Checks for libraries.

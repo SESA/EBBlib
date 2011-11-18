@@ -34,7 +34,7 @@ struct RepListNode_s {
   RepListNode *next;
 };
 
-uintptr_t
+EBBRC
 CObjEBBRootMulti_handleMiss(void *_self, void*obj, EBBLTrans *lt,
 			    FuncNum fnum)
 {

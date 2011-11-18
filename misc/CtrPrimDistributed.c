@@ -21,6 +21,7 @@
  */
 #include <config.h>
 #include <stdint.h>
+#include <lrt/assert.h>
 #include <l0/cobj/cobj.h>
 #include <l0/sys/trans.h> //FIXME: move EBBTransLSys out of this header
 #include <l0/cobj/CObjEBB.h>
@@ -109,10 +110,10 @@ EBBCtrPrimDistributedCreate(EBBCtrId *id)
   rootRef->ft->init(rootRef, EBBCtrPrimDistributed_createRep);
 
   rc = EBBAllocPrimId(id);
-  //  EBBRCAssert(rc);
+  EBBRCAssert(rc);
 
   rc = CObjEBBBind(*id, rootRef);
-  //  EBBRCAssert(rc);
+  EBBRCAssert(rc);
 
   return EBBRC_OK;
 }
