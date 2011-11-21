@@ -1,0 +1,1 @@
+net_lrt_ulnx_sources = net/lrt/ulnx/ethlib.c
