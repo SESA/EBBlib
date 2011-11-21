@@ -1,5 +1,5 @@
-#ifndef __EBB_CTR_PLUS_H__
-#define __EBB_CTR_PLUS_H__
+#ifndef __EBB_CTR_CPLUS_H__
+#define __EBB_CTR_CPLUS_H__
 /*
  * Copyright (C) 2011 by Project SESA, Boston University
  *
@@ -23,10 +23,10 @@
  */
 
 #ifdef __cplusplus
-class CtrPlus;
-typedef CtrPlus **CtrPlusId;
+class CtrCPlus;
+typedef CtrCPlus **CtrCPlusId;
 
-class CtrPlus:CPlusEBB {
+class CtrCPlus:CPlusEBB {
   uintptr_t v;
 public:
   void * operator new(size_t size);
@@ -35,7 +35,7 @@ public:
   virtual EBBRC inc( );
   virtual EBBRC dec( );
   virtual EBBRC val(uintptr_t &v);
-  static EBBRC Create(CtrPlusId &ctr);
+  static EBBRC Create(CtrCPlusId &ctr);
 };
 extern "C" {
 #endif

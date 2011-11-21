@@ -31,39 +31,39 @@
 #include <l0/cplus/CPlusEBB.H>
 #include <l0/cplus/CPlusEBBRoot.H>
 #include <l0/cplus/CPlusEBBRootShared.H>
-#include <misc/CtrPlus.H>
+#include <misc/CtrCPlus.H>
 #include <lrt/assert.h>
 
 /* virtual */ EBBRC
-CtrPlus::init( )
+CtrCPlus::init( )
 {
   v = 0;
   return EBBRC_OK;
 }
 
 /* virtual */ EBBRC
-CtrPlus::inc( )
+CtrCPlus::inc( )
 {
   __sync_fetch_and_add(&v,1);
   return EBBRC_OK;
 }
 
 /* virtual */ EBBRC 
-CtrPlus::dec( )
+CtrCPlus::dec( )
 {
   __sync_fetch_and_sub(&v,1);
   return EBBRC_OK;
 }
 
 /* virtual */ EBBRC 
-CtrPlus::val(uintptr_t &rv)
+CtrCPlus::val(uintptr_t &rv)
 {
   rv = v;
   return EBBRC_OK;
 }
 
 void * 
-CtrPlus::operator new(size_t size)
+CtrCPlus::operator new(size_t size)
 {
   void *val;
   EBBRC rc;
@@ -73,7 +73,7 @@ CtrPlus::operator new(size_t size)
 }
 
 void 
-CtrPlus::operator delete(void * p, size_t size)
+CtrCPlus::operator delete(void * p, size_t size)
 {
   // NYI
   EBBRCAssert(0);
@@ -82,18 +82,18 @@ CtrPlus::operator delete(void * p, size_t size)
 
 #define DYNAMIC
 /* static */ EBBRC 
-CtrPlus::Create(CtrPlusId &ctr)
+CtrCPlus::Create(CtrCPlusId &ctr)
 {
   EBBRC rc;
-  CtrPlus *rep;
+  CtrCPlus *rep;
   CPlusEBBRootShared *root;
 
 #ifdef DYNAMIC
-  rep = new CtrPlus();
+  rep = new CtrCPlus();
   root = new CPlusEBBRootShared();
   EBB_LRT_printf("c++ counter test using dynamic memory\n");
 #else
-  static CtrPlus repObj;
+  static CtrCPlus repObj;
   static CPlusEBBRootShared rootObj;
   rep = &repObj;
   root = &rootObj;
@@ -115,10 +115,10 @@ CtrPlus::Create(CtrPlusId &ctr)
 void test_cplus_counter(void)
 {
   uintptr_t res;
-  CtrPlusId ctr;
+  CtrCPlusId ctr;
 
   EBB_LRT_printf("running c++ counter test\n");
-  CtrPlus::Create(ctr);
+  CtrCPlus::Create(ctr);
 
   CPLUS_EBBCALL(ctr, inc);
   CPLUS_EBBCALL(ctr, inc);

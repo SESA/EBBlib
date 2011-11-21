@@ -7,7 +7,7 @@ ebbtest_SOURCES += l0/cobj/CObjEBB.c l0/EBBMgrPrim.c EBBStart.c
 ebbtest_SOURCES += l0/EventMgrPrimImp.c l0/MemMgrPrim.c net/EthMgrPrim.c
 ebbtest_SOURCES += l0/sys/defFT.c misc/CtrPrim.c misc/CtrPrimDistributed.c
 ebbtest_SOURCES += l0/cplus/CPlusEBBRoot.C l0/cplus/CPlusEBBRootShared.C
-ebbtest_SOURCES += misc/CtrPlus.C 
+ebbtest_SOURCES += misc/CtrCPlus.C 
 
 #headers
 ebbtest_SOURCES += l0/cobj/CObjEBBRootShared.h lrt/io.h l0/sys/trans.h
@@ -22,7 +22,7 @@ ebbtest_SOURCES += net/EthTypeMgr.h net/EthMgr.h net/EthMgrPrim.h
 ebbtest_SOURCES += l0/cobj/CObjEBBUtils.h misc/Ctr.h misc/CtrPrim.h
 ebbtest_SOURCES += misc/CtrPrimDistributed.h l0/const-asm.h l0/lrt/const-asm.h
 ebbtest_SOURCES += l0/cplus/CPlusEBB.H l0/cplus/CPlusEBBRoot.H l0/cplus/CPlusEBBRootShared.H
-ebbtest_SOURCES += misc/CtrPlus.H
+ebbtest_SOURCES += misc/CtrCPlus.H
 
 #LRT conditional
 ebbtest_SOURCES += l0/lrt/ulnx/pic.c lrt/ulnx/lrt_start.c

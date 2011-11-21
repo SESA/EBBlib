@@ -11,7 +11,6 @@ AC_CONFIG_HEADER([config.h])
 AC_CANONICAL_HOST
 #AS_ECHO(["$host_cpu"])
 AS_IF([test "x$host_cpu" != "xx86_64"], [AC_MSG_ERROR([not on x86_64 machine])])
-
 AC_DEFINE(LRT_ULNX, [], [Set to indicate that we are running the userland Linux low-level runtime])
 
 # Checks for programs.

@@ -38,7 +38,7 @@
 #include <net/EthMgrPrim.h>
 #include <misc/Ctr.h>
 #include <misc/CtrPrim.h>
-#include <misc/CtrPlus.H>
+#include <misc/CtrCPlus.H>
 
 pthread_key_t ELKey;
 static void 
