@@ -72,7 +72,7 @@ struct Pic {
   fd_set fdset;
   uintptr_t free;
   uintptr_t numlpics;
-  uintptr_t lpiccnt;
+  volatile uintptr_t lpiccnt;
   uintptr_t lock;
   int maxfd;
 } pic;
@@ -83,8 +83,8 @@ struct LPic {
   lrt_pic_set mymask;
   lrt_pic_id id;
   uintptr_t aux;
-  uintptr_t ipiStatus;
-  uintptr_t resetStatus;
+  volatile uintptr_t ipiStatus;
+  volatile uintptr_t resetStatus;
 } lpics[LRT_PIC_MAX_PICS];
 
 
@@ -400,12 +400,18 @@ lrt_pic_loop(lrt_pic_id myid)
 
   lock(); pic.lpiccnt++; unlock();
 
-  // start with ipi and reset enabled on all lpics so that we can get going via an ipi
+  // all processors have ipi enabled at startup 
+  // Semantics are that only reset is run on first proc
+  // ipi is used on all other procs to get things going
+  // reset code is expected to setup ipi vector appropriately
+  // before invoking.  So at this point ipi vector maybe null
   lrt_pic_enableipi();
-  lrt_pic_enable(RST_VEC);
+
+  // only reset vector to run on boot processor
+  if (lrt_pic_myid == lrt_pic_firstid) lrt_pic_enable(RST_VEC);
+
   // wait for all lpics to be up before we get going
   while (pic.lpiccnt != pic.numlpics);
-  //  printf("%d: pic.lpiccnt=%ld\n", lrt_pic_myid, pic.lpiccnt);
 
   while (1) {
     FD_COPY(&pic.fdset, &rfds);
@@ -443,6 +449,7 @@ lrt_pic_loop(lrt_pic_id myid)
 
     if (lpic->ipiStatus && lrt_pic_set_test(pic.vecs[IPI_VEC].set, myid)) {
       lrt_pic_disableipi();
+      assert(pic.vecs[IPI_VEC].h);
       pic.vecs[IPI_VEC].h();
     }
 
@@ -468,12 +475,32 @@ lrt_pic_loop(lrt_pic_id myid)
 void
 ipihdlr(void)
 {
+  lrt_pic_ackipi();
   fprintf(stderr, "%ld", lrt_pic_myid);
   fflush(stderr);
   sleep(2);
-  lrt_pic_ackipi();
+  lrt_pic_enableipi();
   // pass the ipi along to the next lrt
   lrt_pic_ipi((lrt_pic_myid+1)%(lrt_pic_lastid+1));
+}
+
+
+void
+rsthdlr(void)
+{
+  fprintf(stderr, "%s: START: on %ld\n", __func__, 
+	  lrt_pic_myid);
+  fflush(stderr);  
+
+  // setup our ipi handler and enable ipi 
+  // FIXME:  for the moment these are global operations that affect all pics
+  //         reset only runs on first lpic
+  lrt_pic_mapipi(ipihdlr);
+
+  // ipi is enabled by default... so all we have to do is send the first
+  // ipi to ourselvs
+  // send ipi to my self to get the ball rolling
+  lrt_pic_ipi(lrt_pic_myid);
 }
 
 int
@@ -482,7 +509,7 @@ main(int argc, char **argv)
   uintptr_t cores=1;
 
   if (argc>1) cores=atoi(argv[1]);
-  lrt_pic_init(cores, ipihdlr);
+  lrt_pic_init(cores, rsthdlr);
   return -1;
 }
 
