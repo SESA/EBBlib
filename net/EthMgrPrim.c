@@ -105,7 +105,7 @@ EthMgrPrimSetFT(EthMgrPrimRef o)
 
 
 EBBRC
-EthMgrPrimCreate(EthMgrId *id) 
+EthMgrPrimCreate(EthMgrId *id, char *nic) 
 {
   EBBRC rc;
   EthMgrPrimRef repRef;
@@ -141,12 +141,14 @@ EthMgrPrimCreate(EthMgrId *id)
   rc = EBBCALL(theEventMgrPrimId, allocEventNo, &(repRef->ev));
   EBBRCAssert(rc);
 
-  rc = ethlib_nic_init("eth1", &nicisrc);
-  EBBRCAssert(rc);
+  if (nic) {
+    rc = ethlib_nic_init(nic, &nicisrc);
+    EBBRCAssert(rc);
+    
+    rc = EBBCALL(theEventMgrPrimId, registerHandler, repRef->ev, 
+		 repRef->hdlrId, nicisrc);
+    EBBRCAssert(rc);
+  }
 
-  rc = EBBCALL(theEventMgrPrimId, registerHandler, repRef->ev, 
-	       repRef->hdlrId, nicisrc);
-  EBBRCAssert(rc);
-  
   return EBBRC_OK;
 }

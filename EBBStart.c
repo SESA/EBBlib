@@ -40,7 +40,6 @@
 #include <misc/CtrPrim.h>
 #include <misc/CtrCPlus.H>
 
-pthread_key_t ELKey;
 static void 
 kludge(void)
 {
@@ -49,7 +48,6 @@ kludge(void)
   EBBCtrId ctr;
 
   EBB_LRT_printf("%s: start\n", __func__);
-  pthread_setspecific(ELKey, (void *)lrt_pic_myid);
 
   EBBMgrPrimInit();
   rc = EBBMemMgrPrimInit();
@@ -62,7 +60,11 @@ kludge(void)
 
 
   EBB_LRT_printf("%s: about to call init eth\n", __func__);
-  EthMgrPrimCreate(&ethmgr);
+#ifdef __linux__
+  EthMgrPrimCreate(&ethmgr, "eth1");
+#else
+  EthMgrPrimCreate(&ethmgr, NULL);
+#endif
   EBBRCAssert(rc);
   rc = EBBCtrPrimSharedCreate(&ctr);
   EBBRCAssert(rc);

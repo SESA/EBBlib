@@ -21,14 +21,10 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-
-#include <pthread.h>
-
-extern pthread_key_t ELKey;
+#include <l0/lrt/pic.h>
 
 static inline uintptr_t LRTEBBMyEL(void) {
-/*   return 0; */
-  return (uintptr_t)pthread_getspecific(ELKey);
+  return lrt_pic_myid;
 }
 
 #endif
