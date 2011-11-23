@@ -143,12 +143,11 @@ EthMgrPrimCreate(EthMgrId *id, char *nic)
 
   if (nic) {
     rc = ethlib_nic_init(nic, &nicisrc);
-    EBBRCAssert(rc);
-    
-    rc = EBBCALL(theEventMgrPrimId, registerHandler, repRef->ev, 
-		 repRef->hdlrId, nicisrc);
-    EBBRCAssert(rc);
+    if (EBBRC_SUCCESS(rc)) {
+      rc = EBBCALL(theEventMgrPrimId, registerHandler, repRef->ev, 
+		   repRef->hdlrId, nicisrc);
+      EBBRCAssert(rc);
+    }
   }
-
   return EBBRC_OK;
 }

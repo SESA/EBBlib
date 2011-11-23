@@ -76,7 +76,12 @@ ethlib_nic_init(char *dev, lrt_pic_src *s)
 
   hdl = pcap_open_live(dev, PCAP_DEFAULT_SNAPLEN, 
 			       0, 0, errbuf);
-  assert(hdl);
+
+  if (hdl == NULL) {
+    fprintf(stderr, "ERROR: pcap_open_live on \"%s\" failed: %s\n", 
+	    dev, errbuf);
+    return -1;
+  }
 
   if(pcap_setnonblock(hdl, 1, errbuf) == 1) {
     fprintf(stderr, "Could not set device \"%s\" to non-blocking: %s\n", dev, 
