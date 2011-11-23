@@ -38,6 +38,7 @@
 #include <net/EthMgrPrim.h>
 #include <misc/Ctr.h>
 #include <misc/CtrPrim.h>
+#include <misc/CtrCPlus.H>
 
 pthread_key_t ELKey;
 static void 
@@ -55,11 +56,18 @@ kludge(void)
   EBBRCAssert(rc);
   rc = EventMgrPrimImpInit();
   EBBRCAssert(rc);
+
+  EBB_LRT_printf("calling stuff that dan broke\n");
+  test_cplus_counter();
+
+
   EBB_LRT_printf("%s: about to call init eth\n", __func__);
   EthMgrPrimCreate(&ethmgr);
   EBBRCAssert(rc);
   rc = EBBCtrPrimSharedCreate(&ctr);
   EBBRCAssert(rc);
+
+
 }
 
 void

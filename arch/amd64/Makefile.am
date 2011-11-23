@@ -1,0 +1,1 @@
+arch_amd64_sources = arch/amd64/asm.h arch/amd64/fpr.h

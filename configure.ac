@@ -8,11 +8,15 @@ AM_INIT_AUTOMAKE([foreign subdir-objects -Wall -Werror ])
 AC_CONFIG_SRCDIR([EBBStart.c])
 AC_CONFIG_HEADER([config.h])
 
+AC_CANONICAL_HOST
+#AS_ECHO(["$host_cpu"])
+AS_IF([test "x$host_cpu" != "xx86_64"], [AC_MSG_ERROR([not on x86_64 machine])])
 AC_DEFINE(LRT_ULNX, [], [Set to indicate that we are running the userland Linux low-level runtime])
 
 # Checks for programs.
 AC_PROG_CC
 AM_PROG_CC_C_O
+AC_PROG_CXX
 AM_PROG_AS
 
 # Checks for libraries.
@@ -45,9 +49,9 @@ AC_TYPE_UINTPTR_T
 
 # Checks for library functions.
 AC_SEARCH_LIBS([pthread_create], [pthread], [],
-				 [AC_MSG_FAILURE([Pthread library missing])])
+				 [AC_MSG_ERROR([pthread library missing])])
 AC_SEARCH_LIBS([pcap_freealldevs], [pcap], [],
-				 [AC_MSG_FAILURE([Pcap library missing])])
+				 [AC_MSG_ERROR([pcap library missing])])
 AC_CHECK_FUNCS([bzero dup2 gethostbyname memset socket strerror])
 
 AC_CONFIG_FILES([Makefile])

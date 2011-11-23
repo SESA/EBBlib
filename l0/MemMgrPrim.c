@@ -21,6 +21,7 @@
  */
 #include <config.h>
 #include <stdint.h>
+#include <lrt/assert.h>
 #include <l0/cobj/cobj.h>
 #include <l0/types.h>
 #include <l0/cobj/CObjEBB.h>
@@ -95,10 +96,10 @@ EBBMemMgrPrimInit()
   rootRef->ft->init(rootRef, &theRep);
 
   rc = EBBAllocPrimId(&theEBBMemMgrPrimId);
-  //  EBBRCAssert(rc);
+  EBBRCAssert(rc);
 
   rc = CObjEBBBind(theEBBMemMgrPrimId, rootRef); 
-  //  EBBRCAssert(rc);
+  EBBRCAssert(rc);
 
   return EBBRC_OK;
 }

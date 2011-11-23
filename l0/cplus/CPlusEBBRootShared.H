@@ -1,3 +1,5 @@
+#ifndef __CPLUS_EBB_ROOT_SHARED_H_
+#define __CPLUS_EBB_ROOT_SHARED_H_
 /*
  * Copyright (C) 2011 by Project SESA, Boston University
  *
@@ -19,45 +21,17 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#include <config.h>
-#include <stdint.h>
-#include <l0/types.h>
-#include <l0/cobj/cobj.h>
-#include <l0/cobj/CObjEBB.h>
-#include <l0/cobj/CObjEBBRoot.h>
-#include <l0/cobj/CObjEBBRootShared.h>
 
-//What you want to do here is install theRep into the EBBLTrans
-//then set obj to point to theRep (obj is really of type Object **)
-//Then simply return EBBRC_OK and the default func will
-//handle the rest. Return any failure code to have the call fail
-EBBRC
-CObjEBBRootShared_handleMiss(void *_self, void *obj, EBBLTrans *lt, 
-			     FuncNum fnum)
-{
-  CObjEBBRootSharedRef self = _self;
-  EBBCacheObj(lt, self->theRep);
-  *(void **)obj = self->theRep;
-  return EBBRC_OK;
-}
+class CPlusEBBRootShared : public CPlusEBBRoot {
+  CPlusEBB *theRep;
+private:
+  virtual EBBRC handleMiss(void **obj, EBBLTrans *lt, FuncNum fnum);
+public:
+  void * operator new(size_t size);
+  void operator delete(void * p, size_t size);
 
-//Jonathan's code
-/* uintptr_t */
-/* CObjEBBRootShared_handleMiss(void *_self, void *obj, EBBLTrans *lt,  */
-/* 			     FuncNum fnum) */
-/* { */
-/*   CObjEBBRootSharedRef self = _self; */
-/*   return (uintptr_t)(self->theRep); */
-/* } */
- 
-void
-CObjEBBRootShared_init(void *_self, void *rep)
-{
-  CObjEBBRootSharedRef self = _self;
-  self->theRep = rep;
-}
-
-CObjInterface(CObjEBBRootShared) CObjEBBRootShared_ftable = {
-  { CObjEBBRootShared_handleMiss },
-  CObjEBBRootShared_init
+  // pass in the pre-creted rep for a shared root, get back the root
+  virtual EBBRC init(CPlusEBB *rep) { theRep = rep; }
 };
+#endif
+

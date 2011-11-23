@@ -1,5 +1,8 @@
 System independent library to support Elastic Building Blocks
 
+Wiki at: https://github.com/SESA/EBBlib/wiki
+Issue Tracker at: https://github.com/SESA/EBBlib/issues
+
 To build - 
 autoreconf --install
 mkdir <build directory>

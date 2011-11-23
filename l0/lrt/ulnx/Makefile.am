@@ -1,0 +1,2 @@
+l0_lrt_ulnx_sources = l0/lrt/ulnx/const-asm.h l0/lrt/ulnx/const.h \
+	l0/lrt/ulnx/pic.c l0/lrt/ulnx/pic.h l0/lrt/ulnx/types.h

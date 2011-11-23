@@ -24,7 +24,7 @@
 
 CObjInterface(CObjEBBRoot) 
 {
-  uintptr_t (*handleMiss)(void *_self, void *obj, EBBLTrans *lt, FuncNum fnum);
+  EBBRC (*handleMiss)(void *_self, void *obj, EBBLTrans *lt, FuncNum fnum);
 };
 
 CObject(CObjEBBRoot)
