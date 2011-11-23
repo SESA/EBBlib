@@ -48,18 +48,20 @@ do
 done
 
 cat > $sysdir/Makefile << EOF
-default:
-	make -C debug
-	make -C ndebug
-	make -C partdebug
+all: .DEFAULT
+.DEFAULT:
+	make -C debug \${MAKECMDGOALS}
+	make -C ndebug \${MAKECMDGOALS}
+	make -C partdebug \${MAKECMDGOALS}
 EOF
 
 if [[ ! -a $buildir/Makefile ]]
 then
 cat > $builddir/Makefile << EOF
 sys := \$(shell uname -s)
-default:
-	make -C \${sys}
+all: .DEFAULT
+.DEFAULT:
+	make -C \${sys} \${MAKECMDGOALS}
 EOF
 fi
 echo "Build directory $sysdir ready."
