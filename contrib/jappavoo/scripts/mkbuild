@@ -16,13 +16,14 @@ then
   exit -1
 fi
 
+(cd $dir; autoreconf --install)
+
 if [[ ! -a $dir/configure ]]
 then
   echo "ERROR: $dir/configure not found"
   exit -1
 fi
 
-(cd $dir; autoreconf --install)
 
 builddir=$dir/../build
 sysdir=$builddir/$(uname -s)
