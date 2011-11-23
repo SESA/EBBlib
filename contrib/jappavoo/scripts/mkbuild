@@ -1,0 +1,66 @@
+#!/bin/bash
+#set -x
+DEBUGDIRS="debug ndebug partdebug"
+
+dir=$1
+
+if [[ -z $dir ]]
+then
+    dir=$(basename $(pwd))
+    cd ..
+fi
+
+if [[ ! -a $dir/configure.ac ]]
+then
+  echo "ERROR: $dir does not seem to be a src dir"
+  exit -1
+fi
+
+if [[ ! -a $dir/configure ]]
+then
+  echo "ERROR: $dir/configure not found"
+  exit -1
+fi
+
+(cd $dir; autoreconf --install)
+
+builddir=$dir/../build
+sysdir=$builddir/$(uname -s)
+
+mkdir -p $sysdir
+
+for dl in $DEBUGDIRS
+do
+  mkdir $sysdir/$dl
+  case $dl in
+  debug)
+    flags="-O0 -g"
+    ;;
+  ndebug)
+    flags="-O3"
+    ;;
+  partdebug)
+    flags="-O2 -g"
+    ;;
+  esac
+  echo "../../../$dir/configure 'CFLAGS=$flags' 'CXXFLAGS=$flags'" > $sysdir/$dl/doconfig
+  (cd $sysdir/$dl; . doconfig)
+done
+
+cat > $sysdir/Makefile << EOF
+default:
+	make -C debug
+	make -C ndebug
+	make -C partdebug
+EOF
+
+if [[ ! -a $buildir/Makefile ]]
+then
+cat > $builddir/Makefile << EOF
+sys := \$(shell uname -s)
+default:
+	make -C \${sys}
+EOF
+fi
+echo "Build directory $sysdir ready."
+echo "Issue 'make' in $builddir or $sysdir on a $(uname -s) machine to build all debug levels"
