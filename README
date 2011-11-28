@@ -7,5 +7,5 @@ To build -
 autoreconf --install
 mkdir <build directory>
 cd <build directory>
-run the configure script
+run the configure script from the EBBlib directory (e.g. ../../../EBBlib/configure -build=x86_64-darwin)
 make	   
