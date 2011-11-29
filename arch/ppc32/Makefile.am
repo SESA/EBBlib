@@ -1,0 +1,1 @@
+arch_powerpc_sources = arch/powerpc/asm.h arch/powerpc/asdef.h
