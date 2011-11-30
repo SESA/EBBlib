@@ -22,9 +22,8 @@
  * THE SOFTWARE.
  */
 
-#include <pthread.h>
-
-enum {LRT_PIC_MAX_PICS = 128};
+enum {LRT_PIC_LG2MAX_PICS = 7}; // 128 
+enum {LRT_PIC_MAX_PICS = (1 << LRT_PIC_LG2MAX_PICS) };
 enum {LRT_PIC_FIRST_PIC_ID = 0};
 enum {LRT_PIC_MAX_PIC_ID = (LRT_PIC_MAX_PICS-1)};
 
@@ -84,6 +83,7 @@ typedef uintptr_t lrt_pic_src;
 
 //FIXME:  JA would like these to be consts
 #ifdef __APPLE__
+#include <pthread.h>
 extern pthread_key_t lrt_pic_myid_pthreadkey;
 #define lrt_pic_myid ((lrt_pic_id)pthread_getspecific(lrt_pic_myid_pthreadkey))
 #else

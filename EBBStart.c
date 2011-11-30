@@ -46,18 +46,11 @@ kludge(void)
   EBBRC rc;
   EthMgrId ethmgr;
   EBBCtrId ctr;
-
+  
   EBB_LRT_printf("%s: start\n", __func__);
-
-  EBBMgrPrimInit();
-  rc = EBBMemMgrPrimInit();
-  EBBRCAssert(rc);
-  rc = EventMgrPrimImpInit();
-  EBBRCAssert(rc);
 
   EBB_LRT_printf("calling stuff that dan broke\n");
   test_cplus_counter();
-
 
   EBB_LRT_printf("%s: about to call init eth\n", __func__);
 #ifdef __linux__
@@ -66,9 +59,9 @@ kludge(void)
   EthMgrPrimCreate(&ethmgr, NULL);
 #endif
   EBBRCAssert(rc);
+
   rc = EBBCtrPrimSharedCreate(&ctr);
   EBBRCAssert(rc);
-
 
 }
 
@@ -86,13 +79,20 @@ ipihdlr(void)
 
 
 void
-EBBStart(void)
+EBBStart()
 {
   /* Three main EBB's are EBBMgrPrim, EventMgrPrim EBBMemMgrPrim    */
   /* There creation and initialization are interdependent and requires */
   /* fancy footwork */
+  EBBRC rc;
 
-  // put code here to get preboot versions of l0 EBBs ready
+  EBBMgrPrimInit();
+
+  rc = EBBMemMgrPrimInit();
+  EBBRCAssert(rc);
+
+  rc = EventMgrPrimImpInit();
+  EBBRCAssert(rc);
 
   // then invoke a method of BootInfo object on first message
   // this object should gather boot information (sysfacts and boot args)

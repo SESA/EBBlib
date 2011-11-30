@@ -19,33 +19,41 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#include <config.h>
-#include <stdio.h>
-#include <stdlib.h>
+
 #include <stdint.h>
-#include <l0/lrt/pic.h>
-#include <l0/lrt/mem.h>
-#include <l0/lrt/trans.h>
+#include <l0/lrt/ulnx/pic.h>
+#include <l0/lrt/ulnx/mem.h>
 
-extern void EBBStart(void);
+#include <sys/mman.h>
 
+enum { LRT_MEM_PAGESIZE=4096, LRT_MEM_PAGESPERPIC=1024 };
+enum { LRT_MEM_PERPIC=LRT_MEM_PAGESIZE * LRT_MEM_PAGESPERPIC };
 
+struct BootMemDesc {
+  uintptr_t start;
+  uintptr_t end;
+} bootMem[LRT_PIC_MAX_PICS];
 
-// first code to be runnining on an interrupt
-void lrt_start(void)
+uintptr_t 
+lrt_mem_start(void)
 {
-  fprintf(stderr, "%s: start!\n", __func__);
-  lrt_mem_init();
-  lrt_trans_init();
-  EBBStart();
+  return bootMem[lrt_pic_myid].start;
 }
 
-int
-main(int argc, char **argv)
+uintptr_t 
+lrt_mem_end(void)
 {
-  uintptr_t cores=1;
-  fprintf(stderr, "%s: start!\n", __func__);
-  if (argc>1) cores=atoi(argv[1]);
-  lrt_pic_init(cores, lrt_start);
-  return -1;
+  return bootMem[lrt_pic_myid].end;
 }
+
+intptr_t
+lrt_mem_init(void)
+{
+  struct BootMemDesc *bm = &(bootMem[lrt_pic_myid]);
+  bm->start = (intptr_t)mmap(NULL, LRT_MEM_PERPIC, 
+			     PROT_READ|PROT_WRITE|PROT_EXEC, 
+			     MAP_ANON, -1, 0);     
+  bm->end = bm->start + LRT_MEM_PERPIC;
+  return 1;
+}
+

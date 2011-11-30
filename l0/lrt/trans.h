@@ -1,3 +1,5 @@
+#ifndef __LRT_TRANS_H__
+#define __LRT_TRANS_H__
 /*
  * Copyright (C) 2011 by Project SESA, Boston University
  *
@@ -19,33 +21,9 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#include <config.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdint.h>
-#include <l0/lrt/pic.h>
-#include <l0/lrt/mem.h>
-#include <l0/lrt/trans.h>
 
-extern void EBBStart(void);
+#ifdef LRT_ULNX
+#include <l0/lrt/ulnx/trans.h>
+#endif
 
-
-
-// first code to be runnining on an interrupt
-void lrt_start(void)
-{
-  fprintf(stderr, "%s: start!\n", __func__);
-  lrt_mem_init();
-  lrt_trans_init();
-  EBBStart();
-}
-
-int
-main(int argc, char **argv)
-{
-  uintptr_t cores=1;
-  fprintf(stderr, "%s: start!\n", __func__);
-  if (argc>1) cores=atoi(argv[1]);
-  lrt_pic_init(cores, lrt_start);
-  return -1;
-}
+#endif

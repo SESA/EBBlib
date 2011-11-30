@@ -45,8 +45,6 @@ __thread lrt_pic_id lrt_pic_myid;
 lrt_pic_id lrt_pic_firstid;
 lrt_pic_id lrt_pic_lastid;
 
-enum {NUM_LPICS_CONFIGED = 4};
-
 #ifdef __APPLE__
 enum {FIRST_VECFD = 128};
 #else
