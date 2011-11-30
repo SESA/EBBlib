@@ -4,9 +4,10 @@
 AC_PREREQ(2.61)
 AC_INIT([EBBLib],[0.1],[sesa@lists.xstack.org])
 AC_CONFIG_AUX_DIR([build-aux])
-AM_INIT_AUTOMAKE([foreign subdir-objects -Wall -Werror ])
+AM_INIT_AUTOMAKE([foreign subdir-objects -Wall -Werror])
 AC_CONFIG_SRCDIR([EBBStart.c])
 AC_CONFIG_HEADER([config.h])
+AM_PATH_CPPUNIT(1.12.1)
 
 AC_CANONICAL_HOST
 #AS_ECHO(["$host_cpu"])

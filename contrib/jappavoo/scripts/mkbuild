@@ -27,8 +27,15 @@ fi
 
 builddir=$dir/../build
 sysdir=$builddir/$(uname -s)
+system=$(uname -s)
 
 mkdir -p $sysdir
+
+case $system in
+    Darwin)
+	XFLG="--build=x86_64-darwin"
+	;;
+esac
 
 for dl in $DEBUGDIRS
 do
@@ -44,7 +51,7 @@ do
     flags="-O2 -g"
     ;;
   esac
-  echo "../../../$dir/configure 'CFLAGS=$flags' 'CXXFLAGS=$flags'" > $sysdir/$dl/doconfig
+  echo "../../../$dir/configure 'CFLAGS=$flags' 'CXXFLAGS=$flags' $XFLG" > $sysdir/$dl/doconfig
   (cd $sysdir/$dl; . doconfig)
 done
 

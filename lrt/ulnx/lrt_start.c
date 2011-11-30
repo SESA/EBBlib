@@ -40,8 +40,11 @@ void lrt_start(void)
   EBBStart();
 }
 
+//DS KLUDGE: I make main a weak symbol so that testing can overwrite the symbol
+// but still link with all the code
+__attribute__ ((weak)) 
 int
-main(int argc, char **argv)
+main(int argc, char **argv) 
 {
   uintptr_t cores=1;
   fprintf(stderr, "%s: start!\n", __func__);
