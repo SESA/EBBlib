@@ -29,8 +29,6 @@
 
 extern void EBBStart(void);
 
-
-
 // first code to be runnining on an interrupt
 void lrt_start(void)
 {
