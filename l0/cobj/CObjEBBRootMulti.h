@@ -22,27 +22,29 @@
  * THE SOFTWARE.
  */
 
-CObject(CObjEBBRootMulti) {
-  CObjInterface(CObjEBBRootMulti) *ft;
-};
+// JA: FIX TYPES BUT DO NOT GET RIDE OF IMPLEMENTATION WE NEED
+//     STATICS OF THESE
 
-typedef EBBRep *(*CreateRepFunc) (CObjEBBRootMultiRef rootRef);
+typedef EBBRep *(*CreateRepFunc) (void * _self);
 typedef struct RepListNode_s RepListNode;
 
 CObjInterface(CObjEBBRootMulti)
 {
   CObjImplements(CObjEBBRoot);
-  void (*init)(CObjEBBRootMultiRef _self, CreateRepFunc func);
-  RepListNode *(*nextRep) (CObjEBBRootMultiRef _self, 
+  void (*addRepOn)(void * _self, uintptr_t el, EBBRep *rep);
+  RepListNode *(*nextRep) (void * _self, 
 			   RepListNode *curr, EBBRep **rep);
 };
 
-extern CObjInterface(CObjEBBRootMulti) CObjEBBRootMulti_ftable;
-				       
-static inline void
-CObjEBBRootMultiSetFT(CObjEBBRootMultiRef o)
-{
-  o->ft = &CObjEBBRootMulti_ftable;
-}
+// Got ride of abstract type since we may commonly need
+// to delare statics of these and embed them
+CObject(CObjEBBRootMulti) {
+  CObjInterface(CObjEBBRootMulti) *ft;
+  CreateRepFunc createRep;
+  RepListNode *head;
+  uintptr_t lock;
+};
 
+extern EBBRC CObjEBBRootMultiStaticInit(CObjEBBRootMultiRef o, CreateRepFunc func);
+extern EBBRC CObjEBBRootMultiCreate(CObjEBBRootMultiRef *o, CreateRepFunc func);
 #endif

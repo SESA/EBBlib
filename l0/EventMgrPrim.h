@@ -64,6 +64,11 @@ extern EventMgrPrimId theEventMgrPrimId;
  * the EL of the rep of the EventMgr
  */
 typedef uintptr_t EvntLoc;
-extern EvntLoc  EventMgrPrim_GetMyEL();
+
+inline static EvntLoc 
+myEL()
+{
+  return LRTEBBMyEL();
+};
 
 #endif

@@ -74,6 +74,7 @@ static CObjInterface(EBBMgrPrim) EBBMgrPrimImp_ftable = {
   .UnBindId = UnBindId, 
 };
 
+#if 0
 static EBBRC 
 EBBMgrPrimErrMF (EBBRep **_self, EBBLTrans *lt,
 		 FuncNum fnum, EBBMissArg arg) {
@@ -81,15 +82,15 @@ EBBMgrPrimErrMF (EBBRep **_self, EBBLTrans *lt,
 		 _self, lt, (void *)fnum, (void *)arg);
   return EBBRC_GENERIC_FAILURE;
 }
+#endif
 
 static EBBRep *
-EBBMgrPrimImp_createRep(CObjEBBRootMultiRef rootRef) {
+EBBMgrPrimImp_createRep(void *_self) {
   EBBMgrPrimImpRef repRef;
   EBBPrimMalloc(sizeof(*repRef), &repRef, EBB_MEM_DEFAULT);
   repRef->ft = &EBBMgrPrimImp_ftable;
-  repRef->theRoot = rootRef;
-  initGTable(EBBMgrPrimErrMF, 0);
-  initLTable();
+  repRef->theRoot = _self;
+  //  initGTable(EBBMgrPrimErrMF, 0);
   return (EBBRep *)repRef;
 }
 
@@ -98,11 +99,7 @@ void EBBMgrPrimInit() {
 
   if (__sync_bool_compare_and_swap(&theEBBMgrPrimId, (EBBMgrPrimId)0,
 				   (EBBMgrPrimId)-1)) {
-    
-    EBBPrimMalloc(sizeof(*rootRef), &rootRef, EBB_MEM_DEFAULT);
-    CObjEBBRootMultiSetFT(rootRef);
-    rootRef->ft->init(rootRef, EBBMgrPrimImp_createRep);
-    
+    CObjEBBRootMultiCreate(&rootRef, EBBMgrPrimImp_createRep);
     
     theEBBMgrPrimId = (EBBMgrPrimId)EBBIdAlloc();
     EBBAssert(theEBBMgrPrimId != NULL);

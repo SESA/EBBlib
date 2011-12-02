@@ -21,21 +21,8 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-
-CObject(EBBMemMgrPrim) {
-  CObjInterface(EBBMemMgr) *ft;
-  void *mem;
-  uintptr_t len;
-};
-
-extern CObjInterface(EBBMemMgr) EBBMemMgrPrim_ftable;
-
-static inline void
-EBBMemMgrPrimSetFT(EBBMemMgrPrimRef o) {o->ft = &EBBMemMgrPrim_ftable; }
-
-typedef EBBMemMgrPrimRef *EBBMemMgrPrimId;
 extern EBBRC EBBMemMgrPrimInit(void);
-extern EBBMemMgrPrimRef *theEBBMemMgrPrimId;
+extern EBBMemMgrId theEBBMemMgrPrimId;
 
 static inline EBBRC
 EBBPrimMalloc(uintptr_t size, void *mem, EBB_MEM_POOL pool) {

@@ -12,9 +12,9 @@ struct lrt_trans {
   uint64_t vals[4];
 };
 
-enum { LRT_TRANS_LG2_PAGESIZE=12, LRT_TRANS_LG2_NUMPAGES=4 };
+enum { LRT_TRANS_LG2_PAGESIZE=12, LRT_TRANS_LG2_NUMPAGES=8 };
 enum { LRT_TRANS_PAGESIZE=(1<<LRT_TRANS_LG2_PAGESIZE),   // 4096
-       LRT_TRANS_NUMPAGES=(1<<LRT_TRANS_LG2_NUMPAGES) }; // 16
+       LRT_TRANS_NUMPAGES=(1<<LRT_TRANS_LG2_NUMPAGES) }; // 256
 enum { LRT_TRANS_NUMIDS_PERPAGE=LRT_TRANS_PAGESIZE/sizeof(struct lrt_trans) };
 enum { LRT_TRANS_LG2_TBLSIZE=(LRT_TRANS_LG2_PAGESIZE + 
 			      LRT_TRANS_LG2_NUMPAGES) };
@@ -30,25 +30,17 @@ extern struct TransMemDesc TransMem;
 static inline int 
 lrt_trans_valid(void)
 {
-  if ((sizeof(struct lrt_trans) * LRT_TRANS_NUMIDS_PERPAGE) == 
-      LRT_TRANS_PAGESIZE) return 1;
-  return 0;
+  // an trans page should fit an exact number of trans structs on it
+  if ((sizeof(struct lrt_trans) * LRT_TRANS_NUMIDS_PERPAGE) != 
+      LRT_TRANS_PAGESIZE) return 0;
+
+  return 1;
 }
 
-
-// Size of a pic's portion of the gtable
-static inline uintptr_t
-lrt_trans_gmem_size(void)
-{
-  return LRT_TRANS_TBLSIZE / LRT_PIC_MAX_PICS;
-}
-
-// This pic's portion of the gtable
 static inline uintptr_t 
 lrt_trans_gmem(void)
 {
-  uintptr_t ret = (uintptr_t)TransMem.GMem;
-  return ret + (lrt_pic_myid * lrt_trans_gmem_size());
+  return (uintptr_t)TransMem.GMem;
 }
 
 static inline uintptr_t
@@ -59,9 +51,9 @@ lrt_trans_lmem(void)
 }
 
 static inline uintptr_t
-lrt_trans_offset(void *t) 
+lrt_trans_offset(uintptr_t base, uintptr_t t) 
 {
- return (uintptr_t)t & ((1 << (unsigned)LRT_TRANS_LG2_TBLSIZE)-1);    
+  return (uintptr_t)(t - base);
 }
 
 static inline uintptr_t
@@ -73,37 +65,45 @@ lrt_trans_idbase(void)
 static inline struct lrt_trans *
 lrt_trans_id2lt(lrt_transid i)
 {
-  return (struct lrt_trans *)(lrt_trans_lmem() + lrt_trans_offset((void *)i));
+  return (struct lrt_trans *)(lrt_trans_lmem() + 
+			      lrt_trans_offset(lrt_trans_idbase(), i));
 }
     
 static inline lrt_transid 
 lrt_trans_lt2id(struct lrt_trans *t)
 {
-  return (lrt_transid)(lrt_trans_idbase() + lrt_trans_offset(t));
+  return (lrt_transid)(lrt_trans_idbase() + 
+		       lrt_trans_offset(lrt_trans_lmem(), (uintptr_t)t));
 }
 
 static inline struct lrt_trans *
 lrt_trans_id2gt(lrt_transid i)
 {
-  return (struct lrt_trans *)(lrt_trans_gmem() + lrt_trans_offset((void *)i));
+  return (struct lrt_trans *)(lrt_trans_gmem() + 
+			      lrt_trans_offset(lrt_trans_idbase(), i));
 }
 
 static inline lrt_transid
 lrt_trans_gt2id(struct lrt_trans *t)
 {
-  return (lrt_transid)(lrt_trans_idbase() + lrt_trans_offset(t));
+  return (lrt_transid)(lrt_trans_idbase() + 
+		       lrt_trans_offset(lrt_trans_gmem(), (uintptr_t)t));
 }
 
 static inline struct lrt_trans *
 lrt_trans_gt2lt(struct lrt_trans *gt)
 {
-  return (struct lrt_trans *)(lrt_trans_lmem() + lrt_trans_offset(gt)); 
+  return (struct lrt_trans *)(lrt_trans_lmem() + 
+			      lrt_trans_offset(lrt_trans_gmem(), 
+					       (uintptr_t)gt)); 
 }
 
 static inline struct lrt_trans *
 lrt_trans_lt2gt(struct lrt_trans *lt)
 {
-  return (struct lrt_trans *)(lrt_trans_gmem() + lrt_trans_offset(lt));
+  return (struct lrt_trans *)(lrt_trans_gmem() + 
+			      lrt_trans_offset(lrt_trans_lmem(), 
+					       (uintptr_t)lt));
 }
 
 void lrt_trans_init(void);

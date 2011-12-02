@@ -22,11 +22,12 @@
  * THE SOFTWARE.
  */
 
-static inline
-EBBRC
+static inline EBBRC
 CObjEBBBind(EBBId id, void *root)
 {
   return EBBBindPrimId(id, CObjEBBMissFunc, (EBBMissArg) root);
 }
+
+extern EBBRC CObjEBBBindBoot(EBBId id, void *root);
 
 #endif

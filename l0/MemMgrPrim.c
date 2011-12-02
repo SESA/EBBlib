@@ -22,28 +22,36 @@
 #include <config.h>
 #include <stdint.h>
 #include <lrt/assert.h>
+#include <l0/lrt/types.h>
 #include <l0/cobj/cobj.h>
 #include <l0/lrt/pic.h>
 #include <l0/lrt/trans.h>
 #include <l0/types.h>
 #include <l0/cobj/CObjEBB.h>
 #include <l0/EBBMgrPrim.h>
+#include <l0/EBBMgrPrimBoot.h>
+#include <l0/EventMgrPrim.h>
 #include <l0/cobj/CObjEBBUtils.h>
 #include <l0/cobj/CObjEBBRoot.h>
-#include <l0/cobj/CObjEBBRootShared.h>
+#include <l0/cobj/CObjEBBRootMulti.h>
 #include <l0/MemMgr.h>
 #include <l0/MemMgrPrim.h>
+#include <l0/lrt/mem.h>
 
-enum {MEMSIZE = (1 << 20)};
-
-static uint8_t theMemory[MEMSIZE];
+CObject(EBBMemMgrPrim) {
+  CObjInterface(EBBMemMgr) *ft;
+  void *myRoot;
+  void *mem;
+  uintptr_t len;
+};
 
 static EBBRC
-EBBMemMgrPrim_init(void *_self)
+EBBMemMgrPrim_init(void *_self, void *rootRef, uintptr_t end)
 {
   EBBMemMgrPrimRef self = _self;
-  self->mem = theMemory;
-  self->len = MEMSIZE;
+  self->mem = (void *)((uintptr_t)self + sizeof(*self));
+  self->len = end - (uintptr_t)self->mem;
+  self->myRoot = rootRef;
   return EBBRC_OK;
 }
 
@@ -75,33 +83,117 @@ CObjInterface(EBBMemMgr) EBBMemMgrPrim_ftable = {
   .free = EBBMemMgrPrim_free
 };
 
+static inline void
+EBBMemMgrPrimSetFT(EBBMemMgrPrimRef o) {o->ft = &EBBMemMgrPrim_ftable; }
 
-EBBMemMgrPrimRef *theEBBMemMgrPrimId;
+
+static EBBRep *
+MemMgrPrim_createRep(void *_self)
+{
+  EBBAssert(0);
+  return NULL;
+}
+
+
+EBBMemMgrRef *theEBBMemMgrPrimId;
+
+EBBRC
+EBBMemMgrPrimInit()
+{
+  static CObjEBBRootMulti theRoot;
+  CObjEBBRootMultiRef rootRef = &theRoot;
+  EBBMemMgrPrimRef repRef;
+  EBBLTrans *lt;
+  EBBRC rc;
+  EBBId id;
+  
+  if (__sync_bool_compare_and_swap(&(theEBBMemMgrPrimId), 0, -1)) {
+    CObjEBBRootMultiStaticInit(rootRef, MemMgrPrim_createRep);
+    
+    rc = EBBAllocPrimIdBoot(&id);
+    EBBRCAssert(rc);
+    rc = CObjEBBBindBoot(id, rootRef); 
+    EBBRCAssert(rc);
+    
+    __sync_bool_compare_and_swap(&(theEBBMemMgrPrimId), -1, id);
+  } else {   
+    // racing with root creation...wait till root is ready
+    while (((volatile uintptr_t)theEBBMemMgrPrimId)==-1);
+  }
+  // no where to alloc rep from other than the memory
+  // we are creating this rep to manage so we do the obvious
+  // and hack off some memory for the rep itself.
+  // "create the rep"
+  repRef = (EBBMemMgrPrimRef)lrt_mem_start();
+
+  // initialize the rep memory
+  EBBMemMgrPrimSetFT(repRef); 
+  repRef->ft->init(repRef, rootRef, lrt_mem_end());
+
+  // manually install rep into local table so that memory allocations 
+  // can work immediate without recursion
+  lt = (EBBLTrans *)lrt_trans_id2lt((lrt_transid)theEBBMemMgrPrimId);
+  EBBCacheObj(lt, (EBBRep *)repRef); 
+
+  // it is now safe to call the allocator assuming that the 
+  // ltrans is stable between last and the next one that 
+  // may use dynamic memory to add the rep to the root
+  rootRef->ft->addRepOn(rootRef, myEL(), (EBBRep *)repRef);
+
+  // Ok at this point the memory manager is up on this EL
+  // and missing on the local table is also safe for this EL
+  // as the rep has been added explicity to the root.
+
+  return EBBRC_OK;
+}
+
+#if 0
+// ALTENATIVE -- CHIMERA: QUEENS, CLONES, DRONES
+// hmmm not sure if it would not be better to start off with thinking
+// about the role of firstRep embedding the Root
+// this implies a single rep object and a multirep are more similar
+// and my evolve more naturally ... this makes it more natural to think
+// of hybrids and devolve the role of the root and thus centeralized data
+struct EBBMemMgrData {
+  void *mem;
+  uintptr_t len;
+};
+
+CObject(EBBMemMgrPrimQueen) {
+  CObjInterface(EBBMemMgr) *ft;
+  CObjEBBRootMulti root;
+  struct EBBMemMgrData data;
+};
+
+CObject(EBBMemMgrPrimDrone) {
+  CObjInterface(EBBMemMgr) *ft;
+  EBBMemMgrPrimQueenRef *queen;
+  struct EBBMemMgrData data;
+};
 
 EBBRC
 EBBMemMgrPrimInit()
 {
   EBBRC rc;
-  static EBBMemMgrPrim theRep;
-  static CObjEBBRootShared theRoot;
-  EBBMemMgrPrimRef repRef = &theRep;
-  CObjEBBRootSharedRef rootRef = &theRoot;
+  EBBId id;
 
-  // setup function tables
-  CObjEBBRootSharedSetFT(rootRef);
-  EBBMemMgrPrimSetFT(repRef);
-
-  // setup my representative and root
-  repRef->ft->init(repRef);
-  // shared root knows about only one rep so we 
-  // pass it along for it's init
-  rootRef->ft->init(rootRef, (EBBRep *)&theRep);
-
-  rc = EBBAllocPrimId((EBBId *)&theEBBMemMgrPrimId);
-  EBBRCAssert(rc);
-
-  rc = CObjEBBBind((EBBId)theEBBMemMgrPrimId, rootRef); 
-  EBBRCAssert(rc);
-
+  repRef = (EBBMemMgrPrimRef)lrt_mem_start();
+  if (__sync_bool_compare_and_swap(&(theEBBMemMgrPrimId), 0, -1)) {
+    EBBMemMgrPrimQueen_init(repRef, lrt_mem_end());              
+    __sync_bool_compare_and_swap(&(theEBBMemMgrPrimId), -1, id);
+  } else {   
+    // races on root setup is taken care of here
+    while (((volatile uintptr_t)theEBBMemMgrPrimId)==-1);
+    EBBMemMgrPrimDrone_init(repRef, lrt_mem_end());              
+  }
+  theRoot.addRepOn(lrt_pic_id, theRep);               // Add my rep to the Root
   return EBBRC_OK;
 }
+#endif
+
+
+
+
+
+
+

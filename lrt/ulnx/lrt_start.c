@@ -27,7 +27,7 @@
 #include <l0/lrt/mem.h>
 #include <l0/lrt/trans.h>
 
-extern void EBBStart(void);
+extern void l0_start(void);
 
 // first code to be runnining on an interrupt
 void lrt_start(void)
@@ -35,7 +35,7 @@ void lrt_start(void)
   fprintf(stderr, "%s: start!\n", __func__);
   lrt_mem_init();
   lrt_trans_init();
-  EBBStart();
+  l0_start();
 }
 
 //DS KLUDGE: I make main a weak symbol so that testing can overwrite the symbol

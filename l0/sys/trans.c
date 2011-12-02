@@ -23,6 +23,7 @@
 #include <config.h>
 #include <inttypes.h>
 #include <lrt/io.h>
+#include <lrt/misc.h>
 #include <lrt/assert.h>
 #include <l0/lrt/pic.h>
 #include <l0/lrt/trans.h>
@@ -30,7 +31,50 @@
 #include <l0/sys/trans.h>
 #include <l0/sys/trans-def.h>
 
+// JA FIXME: Need to decided who really uses lrt_pic_myid versus myEL()
+
 const EBBGTrans *ALLOCATED = (EBBGTrans *)-1;
+
+// Policy for managing global translation memory is software's responsibility
+// We are choosing to use a simple partitioning scheme in which each event location
+// manages its own local portion.  Local size and thus position are determined by 
+// simply dividing the total global size by the maximum allowable event locations
+
+int sysTransValidate()
+{
+  uintptr_t psize = LRT_TRANS_TBLSIZE / LRT_PIC_MAX_PICS;
+
+  // ensure that tables divide evenly among max pics
+  if (psize * LRT_PIC_MAX_PICS != LRT_TRANS_TBLSIZE) return 0;
+
+  // there should be at least one page of translations per pic
+  if ((LRT_TRANS_TBLSIZE / LRT_PIC_MAX_PICS) < LRT_TRANS_PAGESIZE) return 0;
+  
+  // we initialized trans memory to 0 so allocated must be a non-zero value
+  if (ALLOCATED == 0) return 0;
+
+  // ensure sizes of trans structs all match
+  if (sizeof(EBBGTrans) != sizeof(struct lrt_trans)) return 0;
+  if (sizeof(EBBLTrans) != sizeof(struct lrt_trans)) return 0;
+
+  return 1;
+}
+
+
+// Size of a pic's portion of the gtable
+static inline uintptr_t
+mygmem_size(void)
+{
+  return LRT_TRANS_TBLSIZE / LRT_PIC_MAX_PICS;
+}
+
+// This pic's portion of the gtable
+static inline uintptr_t 
+mygmem(void)
+{
+  uintptr_t ret = (uintptr_t)lrt_trans_gmem();
+  return ret + (lrt_pic_myid * mygmem_size());
+}
 
 static inline 
 EBBId
@@ -51,27 +95,20 @@ EBBCacheObj(EBBLTrans *lt, EBBRep *obj) {
 
 //get number of GTrans in the table
 uintptr_t
-myGTableSize() {
-  return lrt_trans_gmem_size() / sizeof(EBBGTrans);
+myNumGTrans() {
+  return mygmem_size() / sizeof(EBBGTrans);
 }
 
 //get my portion of the gtable
 EBBGTrans *
 myGTable() {
-  EBBGTrans *gt = (EBBGTrans *)lrt_trans_gmem();
-  return gt + (lrt_pic_myid * myGTableSize());
+  return (EBBGTrans *)mygmem();
 }
 
 //get number of LTrans in the table
 uintptr_t
-myLTableSize() {
+myNumLTrans() {
   return LRT_TRANS_TBLSIZE / sizeof(EBBLTrans);
-}
-
-//get my portion of the gtable
-EBBLTrans *
-myLTable() {
-  return (EBBLTrans *)lrt_trans_lmem();
 }
 
 void 
@@ -91,19 +128,22 @@ initGTable(EBBMissFunc mf, EBBMissArg arg) {
   EBBGTrans *gt = myGTable();
   uintptr_t i, len;
 
-  len = myGTableSize();
+  len = myNumGTrans();
   
+  // We expect that all the global trans memory had been zero'd
+  // and that any early allocations have set the free field
+  // to ALLOCATED (a non-zero value)
   for (i = 0; i < len; i++) {
-    EBBInitGTrans(&gt[i], mf, arg);
+    if (gt[i].free != ALLOCATED) EBBInitGTrans(&gt[i], mf, arg);
   }
 }
 
 void 
 initLTable() {
-  EBBLTrans *lt = myLTable();
+  EBBLTrans *lt = (EBBLTrans *)lrt_trans_lmem();
   uintptr_t i, len;
 
-  len = myLTableSize();
+  len = myNumLTrans();
 
   for (i = 0 ; i < len; i++) {
     EBBInitLTrans(&lt[i]);
@@ -115,7 +155,7 @@ EBBIdAlloc() {
   EBBGTrans *gt;
   uintptr_t i, len;
 
-  len = myGTableSize();
+  len = myNumGTrans();
   
   gt = myGTable(); //Get my piece of the global table
   for (i = 0; i < len; i++) {
@@ -144,4 +184,15 @@ void
 EBBIdUnBind(EBBId id, EBBMissFunc *mf, EBBMissArg *arg) {
   EBB_LRT_printf("%s: NYI\n", __func__);
   EBBAssert(0);
+}
+
+// at this point translation hardware has been initialized
+// software must setup the memory and any if its basic 
+// managment up
+void
+trans_init(void)
+{
+  EBBAssert(sysTransValidate());
+  LRT_bzero((void *)mygmem(), mygmem_size());
+  initLTable();
 }

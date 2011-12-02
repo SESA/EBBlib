@@ -19,49 +19,53 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-
+#include <config.h>
 #include <stdint.h>
-#include <l0/lrt/ulnx/pic.h>
-#include <l0/lrt/ulnx/mem.h>
+#include <lrt/io.h>
+#include <l0/lrt/pic.h>
+#include <lrt/assert.h>
+#include <l0/lrt/types.h>
+#include <l0/cobj/cobj.h>
+#include <l0/lrt/pic.h>
+#include <l0/lrt/trans.h>
+#include <l0/types.h>
+#include <l0/cobj/CObjEBB.h>
+#include <l0/EBBMgrPrim.h>
+#include <l0/MemMgr.h> 
+#include <l0/MemMgrPrim.h>
+#include <l0/EventMgrPrim.h>
+#include <l0/EventMgrPrimImp.h>
 
-#include <sys/mman.h>
-#include <stdio.h>
-#include <assert.h>
-#include <errno.h>
+extern void trans_init(void);
 
-enum { LRT_MEM_PAGESIZE=4096, LRT_MEM_PAGESPERPIC=1024 };
-enum { LRT_MEM_PERPIC=LRT_MEM_PAGESIZE * LRT_MEM_PAGESPERPIC };
-
-struct BootMemDesc {
-  uintptr_t start;
-  uintptr_t end;
-} bootMem[LRT_PIC_MAX_PICS];
-
-uintptr_t 
-lrt_mem_start(void)
+void
+EBB_init()
 {
-  return bootMem[lrt_pic_myid].start;
+  /* Three main EBB's are EBBMgrPrim, EventMgrPrim EBBMemMgrPrim    */
+  /* There creation and initialization are interdependent and requires */
+  /* fancy footwork */
+  EBBRC rc;
+
+  rc = EBBMemMgrPrimInit();
+  EBBRCAssert(rc);
+
+  EBBMgrPrimInit();
+
+  rc = EventMgrPrimImpInit();
+  EBBRCAssert(rc);
+
+  // then invoke a method of BootInfo object on first message
+  // this object should gather boot information (sysfacts and boot args)
+  // and then get full blown primitive l0 EBBS up (perhaps by a hot swap)
+  EBB_LRT_printf("%s: ADD REST OF INIT CODE HERE!\n", __func__);
+  LRT_EBBAssert(0);
 }
 
-uintptr_t 
-lrt_mem_end(void)
+void
+l0_start(void)
 {
-  return bootMem[lrt_pic_myid].end;
-}
-
-intptr_t
-lrt_mem_init(void)
-{
-  struct BootMemDesc *bm = &(bootMem[lrt_pic_myid]);
-  bm->start = (intptr_t)mmap(NULL, LRT_MEM_PERPIC, 
-			     PROT_READ|PROT_WRITE|PROT_EXEC, 
-			     MAP_ANON|MAP_PRIVATE, -1, 0);     
-  if (bm->start == (intptr_t)MAP_FAILED) {
-    perror(__func__);
-    printf("%d\n", errno);
-    assert(0);
-  }
-  bm->end = bm->start + LRT_MEM_PERPIC;
-  return 1;
+  EBB_LRT_printf("%s: started!\n", __func__);
+  trans_init();
+  EBB_init();
 }
 

@@ -1,3 +1,5 @@
+#ifndef __ULNX_MISC_H__
+#define __ULNX_MISC_H__
 /*
  * Copyright (C) 2011 by Project SESA, Boston University
  *
@@ -20,48 +22,8 @@
  * THE SOFTWARE.
  */
 
-#include <stdint.h>
-#include <l0/lrt/ulnx/pic.h>
-#include <l0/lrt/ulnx/mem.h>
+#include <string.h>
 
-#include <sys/mman.h>
-#include <stdio.h>
-#include <assert.h>
-#include <errno.h>
+#define LRT_bzero bzero
 
-enum { LRT_MEM_PAGESIZE=4096, LRT_MEM_PAGESPERPIC=1024 };
-enum { LRT_MEM_PERPIC=LRT_MEM_PAGESIZE * LRT_MEM_PAGESPERPIC };
-
-struct BootMemDesc {
-  uintptr_t start;
-  uintptr_t end;
-} bootMem[LRT_PIC_MAX_PICS];
-
-uintptr_t 
-lrt_mem_start(void)
-{
-  return bootMem[lrt_pic_myid].start;
-}
-
-uintptr_t 
-lrt_mem_end(void)
-{
-  return bootMem[lrt_pic_myid].end;
-}
-
-intptr_t
-lrt_mem_init(void)
-{
-  struct BootMemDesc *bm = &(bootMem[lrt_pic_myid]);
-  bm->start = (intptr_t)mmap(NULL, LRT_MEM_PERPIC, 
-			     PROT_READ|PROT_WRITE|PROT_EXEC, 
-			     MAP_ANON|MAP_PRIVATE, -1, 0);     
-  if (bm->start == (intptr_t)MAP_FAILED) {
-    perror(__func__);
-    printf("%d\n", errno);
-    assert(0);
-  }
-  bm->end = bm->start + LRT_MEM_PERPIC;
-  return 1;
-}
-
+#endif

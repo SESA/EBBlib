@@ -22,6 +22,7 @@
 #include <config.h>
 #include <string.h>
 #include <stdint.h>
+#include <l0/lrt/types.h>
 #include <l0/cobj/cobj.h>
 #include <lrt/io.h>
 #include <l0/lrt/pic.h>
@@ -462,12 +463,6 @@ EventMgrPrimImpInit(void)
   rc = CObjEBBBind((EBBId)theEventMgrPrimId, rootRef); 
   EBBRCAssert(rc);
   return EBBRC_OK;
-};
-
-EvntLoc 
-EventMgrPrim_GetMyEL()
-{
-  return lrt_pic_myid;
 };
 
 #if 0

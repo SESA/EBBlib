@@ -87,11 +87,11 @@ EBBCtrPrimDistributed_val(EBBCtrRef _self, uintptr_t *v)
 }
 
 static EBBRep *
-EBBCtrPrimDistributed_createRep(CObjEBBRootMultiRef rootRef) {
+EBBCtrPrimDistributed_createRep(void * _self) {
   EBBCtrPrimDistributedRef repRef;
   EBBPrimMalloc(sizeof(*repRef), &repRef, EBB_MEM_DEFAULT);
   EBBCtrPrimDistributedSetFT(repRef);
-  repRef->theRoot = rootRef;
+  repRef->theRoot = _self;
   repRef->localValue = 0;
   return (EBBRep *)repRef;
 }
@@ -107,9 +107,9 @@ EBBCtrPrimDistributedCreate(EBBCtrId *id)
 {
   EBBRC rc;
   CObjEBBRootMultiRef rootRef;
-  EBBPrimMalloc(sizeof(*rootRef), &rootRef, EBB_MEM_DEFAULT);
-  CObjEBBRootMultiSetFT(rootRef);
-  rootRef->ft->init(rootRef, EBBCtrPrimDistributed_createRep);
+
+  CObjEBBRootMultiCreate(&rootRef, 
+			 EBBCtrPrimDistributed_createRep);
 
   rc = EBBAllocPrimId((EBBId *)id);
   EBBRCAssert(rc);

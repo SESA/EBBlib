@@ -27,9 +27,15 @@ typedef enum {EBB_MEM_LOCAL, EBB_MEM_LOCAL_PADDED,
 	      EBB_MEM_DEFAULT = EBB_MEM_GLOBAL} EBB_MEM_POOL;
 
 CObjInterface(EBBMemMgr) {
-  EBBRC (*init) (void *_self);
+  EBBRC (*init) (void *_self, void *rootRef, uintptr_t end);
   EBBRC (*alloc) (void *_self, uintptr_t size, void *mem, EBB_MEM_POOL pool);
   EBBRC (*free) (void * _self, void *mem);
 };
+
+CObject(EBBMemMgr) {
+  CObjInterface(EBBMemMgr) *ft;
+};
+
+typedef EBBMemMgrRef *EBBMemMgrId;
 
 #endif
