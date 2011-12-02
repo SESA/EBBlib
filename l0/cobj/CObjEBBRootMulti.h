@@ -22,25 +22,19 @@
  * THE SOFTWARE.
  */
 
-#include <l0/cobj/CObjEBBRoot.h>
+CObject(CObjEBBRootMulti) {
+  CObjInterface(CObjEBBRootMulti) *ft;
+};
 
-CObject(CObjEBBRootMulti);
-
-typedef void *(*CreateRepFunc) (CObjEBBRootMultiRef rootRef);
+typedef EBBRep *(*CreateRepFunc) (CObjEBBRootMultiRef rootRef);
 typedef struct RepListNode_s RepListNode;
 
 CObjInterface(CObjEBBRootMulti)
 {
   CObjImplements(CObjEBBRoot);
-  void (*init)(void *_self, CreateRepFunc func);
-  RepListNode *(*nextRep) (void *_self, RepListNode *curr, void *rep);
-};
-
-CObjectDefine(CObjEBBRootMulti)
-{
-  CObjInterface(CObjEBBRootMulti) *ft;
-  CreateRepFunc createRep;
-  RepListNode *head;
+  void (*init)(CObjEBBRootMultiRef _self, CreateRepFunc func);
+  RepListNode *(*nextRep) (CObjEBBRootMultiRef _self, 
+			   RepListNode *curr, EBBRep **rep);
 };
 
 extern CObjInterface(CObjEBBRootMulti) CObjEBBRootMulti_ftable;

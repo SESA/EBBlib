@@ -22,24 +22,16 @@
  * THE SOFTWARE.
  */
 
-CObjInterface(CObjEBBRootShared)
-{
-  CObjImplements(CObjEBBRoot);
-  void (*init)(void *_self, void *rep);
-};
-
 CObject(CObjEBBRootShared) 
 {
   CObjInterface(CObjEBBRootShared) *ft;
-  void *theRep;
 };
 
-extern CObjInterface(CObjEBBRootShared) CObjEBBRootShared_ftable;
-
-static inline void
-CObjEBBRootSharedSetFT(CObjEBBRootSharedRef o) 
+CObjInterface(CObjEBBRootShared)
 {
-  o->ft = &CObjEBBRootShared_ftable; 
-}
+  CObjImplements(CObjEBBRoot);
+  void (*init)(CObjEBBRootSharedRef _self, EBBRep *rep);
+};
 
+extern void CObjEBBRootSharedSetFT(CObjEBBRootSharedRef);
 #endif

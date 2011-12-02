@@ -21,43 +21,48 @@
  */
 #include <config.h>
 #include <stdint.h>
+#include <l0/lrt/pic.h>
+#include <l0/lrt/trans.h>
 #include <l0/types.h>
 #include <l0/cobj/cobj.h>
 #include <l0/cobj/CObjEBB.h>
 #include <l0/cobj/CObjEBBRoot.h>
 #include <l0/cobj/CObjEBBRootShared.h>
 
+CObject(CObjEBBRootSharedImp) 
+{
+  CObjInterface(CObjEBBRootShared) *ft;
+  EBBRep *theRep;
+};
+
 //What you want to do here is install theRep into the EBBLTrans
 //then set obj to point to theRep (obj is really of type Object **)
 //Then simply return EBBRC_OK and the default func will
 //handle the rest. Return any failure code to have the call fail
 EBBRC
-CObjEBBRootShared_handleMiss(void *_self, void *obj, EBBLTrans *lt, 
+CObjEBBRootSharedImp_handleMiss(CObjEBBRootRef _self, EBBRep **obj, EBBLTrans *lt, 
 			     FuncNum fnum)
 {
-  CObjEBBRootSharedRef self = _self;
+  CObjEBBRootSharedImpRef self = (CObjEBBRootSharedImpRef)_self;
   EBBCacheObj(lt, self->theRep);
-  *(void **)obj = self->theRep;
+  *obj = self->theRep;
   return EBBRC_OK;
 }
 
-//Jonathan's code
-/* uintptr_t */
-/* CObjEBBRootShared_handleMiss(void *_self, void *obj, EBBLTrans *lt,  */
-/* 			     FuncNum fnum) */
-/* { */
-/*   CObjEBBRootSharedRef self = _self; */
-/*   return (uintptr_t)(self->theRep); */
-/* } */
- 
 void
-CObjEBBRootShared_init(void *_self, void *rep)
+CObjEBBRootSharedImp_init(CObjEBBRootSharedRef _self, EBBRep *rep)
 {
-  CObjEBBRootSharedRef self = _self;
+  CObjEBBRootSharedImpRef self = (CObjEBBRootSharedImpRef)_self;
   self->theRep = rep;
 }
 
-CObjInterface(CObjEBBRootShared) CObjEBBRootShared_ftable = {
-  { CObjEBBRootShared_handleMiss },
-  CObjEBBRootShared_init
+CObjInterface(CObjEBBRootShared) CObjEBBRootSharedImp_ftable = {
+  { CObjEBBRootSharedImp_handleMiss },
+  CObjEBBRootSharedImp_init
 };
+
+void
+CObjEBBRootSharedSetFT(CObjEBBRootSharedRef o) 
+{
+  o->ft = &CObjEBBRootSharedImp_ftable; 
+}

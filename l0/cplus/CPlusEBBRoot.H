@@ -24,11 +24,11 @@
 
 class CPlusEBBRoot {
 protected:
-  virtual EBBRC handleMiss(void **obj, EBBLTrans *lt, FuncNum fnum)=0;
-  static EBBRC CPlusEBBMissFunc(void *_self, EBBLTrans *lt, FuncNum fnum, 
+  virtual EBBRC handleMiss(CPlusEBB **obj, EBBLTrans *lt, FuncNum fnum)=0;
+  static EBBRC CPlusEBBMissFunc(EBBRep **_self, EBBLTrans *lt, FuncNum fnum, 
 				EBBMissArg arg);
 public:
-  static EBBRC EBBBind(void *id, CPlusEBBRoot *root); 
+  static EBBRC EBBBind(EBBId id, CPlusEBBRoot *root); 
 };
 
 

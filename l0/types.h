@@ -22,17 +22,10 @@
  * THE SOFTWARE.
  */
 
-#include <l0/const.h>
-#include <l0/lrt/types.h>
-
-typedef struct EBBTransStruct EBBTrans;
+typedef union EBBTransStruct EBBTrans;
 typedef EBBTrans EBBLTrans;
-typedef EBBTrans EBBGTrans;
 
 typedef EBBTrans *EBBId;
-#define EBBNullId NULL;
-
-typedef struct EBBTransLSysStruct EBBTransLSys;
 
 typedef intptr_t EBBRC;
 typedef enum { 
@@ -43,38 +36,45 @@ typedef enum {
 } EBBRC_STDVALS;
 #define EBBRC_SUCCESS(rc) ( rc >= 0 )
 
+//The argument type here has to be void * because c sucks
+// and won't let me forward declare a typedef
+// It should be of type EBBRep *
+typedef EBBRC (*EBBFunc) (void *);
+typedef EBBFunc *EBBRep;
+
 typedef uintptr_t FuncNum;
 typedef uintptr_t EBBMissArg;
 
 //first arg is the address of the EBBRep that will be executed
 //second arg is the local table pointer so that a rep can be installed
-typedef EBBRC (*EBBMissFunc) (void *, EBBLTrans *, FuncNum,
+typedef EBBRC (*EBBMissFunc) (EBBRep **, EBBLTrans *, FuncNum,
 			     EBBMissArg);
+#ifdef __cplusplus
+extern "C" {
+#endif
+extern void EBBCacheObj(EBBLTrans *lt, EBBRep *obj);
+#ifdef __cplusplus
+}
+#endif
 
-//FIXME: Not sure if the type of the 2nd arg should be something different
-static inline void EBBCacheObj(EBBLTrans *lt, void *obj) {
-  //assuming the first element of EBBLTrans 
-  //is the object pointer
-  *((void **)lt) = obj; 
+//DS: Here we have to leak in the lrt trans header to do this 
+// translation
+static inline 
+EBBLTrans * 
+EBBIdToLTrans(EBBId id) {
+  return (EBBLTrans *)lrt_trans_id2lt((lrt_transid)id);
 }
 
-static inline uintptr_t EBBMyEL() {
-  return LRTEBBMyEL();
+static inline 
+EBBRep *
+EBBId_DREF_Inline(EBBId id) {
+  EBBLTrans *lt;
+  lt = EBBIdToLTrans(id);
+  //Here we are using the fact that the first word of the ltrans
+  // is a rep pointer
+  return *(EBBRep **)lt;
 }
 
-static inline uintptr_t EBBMyLTransIndex() {
-  return EBBMyEL();
-}
-
-static inline EBBLTrans * EBBIdToSpecificLTrans(EBBId id, uintptr_t i) {
-  return (EBBLTrans *)((uintptr_t)id + i *
-		       EBB_TRANS_PAGE_SIZE * EBB_TRANS_NUM_PAGES);
-}
-
-static inline EBBLTrans * EBBIdToLTrans(EBBId id) {
-  return EBBIdToSpecificLTrans(id, EBBMyLTransIndex());
-}
-
-#define EBBId_DREF(id) ((typeof(*id))(*(void **)EBBIdToLTrans((EBBId)id)))
+#define EBBId_DREF(id) ((typeof(*id))EBBId_DREF_Inline((EBBId)id))
 
 #endif

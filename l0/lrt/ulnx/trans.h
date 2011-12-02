@@ -35,10 +35,20 @@ lrt_trans_valid(void)
   return 0;
 }
 
+
+// Size of a pic's portion of the gtable
+static inline uintptr_t
+lrt_trans_gmem_size(void)
+{
+  return LRT_TRANS_TBLSIZE / LRT_PIC_MAX_PICS;
+}
+
+// This pic's portion of the gtable
 static inline uintptr_t 
 lrt_trans_gmem(void)
 {
-  return (uintptr_t)TransMem.GMem;
+  uintptr_t ret = (uintptr_t)TransMem.GMem;
+  return ret + (lrt_pic_myid * lrt_trans_gmem_size());
 }
 
 static inline uintptr_t

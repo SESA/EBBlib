@@ -25,7 +25,7 @@
 class CPlusEBBRootShared : public CPlusEBBRoot {
   CPlusEBB *theRep;
 private:
-  virtual EBBRC handleMiss(void **obj, EBBLTrans *lt, FuncNum fnum);
+  virtual EBBRC handleMiss(CPlusEBB **obj, EBBLTrans *lt, FuncNum fnum);
 public:
   void * operator new(size_t size);
   void operator delete(void * p, size_t size);

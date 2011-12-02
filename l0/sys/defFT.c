@@ -21,17 +21,20 @@
  */
 #include <config.h>
 #include <stdint.h>
+#include <l0/lrt/pic.h>
+#include <l0/lrt/trans.h>
 #include <l0/sys/trans.h>
+#include <l0/sys/trans-def.h>
 #include <l0/sys/defFT.h>
 
 //takes the function table pointer and function number and
 //invokes the miss handler then
 //returns the function pointer to be called
-void *GenericDefaultFunc(EBBFuncTable **_self, FuncNum fnum) {
+void *GenericDefaultFunc(EBBRep **_self, FuncNum fnum) {
   //the default ftable is the second word in the trans, subtract 1
   //word to get the LTrans
   EBBLTrans *self = (EBBLTrans *)(*_self-1);
-  EBBGTrans *gt = EBBLTransToGTrans(self);
+  EBBGTrans *gt = (EBBGTrans *)lrt_trans_lt2gt((struct lrt_trans *)self);
   EBBRC ret = gt->mf(_self, self, fnum, gt->arg);
   if(EBBRC_SUCCESS(ret)) {
     //return the function we wanted to call originally

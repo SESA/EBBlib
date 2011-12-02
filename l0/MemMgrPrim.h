@@ -39,14 +39,12 @@ extern EBBMemMgrPrimRef *theEBBMemMgrPrimId;
 
 static inline EBBRC
 EBBPrimMalloc(uintptr_t size, void *mem, EBB_MEM_POOL pool) {
-  return EC(theEBBMemMgrPrimId)->alloc(EB(theEBBMemMgrPrimId),
-				       size, mem, pool);
+  return COBJ_EBBCALL(theEBBMemMgrPrimId, alloc, size, mem, pool);
 }
 
 static inline EBBRC
 EBBPrimFree(void *mem) {
-  return EC(theEBBMemMgrPrimId)->free(EB(theEBBMemMgrPrimId),
-				      mem);
+  return COBJ_EBBCALL(theEBBMemMgrPrimId, free, mem);
 }
 
 #endif

@@ -22,14 +22,16 @@
  * THE SOFTWARE.
  */
 
-CObjInterface(CObjEBBRoot) 
-{
-  EBBRC (*handleMiss)(void *_self, void *obj, EBBLTrans *lt, FuncNum fnum);
-};
-
 CObject(CObjEBBRoot)
 {
   CObjInterface(CObjEBBRoot) *ft;
 };
+
+CObjInterface(CObjEBBRoot) 
+{
+  EBBRC (*handleMiss)(CObjEBBRootRef self, EBBRep **obj,
+		      EBBLTrans *lt, FuncNum fnum);
+};
+
 #endif
 

@@ -22,10 +22,11 @@
 #include <config.h>
 #include <stdint.h>
 #include <lrt/io.h>
-#include <l0/cobj/cobj.h>
-#include <l0/sys/trans.h> //FIXME: move EBBTransLSys out of this header
-#include <l0/cobj/CObjEBB.h>
+#include <l0/lrt/pic.h>
+#include <l0/lrt/trans.h>
 #include <l0/types.h>
+#include <l0/cobj/cobj.h>
+#include <l0/cobj/CObjEBB.h>
 #include <lrt/assert.h>
 #include <l0/EBBMgrPrim.h>
 #include <l0/MemMgr.h>
@@ -121,21 +122,21 @@ EthMgrPrimCreate(EthMgrId *id, char *nic)
   bzero(repRef->typeMgrs, sizeof(repRef->typeMgrs));
   repRef->rcnt=0;
 
-  rootRef->ft->init(rootRef, repRef);
+  rootRef->ft->init(rootRef, (EBBRep *)repRef);
   
-  rc = EBBAllocPrimId(id);
+  rc = EBBAllocPrimId((EBBId *)id);
   EBBRCAssert(rc);
 
-  rc = CObjEBBBind(*id, rootRef); 
+  rc = CObjEBBBind((EBBId)*id, rootRef); 
   EBBRCAssert(rc);
 
   // setup the EthMgr on a second id that services the EventHander Interface
   EBBPrimMalloc(sizeof(*rootRef), &rootRef, EBB_MEM_DEFAULT);
   CObjEBBRootSharedSetFT(rootRef);
-  rootRef->ft->init(rootRef, &(repRef->evHdlr));
-  rc = EBBAllocPrimId(&(repRef->hdlrId));
+  rootRef->ft->init(rootRef, (EBBRep *)&(repRef->evHdlr));
+  rc = EBBAllocPrimId((EBBId *)&(repRef->hdlrId));
   EBBRCAssert(rc);
-  rc = CObjEBBBind(repRef->hdlrId, rootRef);
+  rc = CObjEBBBind((EBBId)repRef->hdlrId, rootRef);
   EBBRCAssert(rc);
  
   rc = EBBCALL(theEventMgrPrimId, allocEventNo, &(repRef->ev));

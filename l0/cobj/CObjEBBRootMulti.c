@@ -22,6 +22,8 @@
 #include <config.h>
 #include <stdint.h>
 #include <l0/cobj/cobj.h>
+#include <l0/lrt/pic.h>
+#include <l0/lrt/trans.h>
 #include <l0/types.h>
 #include <l0/cobj/CObjEBB.h>
 #include <l0/cobj/CObjEBBRoot.h>
@@ -30,19 +32,25 @@
 #include <l0/MemMgrPrim.h>
 
 struct RepListNode_s {
-  void *rep;
+  EBBRep *rep;
   RepListNode *next;
 };
 
+CObject(CObjEBBRootMultiImp)
+{
+  CObjInterface(CObjEBBRootMulti) *ft;
+  CreateRepFunc createRep;
+  RepListNode *head;
+};
+
 EBBRC
-CObjEBBRootMulti_handleMiss(void *_self, void*obj, EBBLTrans *lt,
+CObjEBBRootMulti_handleMiss(CObjEBBRootRef _self, EBBRep **obj, EBBLTrans *lt,
 			    FuncNum fnum)
 {
-  CObjEBBRootMultiRef self = _self;
-
-  void *rep = self->createRep(self);
+  CObjEBBRootMultiImpRef self = (CObjEBBRootMultiImpRef)_self;
+  EBBRep *rep = self->createRep((CObjEBBRootMultiRef)self);
   EBBCacheObj(lt, rep);
-  *(void **)obj = rep;
+  *obj = rep;
 
   RepListNode *p;
   EBBPrimMalloc(sizeof(RepListNode), &p, EBB_MEM_DEFAULT);
@@ -54,17 +62,18 @@ CObjEBBRootMulti_handleMiss(void *_self, void*obj, EBBLTrans *lt,
 }
 
 void
-CObjEBBRootMulti_init(void *_self, CreateRepFunc func)
+CObjEBBRootMulti_init(CObjEBBRootMultiRef _self, CreateRepFunc func)
 {
-  CObjEBBRootMultiRef self = _self;
+  CObjEBBRootMultiImpRef self = (CObjEBBRootMultiImpRef)_self;
   self->createRep = func;
   self->head = NULL;
 }
 
 RepListNode *
-CObjEBBRootMulti_nextRep(void *_self, RepListNode *curr, void *rep)
+CObjEBBRootMulti_nextRep(CObjEBBRootMultiRef _self, RepListNode *curr, 
+			 EBBRep **rep)
 {
-  CObjEBBRootMultiRef self = _self;
+  CObjEBBRootMultiImpRef self = (CObjEBBRootMultiImpRef)_self;
   RepListNode *node;
   //FIXME: lock the list
   if(!curr) {
@@ -73,7 +82,7 @@ CObjEBBRootMulti_nextRep(void *_self, RepListNode *curr, void *rep)
     node = curr->next;
   }
   if (node) {
-    *((void **)rep) = node->rep;
+    *rep = node->rep;
   }
   return node;
 }

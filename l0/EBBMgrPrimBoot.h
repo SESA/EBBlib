@@ -1,3 +1,5 @@
+#ifndef __L0_EBBMGRPRIMBOOT_H__
+#define __L0_EBBMGRPRIMBOOT_H__
 /*
  * Copyright (C) 2011 by Project SESA, Boston University
  *
@@ -20,43 +22,7 @@
  * THE SOFTWARE.
  */
 
-#include <config.h>
-#include <stdint.h>
-#include <lrt/assert.h>
-#include <l0/lrt/pic.h>
-#include <l0/lrt/trans.h>
-#include <l0/types.h>
-#include <l0/cobj/cobj.h>
-#include <l0/cobj/CObjEBB.h>
-#include <l0/EBBMgrPrim.h>
-#include <l0/MemMgr.h>
-#include <l0/MemMgrPrim.h>
+extern EBBRC EBBAllocPrimIdBoot(EBBId *id);
+extern EBBRC EBBBindPrimIdBoot(EBBId id, EBBMissFunc mf, EBBMissArg arg);
 
-#include <l0/cplus/CPlusEBB.H>
-#include <l0/cplus/CPlusEBBRoot.H>
-#include <l0/cplus/CPlusEBBRootShared.H>
-
-/* virtual */ EBBRC
-CPlusEBBRootShared::handleMiss(CPlusEBB **obj, EBBLTrans *lt, FuncNum fnum)
-{
-  EBBCacheObj(lt, (EBBRep *)theRep);
-  *obj = theRep;
-  return EBBRC_OK;
-}
-
-void * 
-CPlusEBBRootShared::operator new(size_t size)
-{
-  void *val;
-  EBBRC rc;
-  rc = EBBPrimMalloc(size, &val, EBB_MEM_DEFAULT);
-  EBBRCAssert(rc);
-  return val;
-}
-
-void 
-CPlusEBBRootShared::operator delete(void * p, size_t size)
-{
-  // NYI
-  EBBRCAssert(0);
-}
+#endif

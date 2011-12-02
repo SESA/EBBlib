@@ -24,6 +24,8 @@
 #include <stdint.h>
 #include <l0/cobj/cobj.h>
 #include <lrt/io.h>
+#include <l0/lrt/pic.h>
+#include <l0/lrt/trans.h>
 #include <l0/types.h>
 #include <lrt/assert.h>
 #include <l0/cobj/CObjEBB.h>
@@ -67,7 +69,7 @@ repInit(EventMgrPrimImpRef rep)
 {
   uintptr_t i;
 
-  for (i=0; i<MAXEVENTS; i++) rep->handlerInfo[i].id=NULLId;
+  for (i=0; i<MAXEVENTS; i++) rep->handlerInfo[i].id=NULL;
 }
 
 EventMgrPrimImp theRep;
@@ -393,7 +395,7 @@ EventMgrPrim_registerHandler(void *_self, uintptr_t eventNo,
     return EBBRC_BADPARAMETER;
   };
   
-  if (self->handlerInfo[eventNo].id != NULLId) {
+  if (self->handlerInfo[eventNo].id != NULL) {
     // for now, if its not null, assume error, should we ever be able
     // to change the handler for an event?
     return EBBRC_BADPARAMETER;
@@ -406,7 +408,7 @@ EventMgrPrim_registerHandler(void *_self, uintptr_t eventNo,
   // you map a vector it is only active on this el
   // map vector in pic
   if (lrt_pic_mapvec((lrt_pic_src)isrc, eventNo, vfTbl[eventNo])<0) {
-    self->handlerInfo[eventNo].id = NULLId;
+    self->handlerInfo[eventNo].id = NULL;
     return EBBRC_BADPARAMETER;
   }
 
@@ -452,12 +454,12 @@ EventMgrPrimImpInit(void)
   repInit(repRef);
   // shared root knows about only one rep so we 
   // pass it along for it's init
-  rootRef->ft->init(rootRef, &theRep);
+  rootRef->ft->init(rootRef, (EBBRep *)&theRep);
 
-  rc = EBBAllocPrimId(&theEventMgrPrimId);
+  rc = EBBAllocPrimId((EBBId *)&theEventMgrPrimId);
   EBBRCAssert(rc);
 
-  rc = CObjEBBBind(theEventMgrPrimId, rootRef); 
+  rc = CObjEBBBind((EBBId)theEventMgrPrimId, rootRef); 
   EBBRCAssert(rc);
   return EBBRC_OK;
 };

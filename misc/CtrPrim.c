@@ -23,9 +23,10 @@
 #include <stdint.h>
 #include <lrt/io.h>
 #include <l0/cobj/cobj.h>
-#include <l0/sys/trans.h> //FIXME: move EBBTransLSys out of this header
-#include <l0/cobj/CObjEBB.h>
+#include <l0/lrt/pic.h>
+#include <l0/lrt/trans.h>
 #include <l0/types.h>
+#include <l0/cobj/CObjEBB.h>
 #include <l0/EBBMgrPrim.h>
 #include <l0/MemMgr.h>
 #include <l0/MemMgrPrim.h>
@@ -108,12 +109,12 @@ setup(EBBCtrPrimRef repRef, CObjEBBRootSharedRef rootRef, EBBCtrId *id)
   EBBCtrPrim_init(repRef);
   // shared root knows about only one rep so we 
   // pass it along for it's init
-  rootRef->ft->init(rootRef, repRef);
+  rootRef->ft->init(rootRef, (EBBRep *)repRef);
 
-  rc = EBBAllocPrimId(id);
+  rc = EBBAllocPrimId((EBBId *)id);
   EBBRCAssert(rc);
 
-  rc = CObjEBBBind(*id, rootRef); 
+  rc = CObjEBBBind((EBBId)*id, rootRef); 
   EBBRCAssert(rc);
 
   return rc;

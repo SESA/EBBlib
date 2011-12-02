@@ -23,9 +23,10 @@
 #include <stdint.h>
 #include <lrt/assert.h>
 #include <l0/cobj/cobj.h>
-#include <l0/sys/trans.h> //FIXME: move EBBTransLSys out of this header
-#include <l0/cobj/CObjEBB.h>
+#include <l0/lrt/pic.h>
+#include <l0/lrt/trans.h>
 #include <l0/types.h>
+#include <l0/cobj/CObjEBB.h>
 #include <l0/EBBMgrPrim.h>
 #include <l0/MemMgr.h>
 #include <l0/MemMgrPrim.h>
@@ -76,22 +77,23 @@ EBBCtrPrimDistributed_val(EBBCtrRef _self, uintptr_t *v)
   uintptr_t val = 0;
   RepListNode *node;
   EBBCtrPrimDistributedRef rep = NULL;
-  for (node = self->theRoot->ft->nextRep(self->theRoot, 0, &rep);
-       node; node = self->theRoot->ft->nextRep(self->theRoot, node, &rep)) {
+  for (node = self->theRoot->ft->nextRep(self->theRoot, 0, (EBBRep **)&rep);
+       node; 
+       node = self->theRoot->ft->nextRep(self->theRoot, node, (EBBRep **)&rep)) {
     val += rep->localValue;
   }
   *v = val;
   return EBBRC_OK;
 }
 
-static void *
+static EBBRep *
 EBBCtrPrimDistributed_createRep(CObjEBBRootMultiRef rootRef) {
   EBBCtrPrimDistributedRef repRef;
   EBBPrimMalloc(sizeof(*repRef), &repRef, EBB_MEM_DEFAULT);
   EBBCtrPrimDistributedSetFT(repRef);
   repRef->theRoot = rootRef;
   repRef->localValue = 0;
-  return repRef;
+  return (EBBRep *)repRef;
 }
 
 CObjInterface(EBBCtr) EBBCtrPrimDistributed_ftable = {
@@ -109,10 +111,10 @@ EBBCtrPrimDistributedCreate(EBBCtrId *id)
   CObjEBBRootMultiSetFT(rootRef);
   rootRef->ft->init(rootRef, EBBCtrPrimDistributed_createRep);
 
-  rc = EBBAllocPrimId(id);
+  rc = EBBAllocPrimId((EBBId *)id);
   EBBRCAssert(rc);
 
-  rc = CObjEBBBind(*id, rootRef);
+  rc = CObjEBBBind((EBBId)*id, rootRef);
   EBBRCAssert(rc);
 
   return EBBRC_OK;

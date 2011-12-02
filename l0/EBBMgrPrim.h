@@ -22,38 +22,34 @@
  * THE SOFTWARE.
  */
 
-CObjInterface(EBBMgrPrim) {
-  EBBRC (*AllocId) (void *_self, void **id);
-  EBBRC (*FreeId) (void *_self, EBBId id);
-  EBBRC (*BindId) (void *_self, EBBId id, EBBMissFunc mf, EBBMissArg arg);
-  EBBRC (*UnBindId) (void *_self, EBBId id, EBBMissFunc *mf, EBBMissArg *arg);
-};
-
 CObject(EBBMgrPrim) {
   CObjInterface(EBBMgrPrim) *ft;
-  //JA Hack
-  void *myRoot;
-  EBBTransLSys *lsys;
 };
 
+CObjInterface(EBBMgrPrim) {
+  EBBRC (*AllocId) (EBBMgrPrimRef _self, EBBId *id);
+  EBBRC (*FreeId) (EBBMgrPrimRef _self, EBBId id);
+  EBBRC (*BindId) (EBBMgrPrimRef _self, EBBId id, EBBMissFunc mf, 
+		   EBBMissArg arg);
+  EBBRC (*UnBindId) (EBBMgrPrimRef _self, EBBId id, EBBMissFunc *mf, 
+		     EBBMissArg *arg);
+};
 
-extern void *NULLId;
 typedef EBBMgrPrimRef *EBBMgrPrimId;
 extern EBBMgrPrimId theEBBMgrPrimId;
+
 extern void EBBMgrPrimInit(void);
 
-//FIXME: JA fix typing here on id
 static inline EBBRC
-EBBAllocPrimId(void *id)
+EBBAllocPrimId(EBBId *id)
 {
-  return EC(theEBBMgrPrimId)->AllocId(EB(theEBBMgrPrimId), (void **)id);
+  return COBJ_EBBCALL(theEBBMgrPrimId, AllocId, id);
 }
 
 static inline EBBRC
-EBBBindPrimId(void *id, EBBMissFunc mf, EBBMissArg arg)
+EBBBindPrimId(EBBId id, EBBMissFunc mf, EBBMissArg arg)
 {  
-  return EC(theEBBMgrPrimId)->BindId(EB(theEBBMgrPrimId), 
-				     (EBBId)id, mf, arg);
+  return COBJ_EBBCALL(theEBBMgrPrimId, BindId, id, mf, arg);
 }
 
 

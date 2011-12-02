@@ -22,6 +22,8 @@
 #include <config.h>
 #include <stdint.h>
 #include <lrt/io.h>
+#include <l0/lrt/pic.h>
+#include <l0/lrt/trans.h>
 #include <l0/types.h>
 #include <l0/cobj/cobj.h>
 #include <l0/cobj/CObjEBB.h>
@@ -105,10 +107,10 @@ CtrCPlus::Create(CtrCPlusId &ctr)
   // pass it along for it's init
   root->init(rep);
 
-  rc = EBBAllocPrimId(&ctr);
+  rc = EBBAllocPrimId((EBBId *)&ctr);
   EBBRCAssert(rc);
 
-  rc = CPlusEBBRoot::EBBBind(ctr, root); 
+  rc = CPlusEBBRoot::EBBBind((EBBId)ctr, root); 
   EBBRCAssert(rc);
 }
 

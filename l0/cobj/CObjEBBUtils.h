@@ -24,7 +24,7 @@
 
 static inline
 EBBRC
-CObjEBBBind(void *id, void *root)
+CObjEBBBind(EBBId id, void *root)
 {
   return EBBBindPrimId(id, CObjEBBMissFunc, (EBBMissArg) root);
 }

@@ -23,6 +23,8 @@
 #include <stdint.h>
 #include <lrt/assert.h>
 #include <l0/cobj/cobj.h>
+#include <l0/lrt/pic.h>
+#include <l0/lrt/trans.h>
 #include <l0/types.h>
 #include <l0/cobj/CObjEBB.h>
 #include <l0/EBBMgrPrim.h>
@@ -93,12 +95,12 @@ EBBMemMgrPrimInit()
   repRef->ft->init(repRef);
   // shared root knows about only one rep so we 
   // pass it along for it's init
-  rootRef->ft->init(rootRef, &theRep);
+  rootRef->ft->init(rootRef, (EBBRep *)&theRep);
 
-  rc = EBBAllocPrimId(&theEBBMemMgrPrimId);
+  rc = EBBAllocPrimId((EBBId *)&theEBBMemMgrPrimId);
   EBBRCAssert(rc);
 
-  rc = CObjEBBBind(theEBBMemMgrPrimId, rootRef); 
+  rc = CObjEBBBind((EBBId)theEBBMemMgrPrimId, rootRef); 
   EBBRCAssert(rc);
 
   return EBBRC_OK;
