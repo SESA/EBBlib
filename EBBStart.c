@@ -56,9 +56,9 @@ kludge(void)
 
   EBB_LRT_printf("%s: about to call init eth\n", __func__);
 #ifdef __linux__
-  EthMgrPrimCreate(&ethmgr, "eth1");
+  rc = EthMgrPrimCreate(&ethmgr, "eth1");
 #else
-  EthMgrPrimCreate(&ethmgr, NULL);
+  rc = EthMgrPrimCreate(&ethmgr, NULL);
 #endif
   EBBRCAssert(rc);
 

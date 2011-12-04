@@ -27,7 +27,7 @@ class CPlusEBBRootShared : public CPlusEBBRoot {
 private:
   virtual EBBRC handleMiss(CPlusEBB **obj, EBBLTrans *lt, FuncNum fnum);
 public:
-  void * operator new(size_t size);
+  void *operator new(size_t size);
   void operator delete(void * p, size_t size);
 
   // pass in the pre-creted rep for a shared root, get back the root
