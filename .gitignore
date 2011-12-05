@@ -7,3 +7,5 @@ install
 /build*/
 /tmp/
 /config.h.in
+/cscope.files
+/cscope.out
