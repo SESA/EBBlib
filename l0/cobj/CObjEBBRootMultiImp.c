@@ -30,6 +30,7 @@
 #include <l0/cobj/CObjEBB.h>
 #include <l0/cobj/CObjEBBRoot.h>
 #include <l0/cobj/CObjEBBRootMulti.h>
+#include <l0/cobj/CObjEBBRootMultiImp.h>
 #include <l0/EventMgrPrim.h>
 #include <l0/MemMgr.h>
 #include <l0/MemMgrPrim.h>
@@ -41,19 +42,19 @@ struct RepListNode_s {
 };
 
 static inline void
-lockReps(CObjEBBRootMultiRef self)
+lockReps(CObjEBBRootMultiImpRef self)
 {
   while (__sync_bool_compare_and_swap(&self->lock, 0, 1));
 }
 
 static inline void
-unlockReps(CObjEBBRootMultiRef self)
+unlockReps(CObjEBBRootMultiImpRef self)
 {
   EBBAssert(__sync_bool_compare_and_swap(&self->lock, 1, 0)==1);
 }
 
 static EBBRep *
-locked_FindRepOn(CObjEBBRootMultiRef self, uintptr_t el)
+locked_FindRepOn(CObjEBBRootMultiImpRef self, uintptr_t el)
 {
   EBBRep *rep=NULL;
   struct RepListNode_s *rd;
@@ -65,7 +66,7 @@ locked_FindRepOn(CObjEBBRootMultiRef self, uintptr_t el)
 }
 
 static void 
-locked_AddRepOn(CObjEBBRootMultiRef self, uintptr_t el, EBBRep *rep)
+locked_AddRepOn(CObjEBBRootMultiImpRef self, uintptr_t el, EBBRep *rep)
 {
   struct RepListNode_s *rd;
   EBBRC rc;
@@ -80,20 +81,22 @@ locked_AddRepOn(CObjEBBRootMultiRef self, uintptr_t el, EBBRep *rep)
   self->head = rd;
 }
 
+static
 void
-CObjEBBRootMulti_addRepOn(void * _self, uintptr_t el, EBBRep *rep)
+CObjEBBRootMulti_addRepOn(CObjEBBRootMultiRef _self, uintptr_t el, EBBRep *rep)
 {
-  CObjEBBRootMultiRef self = (CObjEBBRootMultiRef)_self;
+  CObjEBBRootMultiImpRef self = (CObjEBBRootMultiImpRef)_self;
   lockReps(self);
   locked_AddRepOn(self, el, rep);
   unlockReps(self);
 }
 
+static
 EBBRC
 CObjEBBRootMulti_handleMiss(CObjEBBRootRef _self, EBBRep **obj, EBBLTrans *lt,
 			    FuncNum fnum)
 {
-  CObjEBBRootMultiRef self = (CObjEBBRootMultiRef)_self;
+  CObjEBBRootMultiImpRef self = (CObjEBBRootMultiImpRef)_self;
   uintptr_t myel = myEL();
   EBBRep *rep;
 
@@ -110,14 +113,16 @@ CObjEBBRootMulti_handleMiss(CObjEBBRootRef _self, EBBRep **obj, EBBLTrans *lt,
 }
 
 
+static
 RepListNode *
-CObjEBBRootMulti_nextRep(void * _self, RepListNode *curr, 
+CObjEBBRootMulti_nextRep(CObjEBBRootMultiRef _self, RepListNode *curr, 
 			 EBBRep **rep)
 {
   EBBRCAssert(0);
   return NULL;
 }
 
+static
 CObjInterface(CObjEBBRootMulti) CObjEBBRootMulti_ftable = {
   { .handleMiss = CObjEBBRootMulti_handleMiss },
   .addRepOn = CObjEBBRootMulti_addRepOn,
@@ -125,13 +130,13 @@ CObjInterface(CObjEBBRootMulti) CObjEBBRootMulti_ftable = {
 };
 
 static inline void
-CObjEBBRootMultiSetFT(CObjEBBRootMultiRef o)
+CObjEBBRootMultiSetFT(CObjEBBRootMultiImpRef o)
 {
   o->ft = &CObjEBBRootMulti_ftable;
 }
 
 static void
-CObjEBBRootMultiInit(CObjEBBRootMultiRef o, CreateRepFunc func)
+CObjEBBRootMultiImpInit(CObjEBBRootMultiImpRef o, CreateRepFunc func)
 {
   CObjEBBRootMultiSetFT(o);
   o->createRep = func;
@@ -140,17 +145,17 @@ CObjEBBRootMultiInit(CObjEBBRootMultiRef o, CreateRepFunc func)
 }
 
 EBBRC
-CObjEBBRootMultiStaticInit(CObjEBBRootMultiRef o, CreateRepFunc func)
+CObjEBBRootMultiImpStaticInit(CObjEBBRootMultiImpRef o, CreateRepFunc func)
 {
-  CObjEBBRootMultiInit(o, func);
+  CObjEBBRootMultiImpInit(o, func);
   return EBBRC_OK;
 }
 
 EBBRC
-CObjEBBRootMultiCreate(CObjEBBRootMultiRef *o, CreateRepFunc func)
+CObjEBBRootMultiImpCreate(CObjEBBRootMultiImpRef *o, CreateRepFunc func)
 {
   EBBRC rc;
-  rc = EBBPrimMalloc(sizeof(CObjEBBRootMulti), o, EBB_MEM_GLOBAL);
-  if (EBBRC_SUCCESS(rc)) CObjEBBRootMultiInit(*o, func);
+  rc = EBBPrimMalloc(sizeof(CObjEBBRootMultiImp), o, EBB_MEM_GLOBAL);
+  if (EBBRC_SUCCESS(rc)) CObjEBBRootMultiImpInit(*o, func);
   return rc;
 }

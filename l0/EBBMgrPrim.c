@@ -31,6 +31,7 @@
 #include <l0/cobj/CObjEBB.h>
 #include <l0/cobj/CObjEBBRoot.h>
 #include <l0/cobj/CObjEBBRootMulti.h>
+#include <l0/cobj/CObjEBBRootMultiImp.h>
 #include <l0/EBBMgrPrim.h>
 #include <l0/cobj/CObjEBBUtils.h>
 #include <l0/MemMgr.h>
@@ -85,7 +86,7 @@ EBBMgrPrimErrMF (EBBRep **_self, EBBLTrans *lt,
 #endif
 
 static EBBRep *
-EBBMgrPrimImp_createRep(void *_self) {
+EBBMgrPrimImp_createRep(CObjEBBRootMultiRef _self) {
   EBBMgrPrimImpRef repRef;
   EBBPrimMalloc(sizeof(*repRef), &repRef, EBB_MEM_DEFAULT);
   repRef->ft = &EBBMgrPrimImp_ftable;
@@ -95,15 +96,17 @@ EBBMgrPrimImp_createRep(void *_self) {
 }
 
 void EBBMgrPrimInit() {
-  CObjEBBRootMultiRef rootRef;
+  CObjEBBRootMultiImpRef rootRef;
 
   if (__sync_bool_compare_and_swap(&theEBBMgrPrimId, (EBBMgrPrimId)0,
 				   (EBBMgrPrimId)-1)) {
-    CObjEBBRootMultiCreate(&rootRef, EBBMgrPrimImp_createRep);
+    CObjEBBRootMultiImpCreate(&rootRef, EBBMgrPrimImp_createRep);
     
     theEBBMgrPrimId = (EBBMgrPrimId)EBBIdAlloc();
     EBBAssert(theEBBMgrPrimId != NULL);
     
     EBBIdBind((EBBId)theEBBMgrPrimId, CObjEBBMissFunc, (EBBMissArg) rootRef);
+  } else {
+    while (((volatile uintptr_t)theEBBMemMgrPrimId)==-1);
   }
 }

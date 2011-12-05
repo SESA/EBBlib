@@ -33,6 +33,7 @@
 #include <l0/cobj/CObjEBBUtils.h>
 #include <l0/cobj/CObjEBBRoot.h>
 #include <l0/cobj/CObjEBBRootMulti.h>
+#include <l0/cobj/CObjEBBRootMultiImp.h>
 #include <misc/Ctr.h>
 #include <misc/CtrPrimDistributed.h>
 
@@ -87,7 +88,7 @@ EBBCtrPrimDistributed_val(EBBCtrRef _self, uintptr_t *v)
 }
 
 static EBBRep *
-EBBCtrPrimDistributed_createRep(void * _self) {
+EBBCtrPrimDistributed_createRep(CObjEBBRootMultiRef _self) {
   EBBCtrPrimDistributedRef repRef;
   EBBPrimMalloc(sizeof(*repRef), &repRef, EBB_MEM_DEFAULT);
   EBBCtrPrimDistributedSetFT(repRef);
@@ -106,9 +107,9 @@ EBBRC
 EBBCtrPrimDistributedCreate(EBBCtrId *id)
 {
   EBBRC rc;
-  CObjEBBRootMultiRef rootRef;
+  CObjEBBRootMultiImpRef rootRef;
 
-  CObjEBBRootMultiCreate(&rootRef, 
+  CObjEBBRootMultiImpCreate(&rootRef, 
 			 EBBCtrPrimDistributed_createRep);
 
   rc = EBBAllocPrimId((EBBId *)id);

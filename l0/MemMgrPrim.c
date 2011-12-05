@@ -34,6 +34,7 @@
 #include <l0/cobj/CObjEBBUtils.h>
 #include <l0/cobj/CObjEBBRoot.h>
 #include <l0/cobj/CObjEBBRootMulti.h>
+#include <l0/cobj/CObjEBBRootMultiImp.h>
 #include <l0/MemMgr.h>
 #include <l0/MemMgrPrim.h>
 #include <l0/lrt/mem.h>
@@ -88,7 +89,7 @@ EBBMemMgrPrimSetFT(EBBMemMgrPrimRef o) {o->ft = &EBBMemMgrPrim_ftable; }
 
 
 static EBBRep *
-MemMgrPrim_createRep(void *_self)
+MemMgrPrim_createRep(CObjEBBRootMultiRef _self)
 {
   EBBAssert(0);
   return NULL;
@@ -100,16 +101,15 @@ EBBMemMgrRef *theEBBMemMgrPrimId;
 EBBRC
 EBBMemMgrPrimInit()
 {
-  static CObjEBBRootMulti theRoot;
-  CObjEBBRootMultiRef rootRef = &theRoot;
+  static CObjEBBRootMultiImp theRoot;
+  CObjEBBRootMultiImpRef rootRef = &theRoot;
   EBBMemMgrPrimRef repRef;
   EBBLTrans *lt;
   EBBRC rc;
   EBBId id;
   
   if (__sync_bool_compare_and_swap(&(theEBBMemMgrPrimId), 0, -1)) {
-    CObjEBBRootMultiStaticInit(rootRef, MemMgrPrim_createRep);
-    
+    CObjEBBRootMultiImpStaticInit(rootRef, MemMgrPrim_createRep);
     rc = EBBAllocPrimIdBoot(&id);
     EBBRCAssert(rc);
     rc = CObjEBBBindBoot(id, rootRef); 
@@ -138,7 +138,7 @@ EBBMemMgrPrimInit()
   // it is now safe to call the allocator assuming that the 
   // ltrans is stable between last and the next one that 
   // may use dynamic memory to add the rep to the root
-  rootRef->ft->addRepOn(rootRef, myEL(), (EBBRep *)repRef);
+  rootRef->ft->addRepOn((CObjEBBRootMultiRef)rootRef, myEL(), (EBBRep *)repRef);
 
   // Ok at this point the memory manager is up on this EL
   // and missing on the local table is also safe for this EL

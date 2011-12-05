@@ -1,5 +1,5 @@
-#ifndef __COBJ_EBB_ROOT_MULTI_H__
-#define __COBJ_EBB_ROOT_MULTI_H__
+#ifndef __COBJ_EBB_ROOT_MULTI_IMP_H__
+#define __COBJ_EBB_ROOT_MULTI_IMP_H__
 /*
  * Copyright (C) 2011 by Project SESA, Boston University
  *
@@ -22,19 +22,19 @@
  * THE SOFTWARE.
  */
 
-CObject(CObjEBBRootMulti) {
+// JA: DO NOT GET RID OF IMPLEMENTATION WE NEED
+//     STATICS OF THESE
+
+// Got rid of abstract type since we may commonly need
+// to delare statics of these and embed them
+CObject(CObjEBBRootMultiImp) {
   CObjInterface(CObjEBBRootMulti) *ft;
+  CreateRepFunc createRep;
+  RepListNode *head;
+  uintptr_t lock;
 };
 
-typedef EBBRep *(*CreateRepFunc) (CObjEBBRootMultiRef _self);
-typedef struct RepListNode_s RepListNode;
-
-CObjInterface(CObjEBBRootMulti)
-{
-  CObjImplements(CObjEBBRoot);
-  void (*addRepOn)(CObjEBBRootMultiRef _self, uintptr_t el, EBBRep *rep);
-  RepListNode *(*nextRep) (CObjEBBRootMultiRef _self, 
-			   RepListNode *curr, EBBRep **rep);
-};
+extern EBBRC CObjEBBRootMultiImpStaticInit(CObjEBBRootMultiImpRef o, CreateRepFunc func);
+extern EBBRC CObjEBBRootMultiImpCreate(CObjEBBRootMultiImpRef *o, CreateRepFunc func);
 
 #endif
