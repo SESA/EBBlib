@@ -27,6 +27,7 @@ enum {LRT_PIC_MAX_PICS = (1 << LRT_PIC_LG2MAX_PICS) };
 enum {LRT_PIC_FIRST_PIC_ID = 0};
 enum {LRT_PIC_MAX_PIC_ID = (LRT_PIC_MAX_PICS-1)};
 
+// FIXME: implement a genereric bitvector set of macroes
 typedef uintptr_t lrt_pic_id;
 typedef uint64_t lrt_pic_set[LRT_PIC_MAX_PICS/64];
 

@@ -21,21 +21,15 @@
  */
 #include <config.h>
 #include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
 #include <stdio.h>
 #include <errno.h>
 #include <unistd.h>
-#include <sys/select.h>
 #include <string.h>
 #include <assert.h>
-#include <signal.h>
-#include <pthread.h>
 
 #include <stdint.h>
+#include <l0/lrt/ulnx/pic-unix.h>
 #include <l0/lrt/ulnx/pic.h>
-
-extern lrt_pic_handler EBBstart;
 
 #ifdef __APPLE__
 pthread_key_t lrt_pic_myid_pthreadkey;
@@ -45,46 +39,34 @@ __thread lrt_pic_id lrt_pic_myid;
 lrt_pic_id lrt_pic_firstid;
 lrt_pic_id lrt_pic_lastid;
 
-#ifdef __APPLE__
-enum {FIRST_VECFD = 128};
-#else
-enum {FIRST_VECFD = 16};
-#endif
-enum {NUM_MAPPABLE_VEC = 15};
-// reserve 2 : 1 for ipi and 1 additional
-enum {NUM_RES_VEC = 2};
-enum {RES0_VEC = (NUM_MAPPABLE_VEC)};
-enum {RES1_VEC = (RES0_VEC + 1)};
-enum {IPI_VEC = (RES0_VEC)};
-enum {RST_VEC = (RES1_VEC)};
-enum {NUM_VEC = (NUM_MAPPABLE_VEC + NUM_RES_VEC)};
-
-#ifndef FD_COPY
-#define FD_COPY(src,dest) memcpy((dest),(src),sizeof(dest))
-#endif
-
+/*
+ * set: the set of cores on which this interrupt is enabled/disabled
+ * handler: the handler, globally, for this interrupt
+ */
 struct VecDesc {
   lrt_pic_set set;
   lrt_pic_handler h;
-  int fd;
 };
 
+/*
+ * the global pic structure, maintains a 
+ */
 struct Pic {
   struct VecDesc vecs[NUM_VEC];
-  fd_set fdset;
   uintptr_t free;
   uintptr_t numlpics;
   volatile uintptr_t lpiccnt;
   uintptr_t lock;
-  int maxfd;
 } pic;
 
+/*
+ * Array of pic structures with one per core. 
+ */
 //FIXME: Do we want to pad these to cacheline size
 struct LPic {
-  struct timespec periodic;
   lrt_pic_set mymask;
   lrt_pic_id id;
-  uintptr_t aux;
+  uintptr_t lcore;		/* logical core */
   volatile uintptr_t ipiStatus;
   volatile uintptr_t resetStatus;
 } lpics[LRT_PIC_MAX_PICS];
@@ -107,25 +89,13 @@ unlock(void)
   __sync_bool_compare_and_swap(&(pic.lock), 1, 0);
 }
 
-static void
-sighandler(int s)
-{
-  return;
-}
-
-static inline void 
-wakeup(lrt_pic_id target)
-{
-  //  printf("wup: target=%ld ipiStatus=%ld\n", target, lpics[target].ipiStatus);
-  pthread_kill((pthread_t)lpics[target].aux, SIGINT);
-}
-
 static inline void
 wakeupall(void)
 {
   lrt_pic_id i;
   assert(pic.lpiccnt == pic.numlpics);
-  for (i=lrt_pic_firstid; i<=lrt_pic_lastid; i++) wakeup(i);
+  for (i=lrt_pic_firstid; i<=lrt_pic_lastid; i++) 
+    lrt_pic_unix_wakeup(lpics[i].lcore);
 }
 
 void
@@ -168,11 +138,7 @@ lrt_pic_numvec(void)
 intptr_t
 lrt_pic_init(uintptr_t numlpics, lrt_pic_handler h)
 {
-  int fd[FIRST_VECFD];
-  int i=0;
   uintptr_t id;
-  struct sigaction sa;
-  sigset_t blockset;
 
   // confirm sanity of pic configuration 
   assert(LRT_PIC_MAX_PICS/64 * 64 == LRT_PIC_MAX_PICS);
@@ -195,63 +161,27 @@ lrt_pic_init(uintptr_t numlpics, lrt_pic_handler h)
   lrt_pic_myid = lrt_pic_firstid;
 #endif
   
-  // initialized working fd array 
-  bzero(&fd, sizeof(fd));
-  fd[i] = open("/dev/null", O_RDONLY);
-
-  // get us to the FIRST_VEC fd by opening
-  // fds until we get to FIRST_VEC
-  while (fd[i] < (FIRST_VECFD-1)) {
-    i++;
-    fd[i] = dup(fd[0]);
-  };
-
-  // reserve fds for our vectors
-  for (i=0; i<NUM_VEC; i++) {
-    pic.vecs[i].fd=dup(fd[0]);
-    if (pic.vecs[i].fd != (FIRST_VECFD+i)) {
-      fprintf(stderr, "ERROR: file %s line %d: runtime tromping over fd space\n"
-	      "\tsuggest you increase the FIRST_VECFD\n", __FILE__, __LINE__);
-      return -1;
-    }
+  if (lrt_pic_unix_init() != 0) { /* initialize logical HW for unix */
+    //error, return -1;
+    return -1;
   }
-   
-  // close and free fd's that we allocated to get to
-  // FIRST_VEC
-  for (i=0; i<FIRST_VECFD; i++) if(fd[i]) close(fd[i]);
 
-  // explicity setup fdset so that we are not paying attention
-  // to any vectors at start... vectors are added when they are mapped
-  FD_ZERO(&pic.fdset);
-  
-  // setup default signal mask so that SIGINT is being ignored by
-  // all pic threads when they start however ensure that a common 
-  // handler is in place
-  /* this code was based on http://lwn.net/Articles/176911/ */
-  sigemptyset(&blockset);         /* Block SIGINT */
-  sigaddset(&blockset, SIGINT);
-  pthread_sigmask(SIG_BLOCK, &blockset, NULL);
+  assert(!lrt_pic_set_test(lpics[lrt_pic_myid].mymask, lrt_pic_myid));
 
-  sa.sa_handler = sighandler;        /* Establish signal handler */
-  sa.sa_flags = 0;
-  sigemptyset(&(sa.sa_mask));
-  sigaction(SIGINT, &sa, NULL);
-
-  assert(!lrt_pic_set_test(lpics[lrt_pic_myid].mymask,lrt_pic_myid));
   // setup where the initial ipi will be directed to
   lrt_pic_mapreset(h);
 
-  // record this the thread id of this thread as lpic 
+  // enable interrupts from myself
   lrt_pic_set_add(lpics[lrt_pic_myid].mymask, lrt_pic_myid);
-  lpics[lrt_pic_myid].aux = (uintptr_t)pthread_self();
-  // start up threads for any other lpics
+
+  // get my core
+  lpics[lrt_pic_myid].lcore = lrt_pic_unix_getlcoreid();
+
+  // start up other cores
   for (id=lrt_pic_firstid+1; id<=lrt_pic_lastid; id++) {
-    if (pthread_create((pthread_t *)(&lpics[id].aux), 
-		       NULL, (void *(*)(void*))lrt_pic_loop, 
-		       (void *)id) != 0) {
-      perror("pthread_create");
-      return -1;
-    }
+    lpics[id].lcore = lrt_pic_unix_addcore((void *(*)(void*))lrt_pic_loop, 
+					     (void *)id);
+    if (lpics[id].lcore == 0) return -1;
   }
 
   // initiate a reset to get things going once the loop is up
@@ -314,7 +244,7 @@ lrt_pic_ipi(lrt_pic_id target)
   if (target>lrt_pic_lastid) return -1;
   // FIXME: probably need to make this at least volatile
   lpics[target].ipiStatus = 1;
-  wakeup(target);
+  lrt_pic_unix_wakeup(lpics[target].lcore);
   return 1;
 }
 
@@ -322,7 +252,7 @@ intptr_t
 lrt_pic_reset()
 {
   lpics[lrt_pic_myid].resetStatus = 1;
-  wakeup(lrt_pic_myid);
+  lrt_pic_unix_wakeup(lpics[lrt_pic_myid].lcore);
   return 1;
 }
 
@@ -342,8 +272,6 @@ lrt_pic_ackipi(void)
 intptr_t
 lrt_pic_mapvec(lrt_pic_src s, uintptr_t vec, lrt_pic_handler h)
 {
-  int i;
-  int sfd = (int)s;
   int rc=1;
   
   lock();
@@ -354,10 +282,9 @@ lrt_pic_mapvec(lrt_pic_src s, uintptr_t vec, lrt_pic_handler h)
   }
 
   pic.vecs[vec].h = h;
-  i = dup2(sfd, pic.vecs[vec].fd);
-  assert(i == pic.vecs[vec].fd);
-  FD_SET(i, &pic.fdset);
-  if (i>pic.maxfd) pic.maxfd=i;
+  if ((rc = lrt_pic_unix_enable(s, vec)) != 0) 
+    goto done;
+
   wakeupall();
 
  done:
@@ -388,15 +315,10 @@ bind_proc(uintptr_t p)
 intptr_t 
 lrt_pic_loop(lrt_pic_id myid)
 {
-  fd_set rfds, efds;
-  int v,i, rc;
-  sigset_t emptyset;
+  int v, numintr;
   struct LPic *lpic = lpics + myid;
 
 #ifdef __APPLE__
-  struct timespec tout;
-  bzero(&tout, sizeof(tout));
-  tout.tv_nsec = 100000000; // .1 seconds
   pthread_setspecific(lrt_pic_myid_pthreadkey, (void *)myid);
 #else
   lrt_pic_myid = myid;
@@ -412,67 +334,48 @@ lrt_pic_loop(lrt_pic_id myid)
   // reset code is expected to setup ipi vector appropriately
   // before invoking.  So at this point ipi vector maybe null
   lrt_pic_enableipi();
-
+  
   // only reset vector to run on boot processor
   if (lrt_pic_myid == lrt_pic_firstid) lrt_pic_enable(RST_VEC);
-
+  
   // wait for all lpics to be up before we get going
   while (pic.lpiccnt != pic.numlpics);
-
+  
   while (1) {
-    FD_COPY(&pic.fdset, &rfds);
-    FD_COPY(&pic.fdset, &efds);
-
-    sigemptyset(&emptyset);
-#ifdef __APPLE__
-    rc = pselect(pic.maxfd+1, &rfds, NULL, &efds, &tout, &emptyset);
-#else
-    rc = pselect(pic.maxfd+1, &rfds, NULL, &efds, NULL, &emptyset);
-#endif
-    if (rc < 0) {
-      if (errno==EINTR) {
-	// do nothing
-      } else {
-	fprintf(stderr, "Error: pselect failed (%d)\n", errno);
-	perror("pselect");
-	return -1;
-      }
-    }
-
-    // may later want to actually have a period event that has a programmable
-    // period
-#ifndef __APPLE__
-    if (rc == 0) {
-      fprintf(stderr, "What Select timed out\n");
+    lrt_pic_unix_ints intrSet;
+    
+    if ((numintr = lrt_pic_unix_blockforinterrupt(&intrSet)) <0 ) {
       return -1;
     }
-#endif
-
-   if (lpic->resetStatus) {
-     lpic->resetStatus=0;
-     pic.vecs[RST_VEC].h();
-   }
-
+    
+    if (lpic->resetStatus) {
+      lpic->resetStatus=0;
+      pic.vecs[RST_VEC].h();
+    }
+    
     if (lpic->ipiStatus && lrt_pic_set_test(pic.vecs[IPI_VEC].set, myid)) {
       lrt_pic_disableipi();
       assert(pic.vecs[IPI_VEC].h);
       pic.vecs[IPI_VEC].h();
     }
-
-    for (i = FIRST_VECFD,v=0; i <= pic.maxfd; i++, v++) {
-      if ((FD_ISSET(i, &efds) || (FD_ISSET(i, &rfds)))
-	  && lrt_pic_set_test(pic.vecs[i].set, myid)) {
+    
+    
+    for (v=0;v<NUM_VEC;v++) {
+      if (lrt_pic_unix_ints_test(intrSet, v) && 
+	  lrt_pic_set_test(pic.vecs[v].set, myid)) {
+	numintr--;
 	if (pic.vecs[v].h) {
 	  pic.vecs[v].h();
 	} else {
-	  fprintf(stderr, "ERROR: %s: spurious interrupt on %d\n", __func__, i);
+	  fprintf(stderr, "ERROR: %s: spurious interrupt on %d\n", __func__, v);
 	}
+	if(numintr<=0) break;
       }
     }
   }
-
   return -1;
 }
+
 
 #ifdef PIC_TEST
 #include <unistd.h>
