@@ -20,7 +20,10 @@
  * THE SOFTWARE.
  */
 #include <config.h>
+
 #include <stdint.h>
+#include <stddef.h>
+
 #include <lrt/assert.h>
 #include <l0/cobj/cobj.h>
 #include <l0/lrt/pic.h>

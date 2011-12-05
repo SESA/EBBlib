@@ -22,9 +22,9 @@
  * THE SOFTWARE.
  */
 
-#ifndef NULL
-#define NULL ((void *)0)
-#endif /* ! NULL */
+/* #ifndef NULL */
+/* #define NULL ((void *)0) */
+/* #endif /\* ! NULL *\/ */
 
 typedef union EBBTransStruct EBBTrans;
 typedef EBBTrans EBBLTrans;
