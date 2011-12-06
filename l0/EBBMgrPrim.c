@@ -97,15 +97,18 @@ EBBMgrPrimImp_createRep(CObjEBBRootMultiRef _self) {
 
 void EBBMgrPrimInit() {
   CObjEBBRootMultiImpRef rootRef;
+  EBBMgrPrimId id;
 
   if (__sync_bool_compare_and_swap(&theEBBMgrPrimId, (EBBMgrPrimId)0,
 				   (EBBMgrPrimId)-1)) {
     CObjEBBRootMultiImpCreate(&rootRef, EBBMgrPrimImp_createRep);
     
-    theEBBMgrPrimId = (EBBMgrPrimId)EBBIdAlloc();
-    EBBAssert(theEBBMgrPrimId != NULL);
+    id = (EBBMgrPrimId)EBBIdAlloc();
+    EBBAssert(id != NULL);
     
-    EBBIdBind((EBBId)theEBBMgrPrimId, CObjEBBMissFunc, (EBBMissArg) rootRef);
+    EBBIdBind((EBBId)id, CObjEBBMissFunc, (EBBMissArg) rootRef);
+
+    theEBBMgrPrimId = id;
   } else {
     while (((volatile uintptr_t)theEBBMemMgrPrimId)==-1);
   }
