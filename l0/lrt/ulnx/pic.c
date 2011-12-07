@@ -356,11 +356,9 @@ lrt_pic_loop()
   // this will initialize lrt_pic_myid
   lrt_pic_allocate_core_id();
 
-  // enable interrupts from myself
-  lrt_pic_set_add(lpics[lrt_pic_myid].mymask, lrt_pic_myid);
-
-
   lpic = lpics + lrt_pic_myid;
+
+  // setup mymask to have the bit associated with my id enabled
   lrt_pic_set_add(lpic->mymask, lrt_pic_myid);
 
   bind_proc(lrt_pic_myid);
