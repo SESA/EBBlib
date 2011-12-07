@@ -33,7 +33,7 @@
 
 // JA FIXME: Need to decided who really uses lrt_pic_myid versus myEL()
 
-const EBBGTrans *ALLOCATED = (EBBGTrans *)-1;
+EBBGTrans * const ALLOCATED = (EBBGTrans *)-1;
 
 // Policy for managing global translation memory is software's responsibility
 // We are choosing to use a simple partitioning scheme in which each event location
@@ -160,7 +160,7 @@ EBBIdAlloc() {
   gt = myGTable(); //Get my piece of the global table
   for (i = 0; i < len; i++) {
     if (gt[i].free != ALLOCATED) {
-      gt[i].free = (EBBGTrans *)ALLOCATED;
+      gt[i].free = ALLOCATED;
       return gt2id(&gt[i]);
     }
   }
@@ -170,7 +170,7 @@ EBBIdAlloc() {
 void
 EBBIdFree(EBBId id) {
   EBBGTrans *gt = id2gt(id);
-  gt->free = (EBBGTrans *)ALLOCATED;
+  gt->free = ALLOCATED;
 }
 
 void
