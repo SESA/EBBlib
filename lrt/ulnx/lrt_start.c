@@ -29,10 +29,26 @@
 
 extern void l0_start(void);
 
+static struct boot_args_t {
+  intptr_t cores;
+  volatile intptr_t cores_to_start;
+} boot_args;
+
+
 // first code to be runnining on an interrupt
 void lrt_start(void)
 {
-  fprintf(stderr, "%s: start!\n", __func__);
+  // check cores
+  // start up another core, with the 
+  fprintf(stderr, "%s: start pic id %ld!\n", __func__, lrt_pic_myid);
+  if (boot_args.cores_to_start > 0) {
+    while (__sync_fetch_and_add(&boot_args.cores_to_start, -1) > 0) {
+      intptr_t core;
+      core = lrt_pic_add_core();
+      fprintf(stderr, "***%s: started core %lx!\n", __func__, core);
+    }
+  }
+
   lrt_mem_init();
   lrt_trans_init();
   l0_start();
@@ -44,9 +60,13 @@ __attribute__ ((weak))
 int
 main(int argc, char **argv) 
 {
-  uintptr_t cores=1;
+  boot_args.cores = 1;
+  boot_args.cores_to_start = 0;
+  if (argc>1) {
+    boot_args.cores=atoi(argv[1]);
+    boot_args.cores_to_start = boot_args.cores -1;
+  }
   fprintf(stderr, "%s: start!\n", __func__);
-  if (argc>1) cores=atoi(argv[1]);
-  lrt_pic_init(cores, lrt_start);
+  lrt_pic_init(lrt_start);
   return -1;
 }

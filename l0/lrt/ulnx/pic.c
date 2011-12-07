@@ -36,8 +36,9 @@ pthread_key_t lrt_pic_myid_pthreadkey;
 #else
 __thread lrt_pic_id lrt_pic_myid;
 #endif
+
 lrt_pic_id lrt_pic_firstid;
-lrt_pic_id lrt_pic_lastid;
+volatile lrt_pic_id lrt_pic_lastid;
 
 /*
  * set: the set of cores on which this interrupt is enabled/disabled
@@ -54,8 +55,7 @@ struct VecDesc {
 struct Pic {
   struct VecDesc vecs[NUM_VEC];
   uintptr_t free;
-  uintptr_t numlpics;
-  volatile uintptr_t lpiccnt;
+  volatile uintptr_t numlpics;	/* number local pics i.e., cores */
   uintptr_t lock;
 } pic;
 
@@ -93,9 +93,11 @@ static inline void
 wakeupall(void)
 {
   lrt_pic_id i;
-  assert(pic.lpiccnt == pic.numlpics);
-  for (i=lrt_pic_firstid; i<=lrt_pic_lastid; i++) 
+  for (i=lrt_pic_firstid; i<=lrt_pic_lastid; i++) {
+    // FIXME: will have to handle cores that are not up
+    assert(lpics[i].lcore != 0);
     lrt_pic_unix_wakeup(lpics[i].lcore);
+  }
 }
 
 void
@@ -135,32 +137,76 @@ lrt_pic_numvec(void)
   return NUM_MAPPABLE_VEC; 
 }
     
-intptr_t
-lrt_pic_init(uintptr_t numlpics, lrt_pic_handler h)
+/*
+ * allocate a new ID
+ * this is always done on the core, so nothing returned
+ */
+static inline void
+lrt_pic_allocate_core_id(void)
 {
-  uintptr_t id;
+  lrt_pic_id myid;
+  // for first core, we are running at this point sequentially
+  if (pic.numlpics == 0) { 
+    pic.numlpics = 1;
+    lrt_pic_firstid = lrt_pic_lastid = 0; /* id is 0 */
+    myid = lrt_pic_firstid;
+  } else {
+    lrt_pic_id tmp;
+    myid = __sync_fetch_and_add(&pic.numlpics, 1);
+    assert(myid <= LRT_PIC_MAX_PICS);
+    fprintf(stderr, "ALLOCATED ID %ld\n", myid);
 
+    // automically check if myid > last_id, if so modify it
+    tmp = lrt_pic_lastid;
+    while (tmp < myid) {
+      __sync_val_compare_and_swap(&lrt_pic_lastid, tmp, myid);
+      tmp = lrt_pic_lastid;
+    }
+  }
+#ifdef __APPLE__
+  pthread_setspecific(lrt_pic_myid_pthreadkey, (void *)myid);
+#else
+  lrt_pic_myid = myid;
+#endif
+
+  // initialize my lcore to the underlying HW (e.g., threadid)
+  lpics[lrt_pic_myid].lcore = lrt_pic_unix_getlcoreid();
+  fprintf(stderr, "***core %lx started\n", lpics[lrt_pic_myid].lcore);
+  assert(lpics[lrt_pic_myid].lcore != 0);
+}
+      
+
+    
+    
+
+
+intptr_t
+lrt_pic_add_core()
+{
+  uintptr_t core = lrt_pic_unix_addcore((void *(*)(void*))lrt_pic_loop, 0);
+  fprintf(stderr, "***core %lx created\n", core);
+  return core;
+}
+
+/*
+ * routine called just on first core to initialize everything, then goes into 
+ * loop
+ */
+intptr_t
+lrt_pic_init(lrt_pic_handler h)
+{
   // confirm sanity of pic configuration 
   assert(LRT_PIC_MAX_PICS/64 * 64 == LRT_PIC_MAX_PICS);
-  assert(numlpics <= LRT_PIC_MAX_PICS);
 
   // initialize all pic state to zero
   bzero(&pic, sizeof(pic));
   bzero(lpics, sizeof(lpics));
 
-  // setup basic global facts
-  lrt_pic_firstid = LRT_PIC_FIRST_PIC_ID;
-  lrt_pic_lastid  = numlpics-1;
-  pic.numlpics = numlpics;
-
-  // lrt_pic_myid setup for first pic (thread of execution of init)
 #ifdef __APPLE__
+  // initialize key for pthreds
   pthread_key_create(&lrt_pic_myid_pthreadkey, NULL);
-  pthread_setspecific(lrt_pic_myid_pthreadkey, (void *)lrt_pic_firstid);
-#else
-  lrt_pic_myid = lrt_pic_firstid;
 #endif
-  
+
   if (lrt_pic_unix_init() != 0) { /* initialize logical HW for unix */
     //error, return -1;
     return -1;
@@ -171,22 +217,8 @@ lrt_pic_init(uintptr_t numlpics, lrt_pic_handler h)
   // setup where the initial ipi will be directed to
   lrt_pic_mapreset(h);
 
-  // enable interrupts from myself
-  lrt_pic_set_add(lpics[lrt_pic_myid].mymask, lrt_pic_myid);
-
-  // get my core
-  lpics[lrt_pic_myid].lcore = lrt_pic_unix_getlcoreid();
-
-  // start up other cores
-  for (id=lrt_pic_firstid+1; id<=lrt_pic_lastid; id++) {
-    lpics[id].lcore = lrt_pic_unix_addcore((void *(*)(void*))lrt_pic_loop, 
-					     (void *)id);
-    if (lpics[id].lcore == 0) return -1;
-  }
-
-  // initiate a reset to get things going once the loop is up
-  lrt_pic_reset();
-  lrt_pic_loop(lrt_pic_myid);
+  // fall into loop
+  lrt_pic_loop( );
 
   assert(0);
 
@@ -244,15 +276,18 @@ lrt_pic_ipi(lrt_pic_id target)
   if (target>lrt_pic_lastid) return -1;
   // FIXME: probably need to make this at least volatile
   lpics[target].ipiStatus = 1;
+  assert(lpics[target].lcore != 0);
   lrt_pic_unix_wakeup(lpics[target].lcore);
   return 1;
 }
 
 intptr_t
-lrt_pic_reset()
+lrt_pic_reset(lrt_pic_id target)
 {
-  lpics[lrt_pic_myid].resetStatus = 1;
-  lrt_pic_unix_wakeup(lpics[lrt_pic_myid].lcore);
+  if (target>lrt_pic_lastid) return -1;
+  lpics[target].resetStatus = 1;
+  assert(lpics[target].lcore != 0);
+  lrt_pic_unix_wakeup(lpics[target].lcore);
   return 1;
 }
 
@@ -313,33 +348,29 @@ bind_proc(uintptr_t p)
 // each pic will wake up on any interrupt occurring but only dispatches
 // the handler if the interrupt includes the pic id of the loop in its pic set
 intptr_t 
-lrt_pic_loop(lrt_pic_id myid)
+lrt_pic_loop()
 {
   int v, numintr;
-  struct LPic *lpic = lpics + myid;
+  struct LPic *lpic;
 
-#ifdef __APPLE__
-  pthread_setspecific(lrt_pic_myid_pthreadkey, (void *)myid);
-#else
-  lrt_pic_myid = myid;
-#endif
-  lrt_pic_set_add(lpic->mymask, myid);
+  // this will initialize lrt_pic_myid
+  lrt_pic_allocate_core_id();
+
+  // enable interrupts from myself
+  lrt_pic_set_add(lpics[lrt_pic_myid].mymask, lrt_pic_myid);
+
+
+  lpic = lpics + lrt_pic_myid;
+  lrt_pic_set_add(lpic->mymask, lrt_pic_myid);
+
   bind_proc(lrt_pic_myid);
 
-  lock(); pic.lpiccnt++; unlock();
-
-  // all processors have ipi enabled at startup 
-  // Semantics are that only reset is run on first proc
-  // ipi is used on all other procs to get things going
-  // reset code is expected to setup ipi vector appropriately
-  // before invoking.  So at this point ipi vector maybe null
   lrt_pic_enableipi();
-  
-  // only reset vector to run on boot processor
-  if (lrt_pic_myid == lrt_pic_firstid) lrt_pic_enable(RST_VEC);
-  
-  // wait for all lpics to be up before we get going
-  while (pic.lpiccnt != pic.numlpics);
+  // first operation that will happen is reset
+  lrt_pic_enable(RST_VEC);  
+
+  // send a reset to myself
+  lrt_pic_reset(lrt_pic_myid);
   
   while (1) {
     lrt_pic_unix_ints intrSet;
@@ -353,16 +384,17 @@ lrt_pic_loop(lrt_pic_id myid)
       pic.vecs[RST_VEC].h();
     }
     
-    if (lpic->ipiStatus && lrt_pic_set_test(pic.vecs[IPI_VEC].set, myid)) {
+    if (lpic->ipiStatus && 
+	lrt_pic_set_test(pic.vecs[IPI_VEC].set, lrt_pic_myid)) {
       lrt_pic_disableipi();
       assert(pic.vecs[IPI_VEC].h);
       pic.vecs[IPI_VEC].h();
     }
     
-    
+    // handle all interrupts in bit vector returned by HW
     for (v=0;v<NUM_VEC;v++) {
       if (lrt_pic_unix_ints_test(intrSet, v) && 
-	  lrt_pic_set_test(pic.vecs[v].set, myid)) {
+	  lrt_pic_set_test(pic.vecs[v].set, lrt_pic_myid)) {
 	numintr--;
 	if (pic.vecs[v].h) {
 	  pic.vecs[v].h();
@@ -376,50 +408,3 @@ lrt_pic_loop(lrt_pic_id myid)
   return -1;
 }
 
-
-#ifdef PIC_TEST
-#include <unistd.h>
-#include <stdlib.h>
-
-void
-ipihdlr(void)
-{
-  lrt_pic_ackipi();
-  fprintf(stderr, "%ld", lrt_pic_myid);
-  fflush(stderr);
-  sleep(2);
-  lrt_pic_enableipi();
-  // pass the ipi along to the next lrt
-  lrt_pic_ipi((lrt_pic_myid+1)%(lrt_pic_lastid+1));
-}
-
-
-void
-rsthdlr(void)
-{
-  fprintf(stderr, "%s: START: on %ld\n", __func__, 
-	  lrt_pic_myid);
-  fflush(stderr);  
-
-  // setup our ipi handler and enable ipi 
-  // FIXME:  for the moment these are global operations that affect all pics
-  //         reset only runs on first lpic
-  lrt_pic_mapipi(ipihdlr);
-
-  // ipi is enabled by default... so all we have to do is send the first
-  // ipi to ourselvs
-  // send ipi to my self to get the ball rolling
-  lrt_pic_ipi(lrt_pic_myid);
-}
-
-int
-main(int argc, char **argv)
-{
-  uintptr_t cores=1;
-
-  if (argc>1) cores=atoi(argv[1]);
-  lrt_pic_init(cores, rsthdlr);
-  return -1;
-}
-
-#endif
