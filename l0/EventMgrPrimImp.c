@@ -28,17 +28,19 @@
 #include <l0/lrt/pic.h>
 #include <l0/lrt/trans.h>
 #include <l0/types.h>
+#include <l0/sys/trans.h>
 #include <lrt/assert.h>
 #include <l0/cobj/CObjEBB.h>
 #include <l0/EBBMgrPrim.h>
 #include <l0/cobj/CObjEBBUtils.h>
 #include <l0/cobj/CObjEBBRoot.h>
-#include <l0/cobj/CObjEBBRootShared.h>
+#include <l0/cobj/CObjEBBRootMulti.h>
+#include <l0/cobj/CObjEBBRootMultiImp.h>
 #include <l0/EventMgrPrim.h>
 #include <l0/EventMgrPrimImp.h>
 #include <l0/lrt/pic.h>
-
-
+#include <l0/MemMgr.h>
+#include <l0/MemMgrPrim.h>
 
 /*
  * We define these in .c file, since EBBCALL may be different for
@@ -60,20 +62,15 @@ typedef struct  {
 
 enum {MAXEVENTS = 256};
 
+// for now, have a single handerInfo structure
+// later on, replicate to each rep...
+HandlerInfoStruc handlerInfo[MAXEVENTS];
+
 CObject(EventMgrPrimImp){
   CObjInterface(EventMgrPrim) *ft;
-  HandlerInfoStruc handlerInfo[MAXEVENTS];
+  CObjEBBRootMultiRef theRoot;	
 };
 
-static void
-repInit(EventMgrPrimImpRef rep)
-{
-  uintptr_t i;
-
-  for (i=0; i<MAXEVENTS; i++) rep->handlerInfo[i].id=NULL;
-}
-
-EventMgrPrimImp theRep;
 
 // define vector functions that map vectors to events
 // each function call's the appropriate handler installed
@@ -380,8 +377,7 @@ vfunc vfTbl[MAXEVENTS] = {
 static EBBRC
 EventMgrPrim_getHandler(void *_self, uintptr_t eventNo, EventHandlerId *handler)
 {
-  EventMgrPrimImpRef self = _self;
-  *handler = self->handlerInfo[eventNo].id;
+  *handler = handlerInfo[eventNo].id;
   return EBBRC_OK;
 }
 
@@ -390,26 +386,22 @@ EventMgrPrim_registerHandler(void *_self, uintptr_t eventNo,
 			     EventHandlerId handler, 
 			     uintptr_t isrc)
 {
-  EventMgrPrimImpRef self = _self;
-
   if ( (eventNo >= MAXEVENTS) || (eventNo<0) ){
     return EBBRC_BADPARAMETER;
   };
   
-  if (self->handlerInfo[eventNo].id != NULL) {
+  if (handlerInfo[eventNo].id != NULL) {
     // for now, if its not null, assume error, should we ever be able
     // to change the handler for an event?
     return EBBRC_BADPARAMETER;
   };
 
   // install handler in event table
-  self->handlerInfo[eventNo].id = handler;
+  handlerInfo[eventNo].id = handler;
 
-  // for the moment we are hard coding that when 
-  // you map a vector it is only active on this el
   // map vector in pic
   if (lrt_pic_mapvec((lrt_pic_src)isrc, eventNo, vfTbl[eventNo])<0) {
-    self->handlerInfo[eventNo].id = NULL;
+    handlerInfo[eventNo].id = NULL;
     return EBBRC_BADPARAMETER;
   }
 
@@ -437,31 +429,37 @@ EventMgrPrimSetFT(EventMgrPrimImpRef o)
 
 EventMgrPrimId theEventMgrPrimId;
 
+static EBBRep *
+EventMgrPrimImp_createRep(CObjEBBRootMultiRef _self) {
+  EventMgrPrimImpRef repRef;
+  EBBPrimMalloc(sizeof(*repRef), &repRef, EBB_MEM_DEFAULT);
+  EventMgrPrimSetFT(repRef);
+  repRef->theRoot = _self;
+  //  initGTable(EventMgrPrimErrMF, 0);
+  return (EBBRep *)repRef;
+}
+
 EBBRC
 EventMgrPrimImpInit(void)
 {
-  EBBRC rc;
-  static CObjEBBRootShared theRoot;
-  EventMgrPrimImpRef repRef = &theRep;
-  CObjEBBRootSharedRef rootRef = &theRoot;
+  CObjEBBRootMultiImpRef rootRef;
+  EventMgrPrimId id;
+  int i;
 
-  EBBAssert(MAXEVENTS > lrt_pic_numvec());
+  if (__sync_bool_compare_and_swap(&theEventMgrPrimId, (EventMgrPrimId)0,
+				   (EventMgrPrimId)-1)) {
+    EBBAssert(MAXEVENTS > lrt_pic_numvec());
 
-  // setup function tables
-  CObjEBBRootSharedSetFT(rootRef);
-  EventMgrPrimSetFT(repRef);
+    CObjEBBRootMultiImpCreate(&rootRef, EventMgrPrimImp_createRep);
+    id = (EventMgrPrimId)EBBIdAlloc();
+    EBBAssert(id != NULL);
 
-  // setup my representative and root
-  repInit(repRef);
-  // shared root knows about only one rep so we 
-  // pass it along for it's init
-  rootRef->ft->init(rootRef, (EBBRep *)&theRep);
-
-  rc = EBBAllocPrimId((EBBId *)&theEventMgrPrimId);
-  EBBRCAssert(rc);
-
-  rc = CObjEBBBind((EBBId)theEventMgrPrimId, rootRef); 
-  EBBRCAssert(rc);
+    EBBIdBind((EBBId)id, CObjEBBMissFunc, (EBBMissArg) rootRef);
+    theEventMgrPrimId = id;
+    for (i=0; i<MAXEVENTS; i++) handlerInfo[i].id=NULL;
+  } else {
+    while (((volatile uintptr_t)theEventMgrPrimId)==-1);
+  }
   return EBBRC_OK;
 };
 

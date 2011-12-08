@@ -65,10 +65,12 @@ extern EventMgrPrimId theEventMgrPrimId;
  */
 typedef uintptr_t EvntLoc;
 
-inline static EvntLoc 
-myEL()
-{
-  return LRTEBBMyEL();
-};
+/*
+ * For now, one-to-one mapping event location 
+ * and pic location. Since this may change,
+ * we include the corresponding header file here. 
+ */
+#include <l0/lrt/pic.h>
+inline static EvntLoc MyEL() { return lrt_pic_myid; }
 
 #endif

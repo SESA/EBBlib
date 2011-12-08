@@ -141,7 +141,7 @@ EBBMemMgrPrimInit()
   // it is now safe to call the allocator assuming that the 
   // ltrans is stable between last and the next one that 
   // may use dynamic memory to add the rep to the root
-  rootRef->ft->addRepOn((CObjEBBRootMultiRef)rootRef, myEL(), (EBBRep *)repRef);
+  rootRef->ft->addRepOn((CObjEBBRootMultiRef)rootRef, MyEL(), (EBBRep *)repRef);
 
   // Ok at this point the memory manager is up on this EL
   // and missing on the local table is also safe for this EL

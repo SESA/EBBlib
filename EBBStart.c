@@ -93,7 +93,6 @@ EBBStart()
 
   EBBMgrPrimInit();
 
-
   rc = EventMgrPrimImpInit();
   EBBRCAssert(rc);
 

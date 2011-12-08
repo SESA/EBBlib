@@ -94,13 +94,13 @@ CObjEBBRootMulti_addRepOn(CObjEBBRootMultiRef _self, uintptr_t el, EBBRep *rep)
   unlockReps(self);
 }
 
-static
+static 
 EBBRC
 CObjEBBRootMulti_handleMiss(CObjEBBRootRef _self, EBBRep **obj, EBBLTrans *lt,
-			    FuncNum fnum)
+			    FuncNum fnum) 
 {
   CObjEBBRootMultiImpRef self = (CObjEBBRootMultiImpRef)_self;
-  uintptr_t myel = myEL();
+  uintptr_t myel = MyEL();
   EBBRep *rep;
 
   lockReps(self);
