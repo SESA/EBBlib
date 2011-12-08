@@ -64,7 +64,6 @@ struct Pic {
  */
 //FIXME: Do we want to pad these to cacheline size
 struct LPic {
-  lrt_pic_set mymask;
   lrt_pic_id id;
   uintptr_t lcore;		/* logical core */
   volatile uintptr_t ipiStatus;
@@ -212,8 +211,6 @@ lrt_pic_init(lrt_pic_handler h)
     return -1;
   }
 
-  assert(!lrt_pic_set_test(lpics[lrt_pic_myid].mymask, lrt_pic_myid));
-
   // setup where the initial ipi will be directed to
   lrt_pic_mapreset(h);
 
@@ -357,9 +354,6 @@ lrt_pic_loop()
   lrt_pic_allocate_core_id();
 
   lpic = lpics + lrt_pic_myid;
-
-  // setup mymask to have the bit associated with my id enabled
-  lrt_pic_set_add(lpic->mymask, lrt_pic_myid);
 
   bind_proc(lrt_pic_myid);
 
