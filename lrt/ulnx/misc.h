@@ -22,6 +22,7 @@
  * THE SOFTWARE.
  */
 
+#include <inttypes.h>
 #include <string.h>
 
 #define LRT_bzero bzero

@@ -40,15 +40,11 @@ void lrt_start(void)
 {
   // check cores
   // start up another core, with the 
-  // FIXME DS: This format is from inttypes.h which isn't
-  // freestanding =(
   fprintf(stderr, "%s: start pic id %" PRIuPTR "!\n", __func__, lrt_pic_myid);
   if (boot_args.cores_to_start > 0) {
     while (__sync_fetch_and_add(&boot_args.cores_to_start, -1) > 0) {
       intptr_t core;
       core = lrt_pic_add_core();
-      // FIXME DS: This format is from inttypes.h which isn't
-      // freestanding =(
       fprintf(stderr, "***%s: started core %" PRIxPTR "!\n", __func__, core);
     }
   }

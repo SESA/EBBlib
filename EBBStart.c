@@ -20,7 +20,8 @@
  * THE SOFTWARE.
  */
 #include <config.h>
-#include <inttypes.h>
+#include <stdint.h>
+#include <lrt/misc.h>
 #include <lrt/io.h>
 #include <l0/lrt/pic.h>
 #include <lrt/assert.h>
@@ -71,8 +72,8 @@ void
 ipihdlr(void)
 {
   lrt_pic_ackipi();
-  // FIXME DS: This format is from inttypes.h which isn't
-  // freestanding =(
+
+  // FIXME: If this code stays fix these printouts + format specifier
   fprintf(stderr, "%" PRIuPTR, lrt_pic_myid);
   fflush(stderr);
   sleep(2);
