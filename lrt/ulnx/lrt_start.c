@@ -22,7 +22,7 @@
 #include <config.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdint.h>
+#include <inttypes.h>
 #include <l0/lrt/pic.h>
 #include <l0/lrt/mem.h>
 #include <l0/lrt/trans.h>
@@ -40,12 +40,16 @@ void lrt_start(void)
 {
   // check cores
   // start up another core, with the 
-  fprintf(stderr, "%s: start pic id %ld!\n", __func__, lrt_pic_myid);
+  // FIXME DS: This format is from inttypes.h which isn't
+  // freestanding =(
+  fprintf(stderr, "%s: start pic id %" PRIuPTR "!\n", __func__, lrt_pic_myid);
   if (boot_args.cores_to_start > 0) {
     while (__sync_fetch_and_add(&boot_args.cores_to_start, -1) > 0) {
       intptr_t core;
       core = lrt_pic_add_core();
-      fprintf(stderr, "***%s: started core %lx!\n", __func__, core);
+      // FIXME DS: This format is from inttypes.h which isn't
+      // freestanding =(
+      fprintf(stderr, "***%s: started core %" PRIxPTR "!\n", __func__, core);
     }
   }
 

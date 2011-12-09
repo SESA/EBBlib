@@ -1,7 +1,7 @@
 #include <config.h>
 #include <arch/ppc32/asm.h>
 #include <arch/ppc32/asdef.h>
-#include <l0/const.h>
+#include <l0/const-asm.h>
 	
 .section ".text"
 .align 2

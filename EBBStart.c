@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  */
 #include <config.h>
-#include <stdint.h>
+#include <inttypes.h>
 #include <lrt/io.h>
 #include <l0/lrt/pic.h>
 #include <lrt/assert.h>
@@ -71,7 +71,9 @@ void
 ipihdlr(void)
 {
   lrt_pic_ackipi();
-  fprintf(stderr, "%ld", lrt_pic_myid);
+  // FIXME DS: This format is from inttypes.h which isn't
+  // freestanding =(
+  fprintf(stderr, "%" PRIuPTR, lrt_pic_myid);
   fflush(stderr);
   sleep(2);
   lrt_pic_enableipi();

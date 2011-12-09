@@ -52,7 +52,7 @@ ethlib_nic_readpkt(void) {
 intptr_t
 ethlib_nic_init(char *dev, lrt_pic_src *s)
 {
-  uintptr_t i;
+  int i;
   char errbuf[PCAP_ERRBUF_SIZE];
   pcap_if_t *devs, *d;
  
@@ -66,7 +66,7 @@ ethlib_nic_init(char *dev, lrt_pic_src *s)
 
   for (i=0,d=devs; d!=NULL; i++,d=d->next) {
     i++;
-    fprintf(stderr, "d:%ld: %s\n", i, d->name);
+    fprintf(stderr, "d:%d: %s\n", i, d->name);
   }
   
   pcap_freealldevs(devs);

@@ -6,7 +6,7 @@
 // eg.  some bits used as a key map to a node
 //      some bits used as a key map to a 
 //      lrt_trans pointer
-typedef uint64_t lrt_transid;
+typedef uintptr_t lrt_transid;
 
 struct lrt_trans {
   uint64_t vals[4];

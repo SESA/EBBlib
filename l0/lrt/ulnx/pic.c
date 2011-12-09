@@ -27,7 +27,7 @@
 #include <string.h>
 #include <assert.h>
 
-#include <stdint.h>
+#include <inttypes.h>
 #include <l0/lrt/ulnx/pic-unix.h>
 #include <l0/lrt/ulnx/pic.h>
 
@@ -153,7 +153,9 @@ lrt_pic_allocate_core_id(void)
     lrt_pic_id tmp;
     myid = __sync_fetch_and_add(&pic.numlpics, 1);
     assert(myid <= LRT_PIC_MAX_PICS);
-    fprintf(stderr, "ALLOCATED ID %ld\n", myid);
+    // FIXME DS: This format is from inttypes.h which isn't
+    // freestanding =(
+    fprintf(stderr, "ALLOCATED ID %" PRIuPTR "\n", myid);
 
     // automically check if myid > last_id, if so modify it
     tmp = lrt_pic_lastid;
@@ -170,7 +172,9 @@ lrt_pic_allocate_core_id(void)
 
   // initialize my lcore to the underlying HW (e.g., threadid)
   lpics[lrt_pic_myid].lcore = lrt_pic_unix_getlcoreid();
-  fprintf(stderr, "***core %lx started\n", lpics[lrt_pic_myid].lcore);
+  // FIXME DS: This format is from inttypes.h which isn't
+  // freestanding =(
+  fprintf(stderr, "***core %" PRIxPTR " started\n", lpics[lrt_pic_myid].lcore);
   assert(lpics[lrt_pic_myid].lcore != 0);
 }
       
@@ -183,7 +187,9 @@ intptr_t
 lrt_pic_add_core()
 {
   uintptr_t core = lrt_pic_unix_addcore((void *(*)(void*))lrt_pic_loop, 0);
-  fprintf(stderr, "***core %lx created\n", core);
+  // FIXME DS: This format is from inttypes.h which isn't
+  // freestanding =(
+  fprintf(stderr, "***core %" PRIxPTR " created\n", core);
   return core;
 }
 
