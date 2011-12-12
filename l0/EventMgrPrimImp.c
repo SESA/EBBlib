@@ -69,6 +69,7 @@ HandlerInfoStruc handlerInfo[MAXEVENTS];
 CObject(EventMgrPrimImp){
   CObjInterface(EventMgrPrim) *ft;
   CObjEBBRootMultiRef theRoot;	
+  uintptr_t ipi_vec_no;
 };
 
 
@@ -76,14 +77,14 @@ CObject(EventMgrPrimImp){
 // each function call's the appropriate handler installed
 // for the corresponding event that the vector is mapped to
 // We use a simple direct map: vector 0 is mapped to event 0
-// etc.
+// etc.  This function will eventually be per-rep, and will
+// as part of the invocation grab the event stack out fo the rep.
+// FIXME: make this a per-rep strucutre
 #define VFUNC(i)					\
 static void vf##i(void)		    		        \
 {							\
-  EventHandlerId handler;                            \
-  EBBCALL(theEventMgrPrimId, getHandler, i,  &handler); \
-  EBBAssert(handler != NULL);                            \
-  EBBCALL(handler, handleEvent);	                \
+  EBBAssert(handlerInfo[i].id != NULL);                            \
+  EBBCALL(handlerInfo[i].id, handleEvent);            \
 }		
 
 VFUNC(0);
@@ -375,9 +376,14 @@ vfunc vfTbl[MAXEVENTS] = {
 
 
 static EBBRC
-EventMgrPrim_getHandler(void *_self, uintptr_t eventNo, EventHandlerId *handler)
+EventMgrPrim_dispatchIPI(void *_self, EvntLoc el)
 {
-  *handler = handlerInfo[eventNo].id;
+  if (el != MyEL()) {
+    EBB_LRT_printf("%s: sending remote IPI to node %ld\n", 
+		   __func__,
+		   el);
+  }
+  lrt_pic_ipi(el);
   return EBBRC_OK;
 }
 
@@ -404,6 +410,19 @@ EventMgrPrim_registerHandler(void *_self, uintptr_t eventNo,
     handlerInfo[eventNo].id = NULL;
     return EBBRC_BADPARAMETER;
   }
+  return 0;
+}
+
+static EBBRC
+EventMgrPrim_registerIPIHandler(void *_self, EventHandlerId handler)
+{
+  EventMgrPrimImpRef self = (EventMgrPrimImpRef)_self;
+
+  // install handler in event table
+  handlerInfo[self->ipi_vec_no].id = handler;
+
+  // map vector in pic
+  lrt_pic_mapipi(vfTbl[self->ipi_vec_no]);
 
   return 0;
 }
@@ -416,9 +435,10 @@ EventMgrPrim_allocEventNo(void *_self, uintptr_t *eventNoPtr)
 }
 
 CObjInterface(EventMgrPrim) EventMgrPrimImp_ftable = {
-  .getHandler = EventMgrPrim_getHandler,
   .registerHandler = EventMgrPrim_registerHandler, 
+  .registerIPIHandler = EventMgrPrim_registerIPIHandler, 
   .allocEventNo = EventMgrPrim_allocEventNo, 
+  .dispatchIPI = EventMgrPrim_dispatchIPI,
 };
 
 static void
@@ -430,11 +450,12 @@ EventMgrPrimSetFT(EventMgrPrimImpRef o)
 EventMgrPrimId theEventMgrPrimId;
 
 static EBBRep *
-EventMgrPrimImp_createRep(CObjEBBRootMultiRef _self) {
+EventMgrPrimImp_createRep(CObjEBBRootMultiRef root) {
   EventMgrPrimImpRef repRef;
   EBBPrimMalloc(sizeof(*repRef), &repRef, EBB_MEM_DEFAULT);
   EventMgrPrimSetFT(repRef);
-  repRef->theRoot = _self;
+  repRef->theRoot = root;
+  repRef->ipi_vec_no = lrt_pic_getIPIvec();
   //  initGTable(EventMgrPrimErrMF, 0);
   return (EBBRep *)repRef;
 }
@@ -463,66 +484,3 @@ EventMgrPrimImpInit(void)
   return EBBRC_OK;
 };
 
-#if 0
-static EBBRC 
-EventHandler_handleEvent(void *_self)
-{
-  EBB_LRT_printf("Wheeeee Handler Invoked\n");
-  return 0;
-};
-
-static EBBRC
-EventHandler_init(void *_self)
-{
-  return 0;
-};
-
-
-static CObjInterface(EventHandler) EventHandler_ftable = {
-  .handleEvent = EventHandler_handleEvent,
-  .init = EventHandler_init
-};
-
-
-// change to dynamically allocate this
-static EventHandlerId
-CreateTestHandler()
-{
-  EBBRC rc;
-  static EventHandler theRep;
-  EventHandlerRef repRef = &theRep;
-  static CObjEBBRootShared theRoot;
-  CObjEBBRootSharedRef rootRef = &theRoot;
-  EventHandlerId handlerId; 
-
-  // setup function tables
-  CObjEBBRootSharedSetFT(rootRef);
-  repRef->ft = &EventHandler_ftable;
-
-  // setup my representative and root
-  repRef->ft->init(repRef);
-  // shared root knows about only one rep so we 
-  // pass it along for it's init
-  rootRef->ft->init(rootRef, &theRep);
-
-  rc = EBBAllocPrimId(&handlerId);
-  EBBRCAssert(rc);
-
-  rc = CObjEBBBind(handlerId, rootRef); 
-  EBBRCAssert(rc);
-
-  return handlerId;
-}
-
-/* move to a seperate file eventually, should not be imp specific */
-void EventMgrPrimImpTest(void) 
-{
-  EventHandlerId handlerId;
-  int eventNo;
-
-  handlerId = CreateTestHandler();
-
-  EBBCALL(theEventMgrPrimId, allocEventNo, &eventNo);
-  EBBCALL(theEventMgrPrimId, registerHandler, eventNo, handlerId);
-}
-#endif

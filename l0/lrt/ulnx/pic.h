@@ -81,7 +81,6 @@ lrt_pic_set_addall(lrt_pic_set s)
 typedef void (*lrt_pic_handler)(void);
 typedef uintptr_t lrt_pic_src;
 
-//FIXME:  JA would like these to be consts
 #ifdef __APPLE__
 #include <pthread.h>
 extern pthread_key_t lrt_pic_myid_pthreadkey;
@@ -92,12 +91,14 @@ extern __thread lrt_pic_id lrt_pic_myid;
 extern lrt_pic_id lrt_pic_firstid;
 volatile extern lrt_pic_id lrt_pic_lastid;
 
+extern uintptr_t lrt_pic_getIPIvec(void);
 extern uintptr_t lrt_pic_firstvec(void);
 extern uintptr_t lrt_pic_numvec(void);
 extern intptr_t lrt_pic_init(lrt_pic_handler h);
 extern intptr_t lrt_pic_loop(void);
 extern intptr_t lrt_pic_allocvec(uintptr_t *vec);
-extern intptr_t lrt_pic_mapvec(lrt_pic_src src, uintptr_t vec, lrt_pic_handler h);
+extern intptr_t lrt_pic_mapvec(lrt_pic_src src, uintptr_t vec, 
+			       lrt_pic_handler h);
 extern intptr_t lrt_pic_add_core();
 extern intptr_t lrt_pic_mapipi(lrt_pic_handler h);
 extern intptr_t lrt_pic_mapreset(lrt_pic_handler h);
