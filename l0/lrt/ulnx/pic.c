@@ -111,6 +111,13 @@ lrt_pic_disable(uintptr_t vec)
   if (vec != RST_VEC) lrt_pic_set_remove(pic.vecs[vec].set, lrt_pic_myid);
 }
 
+uintptr_t 
+lrt_pic_getIPIvec(void)
+{
+  return IPI_VEC;
+}
+
+
 void
 lrt_pic_enableipi(void)
 {
@@ -221,7 +228,7 @@ lrt_pic_init(lrt_pic_handler h)
   lrt_pic_mapreset(h);
 
   // fall into loop
-  lrt_pic_loop( );
+  lrt_pic_loop();
 
   assert(0);
 

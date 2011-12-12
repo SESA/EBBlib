@@ -95,7 +95,8 @@ EBBMgrPrimImp_createRep(CObjEBBRootMultiRef _self) {
   return (EBBRep *)repRef;
 }
 
-void EBBMgrPrimInit() {
+void 
+EBBMgrPrimInit() {
   CObjEBBRootMultiImpRef rootRef;
   EBBMgrPrimId id;
 
