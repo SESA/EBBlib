@@ -24,6 +24,12 @@
 
 uintptr_t lrt_mem_start(void);
 uintptr_t lrt_mem_end(void);
+#ifdef __cplusplus
+extern "C" {
+#endif
 intptr_t  lrt_mem_init(void);
+#ifdef __cplusplus
+}
+#endif
 
 #endif

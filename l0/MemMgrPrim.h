@@ -21,12 +21,18 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+#ifdef __cplusplus
+extern "C" {
+#endif
 extern EBBRC EBBMemMgrPrimInit(void);
+#ifdef __cplusplus
+}
+#endif
 extern EBBMemMgrId theEBBMemMgrPrimId;
 
 static inline EBBRC
 EBBPrimMalloc(uintptr_t size, void *mem, EBB_MEM_POOL pool) {
-  return COBJ_EBBCALL(theEBBMemMgrPrimId, alloc, size, mem, pool);
+  return COBJ_EBBCALL(theEBBMemMgrPrimId, alloc, size, (void **)mem, pool);
 }
 
 static inline EBBRC

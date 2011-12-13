@@ -94,12 +94,23 @@ volatile extern lrt_pic_id lrt_pic_lastid;
 extern uintptr_t lrt_pic_getIPIvec(void);
 extern uintptr_t lrt_pic_firstvec(void);
 extern uintptr_t lrt_pic_numvec(void);
+#ifdef __cplusplus
+extern "C" {
+#endif
 extern intptr_t lrt_pic_init(lrt_pic_handler h);
+#ifdef __cplusplus
+}
+#endif
 extern intptr_t lrt_pic_loop(void);
 extern intptr_t lrt_pic_allocvec(uintptr_t *vec);
-extern intptr_t lrt_pic_mapvec(lrt_pic_src src, uintptr_t vec, 
-			       lrt_pic_handler h);
+extern intptr_t lrt_pic_mapvec(lrt_pic_src src, uintptr_t vec, lrt_pic_handler h);
+#ifdef __cplusplus
+extern "C" {
+#endif
 extern intptr_t lrt_pic_add_core();
+#ifdef __cplusplus
+}
+#endif
 extern intptr_t lrt_pic_mapipi(lrt_pic_handler h);
 extern intptr_t lrt_pic_mapreset(lrt_pic_handler h);
 extern intptr_t lrt_pic_reset(lrt_pic_id targets);
