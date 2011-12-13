@@ -406,7 +406,7 @@ EventMgrPrim_registerHandler(void *_self, uintptr_t eventNo,
   handlerInfo[eventNo].id = handler;
 
   // map vector in pic
-  if (lrt_pic_mapvec((lrt_pic_src)isrc, eventNo, vfTbl[eventNo])<0) {
+  if (lrt_pic_mapvec_all((lrt_pic_src)isrc, eventNo, vfTbl[eventNo])<0) {
     handlerInfo[eventNo].id = NULL;
     return EBBRC_BADPARAMETER;
   }

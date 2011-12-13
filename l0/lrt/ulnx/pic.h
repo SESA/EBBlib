@@ -97,8 +97,10 @@ extern uintptr_t lrt_pic_numvec(void);
 extern intptr_t lrt_pic_init(lrt_pic_handler h);
 extern intptr_t lrt_pic_loop(void);
 extern intptr_t lrt_pic_allocvec(uintptr_t *vec);
-extern intptr_t lrt_pic_mapvec(lrt_pic_src src, uintptr_t vec, 
-			       lrt_pic_handler h);
+extern intptr_t lrt_pic_mapvec_all(lrt_pic_src src, uintptr_t vec, 
+				   lrt_pic_handler h);
+extern intptr_t lrt_pic_mapvec_local(lrt_pic_src src, uintptr_t vec, 
+				     lrt_pic_handler h);
 extern intptr_t lrt_pic_add_core();
 extern intptr_t lrt_pic_mapipi(lrt_pic_handler h);
 extern intptr_t lrt_pic_mapreset(lrt_pic_handler h);

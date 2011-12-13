@@ -41,22 +41,20 @@ lrt_pic_id lrt_pic_firstid;
 volatile lrt_pic_id lrt_pic_lastid;
 
 /*
- * set: the set of cores on which this interrupt is enabled/disabled
- * handler: the handler, globally, for this interrupt
- */
-struct VecDesc {
-  lrt_pic_set set;
-  lrt_pic_handler h;
-};
-
-/*
  * the global pic structure, maintains a 
  */
 struct Pic {
-  struct VecDesc vecs[NUM_VEC];
+  uintptr_t lock;		/* global lock, protects all changes pic */
+
+  /* 
+   * This is the global version of the vector, vectores can mapped
+   * globally or locally in a single local pic. In either case, need to 
+   * allocate the value of the vector globally.
+   */
+  lrt_pic_handler gvecs[NUM_VEC];
   uintptr_t free;
+
   volatile uintptr_t numlpics;	/* number local pics i.e., cores */
-  uintptr_t lock;
 } pic;
 
 /*
@@ -64,6 +62,8 @@ struct Pic {
  */
 //FIXME: Do we want to pad these to cacheline size
 struct LPic {
+  lrt_pic_handler lvecs[NUM_VEC];
+  int enabled[NUM_VEC];		/* FIXME: make a bitvector */
   lrt_pic_id id;
   uintptr_t lcore;		/* logical core */
   volatile uintptr_t ipiStatus;
@@ -88,27 +88,18 @@ unlock(void)
   __sync_bool_compare_and_swap(&(pic.lock), 1, 0);
 }
 
-static inline void
-wakeupall(void)
-{
-  lrt_pic_id i;
-  for (i=lrt_pic_firstid; i<=lrt_pic_lastid; i++) {
-    // FIXME: will have to handle cores that are not up
-    assert(lpics[i].lcore != 0);
-    lrt_pic_unix_wakeup(lpics[i].lcore);
-  }
-}
-
 void
 lrt_pic_enable(uintptr_t vec)
 {
-  lrt_pic_set_add(pic.vecs[vec].set, lrt_pic_myid);
+  lpics[lrt_pic_myid].enabled[vec] = 1;
 }
 
 void
 lrt_pic_disable(uintptr_t vec)
 {
-  if (vec != RST_VEC) lrt_pic_set_remove(pic.vecs[vec].set, lrt_pic_myid);
+  if (vec != RST_VEC) {
+    lpics[lrt_pic_myid].enabled[vec] = 0;
+  }
 }
 
 uintptr_t 
@@ -150,6 +141,7 @@ lrt_pic_numvec(void)
 static inline void
 lrt_pic_allocate_core_id(void)
 {
+  int i;
   lrt_pic_id myid;
   // for first core, we are running at this point sequentially
   if (pic.numlpics == 0) { 
@@ -180,13 +172,18 @@ lrt_pic_allocate_core_id(void)
   // FIXME DS: This format is from inttypes.h which isn't
   // freestanding =(
   fprintf(stderr, "***core %" PRIxPTR " started\n", lpics[lrt_pic_myid].lcore);
+
+  // copy over the vector of interrupts
+  lock();
+  for (i=0; i<NUM_MAPPABLE_VEC; i++) {
+    lpics[lrt_pic_myid].lvecs[i] = pic.gvecs[i];
+  }
+  // set initial reset vector
+  lpics[lrt_pic_myid].lvecs[RST_VEC] = pic.gvecs[RST_VEC];
+  unlock();
+
   assert(lpics[lrt_pic_myid].lcore != 0);
 }
-      
-
-    
-    
-
 
 intptr_t
 lrt_pic_add_core()
@@ -243,8 +240,8 @@ lrt_pic_allocvec(uintptr_t *vec)
   lock();
 
   for (i=0, rtn=pic.free; i<NUM_MAPPABLE_VEC; i++) {
-    if (pic.vecs[rtn].h == NULL) {
-      pic.vecs[rtn].h = (lrt_pic_handler)((uintptr_t)-1);
+    if (pic.gvecs[rtn] == NULL) {
+      pic.gvecs[rtn] = (lrt_pic_handler)((uintptr_t)-1);
       pic.free++;
       if (pic.free >= NUM_MAPPABLE_VEC) pic.free=0;
       *vec = rtn;
@@ -261,11 +258,14 @@ lrt_pic_allocvec(uintptr_t *vec)
 
 }
 
+/*
+ * this always maps it locally
+ */
 intptr_t 
 lrt_pic_mapipi(lrt_pic_handler h)
 {
 
-  pic.vecs[IPI_VEC].h = h;
+  lpics[lrt_pic_myid].lvecs[IPI_VEC] = h;
   return 1;
 }
 
@@ -273,7 +273,8 @@ intptr_t
 lrt_pic_mapreset(lrt_pic_handler h)
 {
 
-  pic.vecs[RST_VEC].h = h;
+  pic.gvecs[RST_VEC] = h;		/* to start, need global vec set */
+  lpics[lrt_pic_myid].lvecs[RST_VEC] = h;
   return 1;
 }
 
@@ -306,29 +307,60 @@ lrt_pic_ackipi(void)
 }
 
 
-// FIXME: 1: make the vectors lpic specific
-//        2: lpic loop need not monitor fd's that it is not mapped too
-//           thus we can avoid waking up all threads unecessarily
-//        3: no need to wakeupall can wakeup only affected lpics
-//    Perhaps just provide two interfaces for common cases of this, 'on' and 
-//    'all': lrt_pic_mapvec, lrt_pic_mapvec_on, lrt_pic_mapvec_all
 intptr_t
-lrt_pic_mapvec(lrt_pic_src s, uintptr_t vec, lrt_pic_handler h)
+lrt_pic_mapvec_local(lrt_pic_src s, uintptr_t vec, lrt_pic_handler h)
 {
   int rc=1;
   
   lock();
 
-  if (pic.vecs[vec].h == 0) {
+  /*
+   * must not be marked as free, if -1 it is allocated but not yet
+   * assigned a handler
+   */
+  if (pic.gvecs[vec] == 0) {
     rc=-1;
     goto done;
   }
 
-  pic.vecs[vec].h = h;
+  lpics[lrt_pic_myid].lvecs[vec] = h;
   if ((rc = lrt_pic_unix_enable(s, vec)) != 0) 
     goto done;
 
-  wakeupall();
+ done:
+  unlock();
+  return rc;
+}
+
+intptr_t
+lrt_pic_mapvec_all(lrt_pic_src s, uintptr_t vec, lrt_pic_handler h)
+{
+  int rc=1;
+  lrt_pic_id i;
+  
+  lock();
+
+  /*
+   * must not be marked as free, if -1 it is allocated but not yet
+   * assigned a handler
+   */
+  if (pic.gvecs[vec] == 0) {
+    rc=-1;
+    goto done;
+  }
+
+  pic.gvecs[vec] = h;
+  for (i=lrt_pic_firstid; i<=lrt_pic_lastid; i++) {
+    lpics[i].lvecs[vec] = h;
+    
+    // FIXME: will have to handle cores that are not up
+    assert(lpics[i].lcore != 0);
+    lrt_pic_unix_wakeup(lpics[i].lcore);
+  }
+
+  if ((rc = lrt_pic_unix_enable(s, vec)) != 0) {
+    goto done;
+  }
 
  done:
   unlock();
@@ -369,6 +401,7 @@ lrt_pic_loop()
   bind_proc(lrt_pic_myid);
 
   lrt_pic_enableipi();
+
   // first operation that will happen is reset
   lrt_pic_enable(RST_VEC);  
 
@@ -384,23 +417,21 @@ lrt_pic_loop()
     
     if (lpic->resetStatus) {
       lpic->resetStatus=0;
-      pic.vecs[RST_VEC].h();
+      lpic->lvecs[RST_VEC]();
     }
     
-    if (lpic->ipiStatus && 
-	lrt_pic_set_test(pic.vecs[IPI_VEC].set, lrt_pic_myid)) {
+    if (lpic->ipiStatus && lpic->enabled[IPI_VEC]) {
       lrt_pic_disableipi();
-      assert(pic.vecs[IPI_VEC].h);
-      pic.vecs[IPI_VEC].h();
+      assert(lpic->lvecs[IPI_VEC] != NULL);
+      lpic->lvecs[IPI_VEC]();
     }
     
     // handle all interrupts in bit vector returned by HW
     for (v=0;v<NUM_VEC;v++) {
-      if (lrt_pic_unix_ints_test(intrSet, v) && 
-	  lrt_pic_set_test(pic.vecs[v].set, lrt_pic_myid)) {
+      if (lrt_pic_unix_ints_test(intrSet, v) && lpic->enabled[v]) {
 	numintr--;
-	if (pic.vecs[v].h) {
-	  pic.vecs[v].h();
+	if (lpic->lvecs[v]) {
+	  lpic->lvecs[v]();
 	} else {
 	  fprintf(stderr, "ERROR: %s: spurious interrupt on %d\n", __func__, v);
 	}
