@@ -7,7 +7,6 @@ AC_CONFIG_AUX_DIR([build-aux])
 AM_INIT_AUTOMAKE([foreign subdir-objects -Wall -Werror])
 AC_CONFIG_SRCDIR([EBBStart.c])
 AC_CONFIG_HEADER([config.h])
-AM_PATH_CPPUNIT(1.12.1)
 
 AC_CANONICAL_HOST
 AS_CASE([$host_cpu], [x86_64], [], [powerpc], [], [AC_MSG_ERROR([not on a supported architecture])])
@@ -56,6 +55,14 @@ AC_SEARCH_LIBS([pthread_create], [pthread], [],
 AC_SEARCH_LIBS([pcap_freealldevs], [pcap], [],
 				 [AC_MSG_ERROR([pcap library missing])])
 AC_CHECK_FUNCS([bzero dup2 gethostbyname memset socket strerror])
+
+#PKG_CHECK_MODULES([CHECK], [check >= 0.9.8], [BUILD_TESTS="yes"],
+#			   AC_MSG_WARN([Check not found; cannot run unit tests!])
+#			   [BUILD_TESTS="no"])
+AM_PATH_CPPUNIT(1.12.1, [BUILD_TESTS="yes"],
+			AC_MSG_WARN([Check not found; cannot run unit tests!])
+			[BUILD_TESTS="no"])
+AM_CONDITIONAL(BUILD_TESTS, test "x$BUILD_TESTS" = "xyes")
 
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT

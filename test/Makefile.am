@@ -1,1 +1,0 @@
-test_cppunit_sources = test/cppunit.C

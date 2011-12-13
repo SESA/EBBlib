@@ -1,1 +1,1 @@
-arch_powerpc_sources = arch/powerpc/asm.h arch/powerpc/asdef.h
+arch_powerpc_sources = arch/ppc32/asm.h arch/ppc32/asdef.h

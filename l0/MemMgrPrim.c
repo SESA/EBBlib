@@ -44,15 +44,14 @@
 
 CObject(EBBMemMgrPrim) {
   CObjInterface(EBBMemMgr) *ft;
-  void *myRoot;
+  CObjEBBRootMultiRef myRoot;
   void *mem;
   uintptr_t len;
 };
 
 static EBBRC
-EBBMemMgrPrim_init(void *_self, void *rootRef, uintptr_t end)
+init_rep(EBBMemMgrPrimRef self, CObjEBBRootMultiRef rootRef, uintptr_t end)
 {
-  EBBMemMgrPrimRef self = _self;
   self->mem = (void *)((uintptr_t)self + sizeof(*self));
   self->len = end - (uintptr_t)self->mem;
   self->myRoot = rootRef;
@@ -62,13 +61,13 @@ EBBMemMgrPrim_init(void *_self, void *rootRef, uintptr_t end)
 //just grab from the beginning of the memory and move
 //the pointer forward until we run out
 static EBBRC
-EBBMemMgrPrim_alloc(void *_self, uintptr_t size, void *mem, EBB_MEM_POOL pool)
+EBBMemMgrPrim_alloc(EBBMemMgrRef _self, uintptr_t size, void **mem, EBB_MEM_POOL pool)
 {
-  EBBMemMgrPrimRef self = _self;
+  EBBMemMgrPrimRef self = (EBBMemMgrPrimRef)_self;
   if (size > self->len) {
-    *((void **)mem) = NULL; //Do I return some error code here??
+    *mem = NULL; //Do I return some error code here??
   } else {
-    *((void **)mem) = self->mem;
+    *mem = self->mem;
     self->mem += size;
     self->len -= size;
   }
@@ -77,12 +76,11 @@ EBBMemMgrPrim_alloc(void *_self, uintptr_t size, void *mem, EBB_MEM_POOL pool)
 
 //freeing is a nop in this implementation
 static EBBRC
-EBBMemMgrPrim_free(void *_self, void *mem) {
+EBBMemMgrPrim_free(EBBMemMgrRef _self, void *mem) {
   return EBBRC_OK;
 }
 
 CObjInterface(EBBMemMgr) EBBMemMgrPrim_ftable = {
-  .init = EBBMemMgrPrim_init, 
   .alloc = EBBMemMgrPrim_alloc, 
   .free = EBBMemMgrPrim_free
 };
@@ -97,7 +95,6 @@ MemMgrPrim_createRep(CObjEBBRootMultiRef _self)
   EBBAssert(0);
   return NULL;
 }
-
 
 EBBMemMgrRef *theEBBMemMgrPrimId;
 
@@ -131,7 +128,7 @@ EBBMemMgrPrimInit()
 
   // initialize the rep memory
   EBBMemMgrPrimSetFT(repRef); 
-  repRef->ft->init(repRef, rootRef, lrt_mem_end());
+  init_rep(repRef, (CObjEBBRootMultiRef)rootRef, lrt_mem_end());
 
   // manually install rep into local table so that memory allocations 
   // can work immediate without recursion

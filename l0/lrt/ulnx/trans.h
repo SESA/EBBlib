@@ -106,6 +106,12 @@ lrt_trans_lt2gt(struct lrt_trans *lt)
 					       (uintptr_t)lt));
 }
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 void lrt_trans_init(void);
+#ifdef __cplusplus
+}
+#endif
 
 #endif

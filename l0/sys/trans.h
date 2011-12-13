@@ -30,6 +30,14 @@ typedef EBBTrans EBBGTrans;
 
 extern EBBFunc EBBDefFT[EBB_TRANS_MAX_FUNCS];
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+extern void trans_init(void);
+#ifdef __cplusplus
+}
+#endif
+
 extern uintptr_t myGTableSize(void);
 extern EBBGTrans *myGTable(void);
 extern uintptr_t myLTableSize(void);
