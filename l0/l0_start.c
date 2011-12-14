@@ -47,7 +47,6 @@ extern void trans_init(void);
 static EBBRC 
 ResetEventHandler_handleEvent(void *_self)
 {
-  EBB_LRT_printf("On reset event\n");
   // then invoke a method of BootInfo object on first message
   // this object should gather boot information (sysfacts and boot args)
   // and then get full blown primitive l0 EBBS up (perhaps by a hot swap)
@@ -136,7 +135,6 @@ EBB_init()
 void
 l0_start(void)
 {
-  EBB_LRT_printf("%s: started!\n", __func__);
   trans_init();
   EBB_init();
 }

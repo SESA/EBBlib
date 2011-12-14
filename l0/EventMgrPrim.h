@@ -82,10 +82,10 @@ CObjInterface(EventMgrPrim) {
 
   EBBRC (*allocEventNo) (void *_self, uintptr_t *eventNoPtr);
 
-  /* 
-   * Eventually, this call should take remote cnores for IPI
-   */
   EBBRC (*dispatchIPI) (void *_self, EvntLoc el);
+
+  // called by eary implementation of the vector function
+  EBBRC (*dispatchEventLocal) (void *_self, uintptr_t eventNo);
 };
 
 CObject(EventMgrPrim) {

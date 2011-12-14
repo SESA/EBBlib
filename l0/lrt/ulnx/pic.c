@@ -152,7 +152,6 @@ lrt_pic_allocate_core_id(void)
     lrt_pic_id tmp;
     myid = __sync_fetch_and_add(&pic.numlpics, 1);
     assert(myid <= LRT_PIC_MAX_PICS);
-    fprintf(stderr, "ALLOCATED ID %" PRIuPTR "\n", myid);
 
     // automically check if myid > last_id, if so modify it
     tmp = lrt_pic_lastid;

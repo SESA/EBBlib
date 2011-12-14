@@ -48,29 +48,28 @@
  */
 #define EBBCALL(id, method, ...) COBJ_EBBCALL(id, method, ##__VA_ARGS__)
 
-/* 
- * This is the one and only implementation we have today of EventMgrPrim
- Doing:
- o do the wrapper, simple unit test that invokes local object
- o look at how node number is assigned in one of the distributed
-   implementations of object
- */ 
-
 typedef struct  {
   EventHandlerId id;
 } HandlerInfoStruc;
 
 enum {MAXEVENTS = 256};
 
-// for now, have a single handerInfo structure
-// later on, replicate to each rep...
-HandlerInfoStruc handlerInfo[MAXEVENTS];
-
 CObject(EventMgrPrimImp){
   CObjInterface(EventMgrPrim) *ft;
+  uintptr_t lock;
   CObjEBBRootMultiRef theRoot;	
+  HandlerInfoStruc handlerInfo[MAXEVENTS];
+  EventMgrPrimImpRef master;
   uintptr_t ipi_vec_no;
 };
+
+EventMgrPrimId theEventMgrPrimId;
+/*
+ * For now, all allocation through a master, need 
+ * better way to find and allocate a master.
+ */
+EventMgrPrimImpRef theEventMgrPrimMaster = NULL;
+
 
 
 // define vector functions that map vectors to events
@@ -83,8 +82,7 @@ CObject(EventMgrPrimImp){
 #define VFUNC(i)					\
 static void vf##i(void)		    		        \
 {							\
-  EBBAssert(handlerInfo[i].id != NULL);                            \
-  EBBCALL(handlerInfo[i].id, handleEvent);            \
+ EBBCALL(theEventMgrPrimId, dispatchEventLocal, i);     \
 }		
 
 VFUNC(0);
@@ -375,6 +373,23 @@ vfunc vfTbl[MAXEVENTS] = {
 };
 
 
+static uintptr_t
+spin_lock(uintptr_t *lock)
+{
+  uintptr_t rc=0;
+  
+  while (!rc) {
+    rc = __sync_bool_compare_and_swap(lock, 0, 1);
+  }
+  return rc;
+}
+
+static void
+spin_unlock(uintptr_t *lock)
+{
+  __sync_bool_compare_and_swap(lock, 1, 0);
+}
+
 static EBBRC
 EventMgrPrim_dispatchIPI(void *_self, EvntLoc el)
 {
@@ -387,29 +402,78 @@ EventMgrPrim_dispatchIPI(void *_self, EvntLoc el)
   return EBBRC_OK;
 }
 
+/*
+ * This should go away once we have proper implementation of vector
+ * function that should inline this
+ */
+static EBBRC
+EventMgrPrim_dispatchEventLocal(void *_self, uintptr_t eventNo) 
+{
+  EventMgrPrimImpRef self = (EventMgrPrimImpRef)_self;
+  // assume this is atomic
+  EventHandlerId handler = self->handlerInfo[eventNo].id;
+
+  EBB_LRT_printf("%s: handling interrupt %ld\n", __func__, eventNo);
+  EBBAssert(handler != NULL); 
+  EBBCALL(handler, handleEvent); 
+  return EBBRC_OK;   
+}
+
+
+// this is done under protection of the master's lock
+static EBBRC
+lockedreplicateHandler(CObjEBBRootMultiRef root, uintptr_t eventNo, 
+		       EventHandlerId handler)
+{
+  RepListNode *node;
+  EventMgrPrimImpRef rep;
+  // now iterate through all reps and put in hander
+  
+  for (node = root->ft->nextRep(root, 0, (EBBRep **)&rep);
+       node != NULL; 
+       node = root->ft->nextRep(root, node, (EBBRep **)&rep)) {
+     rep->handlerInfo[eventNo].id = handler;
+  }
+  return EBBRC_OK;   
+}
+
+
+
 static EBBRC
 EventMgrPrim_registerHandler(void *_self, uintptr_t eventNo, 
 			     EventHandlerId handler, 
 			     uintptr_t isrc)
 {
+  EventMgrPrimImpRef self = (EventMgrPrimImpRef)_self;
+  EventMgrPrimImpRef master = self->master;
+
   if ( (eventNo >= MAXEVENTS) || (eventNo<0) ){
     return EBBRC_BADPARAMETER;
   };
   
-  if (handlerInfo[eventNo].id != NULL) {
+  spin_lock(&master->lock);
+  if (master->handlerInfo[eventNo].id != NULL) {
     // for now, if its not null, assume error, should we ever be able
     // to change the handler for an event?
+    spin_unlock(&master->lock);
     return EBBRC_BADPARAMETER;
   };
 
   // install handler in event table
-  handlerInfo[eventNo].id = handler;
+  master->handlerInfo[eventNo].id = handler;
 
   // map vector in pic
   if (lrt_pic_mapvec_all((lrt_pic_src)isrc, eventNo, vfTbl[eventNo])<0) {
-    handlerInfo[eventNo].id = NULL;
+    master->handlerInfo[eventNo].id = NULL;
+    spin_unlock(&master->lock);
     return EBBRC_BADPARAMETER;
   }
+
+  lockedreplicateHandler(master->theRoot, eventNo, handler);
+
+  spin_unlock(&master->lock);
+
+
   return 0;
 }
 
@@ -418,8 +482,10 @@ EventMgrPrim_registerIPIHandler(void *_self, EventHandlerId handler)
 {
   EventMgrPrimImpRef self = (EventMgrPrimImpRef)_self;
 
-  // install handler in event table
-  handlerInfo[self->ipi_vec_no].id = handler;
+  /* 
+   * FIXME: this is a local operation, make it global in next commit 
+   */
+  self->handlerInfo[self->ipi_vec_no].id = handler;
 
   // map vector in pic
   lrt_pic_mapipi(vfTbl[self->ipi_vec_no]);
@@ -439,6 +505,7 @@ CObjInterface(EventMgrPrim) EventMgrPrimImp_ftable = {
   .registerIPIHandler = EventMgrPrim_registerIPIHandler, 
   .allocEventNo = EventMgrPrim_allocEventNo, 
   .dispatchIPI = EventMgrPrim_dispatchIPI,
+  .dispatchEventLocal = EventMgrPrim_dispatchEventLocal,
 };
 
 static void
@@ -447,16 +514,40 @@ EventMgrPrimSetFT(EventMgrPrimImpRef o)
   o->ft = &EventMgrPrimImp_ftable;
 }
 
-EventMgrPrimId theEventMgrPrimId;
-
 static EBBRep *
-EventMgrPrimImp_createRep(CObjEBBRootMultiRef root) {
+EventMgrPrimImp_createRep(CObjEBBRootMultiRef root) 
+{
+  int i; 
   EventMgrPrimImpRef repRef;
+
   EBBPrimMalloc(sizeof(*repRef), &repRef, EBB_MEM_DEFAULT);
   EventMgrPrimSetFT(repRef);
   repRef->theRoot = root;
   repRef->ipi_vec_no = lrt_pic_getIPIvec();
-  //  initGTable(EventMgrPrimErrMF, 0);
+  spin_lock(&repRef->lock);
+  if (__sync_bool_compare_and_swap(&theEventMgrPrimMaster, 
+				   (EventMgrPrimRef)NULL,
+				   repRef)) {
+    // cool, I am the master, 
+    repRef->master = repRef;
+    for (i=0; i<MAXEVENTS; i++) {
+      repRef->handlerInfo[i].id = NULL;
+    }
+    spin_unlock(&repRef->lock);
+  } else {
+    EventMgrPrimImpRef mstr = theEventMgrPrimMaster;
+
+    repRef->master = mstr;
+    spin_unlock(&repRef->lock);
+    spin_lock(&mstr->lock);
+    spin_lock(&repRef->lock);
+    // copy the handler list of the master rep
+    for (i=0; i<MAXEVENTS; i++) {
+      repRef->handlerInfo[i].id = mstr->handlerInfo[i].id;
+    }
+    spin_unlock(&repRef->lock);
+    spin_unlock(&mstr->lock);
+  }
   return (EBBRep *)repRef;
 }
 
@@ -465,7 +556,6 @@ EventMgrPrimImpInit(void)
 {
   CObjEBBRootMultiImpRef rootRef;
   EventMgrPrimId id;
-  int i;
 
   if (__sync_bool_compare_and_swap(&theEventMgrPrimId, (EventMgrPrimId)0,
 				   (EventMgrPrimId)-1)) {
@@ -477,7 +567,6 @@ EventMgrPrimImpInit(void)
 
     EBBIdBind((EBBId)id, CObjEBBMissFunc, (EBBMissArg) rootRef);
     theEventMgrPrimId = id;
-    for (i=0; i<MAXEVENTS; i++) handlerInfo[i].id=NULL;
   } else {
     while (((volatile uintptr_t)theEventMgrPrimId)==-1);
   }
