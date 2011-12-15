@@ -475,7 +475,7 @@ EventMgrPrim_registerHandler(void *_self, uintptr_t eventNo,
   if (!EBBRC_SUCCESS(rc)) goto done;
 
   // map vector in pic
-  if (lrt_pic_mapvec_all((lrt_pic_src)isrc, eventNo, vfTbl[eventNo])<0) {
+  if (lrt_pic_mapvec((lrt_pic_src)isrc, eventNo, vfTbl[eventNo])<0) {
     // FAILED unmap from all the tables
     lockedReplicateHandler(self->theRoot, eventNo, NULL);
     rc = EBBRC_BADPARAMETER;

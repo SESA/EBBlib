@@ -307,32 +307,7 @@ lrt_pic_ackipi(void)
 
 
 intptr_t
-lrt_pic_mapvec_local(lrt_pic_src s, uintptr_t vec, lrt_pic_handler h)
-{
-  int rc=1;
-  
-  lock();
-
-  /*
-   * must not be marked as free, if -1 it is allocated but not yet
-   * assigned a handler
-   */
-  if (pic.gvecs[vec] == 0) {
-    rc=-1;
-    goto done;
-  }
-
-  lpics[lrt_pic_myid].lvecs[vec] = h;
-  if ((rc = lrt_pic_unix_enable(s, vec)) != 0) 
-    goto done;
-
- done:
-  unlock();
-  return rc;
-}
-
-intptr_t
-lrt_pic_mapvec_all(lrt_pic_src s, uintptr_t vec, lrt_pic_handler h)
+lrt_pic_mapvec(lrt_pic_src s, uintptr_t vec, lrt_pic_handler h)
 {
   int rc=1;
   lrt_pic_id i;
