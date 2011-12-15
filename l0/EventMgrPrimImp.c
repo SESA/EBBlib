@@ -422,7 +422,7 @@ EventMgrPrim_dispatchEventLocal(void *_self, uintptr_t eventNo)
 
 // this is done under protection of the master's lock
 static EBBRC
-lockedreplicateHandler(CObjEBBRootMultiRef root, uintptr_t eventNo, 
+lockedReplicateHandler(CObjEBBRootMultiRef root, uintptr_t eventNo, 
 		       EventHandlerId handler)
 {
   RepListNode *node;
@@ -440,41 +440,51 @@ lockedreplicateHandler(CObjEBBRootMultiRef root, uintptr_t eventNo,
 
 
 static EBBRC
-EventMgrPrim_registerHandler(void *_self, uintptr_t eventNo, 
-			     EventHandlerId handler, 
-			     uintptr_t isrc)
+lockedRegisterHandler(EventMgrPrimImpRef master, uintptr_t eventNo, 
+		 EventHandlerId handler)
 {
-  EventMgrPrimImpRef self = (EventMgrPrimImpRef)_self;
-  EventMgrPrimImpRef master = self->master;
-
   if ( (eventNo >= MAXEVENTS) || (eventNo<0) ){
     return EBBRC_BADPARAMETER;
   };
   
-  spin_lock(&master->lock);
   if (master->handlerInfo[eventNo].id != NULL) {
     // for now, if its not null, assume error, should we ever be able
     // to change the handler for an event?
-    spin_unlock(&master->lock);
     return EBBRC_BADPARAMETER;
   };
 
   // install handler in event table
   master->handlerInfo[eventNo].id = handler;
 
-  // map vector in pic
-  if (lrt_pic_mapvec_all((lrt_pic_src)isrc, eventNo, vfTbl[eventNo])<0) {
-    master->handlerInfo[eventNo].id = NULL;
-    spin_unlock(&master->lock);
-    return EBBRC_BADPARAMETER;
-  }
-
-  lockedreplicateHandler(master->theRoot, eventNo, handler);
-
-  spin_unlock(&master->lock);
-
+  lockedReplicateHandler(master->theRoot, eventNo, handler);
 
   return 0;
+}
+
+static EBBRC
+EventMgrPrim_registerHandler(void *_self, uintptr_t eventNo, 
+			     EventHandlerId handler, 
+			     uintptr_t isrc)
+{
+  EventMgrPrimImpRef self = (EventMgrPrimImpRef)_self;
+  EventMgrPrimImpRef master = self->master;
+  EBBRC rc = EBBRC_OK;
+
+  spin_lock(&master->lock);
+  rc = lockedRegisterHandler(self->master, eventNo, handler);
+  if (!EBBRC_SUCCESS(rc)) goto done;
+
+  // map vector in pic
+  if (lrt_pic_mapvec_all((lrt_pic_src)isrc, eventNo, vfTbl[eventNo])<0) {
+    // FAILED unmap from all the tables
+    lockedReplicateHandler(self->theRoot, eventNo, NULL);
+    rc = EBBRC_BADPARAMETER;
+    goto done;
+  }
+
+ done:
+  spin_unlock(&master->lock);
+  return rc;
 }
 
 static EBBRC
