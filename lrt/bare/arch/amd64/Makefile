@@ -35,7 +35,8 @@ TARG=kern
 OFILES=\
 	start.o\
 	serial.o\
-	lrt_start.o
+	lrt_start.o\
+  fmt.o
 
 $(TARG): $(OFILES)
 	$(LD_32) -o $@ $(LDFLAGS_32) $(OFILES)

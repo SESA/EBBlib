@@ -34,6 +34,6 @@
 
 void lrt_serial_init(uint16_t out);
 
-void lrt_serial_putch(uint16_t out, uint8_t data);
+void lrt_serial_putch(uintptr_t out, uint8_t data);
 
 #endif
