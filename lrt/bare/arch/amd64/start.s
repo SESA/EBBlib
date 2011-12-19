@@ -32,15 +32,15 @@
 
 .align 4
 multiboot:
-	.long MULTIBOOT_MAGIC
-	.long MULTIBOOT_FLAGS
-	.long MULTIBOOT_CHECKSUM
+  .long MULTIBOOT_MAGIC
+  .long MULTIBOOT_FLAGS
+  .long MULTIBOOT_CHECKSUM
 
 _start:
-	cli
-	movl $640, %esp
-	movl %esp, %ebp
-	pushl %ebx
-	call main
+  cli
+  movl $640, %esp
+  movl %esp, %ebp
+  pushl %ebx
+  call main
 _hang:
-	jmp _hang
+  jmp _hang

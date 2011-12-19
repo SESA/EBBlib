@@ -40,26 +40,26 @@ static const uint16_t SCRATCH_REG      = 7;   /* Scratch register */
 
 
 void lrt_serial_init(uint16_t out){
-	uint8_t linectl;
-	/* ensure interrupts are disabled */
-	sysOut8(out+INT_ENABLE, 0);
-	/* enable DLAB */
-	sysOut8(out+LINE_CNTL_REG, (1<<7));
-	/* set Divisor : */
-	sysOut8(out+BAUD_DIV_LSB, 3);
-	sysOut8(out+BAUD_DIV_MSB, 0);
-	/* clear DLAB (Most sig bit = 0) */
-	linectl = 0;
-	/* 8 bit chars (2 least sig bits 1) : */
-	linectl |= 3;
-	/* for 1 stop bit, we leave bit #2 as 0 */
-	/* leave bit #3 as 0 for no pairty */
-	/* commit changes : */	
-	sysOut8(out+LINE_CNTL_REG, linectl);
+  uint8_t linectl;
+  /* ensure interrupts are disabled */
+  sysOut8(out+INT_ENABLE, 0);
+  /* enable DLAB */
+  sysOut8(out+LINE_CNTL_REG, (1<<7));
+  /* set Divisor : */
+  sysOut8(out+BAUD_DIV_LSB, 3);
+  sysOut8(out+BAUD_DIV_MSB, 0);
+  /* clear DLAB (Most sig bit = 0) */
+  linectl = 0;
+  /* 8 bit chars (2 least sig bits 1) : */
+  linectl |= 3;
+  /* for 1 stop bit, we leave bit #2 as 0 */
+  /* leave bit #3 as 0 for no pairty */
+  /* commit changes : */  
+  sysOut8(out+LINE_CNTL_REG, linectl);
 }
 
 void lrt_serial_putch(uintptr_t out, uint8_t data){
-	/* fifth bit of LINE_STATUS_REG, if set, indicates the line is ready. */
-	while (!(sysIn8(out+LINE_STATUS_REG) & (1<<5)));
-	sysOut8(out, data);
+  /* fifth bit of LINE_STATUS_REG, if set, indicates the line is ready. */
+  while (!(sysIn8(out+LINE_STATUS_REG) & (1<<5)));
+  sysOut8(out, data);
 }
