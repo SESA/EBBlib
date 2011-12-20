@@ -45,14 +45,14 @@ struct page_struct {
 };
 
 static inline void load_pml4(page_struct *pml4) {
-  __asm__ volatile ("movl %0, %%cr3" :: "r"(pml4) :);
+  __asm__ volatile ("movl %0, %%cr3" :: "r"(pml4));
 }
 
 static inline void enable_pae(void) {
    uint32_t cr4;
-  __asm__ volatile ("movl %%cr4, %0" : "=r"(cr4) ::);
+  __asm__ volatile ("movl %%cr4, %0" : "=r"(cr4));
   cr4 |= CR4_PAE;
-  __asm__ volatile ("movl %0, %%cr4" :: "r"(cr4) :);
+  __asm__ volatile ("movl %0, %%cr4" :: "r"(cr4));
 }
 
 static inline void enable_longmode(void) {
@@ -66,9 +66,9 @@ static inline void enable_longmode(void) {
 
 static inline void enable_paging(void){
   uint32_t cr0;
-  __asm__ volatile ("movl %%cr0, %0" : "=r"(cr0) ::);
+  __asm__ volatile ("movl %%cr0, %0" : "=r"(cr0));
   cr0 |= CR0_PG;
-  __asm__ volatile ("movl %0, %%cr0" :: "r"(cr0) :);
+  __asm__ volatile ("movl %0, %%cr0" :: "r"(cr0));
 }
 
 static page_struct *kernel_pml4;
