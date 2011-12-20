@@ -24,20 +24,27 @@
 #include "util.h"
 #include "paging.h"
 
-static const uint32_t CR0_PG = (1<<31);
-static const uint32_t CR4_PAE = (1<<5);
-static const uint32_t IA_32E_LME = (1<<8);
+// temporary - for debugging.
+#include "fmt.h"
+
+static const uint64_t CR0_PG = (1<<31);
+static const uint64_t CR4_PAE = (1<<5);
+static const uint64_t IA_32E_LME = (1<<8);
 
 static const uint32_t IA32_EFER = 0xc0000080;
 
 /* we need a #define here because we use this one in page_struct. */
 #define PAGE_ENTS_CONST 512
-static const uint32_t PAGE_ENTS = PAGE_ENTS_CONST;
-static const uint32_t PAGE_LEVELS = 4;
-static const uint32_t PAGE_PRESENT = (1<<0);
+static const uint64_t PAGE_ENTS = PAGE_ENTS_CONST;
+static const uint64_t PAGE_LEVELS = 4;
+static const uint64_t PAGE_PRESENT = (1<<0);
+static const uint64_t PAGE_RW = (1<<1);
+static const uint64_t PAGE_US = (1<<2);
 
-static const uint32_t PAGE_SIZE = 0x1000;
-static const uint32_t PAGE_MASK = ~0xfff;
+static const uint64_t PAGE_SIZE = 0x1000;
+static const uint64_t PAGE_MASK = ~0xfff;
+
+static const uint64_t PAGE_ENT_MASK = 0x1ff;
 
 typedef struct page_struct page_struct;
 struct page_struct {
@@ -73,24 +80,41 @@ static inline void enable_paging(void){
 
 static page_struct *kernel_pml4;
 
-void map_page(uintptr_t ptr, page_struct *pgs) {
-  /* we truncate some addresses in here if in 32 bit mode, but this is okay,
-     since we know the high bits are zero. */
-  uintptr_t index, orig_ptr;
-  uint8_t i;
-  orig_ptr = ptr;
-  ptr /= PAGE_SIZE;
-  for(i = 1; i < PAGE_LEVELS; i++) {
-    index = ptr / PAGE_ENTS;
-    if(!pgs->ents[index]) {
-      pgs->ents[index] = (uintptr_t)premalloc(sizeof(page_struct), PAGE_SIZE);
-      bzero((void*)(uintptr_t)pgs->ents[index], sizeof(page_struct));
-      pgs->ents[index] |= PAGE_PRESENT;
+void map_page(uint64_t laddr, page_struct *pgs) {
+  uintptr_t shift = 39;
+  int i;
+  for(i = 0; i < 3; i++) {
+    uintptr_t entnum = PAGE_ENT_MASK & (laddr>>shift);
+    if(!(pgs->ents[entnum] & PAGE_PRESENT)) {
+      pgs->ents[entnum] = (uintptr_t)premalloc(sizeof(page_struct), PAGE_SIZE);
+      bzero((void*)(uintptr_t)pgs->ents[entnum], sizeof(page_struct));
+      pgs->ents[entnum] |= PAGE_PRESENT | PAGE_RW;
     }
-    pgs = (page_struct*)(uintptr_t)(pgs->ents[index] & PAGE_MASK);
-    ptr /= PAGE_SIZE;
+    pgs = (page_struct*)(uintptr_t)(pgs->ents[entnum] & PAGE_MASK);
+    shift -= 9;
   }
-  pgs->ents[index] = (orig_ptr & PAGE_MASK) | PAGE_PRESENT;
+  pgs->ents[laddr>>shift] = (laddr & PAGE_MASK) | PAGE_PRESENT | PAGE_RW;
+
+}
+
+void print_pagestruct(unsigned int level, page_struct *pgs) {
+  unsigned int i, j;
+  if(level >= PAGE_LEVELS)
+    return;
+  for(j = 0; j < level; j++)
+    printf(" ");
+  printf("level %d page structure = {\n", level);
+  for(i = 0; i < PAGE_ENTS; i++) {
+    for(j = 0; j < level; j++)
+      printf(" ");
+    printf("[%d] = 0x%x\n", i, pgs->ents[i]);
+    if(pgs->ents[i])
+      print_pagestruct(level+1, (page_struct*)(uintptr_t)(pgs->ents[i] & PAGE_MASK));
+  } 
+  for(j = 0; j < level; j++)
+    printf(" ");
+  printf("}\n");
+  
 }
 
 void paging_init(void) {
@@ -104,5 +128,6 @@ void paging_init(void) {
   load_pml4(kernel_pml4);
   enable_pae();
   enable_longmode();
-  enable_paging();
+  print_pagestruct(0, kernel_pml4);
+//  enable_paging();
 }
