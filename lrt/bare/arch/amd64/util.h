@@ -1,3 +1,6 @@
+#ifndef __AMD64_UTIL_H__
+#define __AMD64_UTIL_H__
+
 /*
  * Copyright (C) 2011 by Project SESA, Boston University
  *
@@ -21,45 +24,9 @@
  */
 
 #include <stdint.h>
-#include "serial.h"
-#include "fmt.h"
-#include "premalloc.h"
-#include "paging.h"
 
-struct mboot_args_t  {
-  uint32_t flags;
-  uint32_t mem_lower;
-  uint32_t mem_upper;
-  uint32_t boot_device;
-  uint32_t cmdline;
-  uint32_t mods_count;
-  uint32_t mods_addr;
-  uint32_t syms[3];
-  uint32_t mmap_length;
-  uint32_t mmap_addr;
-  uint32_t drives_length;
-  uint32_t drives_addr;  
-  uint32_t config_table;
-  uint32_t boot_loader_name;
-  uint32_t apm_table;
-  uint32_t vbe_control_info;
-  uint32_t vbe_mode_info;
-  uint32_t vbe_mode;
-  uint32_t vbe_interface_seg;
-  uint32_t vbe_interface_off;
-  uint32_t vbe_interface_len;
-};
+void bzero(void *ptr, uintptr_t size);
 
-void main(struct mboot_args_t *args) {
-  void *endofk, *aligned;
-  lrt_serial_init(COM1);
-  stdout.buf = COM1;
-  stdout.putch = lrt_serial_putch;
-  printf("Hello, SESA!\n");
-  endofk = premalloc(7,1);
-  aligned = premalloc(3, 4);
-  printf("endofk = 0x%x, aligned = 0x%x\n", endofk, aligned);
-  paging_init();
-  printf("Hello, LongMode!\n");
-}
+#endif
+
 

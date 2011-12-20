@@ -2,7 +2,7 @@
 #include "premalloc.h"
 
 extern uintptr_t kend; /* in link.ld. located just after the kernel image. */
-static uintptr_t *nextptr = &kend;
+uintptr_t *nextptr = &kend;
 
 void *premalloc(uintptr_t size, uintptr_t align) {
   uintptr_t skew; /* how far past the last aligned address we are */

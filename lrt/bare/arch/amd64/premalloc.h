@@ -31,4 +31,7 @@
    Memory allocation starts from the end of the kernel binary. */
 void *premalloc(uintptr_t size, uintptr_t align);
 
+/* points one byte past the last allocated piece of memory. */
+extern uintptr_t *nextptr;
+
 #endif
