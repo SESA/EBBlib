@@ -63,9 +63,9 @@ static inline void enable_pae(void) {
 }
 
 static inline void enable_longmode(void) {
-  __asm__ volatile("movl %%ecx, %0\n"
+  __asm__ volatile("movl %0, %%ecx\n"
                    "rdmsr\n"
-                   "orl %%eax, %1\n"
+                   "orl %1, %%eax\n"
                    "wrmsr\n"
                    :: "r"(IA32_EFER), "r"(IA_32E_LME)
                    : "eax", "ecx", "edx");
@@ -129,5 +129,5 @@ void paging_init(void) {
   enable_pae();
   enable_longmode();
   print_pagestruct(0, kernel_pml4);
-//  enable_paging();
+  enable_paging();
 }
