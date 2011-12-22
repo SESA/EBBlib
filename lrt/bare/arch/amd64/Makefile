@@ -25,7 +25,7 @@ CFLAGS_32=\
 	-ffreestanding\
 	-Wall\
 	-Wextra\
-  -pedantic\
+	-pedantic\
 	-nostdlib\
 	-g
 LDFLAGS_32=\
@@ -38,8 +38,8 @@ OFILES=\
 	lrt_start.o\
 	fmt.o\
 	premalloc.o\
-  util.o\
-  paging.o
+	util.o\
+	paging.o
 
 $(TARG): $(OFILES)
 	$(LD_32) -o $@ $(LDFLAGS_32) $(OFILES)
