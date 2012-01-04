@@ -21,23 +21,27 @@
  */
 #include <config.h>
 #include <stdint.h>
+#include <l0/lrt/types.h>
+#include <l0/cobj/cobj.h>
 #include <lrt/io.h>
 #include <l0/lrt/pic.h>
-#include <lrt/assert.h>
-#include <l0/cobj/cobj.h>
+#include <l0/lrt/trans.h>
 #include <l0/types.h>
+#include <l0/sys/trans.h>
+#include <lrt/assert.h>
 #include <l0/cobj/CObjEBB.h>
 #include <l0/EBBMgrPrim.h>
-#include <l0/MemMgr.h> 
-#include <l0/MemMgrPrim.h>
+#include <l0/cobj/CObjEBBUtils.h>
+#include <l0/cobj/CObjEBBRoot.h>
+#include <l0/cobj/CObjEBBRootMulti.h>
+#include <l0/cobj/CObjEBBRootMultiImp.h>
 #include <l0/EventMgrPrim.h>
-
+#include <l0/EventMgrPrimImp.h>
+#include <l0/lrt/pic.h>
+#include <l0/MemMgr.h>
+#include <l0/MemMgrPrim.h>
 #include <l1/MsgMgr.h>
 #include <l1/MsgMgrPrim.h>
-
-// FIXME: need this to do IPI, do we really want to do these inline and bypass
-//   EventMgr???
-#include __LRTINC(pic.h)
 
 
 /* -- start routines & types to be implemented, put somewhere global*/
@@ -104,9 +108,10 @@ MsgMgrPrim_findTarget(MsgMgrPrimRef self, EvntLoc loc, MsgMgrPrimRef *target)
   MsgMgrPrimRef rep = NULL;
   rep = self->reps[loc];
   if (rep == NULL) {
-    for (node = self->theRoot->ft->nextRep(self->theRoot, 0, &rep);
+    for (node = self->theRoot->ft->nextRep(self->theRoot, 0, (EBBRep **)&rep);
 	 node != NULL; 
-	 node = self->theRoot->ft->nextRep(self->theRoot, node, &rep)) {
+	 node = self->theRoot->ft->nextRep(self->theRoot, node, 
+					   (EBBRep **)&rep)) {
       EBBAssert(rep != NULL);
       if (rep->eventLoc == loc) break;
     }
@@ -213,40 +218,44 @@ MsgMgrPrim_SetFT(MsgMgrPrimRef o)
  * routine called by distributed root on a miss
  * to create/return a representative on a core
  */
-static void *
-MsgMgrPrim_createRep(CObjEBBRootMultiRef _theRoot)
+static EBBRep *
+MsgMgrPrim_createRep(CObjEBBRootMultiRef root)
 {
   MsgMgrPrimRef repRef;
   EBBPrimMalloc(sizeof(*repRef), &repRef, EBB_MEM_DEFAULT);
   MsgMgrPrim_SetFT(repRef);
   int i;
 
-  repRef->eventLoc = EventMgrPrim_GetMyEL();
+  repRef->eventLoc = MyEL();
   repRef->mml = 0;
   repRef->msgqueue = 0;
   for (i=0; i<LRT_PIC_MAX_PICS ; i++ ) {
     repRef->reps[i] = NULL;
   }
-  repRef->theRoot = _theRoot;
-  return repRef;
+  repRef->theRoot = root;
+  return (EBBRep *)repRef;
 };
 
 
+MsgMgrId theMsgMgrId;
+
 EBBRC
-MsgMgrPrim_Create(MsgMgrId *id)
+MsgMgrPrim_Init(void)
 {
-  EBBRC rc;
-  CObjEBBRootMultiRef rootRef;
-  EBBPrimMalloc(sizeof(*rootRef), &rootRef, EBB_MEM_DEFAULT);
-  CObjEBBRootMultiSetFT(rootRef);
-  rootRef->ft->init(rootRef, MsgMgrPrim_createRep);
+  CObjEBBRootMultiImpRef rootRef;
+  MsgMgrId id;
 
-  rc = EBBAllocPrimId(id);
-  //  EBBRCAssert(rc);
+  if (__sync_bool_compare_and_swap(&theMsgMgrId, (MsgMgrId)0,
+				   (MsgMgrId)-1)) {
+    CObjEBBRootMultiImpCreate(&rootRef, MsgMgrPrim_createRep);
+    id = (MsgMgrId)EBBIdAlloc();
+    EBBAssert(id != NULL);
 
-  rc = CObjEBBBind(*id, rootRef);
-  //  EBBRCAssert(rc);
-
+    EBBIdBind((EBBId)id, CObjEBBMissFunc, (EBBMissArg) rootRef);
+    theMsgMgrId = id;
+  } else {
+    while (((volatile uintptr_t)theMsgMgrId)==-1);
+  }
   return EBBRC_OK;
 }
 

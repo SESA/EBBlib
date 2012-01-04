@@ -69,7 +69,9 @@ CObjectDefine(MsgMgr) {
   CObjInterface(MsgMgr) *ft;
 };
 
-// the ID of the one and only Primative MsgHandler
 typedef MsgMgrRef *MsgMgrId;
+
+// the ID of the one and only Primative MsgHandler
+extern MsgMgrId theMsgMgrId;
 
 #endif

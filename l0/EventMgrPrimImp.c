@@ -404,7 +404,7 @@ EventMgrPrim_dispatchIPI(void *_self, EvntLoc el)
 
 /*
  * This should go away once we have proper implementation of vector
- * function that should inline this
+ * function that should inline this.  Should also buy stack here...
  */
 static EBBRC
 EventMgrPrim_dispatchEventLocal(void *_self, uintptr_t eventNo) 
@@ -487,14 +487,20 @@ EventMgrPrim_registerHandler(void *_self, uintptr_t eventNo,
   return rc;
 }
 
+/* 
+ * IPI is different from other handlers, since it is a purely local
+ * operation, i.e., both at the pic and in the EventMgr we are going
+ * to a different handler for IPIs on each processor.  This is
+ * necessary since we remap IPIs on different processors as we go
+ * through the initialization.  I assume, for now, that all other
+ * interrupts are globally allocated and are the same on all ELs
+ * (Event Locations).
+ */
 static EBBRC
 EventMgrPrim_registerIPIHandler(void *_self, EventHandlerId handler)
 {
   EventMgrPrimImpRef self = (EventMgrPrimImpRef)_self;
 
-  /* 
-   * FIXME: this is a local operation, make it global in next commit 
-   */
   self->handlerInfo[self->ipi_vec_no].id = handler;
 
   // map vector in pic

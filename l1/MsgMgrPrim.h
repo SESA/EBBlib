@@ -24,6 +24,9 @@
 
 #include "MsgMgr.h"
 
-extern EBBRC MsgMgrPrim_Create(MsgMgrId *id);
+/*
+ * Initialization called on each processor
+ */
+extern EBBRC MsgMgrPrim_Init(void);
 
 #endif
