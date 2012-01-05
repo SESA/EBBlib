@@ -1,3 +1,5 @@
+#ifndef LRT_BARE_ARCH_AMD64_STDIO_H
+#define LRT_BARE_ARCH_AMD64_STDIO_H
 /*
  * Copyright (C) 2011 by Project SESA, Boston University
  *
@@ -20,53 +22,36 @@
  * THE SOFTWARE.
  */
 
-OUTPUT_ARCH(i386:x86-64)
-OUTPUT_FORMAT(elf64-x86-64)
-ENTRY(_start)
+#include <stdarg.h>
+#include <stddef.h>
+#include <stdint.h>
 
-SECTIONS
-{
-	. = 0x00100000;	
-	kstart = .;
-		  
-	.init32 : 
-	{
-		/* the mb_header has to be in the first 8k
-		 * of the file so I put it here.
-		 */
-		*(.mb_header); 
-		*(.init.startup32);
-		*(.init.text32);
-		*(.init.data32);
-	}
-	.text ALIGN (4K) :
-	{
-		*(.text);
-	}
+static const int EOF = -1;
 
-	.rodata ALIGN (4K) : 
-	{
-		*(.rodata)
-	}
-	.data ALIGN (4K) : 
-	{
-		*(.data)
-	}
+typedef struct {
+  uintptr_t cookie;
+  int (*write)(uintptr_t, const char *, int);
+} FILE;  
 
-	.bss : 
-	{
-		sbss = .;
-		*(COMMON)
-		*(.bss)
-		ebss = .;
-	}
+extern FILE *stdout;
+extern FILE *stdin;
+extern FILE *stderr;
 
-	/DISCARD/ :
-	{
-		*(.eh_frame);
-		*(.note);
-		*(.comment);
-	}
-	kend = .;
-}
+extern int fputc(int c, FILE *stream);
+extern int fputs(const char *s, FILE *stream);
+extern int putc(int c, FILE *stream);
+extern int putchar(int c);
+extern int puts(const char *s);
 
+extern int printf(const char *format, ...);
+extern int fprintf(FILE *stream, const char *format, ...);
+extern int sprintf(char *str, const char *format, ...);
+extern int snprintf(char *str, size_t size, const char *format, ...);
+
+/* stdarg */
+extern int vprintf(const char *format, va_list ap);
+extern int vfprintf(FILE *stream, const char *format, va_list ap);
+extern int vsprintf(char *str, const char *format, va_list ap);
+extern int vsnprintf(char *str, size_t size, const char *format, va_list ap);
+
+#endif

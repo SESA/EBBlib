@@ -1,3 +1,6 @@
+#ifndef ARCH_AMD64_SEGMENTATION_H
+#define ARCH_AMD64_SEGMENTATION_H
+
 /*
  * Copyright (C) 2011 by Project SESA, Boston University
  *
@@ -20,53 +23,4 @@
  * THE SOFTWARE.
  */
 
-OUTPUT_ARCH(i386:x86-64)
-OUTPUT_FORMAT(elf64-x86-64)
-ENTRY(_start)
-
-SECTIONS
-{
-	. = 0x00100000;	
-	kstart = .;
-		  
-	.init32 : 
-	{
-		/* the mb_header has to be in the first 8k
-		 * of the file so I put it here.
-		 */
-		*(.mb_header); 
-		*(.init.startup32);
-		*(.init.text32);
-		*(.init.data32);
-	}
-	.text ALIGN (4K) :
-	{
-		*(.text);
-	}
-
-	.rodata ALIGN (4K) : 
-	{
-		*(.rodata)
-	}
-	.data ALIGN (4K) : 
-	{
-		*(.data)
-	}
-
-	.bss : 
-	{
-		sbss = .;
-		*(COMMON)
-		*(.bss)
-		ebss = .;
-	}
-
-	/DISCARD/ :
-	{
-		*(.eh_frame);
-		*(.note);
-		*(.comment);
-	}
-	kend = .;
-}
-
+#endif

@@ -21,7 +21,10 @@
  * THE SOFTWARE.
  */
 
-#include "sysio.h"
+#include <stdint.h>
+
+#include <arch/amd64/sysio.h>
+#include <lrt/bare/arch/amd64/stdio.h>
 
 /* offsets from serial port address: */
 /* when DLAB = 0 : */
@@ -38,8 +41,20 @@ static const uint16_t LINE_STATUS_REG  = 5;   /* Line status register */
 static const uint16_t MODEM_STATUS_REG = 6;   /* Modem status register */
 static const uint16_t SCRATCH_REG      = 7;   /* Scratch register */
 
+static int
+serial_write(uintptr_t cookie, const char *str, int len) {
+  uint16_t outport = (uint16_t)cookie;
+  for (int i = 0; i < len; i++) {
+    while (!(sysIn8(outport + LINE_STATUS_REG) * (1 << 5)))
+      ;
+    sysOut8(outport, (uint8_t)str[i]);
+  }
+  return (int)str[len - 1];
+}
 
-void lrt_serial_init(uint16_t out){
+/* DS HACK: no memory allocation so you pass in the structure to be filled */
+/* init the serial port and return the corresponding file stream */
+void serial_init(uint16_t out, FILE *stream) {
   uint8_t linectl;
   /* ensure interrupts are disabled */
   sysOut8(out+INT_ENABLE, 0);
@@ -56,10 +71,7 @@ void lrt_serial_init(uint16_t out){
   /* leave bit #3 as 0 for no pairty */
   /* commit changes : */  
   sysOut8(out+LINE_CNTL_REG, linectl);
-}
-
-void lrt_serial_putch(uintptr_t out, uint8_t data){
-  /* fifth bit of LINE_STATUS_REG, if set, indicates the line is ready. */
-  while (!(sysIn8(out+LINE_STATUS_REG) & (1<<5)));
-  sysOut8(out, data);
+  
+  stream->cookie = (uintptr_t)out;
+  stream->write = serial_write;
 }

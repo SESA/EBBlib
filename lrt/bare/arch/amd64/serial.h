@@ -29,11 +29,11 @@
 
 #include <stdint.h>
 
+#include <lrt/bare/arch/amd64/stdio.h>
+
 /* This is the only serial port we use for now : */
-#define COM1 0x3f8
+const uint16_t COM1 = 0x3f8;
 
-void lrt_serial_init(uint16_t out);
-
-void lrt_serial_putch(uintptr_t out, uint8_t data);
+void serial_init(uint16_t out, FILE *stream);
 
 #endif

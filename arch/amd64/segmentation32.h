@@ -1,3 +1,6 @@
+#ifndef ARCH_AMD64_SEGMENTATION32_H
+#define ARCH_AMD64_SEGMENTATION32_H
+
 /*
  * Copyright (C) 2011 by Project SESA, Boston University
  *
@@ -20,53 +23,44 @@
  * THE SOFTWARE.
  */
 
-OUTPUT_ARCH(i386:x86-64)
-OUTPUT_FORMAT(elf64-x86-64)
-ENTRY(_start)
+typedef union {
+  uint64_t raw;
+  struct {
+    uint64_t limit_low :16;
+    uint64_t base_low :24;
+    uint64_t type :4;
+    uint64_t s :1;
+    uint64_t dpl :2;
+    uint64_t p :1;
+    uint64_t limit_high	:4;
+    uint64_t avl :1;
+    uint64_t l :1;
+    uint64_t d :1;
+    uint64_t g :1;
+    uint64_t base_high :8;
+  };
+} segdesc_32;
 
-SECTIONS
+_Static_assert(sizeof(segdesc_32) == 8, "segdesc packing issue");
+
+typedef struct {
+  uint16_t limit;
+  uint32_t base __attribute__((packed));
+} gdtr_32;
+
+_Static_assert(sizeof(gdtr_32) == 6, "gdtr packing issue");
+
+static inline void
+load_gdtr32(segdesc_32 base[], uint16_t limit)
 {
-	. = 0x00100000;	
-	kstart = .;
-		  
-	.init32 : 
-	{
-		/* the mb_header has to be in the first 8k
-		 * of the file so I put it here.
-		 */
-		*(.mb_header); 
-		*(.init.startup32);
-		*(.init.text32);
-		*(.init.data32);
-	}
-	.text ALIGN (4K) :
-	{
-		*(.text);
-	}
-
-	.rodata ALIGN (4K) : 
-	{
-		*(.rodata)
-	}
-	.data ALIGN (4K) : 
-	{
-		*(.data)
-	}
-
-	.bss : 
-	{
-		sbss = .;
-		*(COMMON)
-		*(.bss)
-		ebss = .;
-	}
-
-	/DISCARD/ :
-	{
-		*(.eh_frame);
-		*(.note);
-		*(.comment);
-	}
-	kend = .;
+  gdtr_32 gdtr;
+  gdtr.limit = limit - 1; //limit is length - 1
+  gdtr.base = (uint32_t)base;
+  __asm__ volatile (
+	 "lgdt %[gdtr]"
+	 :
+	 : [gdtr] "m" (gdtr)
+	 );
 }
 
+#endif

@@ -18,34 +18,28 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-AS_32=as --32
-CC_32=cc -m32
-LD_32=ld -melf_i386
-CFLAGS_32=\
-	-ffreestanding\
-	-Wall\
-	-Wextra\
-	-pedantic\
-	-nostdlib\
-	-g
-LDFLAGS_32=\
-	-Tlink.ld
+ASFLAGS = -m64 -g3 -D ASM_FILE
+CPPFLAGS = -I ~/Work/sesa/EBBlib
+CFLAGS = -m64 -ffreestanding -Wall -Werror -nostdlib -nodefaultlibs -g3 -std=c99 -O2 -mno-red-zone -mno-mmx -mno-sse -mno-sse2 -mno-sse3
+LDFLAGS = -melf_x86_64 -static -n -z max-page-size=0x1000
 
-TARG=kern
-OFILES=\
-	start.o\
-	serial.o\
-	lrt_start.o\
-	fmt.o\
-	premalloc.o\
-	util.o\
-	paging.o
+OBJS = start.o init32.o init64.o stdio.o serial.o string.o
 
-$(TARG): $(OFILES)
-	$(LD_32) -o $@ $(LDFLAGS_32) $(OFILES)
+kernel.bin: $(OBJS) Makefile link.ld
+	$(LD) $(LDFLAGS) -o $@ -Tlink.ld $(OBJS)
+
 clean:
-	rm -f *.o $(TARG)
-%.o: %.c
-	$(CC_32) -c -o $@ $< $(CFLAGS_32)
-%.o: %.s
-	$(AS_32) -o $@ $< $(ASFLAGS_32)
+	rm -f *.o kernel.bin
+
+# compile as 32 bit and stuff into elf64
+# we turn on Winline because if something isn't inlined then we call
+# into code in a different section which may cause problems
+init32.o: init32.c Makefile
+	$(CC) $(CPPFLAGS) $(patsubst -m64, -m32, $(CFLAGS)) -Winline \
+		-c -o $@ $<
+	objcopy -g -O elf64-x86-64 $@ $@
+
+%.o: %.c Makefile
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c -o $@ $<
+%.o: %.S Makefile
+	$(CC) $(CPPFLAGS) $(ASFLAGS) -c -o $@ $<

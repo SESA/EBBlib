@@ -20,27 +20,33 @@
  * THE SOFTWARE.
  */
 
+#include <arch/amd64/multiboot.h>
+
 .global _start
-.global multiboot
-
-.extern main
-
-.set MULTIBOOT_MAGIC, 0x1badb002
-.set MULTIBOOT_MEMINFO_FLAG, (1<<1)
-.set MULTIBOOT_FLAGS, MULTIBOOT_MEMINFO_FLAG
-.set MULTIBOOT_CHECKSUM, -(MULTIBOOT_MAGIC + MULTIBOOT_FLAGS)
-
-.align 4
-multiboot:
-  .long MULTIBOOT_MAGIC
-  .long MULTIBOOT_FLAGS
-  .long MULTIBOOT_CHECKSUM
-
+.section .init.startup32
+	
+.code32
 _start:
-  cli
-  movl $640, %esp
-  movl %esp, %ebp
-  pushl %ebx
-  call main
+	lea _mini_stack-4, %esp
+	mov 0, %ebp
+	push %eax
+	push %ebx
+	call init32
+	cli
 _hang:
-  jmp _hang
+	jmp _hang
+
+	.align 16
+	.space 0x4000
+_mini_stack:	
+
+.set MULTIBOOT_MAGIC,		MULTIBOOT_HEADER_MAGIC
+.set MULTIBOOT_FLAGS,		MULTIBOOT_PAGE_ALIGN | MULTIBOOT_MEMORY_INFO
+.set MULTIBOOT_CHECKSUM,	-(MULTIBOOT_MAGIC + MULTIBOOT_FLAGS)
+
+.section .mb_header
+.align 4
+_mb_header:
+.long MULTIBOOT_MAGIC
+.long MULTIBOOT_FLAGS
+.long MULTIBOOT_CHECKSUM

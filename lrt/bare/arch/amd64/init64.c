@@ -1,6 +1,3 @@
-#ifndef __AMD64_PAGING_H__
-#define __AMD64_PAGING_H__
-
 /*
  * Copyright (C) 2011 by Project SESA, Boston University
  *
@@ -23,7 +20,50 @@
  * THE SOFTWARE.
  */
 
-void paging_init(void);
+#include <stdint.h>
 
-#endif
+#include <arch/amd64/cpu.h>
+#include <arch/amd64/multiboot.h>
+#include <lrt/bare/arch/amd64/serial.h>
+#include <lrt/bare/arch/amd64/stdio.h>
 
+FILE com1;
+
+typedef struct {
+  uint32_t reserved0;
+  uint64_t rsp[3] __attribute__ ((packed));
+  uint64_t reserved1;
+  uint64_t ist[7] __attribute__ ((packed));
+  uint64_t reserved2;
+  uint16_t reserved3;
+  uint16_t iopbm_offset;
+} tss;
+
+/* typedef struct { */
+/*   uint64_t limit_low :16; */
+/*   uint64_t base_low :24; */
+/*   uint64_t type :4; */
+/*   uint64_t  */
+
+static inline void __attribute__ ((noreturn))
+panic (void) {
+  while(1)
+    ;
+}
+
+void __attribute__ ((noreturn))
+init64(multiboot_info_t *mbi) { 
+  unsigned char *vram = (unsigned char *)0xb8000;
+  vram[0] = 65;
+  vram[1] = 0x07;
+  serial_init(COM1, &com1);
+  stdout = &com1;
+  printf("Hello World!\n");
+  
+  //setup tss
+  
+  //setup idt
+
+
+  panic();
+}
