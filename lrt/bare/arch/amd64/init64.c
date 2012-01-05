@@ -29,22 +29,6 @@
 
 FILE com1;
 
-typedef struct {
-  uint32_t reserved0;
-  uint64_t rsp[3] __attribute__ ((packed));
-  uint64_t reserved1;
-  uint64_t ist[7] __attribute__ ((packed));
-  uint64_t reserved2;
-  uint16_t reserved3;
-  uint16_t iopbm_offset;
-} tss;
-
-/* typedef struct { */
-/*   uint64_t limit_low :16; */
-/*   uint64_t base_low :24; */
-/*   uint64_t type :4; */
-/*   uint64_t  */
-
 static inline void __attribute__ ((noreturn))
 panic (void) {
   while(1)
@@ -61,6 +45,11 @@ init64(multiboot_info_t *mbi) {
   printf("Hello World!\n");
   
   //setup tss
+  __asm__ volatile (
+		    "ltr %w[tssdesc]\n\t"
+		    :
+		    : [tssdesc] "r" (0x10)
+		    );
   
   //setup idt
 

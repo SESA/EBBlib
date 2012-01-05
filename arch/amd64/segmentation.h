@@ -23,4 +23,88 @@
  * THE SOFTWARE.
  */
 
+typedef union {
+  uint64_t raw;
+  struct {
+    uint64_t limit_low :16;
+    uint64_t base_low :24;
+    uint64_t type :4;
+    uint64_t s :1;
+    uint64_t dpl :2;
+    uint64_t p :1;
+    uint64_t limit_high	:4;
+    uint64_t avl :1;
+    uint64_t l :1;
+    uint64_t d :1;
+    uint64_t g :1;
+    uint64_t base_high :8;
+  };
+} segdesc;
+
+_Static_assert(sizeof(segdesc) == 8, "segdesc packing issue");
+
+typedef union {
+  uint64_t raw[2];
+  struct {
+    uint64_t limit_low :16;
+    uint64_t base_low :24;
+    uint64_t type :4;
+    uint64_t s :1;
+    uint64_t dpl :2;
+    uint64_t p :1;
+    uint64_t limit_high :4;
+    uint64_t avl :1;
+    uint64_t l :1;
+    uint64_t d :1;
+    uint64_t g :1;
+    uint64_t base_high :40;
+    uint64_t reserved0 :8;
+    uint64_t zero :5;
+    uint64_t reserved1 :19;
+  };
+} tssdesc;
+
+_Static_assert(sizeof(tssdesc) == 16, "tssdesc packing issue");
+
+typedef struct {
+  uint32_t reserved0;
+  uint64_t rsp[3] __attribute__ ((packed));
+  uint64_t reserved1;
+  uint64_t ist[7] __attribute__ ((packed));
+  uint64_t reserved2;
+  uint16_t reserved3;
+  uint16_t iopbm_offset;
+} tss;
+
+_Static_assert(sizeof(tss) == 104, "tss packing issue");
+
+//This is how OUR gdt looks
+typedef struct {
+  segdesc invalid;
+  segdesc code;
+  tssdesc tss __attribute__((packed));
+} gdt __attribute__ ((aligned(8)));
+
+_Static_assert(sizeof(gdt) == 32, "gdt packing issue");
+
+typedef struct {
+  uint16_t limit;
+  uintptr_t base __attribute__((packed));
+} gdtr;
+
+_Static_assert(sizeof(gdtr) == (2 + sizeof(uintptr_t)), "gdtr packing issue");
+
+static inline void
+load_gdtr(gdt *base, uint16_t limit)
+{
+  gdtr gdtr;
+  gdtr.limit = limit - 1; //limit is length - 1
+  gdtr.base = (uintptr_t)base;
+  __asm__ volatile (
+	 "lgdt %[gdtr]"
+	 :
+	 : [gdtr] "m" (gdtr), "m" (*base) //stupid gcc
+	 );
+}
+
 #endif

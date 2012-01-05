@@ -26,14 +26,16 @@
 #include <arch/amd64/cpu.h>
 #include <arch/amd64/multiboot.h>
 #include <arch/amd64/paging.h>
-#include <arch/amd64/segmentation32.h>
+#include <arch/amd64/segmentation.h>
 #include <lrt/bare/arch/amd64/init64.h>
 
 pml4_ent init_pml4[512] __attribute__((aligned(4096), section(".init.data32")));
 pdpt_ent init_pdpt[512] __attribute__((aligned(4096), section(".init.data32")));
 pd_2m_ent init_pdir[4][512] __attribute__((aligned(4096), section(".init.data32")));
 
-segdesc_32 init_gdt[3] __attribute__((aligned(8), section(".init.data32")));
+gdt init_gdt __attribute__((section(".init.data32")));
+
+tss init_tss __attribute__((section(".init.data32")));
 
 //TODO DS: Maybe this should do something?
 static inline void __attribute__ ((noreturn))
@@ -123,36 +125,49 @@ init32(multiboot_info_t *mbi, uint32_t magic)
   }
 
   //setup GDT
-  for (int i = 0; i < 3; i++) {
-    init_gdt[i].raw = 0;
-  }
+  init_gdt.invalid.raw = 0;
+  init_gdt.code.raw = 0;
+  init_gdt.tss.raw[0] = 0;
+  init_gdt.tss.raw[1] = 0;
 
-  //FIXME DS: Without a volatile gcc keeps optimizing this code out =(
   //long mode code segment
-  ((volatile segdesc_32 *)init_gdt)[1].type = 0x8; //code, execute only
-  ((volatile segdesc_32 *)init_gdt)[1].s = 1; //not a system segment
-  ((volatile segdesc_32 *)init_gdt)[1].p = 1; //present
-  ((volatile segdesc_32 *)init_gdt)[1].l = 1; //long mode code segment
-
-  //TODO: check if this is even necessary
-  //data segment
-  ((volatile segdesc_32 *)init_gdt)[2].s = 1; //not a system segment
-  ((volatile segdesc_32 *)init_gdt)[2].p = 1; //present;
+  init_gdt.code.type = 0x8; //code, execute only
+  init_gdt.code.s = 1; //not a system segment
+  init_gdt.code.p = 1; //present
+  init_gdt.code.l = 1; //long mode code segment
   
-  load_gdtr32(init_gdt, sizeof(init_gdt));
+  //init tss
+  init_tss.reserved0 = 0;
+  for (int i = 0; i < 3; i++) {
+    init_tss.rsp[i] = 0;
+  }
+  init_tss.reserved1 = 0;
+  for (int i = 0; i < 7; i++) {
+    init_tss.ist[i] = 0;
+  }
+  init_tss.reserved2 = 0;
+  init_tss.reserved3 = 0;
+  init_tss.iopbm_offset = 0;
+
+  _Static_assert(sizeof(tss) < (1 << 16), "Need to set granularity flag");
+  init_gdt.tss.limit_low = sizeof(tss);
+  init_gdt.tss.base_low = (uintptr_t)&init_tss;
+  init_gdt.tss.type = 0x9; //available tss
+  init_gdt.tss.p = 1;
+  init_gdt.tss.base_high = ((uintptr_t)&init_tss) >> 24;
+
+  load_gdtr(&init_gdt, sizeof(init_gdt));
 
   __asm__ volatile (
-	 "mov %[init32_ds], %%ds\n\t"
-	 "pushw %w[init32_cs]\n\t"
-	 "pushl %[init64]\n\t"
-	 "ljmp *(%%esp)"
-	 :
-	 :
-	 [init32_ds] "r" (0x10),
-	 [init32_cs] "r" (0x08),
-	 [init64] "r" (&init64),
-	 "D" (mbi)
-	 );
+		    "pushw %w[init32_cs]\n\t"
+		    "pushl %[init64]\n\t"
+		    "ljmp *(%%esp)"
+		    :
+		    :
+		    [init32_cs] "r" (0x08),
+		    [init64] "r" (&init64),
+		    "D" (mbi)
+		    );
   
   panic();
 }
