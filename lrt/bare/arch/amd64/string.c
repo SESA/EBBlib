@@ -24,6 +24,14 @@
 
 #include <lrt/bare/arch/amd64/string.h>
 
+void bzero(void *ptr, size_t size) {
+  size_t i;
+  char *array = ptr;
+  for(i = 0; i < size; i++)
+    array[i] = 0;
+}
+
+
 size_t 
 strlen(const char *s) 
 {
