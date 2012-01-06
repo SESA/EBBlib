@@ -71,5 +71,12 @@ init64(multiboot_info_t *mbi) {
   
   load_idtr(idt, sizeof(idt));
   __asm__ volatile ("int $0x3");
+
+  if (has_lapic()) {
+    printf("Lapic support detected\n");
+  }
+
+  enable_lapic();
+
   panic();
 }

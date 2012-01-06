@@ -49,7 +49,8 @@ static const uint32_t CPUID_MAX_EXT_FUNC = 0x80000000;
 static const uint32_t CPUID_EXT_FEATURES = 0x80000001;
 
 /* CPUID FEATURE FLAGS */
-static const uint32_t CPUID_HAS_X2APIC = 1 << 21;
+static const uint32_t CPUID_ECX_HAS_X2APIC = 1 << 21;
+static const uint32_t CPUID_EDX_HAS_LAPIC = 1 << 9;
 
 /* CPUID EXTENDED FEATURE FLAGS */
 static const uint32_t CPUID_EXT_HAS_1GPAGES = 1 << 26;
@@ -60,6 +61,9 @@ static const uint64_t CR0_PG = 1 << 31;
 
 /* CR4 FLAGS */
 static const uint64_t CR4_PAE = 1 << 5;
+
+
+/* CPUID FUNCTIONS */
 
 static inline bool 
 has_cpuid(void) 
@@ -107,7 +111,32 @@ cpuid(uint32_t index, uint32_t *eax, uint32_t *ebx, uint32_t *ecx,
 	);
 }
 
-static inline bool 
+/* CPUID FEATURES */
+
+static inline bool
+has_x2apic(void)
+{
+  uint32_t features, dummy;
+
+  cpuid(CPUID_FEATURES, &dummy, &dummy, &features, &dummy);
+
+  return (features & CPUID_ECX_HAS_X2APIC);
+}
+
+
+static inline bool
+has_lapic(void)
+{
+  uint32_t features, dummy;
+
+  cpuid(CPUID_FEATURES, &dummy, &dummy, &dummy, &features);
+
+  return (features & CPUID_EDX_HAS_LAPIC);
+}
+
+/* CPUID EXTENDED FEATURES */
+
+static inline bool
 has_ext_features(void)
 {
   if (!has_cpuid()) {
@@ -155,6 +184,8 @@ has_longmode(void)
   return (features & CPUID_EXT_HAS_LONGMODE);
 }
 
+/* OTHER */
+
 static inline void 
 enable_pae(void)
 {
@@ -170,25 +201,44 @@ enable_pae(void)
 	 : [cr4] "r" (cr4));
 }
 
+/* static inline void  */
+/* enable_longmode(void) */
+/* { */
+/*   uint32_t eax, edx; */
+/*   __asm__ volatile ( */
+/* 	 "rdmsr" */
+/* 	 : "=a" (eax), "=d" (edx) */
+/* 	 : "c" (MSR_EFER) */
+/* 	 ); */
+
+/*   uint64_t efer = (((uint64_t)edx) << 32) | ((uint64_t)eax); */
+/*   efer |= MSR_EFER_LME; */
+/*   eax = (uint32_t)efer; */
+/*   edx = (uint32_t)(efer >> 32); */
+
+/*   __asm__ volatile ( */
+/* 	 "wrmsr" */
+/* 	 : */
+/* 	 : "a" (eax), "d" (edx), "c" (MSR_EFER) */
+/* 	 ); */
+/* } */
+
 static inline void 
 enable_longmode(void)
 {
-  uint32_t eax, edx;
+  uint64_t efer;
   __asm__ volatile (
 	 "rdmsr"
-	 : "=a" (eax), "=d" (edx)
+	 : "=A" (efer)
 	 : "c" (MSR_EFER)
 	 );
 
-  uint64_t efer = (((uint64_t)edx) << 32) | ((uint64_t)eax);
   efer |= MSR_EFER_LME;
-  eax = (uint32_t)efer;
-  edx = (uint32_t)(efer >> 32);
 
   __asm__ volatile (
 	 "wrmsr"
 	 :
-	 : "a" (eax), "d" (edx), "c" (MSR_EFER)
+	 : "A" (efer), "c" (MSR_EFER)
 	 );
 }
 
@@ -222,14 +272,23 @@ enable_paging(void)
 	 );
 }
 
-static inline bool
-has_x2apic(void)
+static inline void
+enable_lapic(void)
 {
-  uint32_t features, dummy;
+  uint64_t apic_base;
+  __asm__ volatile (
+	 "rdmsr"
+	 : "=A" (apic_base)
+	 : "c" (MSR_APIC_BASE)
+	 );
 
-  cpuid(CPUID_FEATURES, &dummy, &dummy, &features, &dummy);
+  apic_base |= MSR_APIC_BASE_GLOBAL_ENABLE;
 
-  return (features & CPUID_HAS_X2APIC);
+  __asm__ volatile (
+	 "wrmsr"
+	 :
+	 : "A" (apic_base), "c" (MSR_APIC_BASE)
+	 );
 }
 
 #endif
