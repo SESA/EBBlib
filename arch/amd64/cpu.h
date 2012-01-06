@@ -41,7 +41,7 @@ static const uint64_t MSR_EFER_LME = 1 << 8;
 static const uint64_t MSR_EFER_LMA = 1 << 10;
 
 /* EFLAGS */
-static const uint32_t ID_FLAG = 1 << 21;
+static const uintptr_t ID_FLAG = 1 << 21;
 
 /* CPUID INDICES */
 static const uint32_t CPUID_FEATURES = 0x1;
@@ -52,6 +52,7 @@ static const uint32_t CPUID_EXT_FEATURES = 0x80000001;
 static const uint32_t CPUID_HAS_X2APIC = 1 << 21;
 
 /* CPUID EXTENDED FEATURE FLAGS */
+static const uint32_t CPUID_EXT_HAS_1GPAGES = 1 << 26;
 static const uint32_t CPUID_EXT_HAS_LONGMODE = 1 << 29;
 
 /* CR0 FLAGS */
@@ -65,19 +66,19 @@ has_cpuid(void)
 {
   // Check if we can set and clear the ID Flag (bit 21) of the
   // EFLag register, indicates support of CPUID
-  uint32_t eflags, flipped, flippedback;
+  uintptr_t eflags, flipped, flippedback;
   
   __asm__ volatile (
        //get eflags
-       "pushfl \n\t"
+       "pushf \n\t"
        "pop %[eflags]\n\t"
        //flip the id flag
        "mov %[eflags], %[flipped]\n\t"
        "xor %[id_flag], %[flipped]\n\t"
        //store back into eflags
        "push %[flipped]\n\t"
-       "popfl\n\t"
-       "pushfl\n\t"
+       "popf\n\t"
+       "pushf\n\t"
        "pop %[flipped]\n\t"
        //flip it back
        "push %[eflags]\n\t"
@@ -118,6 +119,23 @@ has_ext_features(void)
   cpuid(CPUID_MAX_EXT_FUNC, &max_func, &dummy, &dummy, &dummy);
 
   return max_func >= CPUID_EXT_FEATURES;
+}
+
+static inline bool
+has_1gpages(void)
+{
+  if (!has_ext_features()) {
+    return false;
+  }
+
+
+  //check for long mode
+
+  uint32_t features, dummy;
+
+  cpuid(CPUID_EXT_FEATURES, &dummy, &dummy, &dummy, &features);
+
+  return (features & CPUID_EXT_HAS_1GPAGES);
 }
 
 static inline bool 

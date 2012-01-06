@@ -1,4 +1,5 @@
 display_library: nogui, options="hideIPS"
+cpuid: 1g_pages=1
 com1: enabled=1, mode=file, dev=serial.out
 boot: cdrom
 ata0-slave: type=cdrom, path=bootable.iso, status=inserted

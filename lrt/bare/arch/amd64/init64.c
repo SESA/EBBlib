@@ -53,6 +53,10 @@ init64(multiboot_info_t *mbi) {
   stdout = &com1;
   printf("Hello World!\n");
   
+  if (has_1gpages()) {
+    printf("has 1g pages\n");
+  }
+
   //setup idt
   for (int i = 0; i < 256; i++) {
     idt[i].raw[0] = 0;
@@ -63,7 +67,7 @@ init64(multiboot_info_t *mbi) {
     //TODO DS: add symbol of generic handler instead of 0
     idt[i].offset_low = ((uint64_t)0 & 0xFFFF);
     idt[i].offset_high = ((uint64_t)0 >> 16);
-    idt[i].selector = 0x8;
+    idt[i].selector = 0x8; //Our code segment
     idt[i].ist = 0;
     idt[i].type = 0xe;
     idt[i].p = 1;
