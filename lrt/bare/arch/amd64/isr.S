@@ -38,7 +38,7 @@ isr\num:
   pushq %r9
   pushq %r10
   pushq %r11
-  movl $\num, %rdi
+  movq $\num, %rdi
   call isr_common
   jmp isr_cleanup
 .endm
