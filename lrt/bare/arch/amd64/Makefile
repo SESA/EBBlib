@@ -19,7 +19,7 @@
 # THE SOFTWARE.
 
 ASFLAGS = -m64 -g3 -D ASM_FILE
-CPPFLAGS = -I ~/Work/sesa/EBBlib
+CPPFLAGS = -I ../../../..
 CFLAGS = -m64 -ffreestanding -Wall -Werror -nostdlib -nodefaultlibs -g3 -std=c99 -O2 -mno-red-zone -mno-mmx -mno-sse -mno-sse2 -mno-sse3
 LDFLAGS = -melf_x86_64 -static -n -z max-page-size=0x1000
 
@@ -29,7 +29,7 @@ kernel.bin: $(OBJS) Makefile link.ld
 	$(LD) $(LDFLAGS) -o $@ -Tlink.ld $(OBJS)
 
 clean:
-	rm -f *.o kernel.bin
+	rm -f *.o kernel.bin iso/boot/kernel.bin bootable.iso
 
 # compile as 32 bit and stuff into elf64
 # we turn on Winline because if something isn't inlined then we call
@@ -43,3 +43,8 @@ init32.o: init32.c Makefile
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c -o $@ $<
 %.o: %.S Makefile
 	$(CC) $(CPPFLAGS) $(ASFLAGS) -c -o $@ $<
+bootable.iso: kernel.bin
+	cp kernel.bin iso/boot/
+	grub-mkrescue -o bootable.iso iso
+
+	
