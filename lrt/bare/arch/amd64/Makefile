@@ -23,7 +23,16 @@ CPPFLAGS = -I ../../../..
 CFLAGS = -m64 -ffreestanding -Wall -Werror -nostdlib -nodefaultlibs -g3 -std=c99 -O2 -mno-red-zone -mno-mmx -mno-sse -mno-sse2 -mno-sse3
 LDFLAGS = -melf_x86_64 -static -n -z max-page-size=0x1000
 
-OBJS = start.o init32.o init64.o stdio.o serial.o string.o
+OBJS = \
+	start.o\
+	init32.o\
+	init64.o\
+	stdio.o\
+	serial.o\
+	string.o\
+	isr.o\
+	isr_common.o\
+	isrtbl.o
 
 kernel.bin: $(OBJS) Makefile link.ld
 	$(LD) $(LDFLAGS) -o $@ -Tlink.ld $(OBJS)

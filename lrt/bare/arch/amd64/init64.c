@@ -27,6 +27,7 @@
 #include <arch/amd64/multiboot.h>
 #include <lrt/bare/arch/amd64/serial.h>
 #include <lrt/bare/arch/amd64/stdio.h>
+#include <lrt/bare/arch/amd64/isr.h>
 
 idtdesc idt[256] __attribute__ ((aligned(8)));
 
@@ -60,9 +61,8 @@ init64(multiboot_info_t *mbi) {
   }
 
   for (int i = 0; i < 256; i++) {
-    //TODO DS: add symbol of generic handler instead of 0
-    idt[i].offset_low = ((uint64_t)0 & 0xFFFF);
-    idt[i].offset_high = ((uint64_t)0 >> 16);
+    idt[i].offset_low = (((uint64_t*)isrtbl)[i] & 0xFFFF);
+    idt[i].offset_high = (((uint64_t*)isrtbl)[i] >> 16);
     idt[i].selector = 0x8; //Our code segment
     idt[i].ist = 0;
     idt[i].type = 0xe;
@@ -70,6 +70,6 @@ init64(multiboot_info_t *mbi) {
   }
   
   load_idtr(idt, sizeof(idt));
-
+  __asm__ volatile ("int $0x3");
   panic();
 }
