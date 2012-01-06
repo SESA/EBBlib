@@ -35,8 +35,6 @@ pd_2m_ent init_pdir[4][512] __attribute__((aligned(4096), section(".init.data32"
 
 gdt init_gdt __attribute__((section(".init.data32")));
 
-tss init_tss __attribute__((section(".init.data32")));
-
 //TODO DS: Maybe this should do something?
 static inline void __attribute__ ((noreturn))
 panic(void)
@@ -127,8 +125,6 @@ init32(multiboot_info_t *mbi, uint32_t magic)
   //setup GDT
   init_gdt.invalid.raw = 0;
   init_gdt.code.raw = 0;
-  init_gdt.tss.raw[0] = 0;
-  init_gdt.tss.raw[1] = 0;
 
   //long mode code segment
   init_gdt.code.type = 0x8; //code, execute only
@@ -136,26 +132,6 @@ init32(multiboot_info_t *mbi, uint32_t magic)
   init_gdt.code.p = 1; //present
   init_gdt.code.l = 1; //long mode code segment
   
-  //init tss
-  init_tss.reserved0 = 0;
-  for (int i = 0; i < 3; i++) {
-    init_tss.rsp[i] = 0;
-  }
-  init_tss.reserved1 = 0;
-  for (int i = 0; i < 7; i++) {
-    init_tss.ist[i] = 0;
-  }
-  init_tss.reserved2 = 0;
-  init_tss.reserved3 = 0;
-  init_tss.iopbm_offset = 0;
-
-  _Static_assert(sizeof(tss) < (1 << 16), "Need to set granularity flag");
-  init_gdt.tss.limit_low = sizeof(tss);
-  init_gdt.tss.base_low = (uintptr_t)&init_tss;
-  init_gdt.tss.type = 0x9; //available tss
-  init_gdt.tss.p = 1;
-  init_gdt.tss.base_high = ((uintptr_t)&init_tss) >> 24;
-
   load_gdtr(&init_gdt, sizeof(init_gdt));
 
   __asm__ volatile (

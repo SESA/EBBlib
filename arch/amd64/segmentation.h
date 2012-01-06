@@ -82,10 +82,9 @@ _Static_assert(sizeof(tss) == 104, "tss packing issue");
 typedef struct {
   segdesc invalid;
   segdesc code;
-  tssdesc tss __attribute__((packed));
 } gdt __attribute__ ((aligned(8)));
 
-_Static_assert(sizeof(gdt) == 32, "gdt packing issue");
+_Static_assert(sizeof(gdt) == 16, "gdt packing issue");
 
 typedef struct {
   uint16_t limit;
@@ -101,10 +100,10 @@ load_gdtr(gdt *base, uint16_t limit)
   gdtr.limit = limit - 1; //limit is length - 1
   gdtr.base = (uintptr_t)base;
   __asm__ volatile (
-	 "lgdt %[gdtr]"
-	 :
-	 : [gdtr] "m" (gdtr), "m" (*base) //stupid gcc
-	 );
+		    "lgdt %[gdtr]"
+		    :
+		    : [gdtr] "m" (gdtr), "m" (*base) //stupid gcc
+		    );
 }
 
 #endif

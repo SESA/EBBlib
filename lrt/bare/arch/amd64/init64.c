@@ -23,9 +23,12 @@
 #include <stdint.h>
 
 #include <arch/amd64/cpu.h>
+#include <arch/amd64/idt.h>
 #include <arch/amd64/multiboot.h>
 #include <lrt/bare/arch/amd64/serial.h>
 #include <lrt/bare/arch/amd64/stdio.h>
+
+idtdesc idt[256] __attribute__ ((aligned(8)));
 
 FILE com1;
 
@@ -37,22 +40,36 @@ panic (void) {
 
 void __attribute__ ((noreturn))
 init64(multiboot_info_t *mbi) { 
-  unsigned char *vram = (unsigned char *)0xb8000;
-  vram[0] = 65;
-  vram[1] = 0x07;
+  
+  /* clear bss */
+  extern uint8_t sbss[];
+  extern uint8_t ebss[];
+  for (uint8_t *i = sbss; i < ebss; i++) {
+    *i = 0;
+  }
+
+  /* serial init */
   serial_init(COM1, &com1);
   stdout = &com1;
   printf("Hello World!\n");
   
-  //setup tss
-  __asm__ volatile (
-		    "ltr %w[tssdesc]\n\t"
-		    :
-		    : [tssdesc] "r" (0x10)
-		    );
-  
   //setup idt
+  for (int i = 0; i < 256; i++) {
+    idt[i].raw[0] = 0;
+    idt[i].raw[1] = 0;    
+  }
 
+  for (int i = 0; i < 256; i++) {
+    //TODO DS: add symbol of generic handler instead of 0
+    idt[i].offset_low = ((uint64_t)0 & 0xFFFF);
+    idt[i].offset_high = ((uint64_t)0 >> 16);
+    idt[i].selector = 0x8;
+    idt[i].ist = 0;
+    idt[i].type = 0xe;
+    idt[i].p = 1;
+  }
+  
+  load_idtr(idt, sizeof(idt));
 
   panic();
 }
