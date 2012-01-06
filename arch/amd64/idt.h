@@ -1,3 +1,6 @@
+#ifndef ARCH_AMD64_IDT_H
+#define ARCH_AMD64_IDT_H
+
 /*
  * Copyright (C) 2011 by Project SESA, Boston University
  *
@@ -22,54 +25,42 @@
 
 #include <stdint.h>
 
-#include <arch/amd64/cpu.h>
-#include <arch/amd64/idt.h>
-#include <arch/amd64/multiboot.h>
-#include <lrt/bare/arch/amd64/serial.h>
-#include <lrt/bare/arch/amd64/stdio.h>
+typedef union {
+  uint64_t raw[2];
+  struct {
+    uint64_t offset_low :16;
+    uint64_t selector :16;
+    uint64_t ist :3;
+    uint64_t zero :5;
+    uint64_t type :4;
+    uint64_t s :1;
+    uint64_t dpl :2;
+    uint64_t p :1;
+    uint64_t offset_high :48 __attribute__((packed));
+    uint64_t reserved :32;
+  };
+} idtdesc;
 
-idtdesc idt[256] __attribute__ ((aligned(8)));
+_Static_assert(sizeof(idtdesc) == 16, "idtdesc packing issue");
 
-FILE com1;
+typedef struct {
+  uint16_t limit;
+  uint64_t base __attribute__((packed));
+} idtr;
 
-static inline void __attribute__ ((noreturn))
-panic (void) {
-  while(1)
-    ;
+_Static_assert(sizeof(idtr) == 10, "idtr packing issue");
+
+static inline void
+load_idtr(idtdesc *base, uint16_t limit)
+{
+  idtr idtr;
+  idtr.limit = limit - 1; //limit is length -1
+  idtr.base = (uint64_t)base;
+  __asm__ volatile (
+		    "lidt %[idtr]"
+		    :
+		    : [idtr] "m" (idtr), "m" (*base)
+		    );
 }
 
-void __attribute__ ((noreturn))
-init64(multiboot_info_t *mbi) { 
-  
-  /* clear bss */
-  extern uint8_t sbss[];
-  extern uint8_t ebss[];
-  for (uint8_t *i = sbss; i < ebss; i++) {
-    *i = 0;
-  }
-
-  /* serial init */
-  serial_init(COM1, &com1);
-  stdout = &com1;
-  printf("Hello World!\n");
-  
-  //setup idt
-  for (int i = 0; i < 256; i++) {
-    idt[i].raw[0] = 0;
-    idt[i].raw[1] = 0;    
-  }
-
-  for (int i = 0; i < 256; i++) {
-    //TODO DS: add symbol of generic handler instead of 0
-    idt[i].offset_low = ((uint64_t)0 & 0xFFFF);
-    idt[i].offset_high = ((uint64_t)0 >> 16);
-    idt[i].selector = 0x8; //Our code segment
-    idt[i].ist = 0;
-    idt[i].type = 0xe;
-    idt[i].p = 1;
-  }
-  
-  load_idtr(idt, sizeof(idt));
-
-  panic();
-}
+#endif
