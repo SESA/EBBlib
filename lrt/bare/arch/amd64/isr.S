@@ -312,4 +312,4 @@ isr_cleanup:
   popq %rdx
   popq %rcx
   popq %rax
-  iret
+  iretq

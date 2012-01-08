@@ -41,7 +41,19 @@ panic (void) {
 
 void __attribute__ ((noreturn))
 init64(multiboot_info_t *mbi) { 
-  
+
+  /* Zero out these segment selectors so we dont have issues later */
+  __asm__ volatile (
+		    "mov %w[zero], %%ds\n\t"
+		    "mov %w[zero], %%es\n\t"
+		    "mov %w[zero], %%ss\n\t"
+		    "mov %w[zero], %%gs\n\t"
+		    "mov %w[zero], %%fs\n\t"
+		    :
+		    :
+		    [zero] "r" (0x0)
+		    );
+
   /* clear bss */
   extern uint8_t sbss[];
   extern uint8_t ebss[];
@@ -70,6 +82,7 @@ init64(multiboot_info_t *mbi) {
   }
   
   load_idtr(idt, sizeof(idt));
+		    
   __asm__ volatile ("int $0x3");
 
   if (has_lapic()) {
