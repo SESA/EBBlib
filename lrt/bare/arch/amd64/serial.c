@@ -45,7 +45,7 @@ static int
 serial_write(uintptr_t cookie, const char *str, int len) {
   uint16_t outport = (uint16_t)cookie;
   for (int i = 0; i < len; i++) {
-    while (!(sysIn8(outport + LINE_STATUS_REG) * (1 << 5)))
+    while (!(sysIn8(outport + LINE_STATUS_REG) & (1 << 5)))
       ;
     sysOut8(outport, (uint8_t)str[i]);
   }
