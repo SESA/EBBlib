@@ -201,28 +201,6 @@ enable_pae(void)
 	 : [cr4] "r" (cr4));
 }
 
-/* static inline void  */
-/* enable_longmode(void) */
-/* { */
-/*   uint32_t eax, edx; */
-/*   __asm__ volatile ( */
-/* 	 "rdmsr" */
-/* 	 : "=a" (eax), "=d" (edx) */
-/* 	 : "c" (MSR_EFER) */
-/* 	 ); */
-
-/*   uint64_t efer = (((uint64_t)edx) << 32) | ((uint64_t)eax); */
-/*   efer |= MSR_EFER_LME; */
-/*   eax = (uint32_t)efer; */
-/*   edx = (uint32_t)(efer >> 32); */
-
-/*   __asm__ volatile ( */
-/* 	 "wrmsr" */
-/* 	 : */
-/* 	 : "a" (eax), "d" (edx), "c" (MSR_EFER) */
-/* 	 ); */
-/* } */
-
 static inline void 
 enable_longmode(void)
 {
@@ -269,25 +247,6 @@ enable_paging(void)
 	 "movl %[cr0], %%cr0"
 	 :
 	 : [cr0] "r" (cr0)
-	 );
-}
-
-static inline void
-enable_lapic(void)
-{
-  uint64_t apic_base;
-  __asm__ volatile (
-	 "rdmsr"
-	 : "=A" (apic_base)
-	 : "c" (MSR_APIC_BASE)
-	 );
-
-  apic_base |= MSR_APIC_BASE_GLOBAL_ENABLE;
-
-  __asm__ volatile (
-	 "wrmsr"
-	 :
-	 : "A" (apic_base), "c" (MSR_APIC_BASE)
 	 );
 }
 

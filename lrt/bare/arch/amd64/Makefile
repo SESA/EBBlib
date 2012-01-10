@@ -55,5 +55,3 @@ init32.o: init32.c Makefile
 bootable.iso: kernel.bin
 	cp kernel.bin iso/boot/
 	grub-mkrescue -o bootable.iso iso
-
-	
