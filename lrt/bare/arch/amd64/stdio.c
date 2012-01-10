@@ -208,7 +208,6 @@ vfprintf(FILE *stream, const char *format, va_list ap)
       flags = 0;
       width = 0;
       precision = -1;
-      format++;
       /* flags */
       if (*format == '-') {
 	format++;
@@ -299,6 +298,5 @@ vfprintf(FILE *stream, const char *format, va_list ap)
       count += prints(cr, 0, 1, 0, stream);
     }
   }
-  va_end(ap);
   return count;
 }
