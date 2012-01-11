@@ -1,6 +1,3 @@
-#ifndef __AMD64_SERIAL_H__
-#define __AMD64_SERIAL_H__
-
 /*
  * Copyright (C) 2011 by Project SESA, Boston University
  *
@@ -23,17 +20,55 @@
  * THE SOFTWARE.
  */
 
-/*
-	Basic output only serial driver for x86.
-*/
-
 #include <stdint.h>
 
-#include <lrt/bare/arch/amd64/stdio.h>
+#include <arch/amd64/apic.h>
+#include <arch/amd64/cpu.h>
+#include <arch/amd64/multiboot.h>
+#include <l0/lrt/bare/arch/amd64/lrt_start_isr.h>
+#include <l0/lrt/bare/arch/amd64/pic.h>
+#include <l0/lrt/bare/arch/amd64/serial.h>
+#include <l0/lrt/bare/arch/amd64/stdio.h>
 
-/* This is the only serial port we use for now : */
-const uint16_t COM1 = 0x3f8;
+FILE com1;
 
-void serial_init(uint16_t out, FILE *stream);
+static inline void __attribute__ ((noreturn))
+panic (void) {
+  while(1)
+    ;
+}
 
-#endif
+static inline void
+clear_bss(void)
+{
+  extern uint8_t sbss[];
+  extern uint8_t ebss[];
+  for (uint8_t *i = sbss; i < ebss; i++) {
+    *i = 0;
+  }
+}
+
+void __attribute__ ((noreturn))
+init64(multiboot_info_t *mbi) { 
+
+  /* Zero out these segment selectors so we dont have issues later */
+  __asm__ volatile (
+		    "mov %w[zero], %%ds\n\t"
+		    "mov %w[zero], %%es\n\t"
+		    "mov %w[zero], %%ss\n\t"
+		    "mov %w[zero], %%gs\n\t"
+		    "mov %w[zero], %%fs\n\t"
+		    :
+		    :
+		    [zero] "r" (0x0)
+		    );
+
+  /* serial init */
+  serial_init(COM1, &com1);
+  stdout = &com1;
+
+  printf("Initializing the pic\n");
+  lrt_pic_init(lrt_start_isr);
+
+  panic();
+}

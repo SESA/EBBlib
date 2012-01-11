@@ -20,53 +20,29 @@
  * THE SOFTWARE.
  */
 
-OUTPUT_ARCH(i386:x86-64)
-OUTPUT_FORMAT(elf64-x86-64)
-ENTRY(_start)
+#include <stdbool.h>
 
-SECTIONS
+#include <arch/amd64/apic.h>
+#include <l0/lrt/bare/arch/amd64/pic.h>
+#include <l0/lrt/bare/arch/amd64/stdio.h>
+
+//We get here after some very early initialization occurs:
+// 1. grub boots us into start.S, we put ourselves on a small boot
+//     stack and call init32 in init32.c
+// 2. init32.c sets up enough paging to idempotently map the first
+//     4 GB of memory, enables long mode and the GDT then jumps to init64
+//     which is in a 64 bit code segment in init64.c
+// 3. init64.c initializes the "pic" and sends an ipi to ourself which goes
+//     through lrt_start_isr.S and then gets here
+
+//We assume the early boot stack is enough until later on when, for example,
+// the event manager gets us on an event and an associated stack. 
+void 
+lrt_start(void)
 {
-	. = 0x00100000;	
-	kstart = .;
-		  
-	.init32 : 
-	{
-		/* the mb_header has to be in the first 8k
-		 * of the file so I put it here.
-		 */
-		*(.mb_header); 
-		*(.init.startup32);
-		*(.init.text32);
-		*(.init.data32);
-	}
-	.text ALIGN (4K) :
-	{
-		*(.text);
-	}
+  printf("lrt_start called!\n");
 
-	.rodata ALIGN (4K) : 
-	{
-		*(.rodata)
-	}
-	.data ALIGN (4K) : 
-	{
-		*(.data)
-	}
-
-	.bss : 
-	{
-		sbss = .;
-		*(COMMON)
-		*(.bss)
-		ebss = .;
-	}
-
-	/DISCARD/ :
-	{
-		*(.eh_frame);
-		*(.note);
-		*(.comment);
-	}
-	kend = .;
+  //Because we get here on an IPI, we need to send an eoi before returning
+  // to the assembly which does our iretq
+  send_eoi();
 }
-

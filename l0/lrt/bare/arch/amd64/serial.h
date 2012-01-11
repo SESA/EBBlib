@@ -1,5 +1,5 @@
-#ifndef __AMD64_UTIL_H__
-#define __AMD64_UTIL_H__
+#ifndef L0_LRT_ARCH_AMD64_SERIAL_H
+#define L0_LRT_ARCH_AMD64_SERIAL_H
 
 /*
  * Copyright (C) 2011 by Project SESA, Boston University
@@ -23,10 +23,17 @@
  * THE SOFTWARE.
  */
 
+/*
+	Basic output only serial driver for x86.
+*/
+
 #include <stdint.h>
 
-void bzero(void *ptr, uintptr_t size);
+#include <l0/lrt/bare/arch/amd64/stdio.h>
+
+/* This is the only serial port we use for now : */
+const uint16_t COM1 = 0x3f8;
+
+void serial_init(uint16_t out, FILE *stream);
 
 #endif
-
-

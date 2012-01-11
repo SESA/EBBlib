@@ -1,5 +1,3 @@
-#ifndef LRT_BARE_ARCH_AMD64_STDIO_H
-#define LRT_BARE_ARCH_AMD64_STDIO_H
 /*
  * Copyright (C) 2011 by Project SESA, Boston University
  *
@@ -22,36 +20,33 @@
  * THE SOFTWARE.
  */
 
-#include <stdarg.h>
 #include <stddef.h>
-#include <stdint.h>
 
-static const int EOF = -1;
+#include <l0/lrt/bare/arch/amd64/string.h>
 
-typedef struct {
-  uintptr_t cookie;
-  int (*write)(uintptr_t, const char *, int);
-} FILE;  
+void bzero(void *ptr, size_t size) {
+  size_t i;
+  char *array = ptr;
+  for(i = 0; i < size; i++)
+    array[i] = 0;
+}
 
-extern FILE *stdout;
-extern FILE *stdin;
-extern FILE *stderr;
 
-extern int fputc(int c, FILE *stream);
-extern int fputs(const char *s, FILE *stream);
-extern int putc(int c, FILE *stream);
-extern int putchar(int c);
-extern int puts(const char *s);
+size_t 
+strlen(const char *s) 
+{
+  size_t rc = 0;
+  while (s[rc]) {
+    ++rc;
+  }
+  return rc;
+}
 
-extern int printf(const char *format, ...);
-extern int fprintf(FILE *stream, const char *format, ...);
-extern int sprintf(char *str, const char *format, ...);
-extern int snprintf(char *str, size_t size, const char *format, ...);
-
-/* stdarg */
-extern int vprintf(const char *format, va_list ap);
-extern int vfprintf(FILE *stream, const char *format, va_list ap);
-extern int vsprintf(char *str, const char *format, va_list ap);
-extern int vsnprintf(char *str, size_t size, const char *format, va_list ap);
-
-#endif
+char *
+strcpy(char * restrict s1, const char * restrict s2 )
+{
+    char * rc = s1;
+    while ((*s1++ = *s2++))
+      ;
+    return rc;
+}

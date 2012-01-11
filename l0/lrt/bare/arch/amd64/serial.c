@@ -1,4 +1,3 @@
-
 /*
  * Copyright (C) 2011 by Project SESA, Boston University
  *
@@ -24,7 +23,7 @@
 #include <stdint.h>
 
 #include <arch/amd64/sysio.h>
-#include <lrt/bare/arch/amd64/stdio.h>
+#include <l0/lrt/bare/arch/amd64/stdio.h>
 
 /* offsets from serial port address: */
 /* when DLAB = 0 : */

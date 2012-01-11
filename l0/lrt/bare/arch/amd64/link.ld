@@ -1,6 +1,3 @@
-#ifndef __AMD64_FMT_H__
-#define __AMD64_FMT_H__
-
 /*
  * Copyright (C) 2011 by Project SESA, Boston University
  *
@@ -23,22 +20,53 @@
  * THE SOFTWARE.
  */
 
-/* formatted IO. */
+OUTPUT_ARCH(i386:x86-64)
+OUTPUT_FORMAT(elf64-x86-64)
+ENTRY(_start)
 
-/* a function type - the uintptr_t should store a
-   pointer to a buffer type into which the uint8_t
-   should be inserted. */
-typedef void (*putchfn)(uintptr_t,uint8_t);
+SECTIONS
+{
+	. = 0x00100000;	
+	kstart = .;
+		  
+	.init32 : 
+	{
+		/* the mb_header has to be in the first 8k
+		 * of the file so I put it here.
+		 */
+		*(.mb_header); 
+		*(.init.startup32);
+		*(.init.text32);
+		*(.init.data32);
+	}
+	.text ALIGN (4K) :
+	{
+		*(.text);
+	}
 
-typedef struct Stream Stream;
-struct Stream{
-	putchfn putch;
-	uintptr_t buf;
-};
+	.rodata ALIGN (4K) : 
+	{
+		*(.rodata)
+	}
+	.data ALIGN (4K) : 
+	{
+		*(.data)
+	}
 
-extern Stream stdout;
+	.bss : 
+	{
+		sbss = .;
+		*(COMMON)
+		*(.bss)
+		ebss = .;
+	}
 
-void printf(char *fmt, ...);
-void fprintf(Stream *out, char *fmt, ...);
+	/DISCARD/ :
+	{
+		*(.eh_frame);
+		*(.note*);
+		*(.comment);
+	}
+	kend = .;
+}
 
-#endif

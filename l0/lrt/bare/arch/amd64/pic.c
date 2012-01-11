@@ -25,9 +25,9 @@
 #include <arch/amd64/pic.h>
 #include <arch/amd64/pit.h>
 #include <arch/amd64/rtc.h>
+#include <l0/lrt/bare/arch/amd64/isr.h>
 #include <l0/lrt/bare/arch/amd64/pic.h>
-#include <lrt/bare/arch/amd64/isr.h>
-#include <lrt/bare/arch/amd64/stdio.h>
+#include <l0/lrt/bare/arch/amd64/stdio.h>
 
 //Vectors 0-31 are reserved by the processor
 //We reserve vectors 32-63 for external interrupts, IPIs, etc.

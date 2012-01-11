@@ -1,4 +1,4 @@
-#include "isr.h"
+#include <l0/lrt/bare/arch/amd64/isr.h>
 
 void *isrtbl[] = {
   isr0,

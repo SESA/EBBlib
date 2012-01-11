@@ -27,7 +27,7 @@
 #include <arch/amd64/multiboot.h>
 #include <arch/amd64/paging.h>
 #include <arch/amd64/segmentation.h>
-#include <lrt/bare/arch/amd64/init64.h>
+#include <l0/lrt/bare/arch/amd64/init64.h>
 
 pml4_ent init_pml4[512] __attribute__((aligned(4096), section(".init.data32")));
 pdpt_ent init_pdpt[512] __attribute__((aligned(4096), section(".init.data32")));

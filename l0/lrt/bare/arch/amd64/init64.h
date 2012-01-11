@@ -1,5 +1,5 @@
-#ifndef LRT_BARE_ARCH_AMD64_STRING_H
-#define LRT_BARE_ARCH_AMD64_STRING_H
+#ifndef L0_LRT_BARE_ARCH_AMD64_INIT64_H
+#define L0_LRT_BARE_ARCH_AMD64_INIT64_H
 /*
  * Copyright (C) 2011 by Project SESA, Boston University
  *
@@ -22,10 +22,8 @@
  * THE SOFTWARE.
  */
 
-#include <stddef.h>
+#include <arch/amd64/multiboot.h>
 
-void bzero(void *ptr, size_t size);
-size_t strlen(const char *s);
-char *strcpy(char * restrict s1, const char * restrict s2);
+extern void init64(multiboot_info_t *mbi);
 
 #endif

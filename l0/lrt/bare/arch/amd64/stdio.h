@@ -1,3 +1,5 @@
+#ifndef L0_LRT_BARE_ARCH_AMD64_STDIO_H
+#define L0_LRT_BARE_ARCH_AMD64_STDIO_H
 /*
  * Copyright (C) 2011 by Project SESA, Boston University
  *
@@ -20,55 +22,36 @@
  * THE SOFTWARE.
  */
 
+#include <stdarg.h>
+#include <stddef.h>
 #include <stdint.h>
 
-#include <arch/amd64/apic.h>
-#include <arch/amd64/cpu.h>
-#include <arch/amd64/multiboot.h>
-#include <l0/lrt/bare/arch/amd64/pic.h>
-#include <lrt/bare/arch/amd64/lrt_start_isr.h>
-#include <lrt/bare/arch/amd64/serial.h>
-#include <lrt/bare/arch/amd64/stdio.h>
+static const int EOF = -1;
 
-FILE com1;
+typedef struct {
+  uintptr_t cookie;
+  int (*write)(uintptr_t, const char *, int);
+} FILE;  
 
-static inline void __attribute__ ((noreturn))
-panic (void) {
-  while(1)
-    ;
-}
+extern FILE *stdout;
+extern FILE *stdin;
+extern FILE *stderr;
 
-static inline void
-clear_bss(void)
-{
-  extern uint8_t sbss[];
-  extern uint8_t ebss[];
-  for (uint8_t *i = sbss; i < ebss; i++) {
-    *i = 0;
-  }
-}
+extern int fputc(int c, FILE *stream);
+extern int fputs(const char *s, FILE *stream);
+extern int putc(int c, FILE *stream);
+extern int putchar(int c);
+extern int puts(const char *s);
 
-void __attribute__ ((noreturn))
-init64(multiboot_info_t *mbi) { 
+extern int printf(const char *format, ...);
+extern int fprintf(FILE *stream, const char *format, ...);
+extern int sprintf(char *str, const char *format, ...);
+extern int snprintf(char *str, size_t size, const char *format, ...);
 
-  /* Zero out these segment selectors so we dont have issues later */
-  __asm__ volatile (
-		    "mov %w[zero], %%ds\n\t"
-		    "mov %w[zero], %%es\n\t"
-		    "mov %w[zero], %%ss\n\t"
-		    "mov %w[zero], %%gs\n\t"
-		    "mov %w[zero], %%fs\n\t"
-		    :
-		    :
-		    [zero] "r" (0x0)
-		    );
+/* stdarg */
+extern int vprintf(const char *format, va_list ap);
+extern int vfprintf(FILE *stream, const char *format, va_list ap);
+extern int vsprintf(char *str, const char *format, va_list ap);
+extern int vsnprintf(char *str, size_t size, const char *format, va_list ap);
 
-  /* serial init */
-  serial_init(COM1, &com1);
-  stdout = &com1;
-
-  printf("Initializing the pic\n");
-  lrt_pic_init(lrt_start_isr);
-
-  panic();
-}
+#endif

@@ -1,5 +1,5 @@
-#ifndef L0_LRT_BARE_PIC_H
-#define L0_LRT_BARE_PIC_H
+#ifndef L0_LRT_BARE_ARCH_AMD64_PIC_H
+#define L0_LRT_BARE_ARCH_AMD64_PIC_H
 
 /*
  * Copyright (C) 2011 by Project SESA, Boston University

@@ -1,3 +1,6 @@
+#ifndef L0_LRT_BARE_ARCH_AMD64_LRT_START_ISR_H
+#define L0_LRT_BARE_ARCH_AMD64_LRT_START_ISR_H
+
 /*
  * Copyright (C) 2011 by Project SESA, Boston University
  *
@@ -20,9 +23,6 @@
  * THE SOFTWARE.
  */
 
-#include "isr.h"
-#include <lrt/bare/arch/amd64/stdio.h>
+extern void lrt_start_isr();
 
-void isr_common(uint64_t int_no) {
-  printf("interrupt #%ld.\n", int_no);
-}
+#endif

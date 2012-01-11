@@ -12,8 +12,6 @@ AC_CANONICAL_HOST
 AS_CASE([$host_cpu], [x86_64], [], [powerpc], [], [AC_MSG_ERROR([not on a supported architecture])])
 AM_CONDITIONAL([x86_64], [test x$host_cpu == xx86_64])
 AM_CONDITIONAL([powerpc], [test x$host_cpu == xpowerpc])
-#AS_IF([test "x$host_cpu" != "xx86_64" -a "x$host_cpu" != "xpowerpc*"], [AC_MSG_ERROR([not on a supported architecture])])
-AC_DEFINE(LRT_ULNX, [], [Set to indicate that we are running the userland Linux low-level runtime])
 
 # Checks for programs.
 AC_PROG_CC
