@@ -27,14 +27,14 @@
 #include <stdint.h>
 
 /* MSRS */
-static const uint32_t MSR_APIC_BASE = 0x1b;
+static const uint32_t MSR_LAPIC_BASE = 0x1b;
 static const uint32_t MSR_EFER = 0xc0000080;
 
-/* MSR_APIC_BASE FLAGS */
-static const uint64_t MSR_APIC_BASE_BSP = 1 << 8;
-static const uint64_t MSR_APIC_BASE_X2APIC_ENABLE = 1 << 10;
-static const uint64_t MSR_APIC_BASE_GLOBAL_ENABLE = 1 << 11;
-static const uint64_t MSR_APIC_BASE_MASK = ((1 << 24) - 1) << 12;
+/* MSR_LAPIC_BASE FLAGS */
+static const uint64_t MSR_LAPIC_BASE_BSP = 1 << 8;
+static const uint64_t MSR_LAPIC_BASE_X2APIC_ENABLE = 1 << 10;
+static const uint64_t MSR_LAPIC_BASE_GLOBAL_ENABLE = 1 << 11;
+static const uint64_t MSR_LAPIC_BASE_MASK = ((1 << 24) - 1) << 12;
 
 /* MSR_EFER FLAGS */
 static const uint64_t MSR_EFER_LME = 1 << 8;
@@ -123,16 +123,6 @@ has_x2apic(void)
   return (features & CPUID_ECX_HAS_X2APIC);
 }
 
-
-static inline bool
-has_lapic(void)
-{
-  uint32_t features, dummy;
-
-  cpuid(CPUID_FEATURES, &dummy, &dummy, &dummy, &features);
-
-  return (features & CPUID_EDX_HAS_LAPIC);
-}
 
 /* CPUID EXTENDED FEATURES */
 

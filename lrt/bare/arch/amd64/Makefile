@@ -32,7 +32,10 @@ OBJS = \
 	string.o\
 	isr.o\
 	isr_common.o\
-	isrtbl.o
+	isrtbl.o\
+	lrt_start_isr.o\
+	lrt_start.o\
+	../../../../l0/lrt/bare/arch/amd64/pic.o
 
 kernel.bin: $(OBJS) Makefile link.ld
 	$(LD) $(LDFLAGS) -o $@ -Tlink.ld $(OBJS)

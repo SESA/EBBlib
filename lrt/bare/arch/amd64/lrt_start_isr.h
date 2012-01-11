@@ -1,3 +1,6 @@
+#ifndef LRT_BARE_ARCH_AMD64_LRT_START_ISR_H
+#define LRT_BARE_ARCH_AMD64_LRT_START_ISR_H
+
 /*
  * Copyright (C) 2011 by Project SESA, Boston University
  *
@@ -20,55 +23,6 @@
  * THE SOFTWARE.
  */
 
-#include <stdint.h>
+extern void lrt_start_isr();
 
-#include <arch/amd64/apic.h>
-#include <arch/amd64/cpu.h>
-#include <arch/amd64/multiboot.h>
-#include <l0/lrt/bare/arch/amd64/pic.h>
-#include <lrt/bare/arch/amd64/lrt_start_isr.h>
-#include <lrt/bare/arch/amd64/serial.h>
-#include <lrt/bare/arch/amd64/stdio.h>
-
-FILE com1;
-
-static inline void __attribute__ ((noreturn))
-panic (void) {
-  while(1)
-    ;
-}
-
-static inline void
-clear_bss(void)
-{
-  extern uint8_t sbss[];
-  extern uint8_t ebss[];
-  for (uint8_t *i = sbss; i < ebss; i++) {
-    *i = 0;
-  }
-}
-
-void __attribute__ ((noreturn))
-init64(multiboot_info_t *mbi) { 
-
-  /* Zero out these segment selectors so we dont have issues later */
-  __asm__ volatile (
-		    "mov %w[zero], %%ds\n\t"
-		    "mov %w[zero], %%es\n\t"
-		    "mov %w[zero], %%ss\n\t"
-		    "mov %w[zero], %%gs\n\t"
-		    "mov %w[zero], %%fs\n\t"
-		    :
-		    :
-		    [zero] "r" (0x0)
-		    );
-
-  /* serial init */
-  serial_init(COM1, &com1);
-  stdout = &com1;
-
-  printf("Initializing the pic\n");
-  lrt_pic_init(lrt_start_isr);
-
-  panic();
-}
+#endif

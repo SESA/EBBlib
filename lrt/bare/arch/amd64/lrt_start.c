@@ -20,55 +20,28 @@
  * THE SOFTWARE.
  */
 
-#include <stdint.h>
+#include <stdbool.h>
 
 #include <arch/amd64/apic.h>
-#include <arch/amd64/cpu.h>
-#include <arch/amd64/multiboot.h>
 #include <l0/lrt/bare/arch/amd64/pic.h>
-#include <lrt/bare/arch/amd64/lrt_start_isr.h>
-#include <lrt/bare/arch/amd64/serial.h>
 #include <lrt/bare/arch/amd64/stdio.h>
 
-FILE com1;
+//We get here after some very early initialization occurs:
+// 1. grub boots us into start.S, we put ourselves on a small boot
+//     stack and call init32 in init32.c
+// 2. init32.c sets up enough paging to idempotently map the first
+//     4 GB of memory, enables long mode and the GDT then jumps to init64
+//     which is in a 64 bit code segment in init64.c
+// 3. init64.c initializes the "pic" and sends an ipi to ourself which goes
+//     through lrt_start_isr.S and then gets here
 
-static inline void __attribute__ ((noreturn))
-panic (void) {
-  while(1)
-    ;
-}
+//We assume the early boot stack is enough until later on when, for example,
+// the event manager gets us on an event and an associated stack. We need to
+//  send an eoi before returning, the assembly will iretq
 
-static inline void
-clear_bss(void)
+void 
+lrt_start(void)
 {
-  extern uint8_t sbss[];
-  extern uint8_t ebss[];
-  for (uint8_t *i = sbss; i < ebss; i++) {
-    *i = 0;
-  }
-}
-
-void __attribute__ ((noreturn))
-init64(multiboot_info_t *mbi) { 
-
-  /* Zero out these segment selectors so we dont have issues later */
-  __asm__ volatile (
-		    "mov %w[zero], %%ds\n\t"
-		    "mov %w[zero], %%es\n\t"
-		    "mov %w[zero], %%ss\n\t"
-		    "mov %w[zero], %%gs\n\t"
-		    "mov %w[zero], %%fs\n\t"
-		    :
-		    :
-		    [zero] "r" (0x0)
-		    );
-
-  /* serial init */
-  serial_init(COM1, &com1);
-  stdout = &com1;
-
-  printf("Initializing the pic\n");
-  lrt_pic_init(lrt_start_isr);
-
-  panic();
+  printf("lrt_start called!\n");
+  send_eoi();
 }
