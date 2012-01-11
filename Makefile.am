@@ -19,6 +19,7 @@ ebbos_CPPFLAGS = -D LRT_BARE
 ebbos_CFLAGS = -m64 -ffreestanding -Wall -Werror -nostdlib -nodefaultlibs -g3 \
 	-std=c99 -O2 -mno-red-zone -mno-mmx -mno-sse -mno-sse2 -mno-sse3
 ebbos_LDFLAGS = -melf_x86_64 -static -n -z max-page-size=0x1000 \
+	-Wl,--build-id=none \
 	-T $(top_srcdir)/l0/lrt/bare/arch/amd64/link.ld
 ebbos_SOURCES = l0/lrt/bare/arch/amd64/init64.c \
 		l0/lrt/bare/arch/amd64/isr_common.c \
@@ -39,14 +40,14 @@ ebbos_SOURCES = l0/lrt/bare/arch/amd64/init64.c \
 		l0/lrt/bare/arch/amd64/string.h
 ebbos_LDADD = l0/lrt/bare/arch/amd64/init32.o
 
+#TODO DS: configure should check for grub-mkrescue
+ebbos.iso: ebbos $(top_srcdir)/l0/lrt/bare/arch/amd64/grub.cfg
+	grub-mkrescue -o ebbos.iso -graft-points boot/ebbos=ebbos \
+	boot/grub/grub.cfg=$(top_srcdir)/l0/lrt/bare/arch/amd64/grub.cfg
+
 #TODO DS: Should have some proper dependency tracking here
 l0/lrt/bare/arch/amd64/init32.o: $(top_srcdir)/l0/lrt/bare/arch/amd64/init32.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ebbos_CPPFLAGS) \
 		$(CPPFLAGS) $(patsubst -m64, -m32, $(ebbos_CFLAGS)) \
 		-Winline -c -o $@ $<
 	objcopy -g -O elf64-x86-64 $@ $@
-
-if BUILD_TESTS
-TESTS = $(l0_tests)
-check_PROGRAMS = $(l0_tests)
-endif

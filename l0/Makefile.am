@@ -2,7 +2,6 @@ include l0/cobj/Makefile.am
 include l0/cplus/Makefile.am
 include l0/lrt/Makefile.am
 include l0/sys/Makefile.am
-include l0/test/Makefile.am
 
 l0_ebbmgrprim_sources = l0/EBBMgrPrim.c l0/EBBMgrPrim.h l0/EBBMgrPrimBoot.c \
 	l0/EBBMgrPrimBoot.h
