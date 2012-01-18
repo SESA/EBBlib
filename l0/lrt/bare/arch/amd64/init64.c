@@ -66,7 +66,7 @@ init64(multiboot_info_t *mbi) {
   /* serial init */
   serial_init(COM1, &com1);
   stdout = &com1;
-
+  serial_getc(COM1);
   printf("Initializing the pic\n");
   lrt_pic_init(lrt_start_isr);
 

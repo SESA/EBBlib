@@ -51,6 +51,13 @@ serial_write(uintptr_t cookie, const char *str, int len) {
   return (int)str[len - 1];
 }
 
+uint8_t
+serial_getc(uintptr_t cookie) {
+  while(!(sysIn8(cookie + LINE_STATUS_REG) & (1 << 0)))
+    ;
+  return sysIn8(cookie);
+}
+
 /* DS HACK: no memory allocation so you pass in the structure to be filled */
 /* init the serial port and return the corresponding file stream */
 void serial_init(uint16_t out, FILE *stream) {

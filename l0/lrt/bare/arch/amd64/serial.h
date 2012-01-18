@@ -36,4 +36,6 @@ const uint16_t COM1 = 0x3f8;
 
 void serial_init(uint16_t out, FILE *stream);
 
+uint8_t serial_getc(uintptr_t cookie);
+
 #endif
