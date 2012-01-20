@@ -11,8 +11,3 @@ bin_PROGRAMS = ebbtest
 
 ebbtest_SOURCES = EBBStart.c $(arch_sources) $(l0_sources) $(lrt_sources) \
 	$(misc_sources) $(net_sources) $(l1_sources)
-
-if BUILD_TESTS
-TESTS = $(l0_tests)
-check_PROGRAMS = $(l0_tests)
-endif
