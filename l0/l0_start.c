@@ -39,6 +39,7 @@
 #include <l0/cobj/CObjEBBRoot.h>
 #include <l0/cobj/CObjEBBRootMulti.h>
 #include <l0/cobj/CObjEBBRootMultiImp.h>
+#include <l1/MsgMgrPrim.h>
 
 
 
@@ -47,6 +48,13 @@ extern void trans_init(void);
 static EBBRC 
 ResetEventHandler_handleEvent(void *_self)
 {
+  EBBRC rc;
+
+  // initialize the message handler, this will take over the
+  // IPI on this core. 
+  rc = MsgMgrPrim_Init();
+  EBBRCAssert(rc);
+
   // then invoke a method of BootInfo object on first message
   // this object should gather boot information (sysfacts and boot args)
   // and then get full blown primitive l0 EBBS up (perhaps by a hot swap)

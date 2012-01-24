@@ -233,12 +233,86 @@ MsgMgrPrim_createRep(CObjEBBRootMultiRef root)
     repRef->reps[i] = NULL;
   }
   repRef->theRoot = root;
+
+  ehid = InitResetEventHandler();
+  EBBAssert(ehid != NULL);
+
+  COBJ_EBBCALL(theEventMgrPrimId, registerIPIHandler, ehid);
+  COBJ_EBBCALL(theEventMgrPrimId, dispatchIPI, MyEL());
+
   return (EBBRep *)repRef;
 };
 
 
 MsgMgrId theMsgMgrId;
 
+// --------------- FIXME: change to MSG Event Handler 
+static EBBRC 
+ResetEventHandler_handleEvent(void *_self)
+{
+  EBBRC rc;
+
+  // initialize the message handler, this will take over the
+  // IPI on this core. 
+  rc = MsgMgrPrim_Init();
+  EBBRCAssert(rc);
+
+  // then invoke a method of BootInfo object on first message
+  // this object should gather boot information (sysfacts and boot args)
+  // and then get full blown primitive l0 EBBS up (perhaps by a hot swap)
+  EBB_LRT_printf("%s: ADD REST OF INIT CODE HERE!\n", __func__);
+  sleep(10);
+  LRT_EBBAssert(0);
+  return 0;
+};
+static EBBRC
+ResetEventHandler_init(void *_self)
+{
+  return 0;
+};
+
+CObject(ResetEventHandler) {
+  CObjInterface(EventHandler) *ft;
+  CObjEBBRootMultiRef theRoot;	
+};
+
+
+static CObjInterface(EventHandler) ResetEventHandler_ftable = {
+  .handleEvent = ResetEventHandler_handleEvent,
+  .init = ResetEventHandler_init
+};
+
+static EBBRep *
+ResetEventHandler_createRep(CObjEBBRootMultiRef _self) {
+  ResetEventHandlerRef repRef;
+  EBBPrimMalloc(sizeof(*repRef), &repRef, EBB_MEM_DEFAULT);
+  repRef->ft = &ResetEventHandler_ftable;
+  repRef->theRoot = _self;
+  //  initGTable(EventMgrPrimErrMF, 0);
+  return (EBBRep *)repRef;
+}
+
+static EventHandlerId
+InitResetEventHandler()
+{
+  CObjEBBRootMultiImpRef rootRef;
+  EventHandlerId id;
+  static EventHandlerId theResetEventHandlerId=0;
+
+  if (__sync_bool_compare_and_swap(&theResetEventHandlerId, (EventHandlerId)0,
+				   (EventHandlerId)-1)) {
+    CObjEBBRootMultiImpCreate(&rootRef, ResetEventHandler_createRep);
+    id = (EventHandlerId)EBBIdAlloc();
+    EBBAssert(id != NULL);
+
+    EBBIdBind((EBBId)id, CObjEBBMissFunc, (EBBMissArg) rootRef);
+    theResetEventHandlerId = id;
+  } else {
+    while (((volatile uintptr_t)theResetEventHandlerId)==-1);
+  }
+  return theResetEventHandlerId;
+};
+// --------------- FIXME: change to MSG Event Handler 
 EBBRC
 MsgMgrPrim_Init(void)
 {
