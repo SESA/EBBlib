@@ -214,41 +214,12 @@ MsgMgrPrim_SetFT(MsgMgrPrimRef o)
 {
   o->ft = &MsgMgrPrim_ftable;
 }
-/*
- * routine called by distributed root on a miss
- * to create/return a representative on a core
- */
-static EBBRep *
-MsgMgrPrim_createRep(CObjEBBRootMultiRef root)
-{
-  MsgMgrPrimRef repRef;
-  EBBPrimMalloc(sizeof(*repRef), &repRef, EBB_MEM_DEFAULT);
-  MsgMgrPrim_SetFT(repRef);
-  int i;
-
-  repRef->eventLoc = MyEL();
-  repRef->mml = 0;
-  repRef->msgqueue = 0;
-  for (i=0; i<LRT_PIC_MAX_PICS ; i++ ) {
-    repRef->reps[i] = NULL;
-  }
-  repRef->theRoot = root;
-
-  ehid = InitResetEventHandler();
-  EBBAssert(ehid != NULL);
-
-  COBJ_EBBCALL(theEventMgrPrimId, registerIPIHandler, ehid);
-  COBJ_EBBCALL(theEventMgrPrimId, dispatchIPI, MyEL());
-
-  return (EBBRep *)repRef;
-};
 
 
 MsgMgrId theMsgMgrId;
 
-// --------------- FIXME: change to MSG Event Handler 
 static EBBRC 
-ResetEventHandler_handleEvent(void *_self)
+MsgEventHandler_handleEvent(void *_self)
 {
   EBBRC rc;
 
@@ -266,53 +237,84 @@ ResetEventHandler_handleEvent(void *_self)
   return 0;
 };
 static EBBRC
-ResetEventHandler_init(void *_self)
+MsgEventHandler_init(void *_self)
 {
   return 0;
 };
 
-CObject(ResetEventHandler) {
+CObject(MsgEventHandler) {
   CObjInterface(EventHandler) *ft;
   CObjEBBRootMultiRef theRoot;	
 };
 
 
-static CObjInterface(EventHandler) ResetEventHandler_ftable = {
-  .handleEvent = ResetEventHandler_handleEvent,
-  .init = ResetEventHandler_init
+static CObjInterface(EventHandler) MsgEventHandler_ftable = {
+  .handleEvent = MsgEventHandler_handleEvent,
+  .init = MsgEventHandler_init
 };
 
 static EBBRep *
-ResetEventHandler_createRep(CObjEBBRootMultiRef _self) {
-  ResetEventHandlerRef repRef;
+MsgEventHandler_createRep(CObjEBBRootMultiRef _self) {
+  MsgEventHandlerRef repRef;
   EBBPrimMalloc(sizeof(*repRef), &repRef, EBB_MEM_DEFAULT);
-  repRef->ft = &ResetEventHandler_ftable;
+  repRef->ft = &MsgEventHandler_ftable;
   repRef->theRoot = _self;
   //  initGTable(EventMgrPrimErrMF, 0);
   return (EBBRep *)repRef;
 }
 
 static EventHandlerId
-InitResetEventHandler()
+InitMsgEventHandler()
 {
   CObjEBBRootMultiImpRef rootRef;
   EventHandlerId id;
-  static EventHandlerId theResetEventHandlerId=0;
+  static EventHandlerId theMsgEventHandlerId=0;
 
-  if (__sync_bool_compare_and_swap(&theResetEventHandlerId, (EventHandlerId)0,
+  if (__sync_bool_compare_and_swap(&theMsgEventHandlerId, (EventHandlerId)0,
 				   (EventHandlerId)-1)) {
-    CObjEBBRootMultiImpCreate(&rootRef, ResetEventHandler_createRep);
+    CObjEBBRootMultiImpCreate(&rootRef, MsgEventHandler_createRep);
     id = (EventHandlerId)EBBIdAlloc();
     EBBAssert(id != NULL);
 
     EBBIdBind((EBBId)id, CObjEBBMissFunc, (EBBMissArg) rootRef);
-    theResetEventHandlerId = id;
+    theMsgEventHandlerId = id;
   } else {
-    while (((volatile uintptr_t)theResetEventHandlerId)==-1);
+    while (((volatile uintptr_t)theMsgEventHandlerId)==-1);
   }
-  return theResetEventHandlerId;
+  return theMsgEventHandlerId;
 };
-// --------------- FIXME: change to MSG Event Handler 
+
+/*
+ * routine called by distributed root on a miss
+ * to create/return a representative on a core
+ */
+static EBBRep *
+MsgMgrPrim_createRep(CObjEBBRootMultiRef root)
+{
+  MsgMgrPrimRef repRef;
+  EventHandlerId ehid; 
+
+  EBBPrimMalloc(sizeof(*repRef), &repRef, EBB_MEM_DEFAULT);
+  MsgMgrPrim_SetFT(repRef);
+  int i;
+
+  repRef->eventLoc = MyEL();
+  repRef->mml = 0;
+  repRef->msgqueue = 0;
+  for (i=0; i<LRT_PIC_MAX_PICS ; i++ ) {
+    repRef->reps[i] = NULL;
+  }
+  repRef->theRoot = root;
+
+  ehid = InitMsgEventHandler();
+  EBBAssert(ehid != NULL);
+
+  COBJ_EBBCALL(theEventMgrPrimId, registerIPIHandler, ehid);
+  COBJ_EBBCALL(theEventMgrPrimId, dispatchIPI, MyEL());
+
+  return (EBBRep *)repRef;
+};
+
 EBBRC
 MsgMgrPrim_Init(void)
 {
