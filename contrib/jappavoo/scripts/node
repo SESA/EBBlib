@@ -1,0 +1,11 @@
+#!/bin/bash
+
+name=$1
+
+if ! VBoxManage list runningvms | grep -q $name 
+then
+  echo "starting $name"
+  nohup VBoxHeadless -s sesa0 -v off >/dev/null 2>&1 &
+else 
+  echo "$name already running"
+fi
