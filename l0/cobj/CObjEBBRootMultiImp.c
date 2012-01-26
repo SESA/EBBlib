@@ -64,7 +64,13 @@ locked_FindRepOn(CObjEBBRootMultiImpRef self, uintptr_t el)
 
   EBBAssert(self->lock!=0);
   rd = self->head;
-  while (rd && rd->el == el) rep=rd->rep;
+  while (rd) {
+    if (rd->el == el) {
+      rep=rd->rep;
+      break;
+    }
+    rd = rd->next;
+  }
   return rep;
 }
 
