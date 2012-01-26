@@ -221,18 +221,7 @@ MsgMgrId theMsgMgrId;
 static EBBRC 
 MsgEventHandler_handleEvent(void *_self)
 {
-  EBBRC rc;
-
-  // initialize the message handler, this will take over the
-  // IPI on this core. 
-  rc = MsgMgrPrim_Init();
-  EBBRCAssert(rc);
-
-  // then invoke a method of BootInfo object on first message
-  // this object should gather boot information (sysfacts and boot args)
-  // and then get full blown primitive l0 EBBS up (perhaps by a hot swap)
-  EBB_LRT_printf("%s: ADD REST OF INIT CODE HERE!\n", __func__);
-  sleep(10);
+  EBB_LRT_printf("%s: MSG EVENT HANDLER, NOW CALL MSG\n", __func__);
   LRT_EBBAssert(0);
   return 0;
 };
@@ -284,12 +273,18 @@ InitMsgEventHandler()
   return theMsgEventHandlerId;
 };
 
-/*
- * routine called by distributed root on a miss
- * to create/return a representative on a core
- */
 static EBBRep *
-MsgMgrPrim_createRep(CObjEBBRootMultiRef root)
+MsgMgrPrim_createRepAssert(CObjEBBRootMultiRef root)
+{
+  EBBAssert(0);
+  return NULL;
+}
+
+/*
+ * Create/return a representative on a core
+ */
+static MsgMgrPrimRef
+MsgMgrPrim_createRep(CObjEBBRootMultiImpRef root)
 {
   MsgMgrPrimRef repRef;
   EventHandlerId ehid; 
@@ -304,34 +299,44 @@ MsgMgrPrim_createRep(CObjEBBRootMultiRef root)
   for (i=0; i<LRT_PIC_MAX_PICS ; i++ ) {
     repRef->reps[i] = NULL;
   }
-  repRef->theRoot = root;
+  repRef->theRoot = (CObjEBBRootMultiRef)root;
 
   ehid = InitMsgEventHandler();
   EBBAssert(ehid != NULL);
-
+  
+  EBB_LRT_printf("%s: msg event hander taking over ipi interrupt\n", 
+		 __func__);
   COBJ_EBBCALL(theEventMgrPrimId, registerIPIHandler, ehid);
   COBJ_EBBCALL(theEventMgrPrimId, dispatchIPI, MyEL());
 
-  return (EBBRep *)repRef;
+  return repRef;
 };
 
 EBBRC
 MsgMgrPrim_Init(void)
 {
-  CObjEBBRootMultiImpRef rootRef;
+  static CObjEBBRootMultiImpRef rootRef = 0;
+  MsgMgrPrimRef repRef;
   MsgMgrId id;
 
   if (__sync_bool_compare_and_swap(&theMsgMgrId, (MsgMgrId)0,
 				   (MsgMgrId)-1)) {
-    CObjEBBRootMultiImpCreate(&rootRef, MsgMgrPrim_createRep);
+    CObjEBBRootMultiImpCreate(&rootRef, MsgMgrPrim_createRepAssert);
     id = (MsgMgrId)EBBIdAlloc();
-    EBBAssert(id != NULL);
+    EBBAssert(id != NULL); 
 
     EBBIdBind((EBBId)id, CObjEBBMissFunc, (EBBMissArg) rootRef);
     theMsgMgrId = id;
   } else {
     while (((volatile uintptr_t)theMsgMgrId)==-1);
   }
+
+  // initialize the msgmgr rep on this core, since we need to take
+  // over the event locally for IPI even before anyone sends a message from
+  // this event location
+  repRef = MsgMgrPrim_createRep(rootRef);
+  rootRef->ft->addRepOn((CObjEBBRootMultiRef)rootRef, MyEL(), (EBBRep *)repRef);
+
   return EBBRC_OK;
 }
 

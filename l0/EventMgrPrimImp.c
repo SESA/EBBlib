@@ -578,9 +578,10 @@ EventMgrPrimImp_createRep(CObjEBBRootMultiImpRef root)
 EBBRC
 EventMgrPrimImpInit(void)
 {
-  CObjEBBRootMultiImpRef rootRef;
+  static CObjEBBRootMultiImpRef rootRef = 0;
   EventMgrPrimId id;
   EventMgrPrimImpRef repRef;
+  EvntLoc myel;
 
   if (__sync_bool_compare_and_swap(&theEventMgrPrimId, (EventMgrPrimId)0,
 				   (EventMgrPrimId)-1)) {
@@ -598,8 +599,9 @@ EventMgrPrimImpInit(void)
   // It makes no sense to handle miss on this object lazily, since it will 
   // always be invoked on every node, everything is in an event
   repRef = EventMgrPrimImp_createRep(rootRef);
-  rootRef->ft->addRepOn((CObjEBBRootMultiRef)rootRef, MyEL(), 
-			(EBBRep *)repRef);
+  myel = MyEL();
+  
+  rootRef->ft->addRepOn((CObjEBBRootMultiRef)rootRef, myel, (EBBRep *)repRef);
   return EBBRC_OK;
 };
 

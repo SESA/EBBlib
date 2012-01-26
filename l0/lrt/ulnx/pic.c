@@ -218,7 +218,7 @@ lrt_pic_init(lrt_pic_handler h)
     return -1;
   }
 
-  // setup where the initial ipi will be directed to
+  // setup where the initial reset will be directed to
   lrt_pic_mapreset(h);
 
   // fall into loop
