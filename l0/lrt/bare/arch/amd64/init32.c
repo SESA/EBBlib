@@ -20,8 +20,8 @@
  * THE SOFTWARE.
  */
 
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 #include <arch/amd64/cpu.h>
 #include <arch/amd64/multiboot.h>
@@ -57,7 +57,8 @@ init32(multiboot_info_t *mbi, uint32_t magic)
   if (!has_longmode()) {
     panic();
   }
-  
+
+  //Eventually these statements can be used to parse the mbi
   if (mbi->flags & MULTIBOOT_INFO_MEMORY) {
   }
 
@@ -78,6 +79,9 @@ init32(multiboot_info_t *mbi, uint32_t magic)
     }
   }
 
+  //now the real work starts
+
+  //FIXME: In the long run consider optimization
   //zero paging structures
   for (int i = 0; i < 512; i++) {
     init_pml4[i].raw = 0;
@@ -114,6 +118,11 @@ init32(multiboot_info_t *mbi, uint32_t magic)
     }
   }
 
+  // now that data structures are ready we load them into the VMM 
+  // facilities and turn on: 
+  //    1) Physical Address Extention (PAE)
+  //    2) Long Mode
+  //    3) Paging on
   load_pml4(init_pml4);
   enable_pae();
   enable_longmode();
