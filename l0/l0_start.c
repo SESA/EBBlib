@@ -59,6 +59,9 @@ ResetEventHandler_handleEvent(void *_self)
   // this object should gather boot information (sysfacts and boot args)
   // and then get full blown primitive l0 EBBS up (perhaps by a hot swap)
   EBB_LRT_printf("%s: ADD REST OF INIT CODE HERE!\n", __func__);
+
+  // bogus call to test IPI to msgmgr
+  COBJ_EBBCALL(theMsgMgrId, msg0, 0, 0);
   sleep(10);
   LRT_EBBAssert(0);
   return 0;

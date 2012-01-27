@@ -202,11 +202,19 @@ MsgMgrPrim_msg3(MsgMgrRef _self, EvntLoc loc, MsgHandlerId id,
   return EBBRC_OK;
 };
 
+static EBBRC 
+MsgMgrPrim_handleIPI(MsgMgrRef _self)
+{
+  EBB_LRT_printf("%s: got first msg, NYI\n", __func__);
+  return EBBRC_OK;
+}
+
 CObjInterface(MsgMgr) MsgMgrPrim_ftable = {
   .msg0 = MsgMgrPrim_msg0,
   .msg1 = MsgMgrPrim_msg1,
   .msg2 = MsgMgrPrim_msg2,
-  .msg3 = MsgMgrPrim_msg3
+  .msg3 = MsgMgrPrim_msg3,
+  .handleIPI = MsgMgrPrim_handleIPI
 };
 
 static inline void
@@ -221,10 +229,9 @@ MsgMgrId theMsgMgrId;
 static EBBRC 
 MsgEventHandler_handleEvent(void *_self)
 {
-  EBB_LRT_printf("%s: MSG EVENT HANDLER, NOW CALL MSG\n", __func__);
-  LRT_EBBAssert(0);
-  return 0;
+  return COBJ_EBBCALL(theMsgMgrId, handleIPI);
 };
+
 static EBBRC
 MsgEventHandler_init(void *_self)
 {
