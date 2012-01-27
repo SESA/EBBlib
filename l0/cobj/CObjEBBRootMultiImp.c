@@ -127,8 +127,21 @@ RepListNode *
 CObjEBBRootMulti_nextRep(CObjEBBRootMultiRef _self, RepListNode *curr, 
 			 EBBRep **rep)
 {
-  EBBRCAssert(0);
-  return NULL;
+  CObjEBBRootMultiImpRef self = (CObjEBBRootMultiImpRef)_self;
+  RepListNode *ret;
+
+  if (curr==NULL) {
+    ret = self->head;
+  } else {
+    ret = curr->next;
+  }
+
+  if (ret != NULL) {
+    *rep = ret->rep;
+  } else {
+    *rep = NULL;
+  }
+  return ret;
 }
 
 static
