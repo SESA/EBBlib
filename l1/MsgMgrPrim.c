@@ -229,7 +229,18 @@ MsgMgrId theMsgMgrId;
 static EBBRC 
 MsgEventHandler_handleEvent(void *_self)
 {
-  return COBJ_EBBCALL(theMsgMgrId, handleIPI);
+  EBBRC rc;
+  // ack that we are handing interrupt
+  lrt_pic_ackipi();
+
+  rc = COBJ_EBBCALL(theMsgMgrId, handleIPI);
+
+  // we are re-enabling interrupts before returning to event mgr
+  // not obvious yet if we should be doing this here, or lower down, 
+  // but its at least reasonable that we want to execute an entire message
+  // disabled.
+  lrt_pic_enableipi();
+  return rc; 
 };
 
 static EBBRC

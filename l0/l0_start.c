@@ -50,6 +50,7 @@ ResetEventHandler_handleEvent(void *_self)
 {
   EBBRC rc;
 
+  lrt_pic_ackipi();
   // initialize the message handler, this will take over the
   // IPI on this core. 
   rc = MsgMgrPrim_Init();
@@ -62,8 +63,7 @@ ResetEventHandler_handleEvent(void *_self)
 
   // bogus call to test IPI to msgmgr
   COBJ_EBBCALL(theMsgMgrId, msg0, 0, 0);
-  sleep(10);
-  LRT_EBBAssert(0);
+  lrt_pic_enableipi();
   return 0;
 };
 static EBBRC

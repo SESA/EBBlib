@@ -394,10 +394,15 @@ lrt_pic_loop()
       lpic->lvecs[RST_VEC]();
     }
     
-    if (lpic->ipiStatus && lpic->enabled[IPI_VEC]) {
-      lrt_pic_disableipi();
-      assert(lpic->lvecs[IPI_VEC] != NULL);
-      lpic->lvecs[IPI_VEC]();
+    if (lpic->ipiStatus) {
+      if (lpic->enabled[IPI_VEC]) {
+	lrt_pic_disableipi();
+	assert(lpic->lvecs[IPI_VEC] != NULL);
+	lpic->lvecs[IPI_VEC]();
+      } else {
+	fprintf(stderr, "FYI (%s:%s): interrupt when disabled\n", 
+		__FILE__, __func__);
+      }
     }
     
     // handle all interrupts in bit vector returned by HW
