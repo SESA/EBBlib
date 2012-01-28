@@ -1,1 +1,1 @@
-l1_sources = l1/MsgMgr.h l1/MsgMgrPrim.c l1/MsgMgrPrim.h
+l1_sources = l1/MsgMgr.h l1/MsgMgrPrim.c l1/MsgMgrPrim.h l1/msgtst.c l1/msgtst.h

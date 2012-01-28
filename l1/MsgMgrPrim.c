@@ -68,6 +68,7 @@ enum{MAXARGS = 3};
 
 typedef struct MsgStore_struc {
   struct MsgStore_struc *next;
+  MsgHandlerId id;
   uintptr_t numargs;
   uintptr_t args[MAXARGS];
 } MsgStore;
@@ -99,6 +100,19 @@ MsgMgrPrim_enqueueMsg(MsgMgrPrimRef target, MsgStore *msg)
     SendIPIEvent(target->eventLoc);
   }
   return EBBRC_OK;
+}
+
+static MsgStore *
+MsgMgrPrim_dequeueMsgHead(MsgMgrPrimRef target)
+{
+  MsgStore *msg;
+  spinLock(&target->mml);
+  msg = target->msgqueue;
+  if (msg != NULL) {
+    target->msgqueue = msg->next;
+  }
+  spinUnlock(&target->mml);
+  return msg;
 }
 
 static EBBRC
@@ -135,6 +149,7 @@ MsgMgrPrim_msg0(MsgMgrRef _self, EvntLoc loc, MsgHandlerId id)
   EBBRCAssert(rc);
 
   EBBPrimMalloc(sizeof(*msg), &msg, EBB_MEM_DEFAULT);
+  msg->id = id;
   msg->numargs = 0;
   
   MsgMgrPrim_enqueueMsg(target, msg);
@@ -154,6 +169,7 @@ MsgMgrPrim_msg1(MsgMgrRef _self, EvntLoc loc, MsgHandlerId id, uintptr_t a1)
 
   rc = EBBPrimMalloc(sizeof(*msg), &msg, EBB_MEM_DEFAULT);
   EBBRCAssert(rc);
+  msg->id = id;
   msg->numargs = 1;
   msg->args[0] = a1;
   MsgMgrPrim_enqueueMsg(target, msg);
@@ -161,7 +177,8 @@ MsgMgrPrim_msg1(MsgMgrRef _self, EvntLoc loc, MsgHandlerId id, uintptr_t a1)
 }
 
 static EBBRC 
-MsgMgrPrim_msg2(MsgMgrRef _self, EvntLoc loc, MsgHandlerId id, uintptr_t a1, uintptr_t a2)
+MsgMgrPrim_msg2(MsgMgrRef _self, EvntLoc loc, MsgHandlerId id, uintptr_t a1, 
+		uintptr_t a2)
 {
   MsgMgrPrimRef self = (MsgMgrPrimRef)_self;
   MsgStore *msg;  
@@ -173,6 +190,7 @@ MsgMgrPrim_msg2(MsgMgrRef _self, EvntLoc loc, MsgHandlerId id, uintptr_t a1, uin
 
   rc = EBBPrimMalloc(sizeof(*msg), &msg, EBB_MEM_DEFAULT);
   EBBRCAssert(rc);
+  msg->id = id;
   msg->numargs = 2;
   msg->args[0] = a1;
   msg->args[1] = a2;
@@ -194,6 +212,7 @@ MsgMgrPrim_msg3(MsgMgrRef _self, EvntLoc loc, MsgHandlerId id,
 
   rc = EBBPrimMalloc(sizeof(*msg), &msg, EBB_MEM_DEFAULT);
   EBBRCAssert(rc);
+  msg->id = id;
   msg->numargs = 3;
   msg->args[0] = a1;
   msg->args[1] = a2;
@@ -205,7 +224,27 @@ MsgMgrPrim_msg3(MsgMgrRef _self, EvntLoc loc, MsgHandlerId id,
 static EBBRC 
 MsgMgrPrim_handleIPI(MsgMgrRef _self)
 {
-  EBB_LRT_printf("%s: got first msg, NYI\n", __func__);
+  MsgMgrPrimRef self = (MsgMgrPrimRef)_self;
+  MsgStore *msg = MsgMgrPrim_dequeueMsgHead(self);
+  while (msg != NULL) {
+    switch(msg->numargs) {
+    case 0:
+      COBJ_EBBCALL(msg->id, msg0);
+      break;
+    case 1:
+      COBJ_EBBCALL(msg->id, msg1, msg->args[0]);
+      break;
+    case 2:
+      COBJ_EBBCALL(msg->id, msg2, msg->args[0], msg->args[1]);
+      break;
+    case 3:
+      COBJ_EBBCALL(msg->id, msg3, msg->args[0], msg->args[1], msg->args[2]);
+      break;
+    }
+    // FIXME: retain in a free list?
+    EBBPrimFree(msg);
+    msg = MsgMgrPrim_dequeueMsgHead(self);
+  }
   return EBBRC_OK;
 }
 
@@ -238,7 +277,9 @@ MsgEventHandler_handleEvent(void *_self)
   // we are re-enabling interrupts before returning to event mgr
   // not obvious yet if we should be doing this here, or lower down, 
   // but its at least reasonable that we want to execute an entire message
-  // disabled.
+  // disabled. Note, a whole chain of messages may be invoked here, so, 
+  // the implicit assumption is that  you re-disable interrupts if you enable
+  // them at the end of a message. 
   lrt_pic_enableipi();
   return rc; 
 };

@@ -40,6 +40,7 @@
 #include <l0/cobj/CObjEBBRootMulti.h>
 #include <l0/cobj/CObjEBBRootMultiImp.h>
 #include <l1/MsgMgrPrim.h>
+#include <l1/msgtst.h>
 
 
 
@@ -61,8 +62,9 @@ ResetEventHandler_handleEvent(void *_self)
   // and then get full blown primitive l0 EBBS up (perhaps by a hot swap)
   EBB_LRT_printf("%s: ADD REST OF INIT CODE HERE!\n", __func__);
 
-  // bogus call to test IPI to msgmgr
-  COBJ_EBBCALL(theMsgMgrId, msg0, 0, 0);
+  // do some basic tests of messaging
+  msgtst();
+
   lrt_pic_enableipi();
   return 0;
 };
