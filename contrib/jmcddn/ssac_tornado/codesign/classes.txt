@@ -1,0 +1,92 @@
+
+Things to think about:
+
+1) Classes
+a)   Factories
+      special short cut FactoryShared
+
+b)   Objects
+ 
+
+Maintain copy of ref in reps or pointer to factory?
+factory pointer: easy access to factory methods and global data
+
+
+
+2) Creation
+   0) ensure ref is avaiable to constructors
+       If possible allow te to allocated 
+       then construction
+       then initialization (avoids serialization of
+       invocation and construction problems)
+   1) Avoid changes to simple shared classes
+         Avoid needing to change parent classes to allow
+         a child class to be clustered
+   2) return errors and ref
+   3) allow clustered degree to be choosen
+
+          
+   Two cases:
+   Standard (Clustered) :
+
+        new of factory
+            allocates ref
+                   
+        to create reps it calls new overidding default shared parm
+
+   Short Cut Shared :
+
+
+3) Deletion
+
+
+class MissHandler {
+protected:
+    virtual SysStatus handleMiss(Obj * &co,
+				 CORef ref, uval methodNum);
+};
+
+class Factory : public MissHandler  {
+protected:
+   CORef _ref;
+
+};
+
+class Obj : public Vtable {
+public:
+    virtual SysStatus destroy();
+    virtual SysStatus cleanup();
+};
+
+class Foo : public Obj {
+public:
+   virtual SysStatus blah();
+};
+
+class FooRep1 : public Foo {
+public:
+   virtual SysStatus blah();
+};
+
+
+
+
+inline void * operator new(uval size, uchar pool, cotype)
+{
+   
+   obj->setpool(pool);
+   if (cotype==SHARED) {
+     Obj *obj=allocCell(sizeof(CLASS),pool);
+     create shared factory
+   } else {
+     Factory *fac=allocCell(sizeof(CLASS),pool);
+     obj->setref(allocref());
+   } 
+   return (void *)obj;
+}
+
+
+ref=(new FooBar(status, arg1, arg2,...))->getRef();
+ref=(new FooFactory(status, arg1, arg2,...))->getRef;
+
+

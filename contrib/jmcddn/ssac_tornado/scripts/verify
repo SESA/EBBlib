@@ -1,0 +1,48 @@
+#!/bin/ksh
+#set -x
+SCRIPTDIR=~/Work/cotst/scripts
+STATSSCRIPT="stats"
+SIMOSRESULTSDIR=~/Work/cotst/results/simoslogs
+# KERNELDIR value should match the KERNELDIR value in runtst
+KERNELDIR=~/Work/cotst
+TMPDIR=/tmp
+
+USAGE="USAGE: verify kernel startcpus endcpus\n"
+
+if [[ $# != 3 ]]
+then
+   echo $USAGE
+   exit
+fi
+
+kernel=$1
+integer startcpus=$2
+integer endcpus=$3
+
+count=0
+
+runtst -l -s BYWORKER -t -C -n verify1 -c ${startcpus}:${endcpus} $kernel
+
+while true
+do
+    (( count=count+1 ))
+    echo "Pass $count"
+    runtst -l -s BYWORKER -t -C -n verify2 -c ${startcpus}:${endcpus} $kernel
+    
+    cd ${SIMOSRESULTSDIR}
+    integer i
+    (( i = startcpus ))
+    while (( i <= endcpus ))
+    do
+	${SCRIPTDIR}/${STATSSCRIPT} ${kernel}.verify1.$i.slog > ${TMPDIR}/$$.stats.1
+	${SCRIPTDIR}/${STATSSCRIPT} ${kernel}.verify2.$i.slog > ${TMPDIR}/$$.stats.2
+	
+	if ! diff ${TMPDIR}/$$.stats.1 ${TMPDIR}/$$.stats.2
+	then
+	echo "****** Found a difference after $count runs stopping *******"
+	exit
+	fi
+        (( i = i + 1 ))
+    done 
+	rm ${TMPDIR}/$$.stats.2 ${TMPDIR}/$$.stats.1 *verify2* ${KERNELDIR}/${kernel}.verify2.*.cs    
+done

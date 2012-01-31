@@ -1,0 +1,123 @@
+#!/bin/sh
+
+# a bit of magic to run script under expect without having to put expect
+# at the top (problem because path is too long for kernel 32char limit)
+eval $skip exec expect -c '"set skip #"' -c '" set 0 dummy"' -f $0 "$@"
+
+# for tracing, use the following
+# exp_internal 1
+
+set start_time [timestamp]
+
+if [info exists env(KERNELDIR)] {
+    set pathprefix "$env(KERNELDIR)/scripts"
+} else {
+    set pathprefix "."
+}
+
+proc run_optional { tout command } {
+  set timeout $tout
+  spawn sh -c $command
+  expect {
+    timeout { 
+      send_user "\nTimed out; skipping skipping command: $command\n"
+      close
+      wait
+    } 
+    SUCCESS {
+      send_user "\n command $command succeeded\n"
+      close
+      wait
+    }
+    FAILED {
+      send_user "\n failed; skipping: $command \n"
+    }
+  }
+}
+
+proc run_required { tout command} {
+  set timeout $tout
+  set start_time [timestamp]
+
+  spawn sh -c $command
+
+  expect {
+    timeout { 
+      send_user "\n timed out on command: $command\n"
+      exit 1
+    } 
+    SUCCESS {
+      send_user "\n command $command succeeded\n"
+      close
+      wait
+    }
+    FAILED {
+      send_user "\n failed on command: $command\n"
+      exit 1
+    }
+  }
+  set elapsed_time [expr [timestamp] - $start_time ]
+  send_user "++++ elapsed time: $elapsed_time\n\n"
+}
+  
+
+if { [lindex $argv 0] == "" } {
+    send_user "dload: <num_procs> { <kparms> }\n"
+    exit 1
+}
+set numprocs	[lindex $argv 0]
+set argv	[lreplace $argv 0 0]
+if { [lindex $argv 0] == "" } {
+    set argv 0
+}
+set kargs	[llength $argv]
+set numargs	[expr 3 + $kargs]
+
+set kparms "-i $numargs 0xBABEFACE0FDEDEAD $numprocs `ttime` $argv"
+
+send_user "kparms: $kparms\n"
+
+send_user "trying to boot $numprocs processors\n"
+
+if [info exists env(GIZMO)] {
+    set machine $env(GIZMO)
+    run_optional 2 "$pathprefix/nload -h$machine -H"
+    set numprocs 1
+} else {
+    send_user "must have gizmo variable declared\n"
+    exit 1
+}
+
+run_required 60 "$pathprefix/loadgserver $machine"
+run_required 30 "$pathprefix/nload -h$machine -g -C"
+send_user "starting program nserver\n"
+run_required 50 "$pathprefix/nload -h$machine -g -b0x80000 nserver"
+run_required 30 "$pathprefix/nload -h$machine -g sysinit"
+run_required 30  "$pathprefix/dloadreset $machine sysinit"
+
+send_user "resetting NUMAchine"
+run_required 30 "$pathprefix/nload -h$machine -g -R"
+
+if [info exists env(PROGLOAD)] {
+    set progload $env(PROGLOAD)
+} else {
+    set progload "nfs pty"
+}
+set baseaddr 0x800000
+foreach loadarg $progload {
+    run_required 150 "$pathprefix/nload -h$machine -n -b$baseaddr $loadarg"
+    set baseaddr [expr $baseaddr + 0x200000]
+}
+#if { [lindex $argv 0] == 0 } {
+#    run_required 150 "$pathprefix/nload -h$machine -n -b0x800000L nfs"
+#    run_required 150 "$pathprefix/nload -h$machine -n -b0xA00000L pty"
+#}
+
+run_required 130 "$pathprefix/nload -h$machine -n -b0x0L $kparms"
+run_required 190 "$pathprefix/nload -h$machine -n -S kernel"
+
+# following string is expected by other expect scripts
+set elapsed_time [expr [timestamp] - $start_time ]
+send_user "Total elapsed time: $elapsed_time\n\n"
+
+send_user "\nDLOAD DONE\n"

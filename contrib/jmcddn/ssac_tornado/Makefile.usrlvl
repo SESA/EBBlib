@@ -1,0 +1,49 @@
+# ############################################################################
+# 
+#                            Tornado Kernel
+# 
+#                        University of Toronto
+#                         Copyright 1994,1995
+# 
+#       This software is free for all non-commercial use, and anyone in this
+#  category may freely copy, modify, and redistribute any portion of it,
+#  provided they retain this disclaimer and author list.
+#       The authors do not accept responsibility for any consequences of
+#  using this program, nor do they in any way guarantee its correct operation.
+# 
+#  $Id: Makefile.usrlvl,v 1.1 1998/12/11 01:44:13 jonathan Exp $
+# 
+# ############################################################################
+
+default:: programs
+
+KERNEL= 
+#FULLDEBUG=1 
+NDEBUG=1
+include $(HOME)/.tornado/mfinc
+include $(MKTORNTOP)/lib64/Makerules.torn
+
+LIBOBJS =
+
+HDRS =
+SRCS = pmem.C
+OBJS = pmem.o
+
+
+TARGETS = pmem
+
+TEST_OBJS = 
+TEST_TARGETS = 
+
+programs:: $(TARGETS)
+
+pmem : pmem.C
+	CC64 -O2 -o $@  -DNDEBUG $^ $(LDFLAGS)
+
+relink::
+	-rm -f $(TARGETS) ; make programs
+
+clean::
+	-rm -f $(OBJS) $(LIBOBJS) $(TARGETS) $(TEST_OBJS) $(TEST_TARGETS)
+
+include $(MKTORNTOP)/lib64/Makerules.end

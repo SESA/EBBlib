@@ -1,0 +1,180 @@
+#!/stumm/i/i/thacks/ben/perl/bin/perl5 -d
+#
+# Copyright (C) 1996 by the Board of Trustees
+#    of Leland Stanford Junior University.
+# 
+# This file is part of the SimOS distribution. 
+# See LICENSE file for terms of the license. 
+#
+
+
+if (defined($ENV{'SIMOS_DIR'})) { 
+    unshift(@INC,"$ENV{'SIMOS_DIR'}/src/apps/scripts");
+}
+
+require "tree.prl";
+
+
+$logfile = $ARGV[0];
+$startnode = "ROOT";
+
+
+%states = ("ROOT" => ["ROOT"],
+	   "all" => ["all"],
+	   "0" => ["0"],
+	   "1" => ["1"],
+	   "2" => ["2"],
+	   "3" => ["3"],
+	   "DESCHED" => ["DESCHED"]
+           );
+
+
+
+$tree = &ParseTree($logfile, "total");
+$comp = SumTree($tree, $startnode, \%states, 1);
+
+sub PrintCount {
+    ($format, $field) = @_;
+
+    printf "%-20s ", $field;
+    
+    foreach $state (sort(keys %$comp)) {
+        if ($comp->{$state}{$field} != -1) {
+            printf $format, $comp->{$state}{$field};
+        } else {
+            printf "%20s ", "undef";
+        }
+    }
+
+    printf "\n";
+}
+
+sub PrintSep {
+    print "---------------------";
+    print "---------------------";
+    print "---------------------";
+    print "---------------------";
+    print "---------------------";
+    print "--------------------\n";
+}
+
+
+PrintCount("%20s ", "name");
+
+PrintSep();
+
+PrintCount("%20.3f ", "seconds");
+PrintCount("%20.0f ", "_cycles");
+PrintCount("%20.0f ", "_instr");
+
+PrintSep();
+
+for $i (@field_time) {
+    PrintCount("%20.3f ","time-$i");
+}
+
+PrintSep();
+
+if ($config{'FalseSharing'} eq "Yes") {
+    for $i ('cold','true','false','repl','other') { 
+        PrintCount("%20.3f ","missclass-$i");
+    }
+    PrintSep();
+}
+
+
+if (defined($fieldPos{'dL2DirtyStall'})) { 
+    for $i ('lat-l1','lat-upg','lat-clean','lat-dirty') {
+        PrintCount("%20.3f ",$i);
+    }
+    PrintSep();
+}
+
+PrintCount("%20.3f ","dL1MR");
+PrintCount("%20.3f ","dL2MR");
+
+PrintSep();
+
+PrintCount("%20.3f ","iMCPI");
+PrintCount("%20.3f ","dMCPI");
+PrintCount("%20.3f ","dL2MCPI");
+
+
+if (1) {
+    PrintSep();
+    PrintCount("%20.3f ","dMCPI-cold");
+    PrintCount("%20.3f ","dMCPI-repl");
+    PrintCount("%20.3f ","dMCPI-true");
+    PrintCount("%20.3f ","dMCPI-false");
+    PrintCount("%20.3f ","dMCPI-other");
+}
+
+if (0) {
+    PrintSep();
+    for $i ('L2LocalStall', 'L2RemoteStall', 
+            'dL2RemoteStall', 'dL2LocalStall',
+            'iL2RemoteStall', 'iL2LocalStall') {
+        PrintCount("%20.0f ",$i);
+    }
+    for $i ('ilat-local','dlat-local','lat-local',
+            'ilat-remote','dlat-remote','lat-remote') {
+        PrintCount("%20.3f ",$i);
+    }
+}
+
+
+sub PrintFrac {
+    ($nm, $f, $t) = @_;
+
+    printf "+ %-15s   %6.0f\n", $nm, 100 * $f / $t;
+}
+
+sub PrintAbs {
+    ($nm, $f) = @_;
+
+    printf "+ %-15s   %10.3f\n", $nm, $f;
+}
+
+if (0) {
+    PrintSep();
+
+    $clock = 1.0 * $config{"Clock"};
+    $kexec =  $comp->{"kernel"}{"seconds"};
+    $sync =  $comp->{"sync"}{"seconds"};
+    $rpc  = $comp->{"rpcwait"}{"seconds"};
+    $totkernel = $kexec + $sync + $rpc;
+
+    $tot = $comp->{"user"}{"seconds"} + $comp->{"idle"}{"seconds"} + $totkernel;
+    print "\n";
+    printf "Measurement period %.2f seconds\n", $tot / 8;
+    print "\nExecution time breakdown:\n\n";
+    PrintFrac('user', $comp->{"user"}{"seconds"}, $tot);
+    PrintFrac('totkernel', $totkernel, $tot);
+    PrintFrac('   exec', $kexec, $tot);
+    PrintFrac('   sync', $sync, $tot);
+    PrintFrac('   rpc', $rpc, $tot);
+    PrintFrac('idle', $comp->{"idle"}{"seconds"}, $tot);
+    print "\nKernel time breakdown:\n\n";
+
+    $lstall = $comp->{"kernel"}{"L2LocalStall"} / $clock;
+    $rstall = $comp->{"kernel"}{"L2RemoteStall"} / $clock;
+    $useful = $totkernel - ($lstall + $rstall + $sync + $rpc);
+
+    PrintFrac('useful', $useful, $totkernel);
+    PrintFrac('loc stall', $lstall, $totkernel);
+    PrintFrac('rem stall', $rstall, $totkernel);
+    PrintFrac('sync', $sync, $totkernel);
+    PrintFrac('rpc wait', $rpc, $totkernel);
+
+    print "\nAbsolute seconds:\n\n";
+
+    PrintAbs('kernel exec sec', $useful /8 );
+    PrintAbs('kernel other sec', ($totkernel - $useful) / 8);
+    PrintAbs('user sec', $comp->{"user"}{"seconds"} / 8);
+    PrintAbs('idle sec', $comp->{"idle"}{"seconds"} / 8);
+
+    print "\nInstruction counts (millions):\n\n";
+    
+    PrintAbs('kexec count', $comp->{"kernel"}{"_instr"} / 1000000);
+    PrintAbs('user count', $comp->{"user"}{"_instr"} / 1000000);
+}

@@ -1,0 +1,44 @@
+#!/bin/sh	-- perl
+eval 'exec perl -S $0 ${1+"$@"}'
+    if 0;
+#!/usr/agora/bin/perl5
+
+require "getopts.pl";
+
+
+$USAGE="mypaste [-d sep]
+-d seperator";
+
+&Getopts('d');
+($opt_d) && ($sep=$opt_d);
+
+
+$sep=',';
+$count=0;
+$max=0;
+
+$numfiles=$#ARGV;
+
+foreach $i (0 .. $numfiles) 
+{
+    open(IN, $ARGV[$i]);
+    $data[$i]=[<IN>];
+    $ref = $data[$i];
+    if ( $#$ref > $max ) 
+    {
+      $max=$#$ref;
+    }
+}
+
+foreach $i (0 .. $max)
+{
+    reset 'l';
+    foreach $j (0 .. $numfiles)
+    {
+    push(@line,$data[$j]->[$i]);
+    }
+    chop @line;
+    print (join ( "$sep" , @line ), "\n");
+}
+
+

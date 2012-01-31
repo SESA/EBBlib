@@ -1,0 +1,74 @@
+#!/stumm/i/i/thacks/ben/perl/bin/perl5
+sub printheader()
+{
+    print "newgraph x_translate $xoffset y_translate $yoffset\n title : $caption\n";
+}
+sub printtrailer()
+{
+    print "curve 0 marktype xbar\nxaxis\n  size $ysize no_auto_hash_labels no_auto_hash_marks\n  hash_labels rotate -90 vjt hjl\n";
+    print "  label : $title\n";
+    print "yaxis\n  size $ysize\n";
+}
+
+sub plot
+{
+#  print "$title|$n|$sum|$sumofsqs=|$min|$max|$numinterval|$minintervalval|$intervalsize|@intevalvalues\n";
+    $count=0;	
+    if ($n==1) {	
+	$variance=0;
+	$stddev=0;
+    }else {
+	$variance=($sumofsqs - (($sum*$sum)/$n))/($n - 1);
+#  $stddev= sqrt($variance);
+	$stddev="fix";	
+    }
+
+    $caption=sprintf("min=%d max=%d variance=%.2f stddev=fixme",$min,$max,$variance);
+    $start=$minintervalval;
+    $end=$minintervalval+$intervalsize;
+    printheader();
+    for $ival (@intervalvalues)
+    {
+	if ($count==0) {
+	    $label="<$start";
+	} else {
+	    $label="$start - $end";
+	}
+        if ($count == ($numinterval + 1)){
+	    $label=">$start";
+	}
+        if ($count >  ($numinterval + 1)) {
+	    die "Number of intervals greater than $numinterval\n";
+	}
+        print "   curve 0 pts  $count $ival\n";
+	print "   xaxis hash_at $count hash_label at $count : $label\n";
+        if ($count>0) {
+	    $start=$end;
+	    $end=$start+$intervalsize;
+	}
+        $count++;
+    }
+    printtrailer();
+    $xoffset=$xoffset+$xsize+$xgap;
+    if ($xoffset>($pagewidth-$xsize-$xgap)) {
+	$xoffset=0;
+        $yoffset=$yoffset-$ysize-$ygap;
+    }
+}
+
+$pagewidth=8.5;
+$pagehieght=0;
+$ysize=2;
+$xsize=2;
+$xgap=2;
+$ygap=1;
+$xoffset=0;
+$yoffset=$pagehieght - $ysize - $ygap;
+
+while (<>)
+{
+   chop;	
+   /(^.*): n (\d+) sumX (\d+\.\d+).*sumXX (\d+\.\d+).*minX (\d+\.\d+).*maxX (\d+\.\d+).*numbucket (\d+) minval (\d+\.\d+).*incr (\d+\.\d+).*buckets(.*)$/
+    && ($title=$1,$n=$2,$sum=$3,$sumofsqs=$4,$min=$5,$max=$6,$numinterval=$7,$minintervalval=$8,$intervalsize=$9,@intervalvalues=split(/\s/,$10),
+	&plot());
+} 

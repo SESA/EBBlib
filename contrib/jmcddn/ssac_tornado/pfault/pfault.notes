@@ -1,0 +1,508 @@
+Creation: (Global Initialization)
+eg. SrvAddr.C:startServer
+  ProgramDefault::create(...)
+  RegionPhys::create( progref,...)
+
+   ProgramDefault:
+      a) Initially has an empty RegionList.
+      b) Creates HATProgramDefault if a HAT is not passed to it.
+         HATProgramDefault
+            a) Initially has an empty (TopLevel) pagetable list
+               and an empty (TopLevel) hatcodes list. (both
+               list are keyed by vp.  One toplevel pagetable
+               per vp and one topLevel hatcode per vp.  
+               The per vp hatcode is responsible for initially
+               fielding TLB exceptions 
+	       (interpreting the toplevel
+               pagetable of the given vp).  Our default
+               behaviour is to treat the top level pagetables
+               as jump tables to code which is responsible
+               for the segment in which the fault occured.
+	    b) allocates a hatSegmentable and initializes
+               entries to null.  This table has one entry
+               per segment of the address space (24bits).
+               Each entry associates a segment of the 
+               Address space to a specific HATRegion which
+               (if there is one) will manage its mappings.
+	    c) creates defaultSegmentCode (NoSegCode).
+	       This code is responsible for redirecting
+               accesses to HATProgramDefault::handleNoSeg.
+
+              
+
+   Region:
+      a) set reference to the ProgramDefault it belongs to.
+      b) Add the Region to the ProgramDefaults::regionList
+      c) Assuming  Regionhat is not prespecified 
+         (if it is then a call to attachTo on the 
+          specified hat is made).
+         ask the HATProgram of 
+         the Program to attach the region (attachFrom).
+      d) Set reference to the HAT responsible for this 
+         Region (this is generally the HATProgram of 
+         the Program it is part of).
+      e) call setmappings on HAT responsible for this
+         Region.
+
+      HATProgramDefault::attachFrom():
+         assuming a specific hat is not specified
+         (if it is then it ensures that all segments
+          that the region falls in do not have a 
+          hat assigned and then assigns the specified 
+          hat to them)
+         attachfrom goes through all necessary
+         entries of the hatSegmentTable for the 
+         Regions dimensions and creates HATRegionDefaults
+         for any null entries.  It then returns
+         a reference of itself back to the caller as 
+         the hat responsible for the region.  
+         (If it spans multiple segements only the 
+          ProgramHAT is capable of handling calls however
+          if the region fits within on RegionHAT that
+          hat could have been specified as the responsible
+          hat however we do not make this optimization)
+
+      HATRegionDefault creation:
+        a) Creates and records a reference to a pagetable for 
+           the segment it manages. Initializes all entries
+           to be invalid.
+        b) Creates and recordss a reference to exception and
+           miss handling code for the segment 
+           (which walks the pagetable for the segment)
+
+      HATProgramDefault::setMapping:
+          a) Check to see that there is a HATRegion
+             identified for each segment contained
+             in the region.
+          b) call setMapping on each HATRegion.
+            
+      HAT.C:setMapping:
+          * Ask Ben:  If setting mappings to invalid
+                      then always flush.  Why?  Is this
+                      to ensure that TLB and ptes are in sync
+		      (over lapping ASIDs)?
+                      And ensure an initial refill on access?
+          a) set page table entries to reflect mappings
+             for region. Initially all set to invalid.
+             (which will force a page fault).
+             If a previous mapping is found to be valid
+             this fact is recorded.  
+	  b) If necessary flush TLB's.             
+
+Context Switch and Process Creation:
+(Local per VP initialization)
+This happens wrt to a given VP.
+A cakl is made to ProgramDefault::getLowLevelInfo.
+Which is responsible for:
+   a) returning an ASID for the Program
+   b) value of the status register.
+   c) topLevel tlbmiss code via call to ProgramDefault::getCtxt 
+
+The getCtxt call is responsible for returning 
+the toplevel tlb handler for the specified vp.
+
+a) Looks up vp in hatcodes list.
+   If found return it (the HATProgram has been initialized on 
+   this vp before).
+   else :
+     Initialize the HATProgram for this vp:
+        a) Allocate topLevel PageTable for this vp.
+           (which in the case of HATProgramDefault is a 
+            jump table of pointers to segment handlers).
+           Add it to the HATPrograms list of toplevel
+           pagetables.
+        b) Allocate topLevel tlbhandler for this vp.
+           It is responsible for jumping trough the
+           vp's PageTable. Add it to the HATProgram's
+           list of toplevel tlbcodes.
+        c) Initialize the vp's PageTable to point
+           to the HATPrograms defaultSegmentCode.
+           This ensures that all initial faults will
+           be directed to code which can lookup and
+           install the appropriate segement code in
+           vp's top level PageTable.
+        d) return pointer to newly created tlbcode
+
+First TLB refill exceptions: (refill maps to miscode)
+a) TLB refill exception is vectored via refill vector:
+   Is directed to current tlbmiss code on vp which 
+   should be the code in HATPrograms list of  hatcodes ( for this
+   vp).  In the case of HATProgramDefault this is simply 
+   a lookup on the vp's toplevel page table and a jump 
+   to the func found (passing the BVADDR). 
+b) Initially this is to the Programs defaultSegmentCode:
+   a) Identifies appropriate HATProgram
+   b) redirects via ppc to HATProgram::handleNoSeg
+   HATProgramDefault::handleNoSeg:
+     a) calls addSeg:
+         a) finds the appropriate entry in the topLevel Page table for this
+            vp. 
+         b)  Looks up the HATRegion in the hatsegmenttable for the
+             faulting segement.  If null returns an error.
+         c) loads the topLevel Page table entry with the miss handling
+            code for the identified HATRegion
+     b) if error then reflect error
+
+Other TLB refills
+ Will jump directly to specific HATRegion tlb miss handling code.
+ Which inturn lookup miss in HATRegion's pagetable and reloads tlb
+ with entry.  (Note this may be an invalid entry in which case
+ the access will fault again and be directed to the general expection
+ path)
+
+(General Exception Path)
+TLB invalid/modify exceptions: (exceptions map to execpt code)
+This will be redirected to the exception handling code for 
+this vp.  This should be the code in the HATPrograms list of hatcodes 
+(for this vp).  Note entry point is a fixed offset from miss entry point.
+
+This gets redirected to :
+   a) HandleTlbExcept in HAT.C (prints a "P" if it is a page fault)
+      a) Flush old TLB entry.
+      b) directs call to approriate XProgram::handleException
+      
+
+
+
+Analysis of Refill and Exception Paths:
+
+a) Refill Path (TLB Miss)
+
+
+b) Page Fault Handling (relevant poritons of general exeption handling)
+    1) HAT-asm.s: hat_default_tlbexcept:
+          template for generating per program per vp exception handler
+             calls handle_tlbexcept with
+             hard coded oid of faulting programs XProgram as arg
+
+    2) HAT-asm.s: handle_tlbexcept:
+          a) Save all user registers in SAVEAREA (per processor/vp space?)
+          b) (dla gp, _gp ???)
+          c) loads execption stack
+          d) calls HandleTlbExcept with 
+               oid of XProgram, PDAnnex of faulter, BADVADDR, vp, CAUSE
+               as args.
+
+    3) HAT.C: HandleTlbExcept
+          a) associated SAVEAREA with PDAnnex via TheSaveAreaList 
+             (is there contention here?)
+          b) flush TLB Entry of fault (TLBFlushEntry : disables interrupts)
+          c) calls  XProgram::handleException via Exception ppc
+    
+    4) XProgram.C:XProgram::handleExecption
+           a) gets PDAnnex of caller via the ActiveProcessRef
+           b) Call Internal Program handleFault
+	   c) setup PDA and XReturn (assumes this gets fault running again)
+   
+    5) ProgramDefault.C:ProgramDefault::handleFault
+           a) get real PD via PDAnnex via The ActiveProcessRef
+          *b) Acquire ProgramDefault::_lock
+           c) Find faulting Region via search of 
+          %d) Release ProgramDefault:_lock
+           e) call handle fault on Faulting Region
+
+    6a) RegionPhys.C:RegionPhys::handleFault
+           a) _hat->setMapping on vp
+
+    6b) RegionSimple.C:RegionSimple::handleFault
+           a) TLBCHECK()) ???
+	   b) _fcm->find() ???
+             (if not found block for io and return)
+	  *c) Acquire RegionSimple::_lock    
+	   d) check timestamp
+           e) _hat->setMapping on vp 
+          %f) Release RegionSimple::_lock
+
+    7) FCMSimple.C:FCMSimple::find
+         *a) Acquire FCMSimple::_lock
+          b) FCMSimple::findPage 
+             Assuming page is found then
+         %c) Release FCMSimple::_lock
+
+   8) HAT.C:HATProgramDefault::setMapping:
+          *a) Acquire HATProgramDefault::_lock
+           b) Check appropriate entries of _hatSegmentTable to ensure
+              all segements that overlap the faulting page have a hatRegion
+           c) call setMappings on all necessary hatRegions.
+          %d) Release HATProgramDefault::_lock
+
+   9) HAT.C:HATRegionDefault:setMapping:
+          *a) Acquire HATRegionDefault::_lock
+           b) call SetMapping passing this pagetable
+           c) Flush TLB's if necessary (on all pps on which getCtxt called)
+          %d) Release HATRegionDefault::_lock
+         
+  10) HAT.C:SetMapping
+           a) Locate first pte entry
+           b) If Setting to an Invalid mapping then:
+               a) Mark flush of TLBs
+               b) Invalidate ptes
+           c) If Setting to a Valid mapping then:
+	       a) For all ptes:
+                  a) check to see if previous mapping is valid
+                     If so Mark flush of TLBs
+                  b) set mapping of pte
+
+  11) HAT.C:HATFlushTLB(useset,....)
+          a) for each processor in use set Flush TLB entries
+             going remote if necessary.
+
+
+Analysis:
+   Locks - ProgramDefault::_lock, FCMSimple::_lock,
+           RegionSimple::_lock, HATProgramDefault::_lock,
+	   HATRegionDefault::_lock.
+	   
+
+Scenario 1:
+
+Two processes fault on independent portions of the same region (implying
+the same COR and FCM associated with the Region).  
+
+Contended Locks: All
+
+
+Scenario 2:
+
+Two processes fault on independent Regions (each regions has is attached
+to seperate COR's with and hence seperate FCM's).
+
+Contended Locks: ProgramDefault::_lock, HATProgramDefault::_lock,
+	         HATRegionDefault::_lock
+
+
+Scenario 3: (OSDI)
+
+Two processes fault on independent Regions which fall on sperate Segments:
+
+Contended Locks:  ProgramDefault::_lock, [HATProgramDefault::_lock]
+
+
+
+
+Optimzation 1:
+
+de-Clustered FCM:
+
+Current:
+  On the page fault path FCM::find is called from the Region in which the
+  fault occured.  It is passed the file offset required, length of data,
+  access type, region reference, the faulting thread, page fault type, 
+  
+  It returns a reference to a physical page containing the data requested
+  of the file and a time stamp.
+
+
+  Sequence:
+     a)  Obtain FCMCommon::_lock
+     b)  call FCMSimple::findPage or FCMPageReplacer::findPage (depending of type
+         of FCM) with the file offset required.
+         Both versions simply query the FCMCommon::_pagelist for the file
+	 offset:
+              PageList::find :
+                  This is a linear search of the link list of pages
+		  associated with the FCM.  Each link contains the file
+                  offset the page it represents corresponds to and
+                  the physical address of the page. (note that pagelist
+                  may contain special links called interval markers which
+                  are ignored for the sake of searching the list)
+     c) if the neseccary page was found in the pagelist then (soft page fault) : (else d)
+            1) Check to see if the page has outstanding ioBeing done to it
+               i) then register the faulting thread for a call back when
+	          the IO is complete
+              ii) release lock and return status indicating need for call back
+            2) mark the page list link as referenced (used=1)
+            3) if write access mark page list link as dirty
+            4) set return physical address to the address in the page list
+	       link
+	    5) set return timestamp to the time stamp of the FCM
+	       (FCMCommon::_timestamp)
+            6) release lock and return ok status.
+
+     d) Necessary page not found in page list:
+         if FCMSimple 
+            a) get a new physical page from _pm
+            b) call FCMSimple:addPage
+         else FCMPageReplacer derived
+            a) call FCMLRU::addPage or FCMFIFO::addPage
+        
+         
+     e) Got a new page now begin filling it and return
+          1) register pd for a call back when IO complete
+          2) Mark new page List link as doing IO set dirty status if access
+	     is a write  (??? should we not be setting the page as used as
+	     well???)
+          (??? for some reason FCMPageReplacer sets the return page phys
+	  addr and timestamp ???)
+          3) release lock and begin IO via core to the new page
+          4) if cor indicates need for a call back then return need for a
+             call back to caller   
+              
+     f) Cor indicated that io is done (immediately done or was asynch for
+        some reason eg. corzero)
+           1) reacquire lock 
+           2) find page in page list (if not there release lock and retry
+              from the top ) 
+	   3) clearIO status of page list link
+           4) remove call back for fileOffset (there could be more than on)
+           5) set return timestamp to FCMCommon::_timestamp
+           6) if the call back deleted is was not the one allocated earlier
+              then
+                        create a tmp list of callbacks
+                        remove the calls backs from the main list
+                        adding them to the tmp list
+                        release lock and do call backs on tmp list
+                        (Region::ioDone)
+           7) set return page to the page list link for the new page.
+
+
+
+
+
+
+Email to ben:
+Current FCM find alg:
+
+    0) search for page and handle hits
+ Cache Miss: (assume lock is held)
+    
+    1) allocate page
+    2) add call back for region for 
+       fileoffset
+    3) set IO bit on page desc
+    4) release lock
+    5) ask cor to read page
+    
+    6a) if cor indicates asynch IO then return to 
+          caller reflecting busy on IO
+    
+    6b) else 
+       7)  reacquire lock
+       8)  look for page
+           9a) if not found then release lock and retry the whole path
+           9b) else 
+                10) clear IO bit on page desc
+                11) remove a callback from the list for the fileoffset
+                12) note timestamp
+                13a) if there are more than one waiter for the fileoffset
+                      12) build list of waiters and remove from call back list
+                      13) release lock
+                      14) do call back for all waiters
+                13b) else release lock
+                14) return result to caller
+
+proposed:
+
+   Cache Miss: (assume lock is held)
+   
+     1) allocate page
+     2) ask core to read page
+
+     3a) if cor indicates asych IO then  (assume sych with read done via FCM 
+                                         lock)
+            4) add call back for region for fileoffset
+            5) set IO bit on page desc
+	    6) release lock and return to caller indicating busy on IO
+
+     3b) else (lock has been held continously so no other requests exist)
+            7) note timestamp
+	    8) release lock and return result to caller
+        
+
+BAD as 2 calls the core with the lock held this should be avoided.
+
+
+
+
+Tracing of time stamps Region::_timestamp and FCM::_timestamp
+(LTS - local time stamp);
+
+
+Construction:
+   Region::_timestamp = 0 (RS::_ts)
+   FCMSimple::_timestamp = ? (not initialized) (FS::_ts)
+   FCMLRU::_timestamp = 0 (FL::_ts)
+
+Action : initial fault after construction (vaddr = v);
+
+a) RegionSimple::handleFault: RS::_ts=0, FS::_ts=?, FL::_ts=0
+    (translates v to fa)
+
+    1) create LTS = ?
+    2) call find on FCM passing in LTS
+
+         FCMSimple:
+	      if ( page found and busy )
+	         do not change LTS
+		 return 1
+              if ( page found and NOT busy )
+	         LTS = FS::_ts = ?
+		 return 0
+              if ( page not found )
+                   if ( IO necessary )
+		      do not change LTS
+		      return 1
+                   if ( IO uncessary )
+		       LTS = FS::_ts = ? (may have changed?)
+		       return 0
+	      
+         FCMLRU: (FCMPageReplacer)
+	      if ( page found and busy )
+	         do not change LTS
+		 return 1
+              if ( page found and NOT busy )
+	         LTS = FS::_ts = 0
+		 return 0
+              if ( page not found )
+	           LTS = FL::_ts = 0
+                   if ( IO necessary )
+		      return 1
+                   if ( IO uncessary )
+		       LTS = FL::_ts = 0 (may have changed?)
+		       return 0
+
+    3) if ( find = 1 ) block and return
+
+    4) if ( find = 0 ) 
+          a) if LTS <_timestamp print warning of race 
+
+          b) map address via HAT (regardless)
+
+
+Action : FCM::readDone called by COR indicating I/O complete for fa
+       RS::=_ts=0, FS::_ts=?, FL::_ts=0
+  
+   FCMSimple and FCMLRU (FCMPageReplacer) identical behaviour
+    Assuming page desc still in cache
+      1) create LTS = FS::_ts = ? | LTS = FL::_ts = 0
+      2) call region::ioDone passing LTS
+
+   RegionSimple::ioDone 
+
+      if ( LTS < RS::_ts ) 
+          print warning of unmap race (DO NOT set mapping!!!)
+      else
+         setmapping via HAT
+  
+      unblock pd (note if race this will cause pd to refault)
+
+
+
+Action : FCMLRU is asked to free up pages by PM
+        
+      1) determine page to free
+      2) call FCMPageReplacer::unmapPage
+            increment FCMLRU::_ts=FCMLRU::_ts +1 = 1;
+      3) call region::unmap passing FCMLRU::_ts
+
+      RegionSimple::unmap 
+         1) translate fa to vaddr 
+         2) if FCMLRU::_ts != 0 them RS::_ts = FCMLRU::_ts
+         3) unsetmapping via HAT
+	 
+
+     
+   
+    
+
+         

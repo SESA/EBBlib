@@ -1,0 +1,88 @@
+#!/stumm/i/i/thacks/ben/perl/bin/perl5
+require "getopts.pl";
+
+$strip=1;
+
+
+&Getopts('n');
+($opt_n) && ($strip=0);
+
+!$ARGV[0] && die "must specifie imagefile"; 
+$IMAGE=$ARGV[0];
+shift;
+
+
+%symtbl={};
+%symlen={};
+%done={};
+%stats={};
+$last=0;
+$c=0;
+$total=0;
+
+sub symtbl {
+    local($add,$len,$type,$sym,$c);
+    $c=0;
+    open(SYM,"/usr/bin/nm -xAC $IMAGE|");
+    while (<SYM>) {
+	/.*\|(.*)\|(.*)\|(.*)\|.*\|.*\|.*\|(.*)/ && ($add=$1,$len=$2,$type=$3,$sym=$4);
+	hex(len)==0 && hex($symlen{$add})!=0 && next;
+	($symtbl{$add}=$sym, $symlen{$add}=$len,$c++) if ($add && ($type =~ /FUNC/));
+	$c==100 && ((print STDERR "."),$c=0);
+        undef $add;
+    }
+    print STDERR "\n";
+}
+
+
+sub findsymbl {
+    local($target,$current)=@_;
+
+    ($stats{$symtbl{$target}}++,
+     $last=$target,
+     $done{$target}=$target,
+     return "$symtbl{$target}") if $symtbl{$target};
+
+    ($stats{$symtbl{$done{$target}}}++,return "$symtbl{$done{$target}}") if $done{$target};
+    ($stats{$symtbl{$last}}++,return "$symtbl{$last}") if ((hex($target)>hex($last)) &&
+				       (hex($target)<(hex($last) + hex($symlen{$last}) - 1 )));
+
+    foreach $current (sort keys %symtbl) {
+	($stats{$symtbl{$current}}++,
+	 $last=$current,
+	 $done{$target}=$current,
+	 return "$symtbl{$current}") if ((hex($target)>hex($current)) &&
+					 (hex($target)<(hex($current) + hex($symlen{$current}) - 1 )));
+    }
+    $stats{"NOTFOUND"}++;
+    return "NOTFOUND";
+}
+
+print STDERR "Loading symbols.";
+&symtbl();
+
+
+foreach $infile (@ARGV) {
+    open(INFILE,$infile) || die "Error opening $infile\n";
+    open(OUTFILE,">$infile.ann") || die "Error opening $infile.ann\n";
+    print STDERR "Processing $infile:\n";
+    print STDERR "Translating addresses.";
+    undef %stats;
+    $c=0;
+    $total=0;
+    while (<INFILE>) {
+ 	/^.*: PC (\S*):(.*)$/o && ($addr=$1,$line="$1: $2"); 
+	!$strip && (chop, $line=$_);
+	print OUTFILE (&findsymbl($addr)," \t- $line \n");
+	$c++;
+	$c==100 && ((print STDERR "."),$c=0);
+    }
+    print STDERR "\n";
+    foreach $stat (keys %stats) {
+	$total=$total+$stats{$stat};
+    print OUTFILE "**** STATS: $stat: $stats{$stat}\n";
+    }
+    print OUTFILE "**** STATS: Total instructions=$total\n";
+    close(INFILE);
+    close(OUTFILE);
+}

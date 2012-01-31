@@ -1,0 +1,39 @@
+#!/stumm/i/i/thacks/ben/perl/bin/perl5
+
+$file=$ARGV[0];
+
+
+sub extracttrace {
+    local($file,$pda,$ofile)=@_;
+    local($p,$cpu)=(0);
+
+    open(TFILE,$file);
+    open(OFILE,">$ofile");
+
+    while (<TFILE>) {
+	/^\*\*\*\* SCACHETRACE: START:.*cpu=(.*) pda=$pda.*$'/ && ($cpu=$1,$p=1);
+	/^\*\*\*\* SCACHETRACE: RESTART:.*cpu=$cpu pda=$pda.*$'/ && ($p=1);
+	/^\*\*\*\* SCACHETRACE: STOP:.*cpu=$cpu pda=$pda.*$'/ && ($p=0);
+	/^\*\*\*\* SCACHETRACE: END:.*cpu=$cpu pda=$pda.*$'/ && ($p=0,last);
+	if ($p && /^\*\*\*\* SCACHETRACE: [0-9]* $cpu: PC.*/) {
+	    print OFILE  $_;
+	}
+	
+    }
+    close(TFILE);
+}
+
+
+
+
+open(IN,"grep '^\*\*\*\* SCACHETRACE: START' $file |");
+
+
+while (<IN>) {
+  /^.*pda=(.*) :.*$/ && (@PDA=(@PDA,$1));
+}
+
+foreach $pda (@PDA) { 
+#    print "             ********* INSTTRACE: for $pda *************\n";
+    &extracttrace($file,$pda,"$pda.scachetrace");
+}

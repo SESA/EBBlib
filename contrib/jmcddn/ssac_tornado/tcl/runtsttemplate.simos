@@ -1,0 +1,390 @@
+###
+### setup the search path to find scripts
+###
+
+lappend simosPath .
+lappend simosPath $env(SIMOS_DIR)/src/apps/tcl
+lappend simosPath $env(TORNTOP)/etc
+lappend simosPath $env(SHARETOOLS)
+lappend simosPath $env(TCLDIR)
+
+
+
+###
+### ALWAYS source this file first. It sets up a number of annotation types.
+###
+source "tcl_support.tcl"
+
+###
+### setup default parameters
+###
+
+source "defaults.tcl"
+
+###
+### override any of the default parameters
+###
+
+
+set NUMCPUS		$env(SIMOSCPUS)
+set NUMSTATIONS		$env(SIMOSSTATIONS)
+set MEMORYPERSTATION 	$env(SIMOSMEMPERSTATION)
+
+set PARAM(CPU.Model)		$env(SIMOSCPUMODEL)
+set PARAM(MEMSYS.Model)		$env(SIMOSMEMMODEL)
+
+set BUS_CYCLE_TIME 30
+
+set PARAM(CONSOLE.SlaveTimeOut)    $env(SIMOSCONSOLETIMEOUT)
+
+
+source "config.tcl"
+
+
+# Associativity of 2nd level unified cache
+set PARAM(CACHE.2Level.L2Assoc)     $env(SIMOSL2ASSOC)
+set PARAM(CACHE.2Level.DAssoc)      $env(SIMOSDASSOC)
+set PARAM(CACHE.2Level.IAssoc)      $env(SIMOSIASSOC)
+
+
+    
+set PARAM(FILES.CptDir)		checkpoints
+set PARAM(FILES.CptTag)		"NOTAG"
+
+###
+### load your kernel's symbols - required by most scripts
+###
+
+set KERNEL $env(SIMOSTEST)
+
+proc loginScript {} {
+# stream anything that you want to run at login time
+}
+
+###
+### the support script has necessary routines in it
+###
+
+set detailLevel $env(SIMOSDETAILLEVEL)
+
+###
+### annotation stuff
+###
+
+symbol load kernel $KERNEL
+
+annotation set pc kernel::check_kargs:START {
+    set addr [symbol read "kernel::KParms.args"]
+    set addr [expr $addr - 0xffffffff80000000 + 0x40000000 + 0x4000000*($CPU/($NUMCPUS/$NUMSTATIONS)) + 0xa800000000000000]
+    set MEMORY($addr) 0
+    set addr [expr $addr + 4]
+    foreach datum $env(KARGS) {
+	console "Storing $datum at $addr for proc $CPU\n"
+	set MEMORY($addr) $datum
+	set addr [expr $addr + 8]
+    }
+}
+
+
+
+#annotation set pc kernel::RunNext:START {
+#    console "RunNext from $ra\n"
+#}
+
+annotation set pc kernel::exit:START {
+    console "reached kernel exit; terminating simos\n"
+    simosExit
+}
+
+annotation set pc kernel::_do_checkpoint:START {
+    console "\n\nreached checkpoint time\n"
+    doCheckpoint
+}
+
+
+if { $env(SIMOSDEBUG) != "NOBREAK" } {
+    annotation set pc $env(SIMOSDEBUG) {
+	console "*** BREAK: $env(SIMOSDEBUG) \tpc $pc\n"
+	debug	
+    }		
+}
+
+#statistics create getcountregister 10 0 10000
+#annotation set pc kernel::GetCountRegister:START {
+# 	set gcr $CYCLES
+#     }
+#     annotation set pc kernel::GetCountRegister:END {
+# 	set time [expr $CYCLES - $gcr]
+# 	statistics entry getcountregister $time
+#     }
+#     annotation set simos exit {
+# 	log "getcountregister: [statistics list getcountregister]\n"
+#     }
+
+if { 0 } {
+    source "blah.tcl"
+    annotation disable tracefunc
+    annotation set tstEvent startworker {
+	annotation enable tracefunc
+    }
+    annotation set tstEvent endworker {
+	annotation disable tracefunc
+    }
+}
+
+symbol load prog pmem
+
+if { 0 } {
+    annotation set simos periodic -tag periodic {
+	log "XYXY pc $REGISTER(pc 0)  ra $REGISTER(ra 0) cycles $CYCLES inst $INSTS\n"
+    }
+    annotation disable periodic
+    annotation set pc prog::tstEvent_startworker:END {
+	if { $CPU == 0 } {
+	    log "XYXY starting...\n"
+	    #annotation enable periodic
+	    instDump $CPU
+	}
+    }
+    annotation set pc prog::tstEvent_endworker:START {
+	if { $CPU == 0 } {
+	    instDump off
+	    annotation disable periodic
+	    log "XYXY ending...\n"
+	}
+    }
+}
+
+if { 0 } {
+    source "mydetail.tcl"
+    annotation set pc prog::tstEvent_startworker:END {
+	detail set kernel.bypc $CPU yes
+    }
+    annotation set pc prog::tstEvent_endworker:START {
+	detail set kernel.bypc $CPU no
+	detail dump kernel.bypc
+    }
+}
+
+if { 0 } {
+    annotation set pc prog::tstEvent_startworker:END {
+	set stime($CPU) $CYCLES
+    }
+    annotation set pc prog::tstEvent_endworker:START {
+	set delta [expr $CYCLES - $stime($CPU)]
+	console "time for proc $CPU is $delta\n"
+    }
+}
+
+if { 0 } {
+  source "tornos.tcl"
+  source "workerstats.tcl"
+}
+
+if { 0 } {
+annotation set tstEvent startworker {
+    set stime($CPU) $CYCLES
+}
+annotation set tstEvent endworker {
+    set delta [expr $CYCLES - $stime($CPU)]
+    console "time for proc $CPU is $delta\n"
+}
+}
+
+if { 0 } {
+set acquire 0
+annotation set pc kernel::bs_tryacquire_lock__FUiPUiUl:START -tag acq {
+    set acquire $CYCLES
+}
+annotation set pc 0xffffffff80098eb0 -tag acq {
+    set time [expr $CYCLES - $acquire]
+    if { $time > 20 } { console "e1: acquire from $ra took $time\n" }
+}
+annotation set pc 0xffffffff80098ee8 -tag acq {
+    set time [expr $CYCLES - $acquire]
+    if { $time > 20 } { console "e2: acquire from $ra took $time\n" }
+}
+annotation set pc kernel::bs_tryacquire_lock__FUlPUlT1:START -tag acq {
+    set acquire $CYCLES
+}
+annotation set pc 0xffffffff80098f10 -tag acq {
+    set time [expr $CYCLES - $acquire]
+    if { $time > 20 } { console "e1: acquire from $ra took $time\n" }
+}
+annotation set pc 0xffffffff80098f48 -tag acq {
+    set time [expr $CYCLES - $acquire]
+    if { $time > 20 } { console "e2: acquire from $ra took $time\n" }
+}
+annotation set simos enter {
+    annotation disable acq
+}
+annotation set pc prog::tstEvent_startworker:END {
+    annotation enable acq
+}
+annotation set pc prog::tstEvent_endworker:START {
+    annotation disable acq
+}
+}
+
+if { 0 } {
+annotation set pc kernel::dev_memcpy:START -tag acq {
+    console "dev_memcpy $a2/$ra\n"
+}
+annotation set pc kernel::dev_memset:START -tag acq {
+    console "dev_memset $a2/$ra\n"
+}
+annotation set pc kernel::memcpy:START -tag acq {
+    console "memcpy $a2/$ra\n"
+}
+annotation set pc kernel::memset:START -tag acq {
+    console "memset $a2/$ra\n"
+}
+}
+
+if { 0 } {
+    source "mydetail.tcl"
+    annotation set scache read -tag scachetrace {
+        if { $ScacheCPU == 0 } {
+    	    log "**** SCACHETRACE READ: $CYCLES ${ScacheCPU}: PC ${pc}: RA ${ra} ScacheCPU=$ScacheCPU vaddr=$ScacheVaddr paddr=$ScachePaddr\n"
+	}
+    }
+    annotation set scache write -tag scachetrace {
+        if { $ScacheCPU == 0 } {
+    	    log "**** SCACHETRACE WRITE: $CYCLES ${ScacheCPU}: PC ${pc}: RA ${ra} ScacheCPU=$ScacheCPU vaddr=$ScacheVaddr paddr=$ScachePaddr\n"
+	}
+    }
+    annotation set scache instr -tag scachetrace {
+        if { $ScacheCPU == 0 } {
+    	    log "**** SCACHETRACE INSTR: $CYCLES ${ScacheCPU}: PC ${pc}: RA ${ra} ScacheCPU=$ScacheCPU vaddr=$ScacheVaddr paddr=$ScachePaddr\n"
+	}
+    }
+    annotation disable scachetrace
+    annotation set pc prog::tstEvent_startworker:END {
+    if { $CPU == 0 } {
+        #detail set kernel.bypc $CPU yes
+	annotation enable scachetrace
+    }
+	}
+	annotation set pc prog::tstEvent_endworker:START {
+    if { $CPU == 0 } {
+        #detail set kernel.bypc $CPU no
+        #detail dump kernel.bypc
+	annotation disable scachetrace
+    }
+	}
+}
+
+if { 0 } {
+    source "mydetail.tcl"
+    annotation set tstEvent startworker {
+	if { $CPU == 0 } {
+	    detail set kernel.bypc $CPU yes
+	}
+    }
+    annotation set tstEvent endworker {
+	if { $CPU == 0 } {
+	    detail set kernel.bypc $CPU no
+	    detail dump kernel.bypc
+	}
+    }
+}
+
+if { 0 } {
+    annotation set tstEvent startworker {
+	instDump $CPU
+    }
+    annotation set tstEvent endworker {
+	instDump off
+    }
+}
+
+if { 0 } {
+    source "tornos.tcl"
+    annotation set osEvent startTLBExc {
+	console "start tlb exception\n"
+	instDump $CPU
+    }
+    annotation set osEvent endTLBExc {
+	console "end tlb exception\n"
+	instDump off
+    }
+}
+
+if { 0 } {
+    source "mydetail.tcl"
+    annotation set tstEvent startworker {
+        detail set kernel.bypc 0 yes
+        detail set kernel.bypc 1 yes
+	annotation enable scachetrace
+	instDump 0
+	instDump 1
+    }
+    annotation set tstEvent endworker {
+        detail set kernel.bypc 0 no
+        detail set kernel.bypc 1 no
+        detail dump kernel.bypc
+	annotation disable scachetrace
+	instDump off
+    }
+}
+
+
+
+if { 1 } {
+if {!$SIMOS(RestoringCpt)} {
+    if [info exists env(SIMOSSTATS)] {
+       #log "simosPath : $simosPath\n"
+       source "tornos.tcl"
+       source "generictest.tcl"
+       source "$env(SIMOSSTATS).tcl"
+    }
+}
+}
+
+###
+### catch annotation errors here
+###
+### this sample prints a backtrace and then goes into interactive mode,
+### alternatively we could just print a warning message, ignore, or exit
+###
+
+handler {
+    console "TCL ERROR:\n" $errorInfo "\n"
+    exit
+}
+
+annotation set simos sigusr {
+    console "\n\nsignal caught; exiting\n"
+    simosExit
+}
+
+###
+### boot line
+###
+
+##if { $env(SIMOSTEST) == "boot" } {
+    expect {simosboot (1)> } {
+	set baseaddr 0x800000
+	foreach loadarg $env(PROGLOAD) {
+	    type "l $loadarg $baseaddr\n"
+	    set baseaddr [expr $baseaddr + 0x200000]
+	}
+	type "b $KERNEL\n"
+    }
+##} else {
+##    expect {simosboot (1)> } {
+##           #type "ld $env(SIMOSKERNELARGSFILE) 0x18\n" 
+##	   type "ld $env(SIMOSKERNELARGSFILE) 0xff0\n"
+##	   type "b $KERNEL\n"
+##    }
+##}
+
+
+###
+### finally list useful info
+###
+
+console "SIMOS: pid [pid]\n"
+console "cpu type:  $PARAM(CPU.Model); memory system: $PARAM(MEMSYS.Model)\n"
+console "BUS CYCLE TIME: $BUS_CYCLE_TIME\n"
+log "[annotation info]\n"

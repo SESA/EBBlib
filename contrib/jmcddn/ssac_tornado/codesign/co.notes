@@ -1,0 +1,310 @@
+1)  How to handle inheritance and extension of globals see
+    FCMDistributedBase
+
+2)  Relation ship of miss handlers to global data and their inheritance
+
+
+
+
+
+---------------------------
+Current Kitchawan Approach :
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Classes
+
+    BaseObj        XBaseObj
+       |               |
+       |               |
+      Obj            
+       |
+       |
+   BaseProcess
+       |
+       |
+ ProcessDefault
+
+
+
+Thing to take care of:
+^^^^^^^^^^^^^^^^^^^^^^
+Initialization of COS: 
+   1) Create COSMgr Factory 
+        1) Create Global Data Structures
+           1)  Global miss table 
+
+
+
+For kernel this has to be done in : init/KernelInit.C : KernelInit() : 
+       Phase I of Kernel Initialization 
+       
+       This the first machine independent function called after initial
+       boot (see for example init/arch/x86/kinit.C:kinit and 
+                             init/arch/x86/MPinit.C:startSecondary).
+       It is executed on each processor at boot time with procnum passed
+       in.  It is in this func that we need to initialize the Kernel's
+       COS. 
+       The second phase of the initialization proceeds right after it and 
+       runs ClassInit calls of other special classes.
+
+
+
+Files changed:
+    init/arch/x86/secondStartVector.S : changed things so that procnum is
+                                        passed to secondaryStart
+    init/arch/x86/MPinit.C:startSecondary: changed to take procnum as parm
+                                           and pass to KernelInit
+
+    init/KernelInit.C : 
+
+
+
+COSMgr::alloc(Obj *)
+COSMgr::alloc(Factory *)
+
+
+
+Currently a co is built
+^^^^^^^^^^^^^^^^^^^^^^^
+via a call to a static method called create
+which instantiates a rep via a call to ObjTrans::alloc(newProcess)
+which inturn makes a clustered object call to a allocTransStruc of
+theObjTransRef.  AllocTransStruct then makes a call to initTransStruc
+which sets the transentry to the object and sets the ref in the object
+to the te.
+
+
+
+
+Questions:
+^^^^^^^^^^
+
+0) Obj is pretty complicated.  What about simple clustered objects which
+   have no associated Xobjects?  Assume for these cases one inherits from
+   BaseObj.  This implies that it might make sense to replace BaseObj
+   with a class called ClusteredObject which defines only the things
+   necessary for an object to be a ClusteredObject.
+
+
+1) What is definition of ClassInit?
+     Static and return type void always?
+     
+2) What is definition of Create
+    Static and return type SysStatus?
+
+3) What is definition of construct (eg. BaseProcess::construct)?
+
+4) Where are processor numbers being stored (SysFacts???)
+   What about MYVP?
+Schedular local.
+
+5) Names:  Factory, Manager, Controller
+Root 
+
+6) Pools are not necessary at userlevel???
+
+
+Components
+^^^^^^^^^^
+External (client) Interface :
+      1 defines a client accessible destroy method (allow client to
+	indicate that no permanent references exist and COS should 
+        garbage collect it when appropriate).  Should this function
+        be special cased via COS iface eg.  dref(COSMgr)->destroy(coid);.
+        Analogous to not having a programmer defined destructor in Java.
+        
+      2 defines all other external methods of the CO.
+
+Root :
+        All CO's have a single root object
+
+        implements COS MissHandling interface (invoked by COS on a miss)
+
+        implements COS discovery interface (invoked by COS to determine
+                                            info re. the CO: eg. Processors
+					    on which the CO has been
+					    assigned)
+
+        implements COS destruction interface (invoked by COS when the CO's
+                                              resources should be dealloced)
+        
+        Contains all global data to the CO (accessed directly by the CO's
+                                            reps)
+
+        Implements internal global methods of the CO (invoked only by the
+                                                      CO's reps)
+
+        *Potentially implements in part or whole the CO client interface
+            
+Representatives :
+        Contains a pointer to the root object of the CO it is apart of.
+
+        Must implement all methods of the CO.  (of course rep method is 
+        free to forward call to root or other reps).
+
+        Contains any per representative data.
+
+* This is the tricky issue.  Can the root serve as a representative 
+  in part or in whole.  This has implications to the class hierarchy.
+  Should we enforce that clients only invoke methods with respect to
+  a representative?  If so then share case is implemented by having
+  a single rep and a simplified root.  Or do we allow a root to 
+  field calls either via misses and or by installing it self as 
+  reps with the COS.  Note once a rep has been installed there 
+  is no simple way (without synchronization and or rep cooperation) for the 
+  the root to intercept access to a given rep. 
+
+** Do we actually want a separate set of client accessible global
+   methods? An automatic way of specifying that a given call should
+   be handled by the root of the CO rather than a rep.  I doubt it.
+   This should be treated as a separate issue and if support is needed
+   then allow for support via method definition.
+
+
+Relationships
+^^^^^^^^^^^^^
+What are the possible interactions between the Root and Repsentatives?
+
+The root must be able to create representatives.
+
+The root must be able to set the root pointer in each rep.
+
+The reps need to be able to minimally be able to invoke methods
+of the global methods of the root.  
+
+The reps ideally should be able to directly access the 
+global data members of CO and hence the data members of 
+the root which implement these.
+
+In the cases in which the Root is fielding external calls it
+needs to implement the external interface either directly or
+by catching all calls generically and switching against the
+method number.
+
+
+Construction
+^^^^^^^^^^^^
+
+
+
+
+Destruction
+^^^^^^^^^^^
+
+In tornado currently:
+
+1) a) When the clients of a CO are done with the CO and have ensured
+      that there are no permanent refs to the CO the invoke the 
+      destroy method of the CO.  Whos default behavior is to simply
+      call the COS dealloc method on the CO.
+  
+   b) This marks the MHO entry as deleted (mho->ppc.deleted=1, a check is made 
+      during a miss on this flag if set simply return return error -1 to 
+      call) and hence stop all future misses to this CO. 
+      Also marks all mho->ppc.isExternal=0 and mho->cleaningUp=1.
+      And mark all valid test for this CO as te->ppc.isExternal=0.
+      Finally add to cleanup lists.
+      
+2) a) When the COS has ensured that there are no temporary references possible
+      for the CO calls cleanup method of the CO's mh.  
+   
+   b) This method is responsible for deallocating all resources associated with 
+      the CO (currently calls the cleanup method of all the reps which in turn
+      does a delete on themselves and then finally does a delete of itself).
+   
+   c) COS then deallocates the translation entries associated with the CO.
+      (deallocTransStruct: 
+          checks to see if transentry == OBJTRANS_DELETED ? where/when set
+          if not reset all te's associated with the co (set to DefaultObject)
+                 and reset all mho entry fields.
+    
+      What happens to entries which have been set to OBJTRANS_DELETED?
+      How do they get cleaned up?
+   
+
+A Proposed CO classes
+^^^^^^^^^^^^^^^^^^^^^
+                    COVBase
+                       |
+               -------   -----------
+              /                     \
+             /                       \
+       MissHandler               Representative
+           |   
+     ClusteredObjectRoot               
+        /        |    \ \--------------
+       /         |     \               \
+CORootOnly  CORootAsRep CORootShared   CORootReplicated
+
+The defaultFunc code calls GenericDefaultFunc which then
+invokes the handleMiss method of the appropriate missHandler
+and the  returns a functions pointer (derived from the rep
+passed back and the method number passed in).  The default
+func code calls the function returned by GenericDefaultFunc.
+
+This allows for a number of possibilities
+
+1)  The misshandler never installs anything into
+    the local translation tables but handles all calls directly.
+    Misses are suffered on all access
+
+2)  The misshandler always installs itself into the 
+    local translation tables and there for handles calls
+    directly and only suffers misses when a local trans
+    table does not have a mapping to it.
+
+3)  The misshandler installs reps on misses.
+
+
+4)  Of course there is the hybrid which does all of the above
+    depending on the method accessed
+
+Or
+^^
+       MissHandler               Representative
+           |   
+     ClusteredObjectRoot               
+        /        \
+       /          \
+CORootShared   CORootReplicated
+
+Clear distinction between Roots and Representatives.
+Roots cannot be installed in localtrantables.
+
+
+
+Yet Another possibility
+^^^^^^^^^^^^^^^^^^^^^^^
+
+Iface      Repesentative       Root
+                                
+  
+class newCO {
+   class newCOIface : public Iface { 
+      public:
+        SysStatus foo() = 0;
+   };
+
+   class newCOrep1 : public newCO::newCOIface {
+        int val;
+         
+        newCOrep1() : val(0) {}  
+      public : 
+        SysStatus foo() { val++; }
+   };
+
+   class newCOrep2 : public newCO::newCOIface {
+        int val;
+         
+        newCOrep1() : val(0) {}  
+      public : 
+        SysStatus foo() { val++; }
+   };
+
+   class newCOroot : public Root {
+      
+   };
+
+};
+
+How do we really want to use inheritance iface vs. implementation?

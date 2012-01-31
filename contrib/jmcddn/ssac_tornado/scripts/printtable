@@ -1,0 +1,35 @@
+#!/stumm/i/i/thacks/ben/perl/bin/perl5
+require "getopt.pl";
+
+&Getopt('t');
+
+if ( $opt_t =~ /tex/ )
+{
+    print "\\documentclass[11pt]{report}\n\\usepackage{rotating}\n";
+    print "\\setlength{\\topmargin}{0.0in}\n\\setlength{\\headheight}{0.0in}\n\\setlength{\\headsep}{0.0in}\n";
+    print "\\setlength{\\topskip}{0.0in}\n\\begin{document}\n\\pagestyle{empty}\n\\begin{sideways}\n";
+    while (<STDIN>)
+    {
+	print ;
+    }
+    print "\\end{sideways}\n\\end{document}\n";       
+}
+else
+{
+    open(OUT, ">$$.tex");
+    print OUT "\\documentclass[11pt]{report}\n\\usepackage{rotating}\n";
+    print OUT "\\setlength{\\topmargin}{0.0in}\n\\setlength{\\headheight}{0.0in}\n\\setlength{\\headsep}{0.0in}\n";
+    print OUT "\\setlength{\\topskip}{0.0in}\n\\begin{document}\n\\pagestyle{empty}\n\\begin{sideways}\n";
+
+    while (<>)
+    {
+	print OUT;
+    }
+    print OUT  "\\end{sideways}\\end{document}\n";
+    close OUT;
+    
+    system "latex $$.tex >/dev/null";
+    system "dvips -o !cat $$.dvi";
+    system "rm $$.tex $$.dvi $$.log $$.aux";
+}
+

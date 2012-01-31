@@ -1,0 +1,308 @@
+
+class ObjTransEntry {
+    ClusteredObject *_obj;
+    union {
+	ClusteredObjectValue  _empty;
+	OTEntry              *_next;
+	uvalPtr               _data;
+	BBLock<uvalPtr,>      _lock;
+    }
+public:
+    SysStatus handleMiss(ClusteredObject &co, uval methodNum) {
+	return _obj->handleMiss(co, (CORef)this, methodNum);
+    }
+}
+       
+SysStatus
+genericDefaultHandler(uvalPtr &ths, uval methodNum, uvalPtr &func)
+{
+    OTEntry entry;
+    SysStatus rtn=OT::lookUp(ths,entry);
+    if (rtn==ERROR || !entry->valid()) {
+	return rtn;
+    } else {
+	rtn=entry->handleMiss((ClusteredObject &)ths, methodNum);
+	if (rtn==ERROR) return rtn;
+	if (lookup func) return rtn;
+	else return ERROR;
+    }
+}
+
+SysStatus
+defaultFunc1(uvalPtr ths,...)
+{
+     uvalPtr   newths=ths;
+     uvalPtr   func;
+     SysStatus rtn;
+     yada yada;
+     rtn=genericDefaultFunc(newths,1,func);
+     if (rtn==ERROR) return ERROR;
+     if (rtn==INSTALL) replace ths with newths;
+     jump to func passing args;
+}
+
+
+class ClusteredObject {
+
+};
+
+class MissHandler : public ClusteredObject {
+    friend ObjTransEntry;
+    virtual SysStatus handleMiss(ClusteredObject &co, CORef ref, uval methodNum)=0;
+protected:
+    enum skipInit { skipObjTransEntryInit };
+    MissHandler()          { ...alloc(this); }
+    MissHandler(CORef ref) { ...initObjTransEntry((TransEntry *)ref, this); }
+    MissHandler(skipInit p) {}   
+}
+
+
+class COSimple : MissHandler {
+    uval _vpmask
+    virtual SysStatus handleMiss(ClusteredObject &co, CORef ref, 
+				 uval methodNum) {
+	_vpmask |= (1<<MYVP);
+	co=this;
+	return INSTALL;
+    }
+};
+
+
+class CODummy : MissHandler {
+    uval _vpmask
+    virtual SysStatus handleMiss(ClusteredObject &co, CORef ref, 
+				 uval methodNum) {
+	_vpmask |= (1<<MYVP);
+	co=this;
+	return BYPASS;
+    }
+    
+};
+
+
+class COFactory : public MissHandler {
+protected:
+    COFactory(CORef ref) : MissHandler(ref) {}
+    COFactory(MissHandler::skipInit p) : MissHandler(p) {}
+};
+
+class COFactoryReplicate : public COFactory {
+protected:
+    COFactoryReplicate(CORef ref) : COFactory(ref) {} 
+    COFactory(MissHandler::skipInit p) : COFactory(p) {}
+};
+
+
+class intCounterIface : public ClusteredObject {
+    virtual SysStatus inc()=0;
+    virtual SysStatus dec()=0;
+    virtual SysStatus val()=0;
+};
+
+typedef intCounterIface **intCounterRef;
+
+class myReplicatedintCounter : public COFactoryReplicate {
+public:
+
+    class myReplicatedCounterRep : intCounterIface {
+	
+    };
+
+    static create intCounterRef() {
+	new myReplicatedintCounter()->ref();
+    }
+};
+
+typedef ObjTrans::ObjTransRep  **ObjTransRef;
+
+class ObjTrans : public  COFactoryReplicate {
+    OTPageDescList *_otPageDescList;	
+    class ObjTransRep : public ClusteredObject  {
+	COFactoryReplicate *global;
+	ObjTransRep();
+	friend ObjTrans;
+	
+    };
+    enum { objTransTableAddr=OT_TRANS_TABLE_ADDR, objTransTablePartSize=OT_TRANS_TABLE_PART_SIZE, 
+	   objTransTablePerProcCacheAddr=OT_TRANS_TABLE_PER_PROC_ADDR };
+
+    SysStatus init();
+    ObjTrans() : COFactoryReplicated(MissHandler::skipObjTransEntryInit) {}
+public:
+    static SysStatus   vpMapObjTransTables();
+    static ObjTransRef create() {
+	tassert(MYVP == firstVp,"Attempting to do initial creation of  ObjectTrans on secondary Processor\n");
+	ObjTrans *ot=new ObjTrans;
+	ot->init();
+	return _ref;
+    };
+};
+	 
+
+SysStatus
+ObjTrans :: init() {
+    tassert(MYVP == firstVp,"Attempting to do initial creation of  ObjectTrans on secondary Processor\n");
+    for (int i=0; i<objTransNumReserved; i++) {
+	te = _otPageDescList->getFreeObjTransEntry();
+	tassert( te, 
+		 ass_printf("ObjTrans::initTables: Failed to reserve Translation Enteries\n"));
+    }
+    // usually we would have let the constructor chaining do this but not 
+    // this time we explicitly initialize our transEntry (see constructor above)
+    this->initTransEntry(this, THE_OBJTRANSREF);
+    return 1;
+}
+
+SysStatus
+ObjTrans :: vpMapObjTransTables(uval vp) {
+    if (vp==firstVp) {
+	map Region for ObjTransTable at ObjTransTableAddr (we want to pin first page if in kernel);
+                       Must have special Core which initializes pages to default entries.
+       _otPageDescList = new OTPageDescList(...);
+       _otPageDescList->addOTPageDesc(new OTPageDesc);
+       // Reserve space for Reserved Entries
+
+    }
+    map AliasedRegion for ObjTransTablePerProcCache(again we want to pin first page if in kernel);
+    return 1;
+}
+
+ObjTrans :: lookup(ths,entry) {
+    if (ths out of range)
+	return ERROR;
+    entry=OTEmptyToEntry();
+    if (entry->empty())
+	return ERROR;
+    return OK;
+}
+
+
+
+
+
+REPLICATEBEGIN(foo)
+    class foo : public ClusteredObject {
+	uval i;
+    public:
+	virtual SysStatus inc() { _i++; return 1}
+	virtual SysStatus dec() { _i--; return 1}
+	virtual SysStatus val(uval value) { value=_i; return 1}
+    };
+REPLICATEEND(foo)
+
+    
+    typedef fooFactory::foo **fooRef;
+
+    class fooFactory : public COFactoryReplicate {
+	class foo : public ClusteredObject {
+	    uval i;
+	public:
+	    virtual SysStatus inc() { _i++; return 1}
+	    virtual SysStatus dec() { _i--; return 1}
+	    virtual SysStatus val(uval value) { value=_i; return 1}
+	};
+    public:
+	
+    }
+
+
+
+
+SHAREDBEGIN(foo)
+    class foo : public ClustedObject {
+	uval _i;
+    public:
+	virtual SysStatus inc() { _i++; return 1}
+	virtual SysStatus dec() { _i--; return 1}
+	virtual SysStatus val(uval value) { value=_i; return 1}
+	init(uval start);
+    }
+SHAREDEND(foo)
+
+    
+typedef foo **fooRef;
+
+class fooFactory : public COFactoryShared {
+    static fooRef create() { } 
+};
+
+class foo : public ClusteredObject {
+    uval i;
+public:
+    virtual SysStatus inc() { _i++; return 1}
+    virtual SysStatus dec() { _i--; return 1}
+    virtual SysStatus val(uval value) { value=_i; return 1}    
+};
+
+
+fooRef f=COCREATE(foo,(1,2));
+fooRef f=fooFactory::create(); CODREF(f)->init(1,2);
+CODREF(f)->val();
+
+You will always have a race on creation and initialization
+
+
+
+
+
+Big problem what: to do if construction of rep requires knowledge of its ref?????
+(Note sure that it really sould sematically speaking but practically I know this 
+is an issue)
+One soltuion is to have create alloc and lock the te then continue with creattion of
+Co and unlock te at end.  Of coures means more creative macros than the ones below.
+Perhaps use methods of ClusteredObjectMgr (on second thought I don't think that will
+work)
+
+Ok here's a solution:
+Shared
+1) create missHandler
+2) create Rep
+
+{
+CORef r=COSharedFactory::create(); // default COSharedFactory::handleMiss returns an error to callers if co not set
+(ObjTrans::MHO(r))->setCO(foo::create(r,a,b,c));
+}
+
+
+
+
+class COSharedFactory : public MissHandler {
+    static CORef create(ClusteredObject *co, CORef ref=0, uchar pool=ALLOC::PAGED) {
+	return (new COSharedFactory(co,ref,pool))->ref();
+    }
+};
+
+
+class IntegetCounter : public Representative { // obj becomes Representative
+public:
+    virtual SysStatus inc()=0
+    virtual SysStatus dec()=0
+    virtual SysStatus value()=0
+}
+
+class COIntegerCounter :  {
+    int _c;
+public:
+    virtual SysStatus  inc();
+    virtual SysStatus  dec();
+    virtual SysStatus  value(uval &val);
+    virtual SystStatus init(int );
+};
+
+
+#define COSHAREDCREATE(class, args)             \
+(class **)COSharedFactory::create(class::create ## args ## )
+#define COSHAREDCREATEAT(ref,class,args)        \
+(class **)COSharedFactory::create(class::create ## args ## , ref ## )
+#define COSHAREDCREATEIN(class,args,pool)       \
+(class **)COSharedFactory::create(class::create ## args ## , 0, pool ## )
+#define COSHAREDCREATEATIN(ref,class,args,pool) \
+(class **)COSharedFactory::create(class::create ## args ## , ref ## , pool ## )
+
+
+#define COREPLICATEDCREATE(factory,args)               notimplemented
+#define COREPLICATEDCREATEAT(ref,factory,args)         notimplemented
+#define COREPLICATEDCREATEIN(factory,args,pool)        notimplemented
+#define COREPLICATEDCREATEATIN(ref,factory,args,pool)  notimplemented
+
+
