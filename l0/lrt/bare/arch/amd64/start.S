@@ -22,7 +22,7 @@
 
 #include <arch/amd64/multiboot.h>
 
-.global _start
+.globl _start
 .section .init.startup32
 	
 .code32

@@ -17,7 +17,7 @@ ebbos_DEPENDENCIES = $(top_srcdir)/l0/lrt/bare/arch/amd64/link.ld \
 	l0/lrt/bare/arch/amd64/init32.o
 ebbos_CPPFLAGS = -D LRT_BARE
 ebbos_CFLAGS = -m64 -ffreestanding -Wall -Werror -nostdlib -nodefaultlibs -g3 \
-	-std=c99 -O2 -mno-red-zone -mno-mmx -mno-sse -mno-sse2 -mno-sse3
+	-std=gnu99 -O2 -mno-red-zone -mno-mmx -mno-sse -mno-sse2 -mno-sse3
 ebbos_LDFLAGS = -melf_x86_64 -static -n -z max-page-size=0x1000 \
 	-Wl,--build-id=none \
 	-T $(top_srcdir)/l0/lrt/bare/arch/amd64/link.ld

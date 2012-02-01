@@ -25,9 +25,10 @@
  * it to the handler. This is a template for the stub functions. We also save
  * some other machine state first.
  */
-.macro ISR num
-.global isr\num
-isr\num:
+.altmacro
+.macro ISR name
+.globl \name
+\name :
   // push all non-callee-saved registers
   pushq %rax
   pushq %rcx
@@ -38,7 +39,7 @@ isr\num:
   pushq %r9
   pushq %r10
   pushq %r11
-  movq $\num, %rdi
+  movq $\name, %rdi
   call isr_common
   jmp isr_cleanup
 .endm
