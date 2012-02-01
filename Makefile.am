@@ -23,7 +23,7 @@ ebbos_LDFLAGS = -melf_x86_64 -static -n -z max-page-size=0x1000 \
 	-T $(top_srcdir)/l0/lrt/bare/arch/amd64/link.ld
 ebbos_SOURCES = l0/lrt/bare/arch/amd64/init64.c \
 		l0/lrt/bare/arch/amd64/isr_common.c \
-		l0/lrt/bare/arch/amd64/isr.S \
+		l0/lrt/bare/arch/amd64/isr.c \
 		l0/lrt/bare/arch/amd64/isr.h \
 		l0/lrt/bare/arch/amd64/isrtbl.c \
 		l0/lrt/bare/arch/amd64/lrt_start.c \
