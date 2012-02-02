@@ -20,33 +20,26 @@
  * THE SOFTWARE.
  */
 
-#include <stdbool.h>
+#include <stdint.h>
 
-#include <arch/amd64/apic.h>
 #include <l0/lrt/bare/arch/amd64/mem.h>
-#include <l0/lrt/bare/arch/amd64/pic.h>
 #include <l0/lrt/bare/arch/amd64/stdio.h>
-#include <l0/lrt/bare/arch/amd64/trans.h>
 
-//We get here after some very early initialization occurs:
-// 1. grub boots us into start.S, we put ourselves on a small boot
-//     stack and call init32 in init32.c
-// 2. init32.c sets up enough paging to idempotently map the first
-//     4 GB of memory, enables long mode and the GDT then jumps to init64
-//     which is in a 64 bit code segment in init64.c
-// 3. init64.c initializes the "pic" and sends an ipi to ourself which goes
-//     through lrt_start_isr.S and then gets here
+static uintptr_t MEM_SIZE = (1 << 20); //1MB
 
-//We assume the early boot stack is enough until later on when, for example,
-// the event manager gets us on an event and an associated stack. 
-void 
-lrt_start(void)
-{
-  printf("lrt_start called!\n");
+extern char kend[];
 
-  lrt_mem_init();
-  lrt_trans_init();
-  //Because we get here on an IPI, we need to send an eoi before returning
-  // to the assembly which does our iretq
-  send_eoi();
+uintptr_t
+lrt_mem_start() {
+  return (uintptr_t)kend;
+}
+
+uintptr_t
+lrt_mem_end() {
+  return (uintptr_t)kend + MEM_SIZE;
+}
+ 
+void lrt_mem_init() {
+  printf("lrt_mem_init called!\n");
+  //nop
 }

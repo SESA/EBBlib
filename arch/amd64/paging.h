@@ -23,6 +23,17 @@
  * THE SOFTWARE.
  */
 
+//number of bits to right shift an address and then the number
+// of bits to mask to get the index into the structure
+static const uintptr_t PML4_INDEX_SHIFT = 39;
+static const uintptr_t PML4_INDEX_BITS = 9;
+static const uintptr_t PDPT_INDEX_SHIFT = 30;
+static const uintptr_t PDPT_INDEX_BITS = 9;
+static const uintptr_t PDIR_INDEX_SHIFT = 21;
+static const uintptr_t PDIR_INDEX_BITS = 9;
+static const uintptr_t PTAB_INDEX_SHIFT = 12;
+static const uintptr_t PTAB_INDEX_BITS = 9;
+
 typedef union {
   uint64_t raw;
   struct {
@@ -150,16 +161,55 @@ typedef union {
 
 _Static_assert(sizeof(pt_4k_ent) == 8, "pt_4k_ent packing issue");
 
+static inline pml4_ent *
+get_pml4(void)
+{
+  pml4_ent *pml4;
+  __asm__ volatile (
+	 "mov %%cr3, %[pml4]"
+	 : [pml4] "=r" (pml4)
+	 :
+	 );
+  return pml4;
+}
+
 static inline void
-load_pml4(pml4_ent pml4[512])
+set_pml4(pml4_ent pml4[512])
 {
   __asm__ volatile (
-	 "movl %[pml4], %%cr3"
+	 "mov %[pml4], %%cr3"
 	 :
 	 : [pml4] "r" (pml4)
 	 );
 }
 
+static inline uint16_t 
+pml4_index(void *addr)
+{
+  uintptr_t val = (uintptr_t)addr;
+  return (val >> PML4_INDEX_SHIFT) & ((1 << PML4_INDEX_BITS) - 1);
+}
+
+static inline uint16_t 
+pdpt_index(void *addr)
+{
+  uintptr_t val = (uintptr_t)addr;
+  return (val >> PDPT_INDEX_SHIFT) & ((1 << PDPT_INDEX_BITS) - 1);
+}
+
+static inline uint16_t 
+pdir_index(void *addr)
+{
+  uintptr_t val = (uintptr_t)addr;
+  return (val >> PDIR_INDEX_SHIFT) & ((1 << PDIR_INDEX_BITS) - 1);
+}
+
+static inline uint16_t 
+ptab_index(void *addr)
+{
+  uintptr_t val = (uintptr_t)addr;
+  return (val >> PTAB_INDEX_SHIFT) & ((1 << PTAB_INDEX_BITS) - 1);
+}
 
 #endif
 

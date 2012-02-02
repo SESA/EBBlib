@@ -123,7 +123,7 @@ init32(multiboot_info_t *mbi, uint32_t magic)
   //    1) Physical Address Extention (PAE)
   //    2) Long Mode
   //    3) Paging on
-  load_pml4(init_pml4);
+  set_pml4(init_pml4);
   enable_pae();
   enable_longmode();
   enable_paging();
