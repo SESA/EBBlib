@@ -1,5 +1,6 @@
 #include "EBBKludge.H"
 #include "SSACSimpleSharedArray.H"
+#include <stdio.h>
   
 void
 SSACSimpleSharedArray :: HashQueues :: init(const int &numentries)
@@ -76,7 +77,7 @@ SSACSimpleSharedArray :: HashQueues :: ~HashQueues()
   
 SSACSimpleSharedArray :: SSACSimpleSharedArray( const int &numhashqs,
 						const int &associativity)
-    : _mh(this)
+    //: _mh(this)
 {
     _associativity=associativity;
     _numhashqs = numhashqs;
@@ -84,11 +85,11 @@ SSACSimpleSharedArray :: SSACSimpleSharedArray( const int &numhashqs,
 }
 
 
-TornStatus 
+EBBRC 
 SSACSimpleSharedArray :: get( CacheObjectId &id, CacheEntry* &ce,
 			      const gettype &type )
 {
-    TornStatus rtn=0;
+    EBBRC rtn=0;
        
     CacheObjectIdSimple& theid=((CacheObjectIdSimple &)id);    
     register struct HashQueues *hashq;
@@ -114,13 +115,14 @@ SSACSimpleSharedArray :: get( CacheObjectId &id, CacheEntry* &ce,
 
     if (ep)
     {
-	// hit
+
 	trace( MISC, TR_INFO,
 	       tr_printf(
 	   ">>> SSACSimpleSharedArray::get: Hit: id=%d index=%d ep=%llx:\n",
-		   theid.id(), theid.index(_numhashqs), ep );
-	       ep->print()
+			theid.id(), theid.index(_numhashqs), ep )
+			//,ep->print()
 	    );
+	
 	if ( ep->flags & CacheEntrySimple::BUSY )
 	{
 	    hashq->lock.releaseLock();
@@ -152,12 +154,15 @@ SSACSimpleSharedArray :: get( CacheObjectId &id, CacheEntry* &ce,
 	{ 
 	    if (ep->flags & CacheEntrySimple::DIRTY)
 	    {
+		
 		//clean the entry
 		trace( MISC, TR_INFO,
 		       tr_printf(
 		   ">>> SSACSimpleSharedArray::get:Miss: Cleaning entry:\n"
-			   );
-		           ep->print());
+			   )
+			//,ep->print()
+			);
+		
 		ep->id.save(ep->data);
 		ep->flags &= ~CacheEntrySimple::DIRTY;
 	    }
@@ -188,7 +193,7 @@ SSACSimpleSharedArray :: get( CacheObjectId &id, CacheEntry* &ce,
     }
 }
 
-TornStatus
+EBBRC
 SSACSimpleSharedArray :: putback( CacheEntry* &ce, const putflag &flag )
 {
 
@@ -198,23 +203,21 @@ SSACSimpleSharedArray :: putback( CacheEntry* &ce, const putflag &flag )
     if (!entry) return 0;
     
     tassert((hashq->entries),
-	 ass_printf("\n\nSSACSimpleSharedArray::putback: bad queue entry:\n");
-	    entry->print());
+	 ass_printf("\n\nSSACSimpleSharedArray::putback: bad queue entry:\n")//,entry->print()
+		);
     hashq->lock.acquireLock();
     if (flag == KEEP)
     {
 	trace( MISC, TR_INFO,
-	       tr_printf(">>> SSACSimpleSharedArray::putback: KEEP entry:");
-	       entry->print()
+	       tr_printf(">>> SSACSimpleSharedArray::putback: KEEP entry:")//,entry->print()
 	    );
     	entry->lastused=hashq->count;
     }
     else
     {
 	trace( MISC, TR_INFO,
-	     tr_printf(">>> SSACSimpleSharedArray::putback: DISCARD entry:");
-	       entry->print()
-	    );
+	     tr_printf(">>> SSACSimpleSharedArray::putback: DISCARD entry:"//,entry->print()
+	    ));
 	entry->lastused=0;
     }
     entry->flags &= ~CacheEntrySimple::BUSY;
@@ -223,7 +226,7 @@ SSACSimpleSharedArray :: putback( CacheEntry* &ce, const putflag &flag )
     return 0;
 }
 
-TornStatus
+EBBRC
 SSACSimpleSharedArray :: flush()
 {
     register struct HashQueues *hashq;
@@ -244,8 +247,7 @@ SSACSimpleSharedArray :: flush()
 		 && ( ce->flags & CacheEntrySimple::DIRTY ))
 	    {
 		trace( MISC, TR_INFO,
-		       tr_printf(">>> SSACSimpleSharedArray::flush: entry:");
-		       ce->print()
+		       tr_printf(">>> SSACSimpleSharedArray::flush: entry:")//,ce->print()
 		       );
 		ce->flags |= CacheEntrySimple::BUSY;
 		hashq->lock.releaseLock();
@@ -270,7 +272,7 @@ SSACSimpleSharedArray :: ~SSACSimpleSharedArray()
     delete[] _hashqs; 
 }
 
-TornStatus
+EBBRC
 SSACSimpleSharedArray :: snapshot()
 {
     register struct HashQueues *hashq;

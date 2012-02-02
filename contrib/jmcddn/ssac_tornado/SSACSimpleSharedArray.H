@@ -7,8 +7,8 @@ class SSACSimpleSharedArray : public SSAC {
   class SimpleLock {
     int l;
   public:
-    void lockAcquire() {}
-    void lockRelease() {}
+		void releaseLock() {}
+		void acquireLock() {}
   };
     enum {DEFAULT_ASSOCIATIVITY=4};
     struct HashQueues {
