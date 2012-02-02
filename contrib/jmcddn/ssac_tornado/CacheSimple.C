@@ -1,5 +1,8 @@
+#include <stdio.h>
+#include <stdlib.h>
+
+#include "EBBKludge.H"
 #include "CacheSimple.H"
-#include <tornado/TAssert.H>
  
 CacheObjectDataSimple
 CacheObjectIdSimple :: load()
@@ -9,7 +12,7 @@ CacheObjectIdSimple :: load()
     return (void *)long(_id);
 }
 
-TornStatus
+EBBRC
 CacheObjectIdSimple :: save(CacheObjectDataSimple data)
 {
     register int i=0;
@@ -19,10 +22,8 @@ CacheObjectIdSimple :: save(CacheObjectDataSimple data)
  
 CacheEntrySimple :: CacheEntrySimple()
 {
-#ifndef NOLOCKSNOFLAGSNOCOUNTERS
     flags=ZERO;
     lastused=0;
-#endif
     data=0;
 }
   
@@ -43,19 +44,15 @@ CacheEntrySimple :: wakeup()
 void
 CacheEntrySimple :: dirty()
 {
-#ifndef NOLOCKSNOFLAGSNOCOUNTERS
     flags |= DIRTY;
-#endif
     return;
 }
 
 void
 CacheEntrySimple :: print()
 {
-    printf("CacheEntrySimple: \n\tthis=%lx\n\tid=%d\n\tflags=",this,id.id());
-#ifndef NOLOCKSNOFLAGSNOCOUNTERS
+    printf("CacheEntrySimple: \n\tthis=%p\n\tid=%d\n\tflags=",this,id.id());
     if (flags & BUSY) printf("BUSY | "); else printf("FREE | ");
     if (flags & DIRTY) printf("DIRTY"); else printf("CLEAN ");
-    printf("\n\tlastused=%U\n\tdata=%lx\n",lastused,data);
-#endif
+    printf("\n\tlastused=%ld\n\tdata=%p\n",lastused,data);
 }

@@ -46,21 +46,30 @@ MySSAC::snapshot()
   return (EBBRC)0;
 }
 
-#if 0
-class foo {
-  int _i;
-public:
-  int val() { return _i; }
-  int val(int i) { int old=_i; _i = i; return old;}
-};
-#endif
+void
+SSACSimpleSharedArrayTest(void)
+{
+  EBBRC status;
+  TRACE("BEGIN");
+
+  const int HASHTABLESIZE=128;
+  CacheObjectIdSimple id(0);
+  CacheEntrySimple *entry=0;
+
+  SSACRef ssac = SSACSimpleSharedArray::create(HASHTABLESIZE);
+
+  status=DREF(ssac)->get((CacheObjectId &)id,(CacheEntry * &)entry,
+			 SSAC::GETFORREAD);
+  entry->print();
+
+  TRACE("END");
+}
 
 int 
 main(int argc, char **argv)
 {
   MySSAC *ssac;
   EBBRC rc;
-
   rc = MySSAC::create(&ssac);
 
   if (rc == 0) {
@@ -68,6 +77,8 @@ main(int argc, char **argv)
   } else {
     fprintf(stderr, "ERROR: create failed\n");
   }
+
+  SSACSimpleSharedArrayTest();
 
   return 0;
 }

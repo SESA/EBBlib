@@ -2,7 +2,7 @@
 #define _SSAC_H_
 
 class SSAC;
-typedef SSAC **SSACRef;
+typedef SSAC *SSACRef;
 
 #undef NOLOCKSNOFLAGSNOCOUNTERS
 

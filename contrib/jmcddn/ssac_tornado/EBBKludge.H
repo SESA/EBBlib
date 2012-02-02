@@ -10,16 +10,29 @@
 typedef int EBBRC;
 
 /* TODO: make into functional printf wrappers*/
-static inline char* tassert(...){ }
-static inline char* trace(...){ }
-static inline char* ass_printf(...){ }
-static inline char* tr_printf(...){ }
+
+#define tassert(EX,STMT)			\
+  if (!(EX)) {					\
+    TRACE("%s", #EX);				\
+    STMT;					\
+    abort();					\
+  }
+
+#define trace(S,L,STMT)				\
+  {						\
+    TRACE("%s %s", #S, #L);	                \
+    STMT;                                       \
+  }
+
+#define ass_printf TRACE 
+#define tr_printf TRACE
 
 class EBB {
 protected:
-  int _ref;
+  void *_ref;
 };
 
+#define DREF(ref) ref
 
 #endif
 

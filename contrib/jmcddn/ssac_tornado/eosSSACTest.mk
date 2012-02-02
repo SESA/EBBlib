@@ -1,4 +1,4 @@
-classes = SSACSimpleSharedArray.C
+classes = SSACSimpleSharedArray.C CacheSimple.C
 hdrs = $(patsubst %.c,%.h,$(classes))
 src = eosSSACTest.C $(classes)
 objs = $(patsubst %.c,%.o,$(src))

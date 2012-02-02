@@ -33,8 +33,8 @@ class SSACSimpleSharedArray : public SSAC {
 public:
     static SSACRef create( const int &numhashqs,
 			   const int &associativity=DEFAULT_ASSOCIATIVITY) {
-	return (SSACRef)((new SSACSimpleSharedArray(numhashqs,
-						    associativity))->ref());
+      return (SSACRef) ((new SSACSimpleSharedArray(numhashqs,
+						   associativity))->ref());
     }
     virtual EBBRC get( CacheObjectId &id, CacheEntry* &ce,
 			    const gettype &type );
