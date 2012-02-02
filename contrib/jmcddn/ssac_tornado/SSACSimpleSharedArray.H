@@ -3,14 +3,17 @@
 #include "SSAC.H"
 #include "CacheSimple.H"
 
-#include <tornado/Lock.H>
 class SSACSimpleSharedArray : public SSAC {
+  class SimpleLock {
+    int l;
+  public:
+    void lockAcquire() {}
+    void lockRelease() {}
+  };
     enum {DEFAULT_ASSOCIATIVITY=4};
     struct HashQueues {
-#ifndef NOLOCKSNOFLAGSNOCOUNTERS 
-	SimpleSpinBlockLock lock;
+	SimpleLock lock;
 	unsigned long count;
-#endif
 	CacheEntrySimple *entries;
 	void init(const int &numentries);
 	inline CacheEntrySimple *search(CacheObjectIdSimple &id,
@@ -23,7 +26,6 @@ class SSACSimpleSharedArray : public SSAC {
     }       *_hashqs;
     int      _numhashqs;
     int      _associativity;
-    MHShared _mh;
     
     SSACRef ref() { return (SSACRef)_ref;}
     SSACSimpleSharedArray( const int &numhashqs,
@@ -34,11 +36,11 @@ public:
 	return (SSACRef)((new SSACSimpleSharedArray(numhashqs,
 						    associativity))->ref());
     }
-    virtual TornStatus get( CacheObjectId &id, CacheEntry* &ce,
+    virtual EBBRC get( CacheObjectId &id, CacheEntry* &ce,
 			    const gettype &type );
-    virtual TornStatus putback( CacheEntry* &ce, const putflag &flag );
-    virtual TornStatus flush();
-    virtual TornStatus snapshot();
+    virtual EBBRC putback( CacheEntry* &ce, const putflag &flag );
+    virtual EBBRC flush();
+    virtual EBBRC snapshot();
     ~SSACSimpleSharedArray();
 };
 #endif

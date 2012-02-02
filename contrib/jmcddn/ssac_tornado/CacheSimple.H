@@ -22,7 +22,7 @@ public:
     int valid() { return _id!=(unsigned int)INVALID; }
     void invalidate() { _id=(unsigned int)INVALID; }
     CacheObjectDataSimple load();
-    TornStatus save(CacheObjectDataSimple data); 
+    EBBRC save(CacheObjectDataSimple data); 
     int index(const int &max) { return _id % max; }
 };
 

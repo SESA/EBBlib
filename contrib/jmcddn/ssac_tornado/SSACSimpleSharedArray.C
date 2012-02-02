@@ -1,5 +1,5 @@
+#include "EBBKludge.H"
 #include "SSACSimpleSharedArray.H"
-#include <tornado/TAssert.H>
   
 void
 SSACSimpleSharedArray :: HashQueues :: init(const int &numentries)
@@ -41,20 +41,16 @@ SSACSimpleSharedArray :: HashQueues :: lruentry(const int &numentries)
     
     while (i<numentries)
     {
-#ifndef NOLOCKSNOFLAGSNOCOUNTERS	    
 	if ( !( entries[i].flags & CacheEntrySimple::BUSY ) )
-#endif
 	    if (!ep)
 	    {
 		ep=&(entries[i]);
 		if (!ep->id.valid())
 		    break;
 	    }
-#ifndef NOLOCKSNOFLAGSNOCOUNTERS
 	    else
 		if ( entries[i].lastused < ep->lastused )
 		    ep=&(entries[i]);
-#endif
 	i++;
     }
     return ep;
@@ -69,9 +65,7 @@ SSACSimpleSharedArray :: HashQueues :: rollover()
 
 SSACSimpleSharedArray :: HashQueues :: HashQueues()
 {
-#ifndef NOLOCKSNOFLAGSNOCOUNTERS
     count=0;
-#endif
     entries=0;
 }
 
@@ -108,19 +102,13 @@ SSACSimpleSharedArray :: get( CacheObjectId &id, CacheEntry* &ce,
     hashq = &(_hashqs[theid.index(_numhashqs)]);
     
     if (!hashq->entries) {
-#ifndef NOLOCKSNOFLAGSNOCOUNTERS
 	hashq->lock.acquireLock();
-#endif
 	hashq->init(_associativity);
-#ifndef NOLOCKSNOFLAGSNOCOUNTERS
 	hashq->lock.releaseLock();
-#endif
     }
 
-#ifndef NOLOCKSNOFLAGSNOCOUNTERS    
  again:    
     hashq->lock.acquireLock();
-#endif    
 
     ep=hashq->search(theid,_associativity);
 
@@ -133,22 +121,19 @@ SSACSimpleSharedArray :: get( CacheObjectId &id, CacheEntry* &ce,
 		   theid.id(), theid.index(_numhashqs), ep );
 	       ep->print()
 	    );
-#ifndef NOLOCKSNOFLAGSNOCOUNTERS
 	if ( ep->flags & CacheEntrySimple::BUSY )
 	{
 	    hashq->lock.releaseLock();
 	    ep->sleep();
 	    goto again;
 	}
-#endif
-#ifndef NOLOCKSNOFLAGSNOCOUNTERS
+
 	hashq->count++;
 	if (!hashq->count) hashq->rollover();
 	ep->lastused=hashq->count;
 	if ( type == SSAC::GETFORWRITE )
 	    ep->flags |= CacheEntrySimple::BUSY;
 	hashq->lock.releaseLock();
-#endif  
 	ce=ep;
 	SET_CLSCD(rtn,1);
 	return rtn;
@@ -165,9 +150,7 @@ SSACSimpleSharedArray :: get( CacheObjectId &id, CacheEntry* &ce,
 	
 	if (ep)
 	{ 
-#ifndef NOLOCKSNOFLAGSNOCOUNTERS
 	    if (ep->flags & CacheEntrySimple::DIRTY)
-#endif
 	    {
 		//clean the entry
 		trace( MISC, TR_INFO,
@@ -176,9 +159,7 @@ SSACSimpleSharedArray :: get( CacheObjectId &id, CacheEntry* &ce,
 			   );
 		           ep->print());
 		ep->id.save(ep->data);
-#ifndef NOLOCKSNOFLAGSNOCOUNTERS 
 		ep->flags &= ~CacheEntrySimple::DIRTY;
-#endif 
 	    }
 	    ep->id=theid;
 	    ep->data=ep->id.load();
@@ -192,19 +173,15 @@ SSACSimpleSharedArray :: get( CacheObjectId &id, CacheEntry* &ce,
 		    ">>> SSACSimpleSharedArray::get: Miss:*NOFREE ENTRIES*\n"
 		       ));
 	    SET_CLSCD(rtn,0);
-#ifndef NOLOCKSNOFLAGSNOCOUNTERS
 	    hashq->lock.releaseLock();
-#endif
 	    return rtn;
 	}
-#ifndef NOLOCKSNOFLAGSNOCOUNTERS
 	hashq->count++;
 	if (!hashq->count) hashq->rollover();
 	ep->lastused=hashq->count;
 	if ( type == SSAC::GETFORWRITE )
 	    ep->flags |= CacheEntrySimple::BUSY;
 	hashq->lock.releaseLock();
-#endif 
 	ce=ep;
 	SET_CLSCD(rtn,1);
 	return rtn;
@@ -223,18 +200,14 @@ SSACSimpleSharedArray :: putback( CacheEntry* &ce, const putflag &flag )
     tassert((hashq->entries),
 	 ass_printf("\n\nSSACSimpleSharedArray::putback: bad queue entry:\n");
 	    entry->print());
-#ifndef NOLOCKSNOFLAGSNOCOUNTERS
     hashq->lock.acquireLock();
-#endif
     if (flag == KEEP)
     {
 	trace( MISC, TR_INFO,
 	       tr_printf(">>> SSACSimpleSharedArray::putback: KEEP entry:");
 	       entry->print()
 	    );
-#ifndef NOLOCKSNOFLAGSNOCOUNTERS
     	entry->lastused=hashq->count;
-#endif
     }
     else
     {
@@ -242,14 +215,10 @@ SSACSimpleSharedArray :: putback( CacheEntry* &ce, const putflag &flag )
 	     tr_printf(">>> SSACSimpleSharedArray::putback: DISCARD entry:");
 	       entry->print()
 	    );
-#ifndef NOLOCKSNOFLAGSNOCOUNTERS
 	entry->lastused=0;
-#endif
     }
-#ifndef NOLOCKSNOFLAGSNOCOUNTERS
     entry->flags &= ~CacheEntrySimple::BUSY;
     hashq->lock.releaseLock();
-#endif
     entry->wakeup();
     return 0;
 }
@@ -265,14 +234,11 @@ SSACSimpleSharedArray :: flush()
     {
 	hashq = &(_hashqs[i]);
 	if (!hashq->entries) continue;
-#ifndef NOLOCKSNOFLAGSNOCOUNTERS
     again:	
 	hashq->lock.acquireLock();
-#endif
 	for ( register int j=0; j<_associativity; j++ )
 	{
 	    ce=&(hashq->entries[j]);
-#ifndef NOLOCKSNOFLAGSNOCOUNTERS
 	    if ( !(ce->flags & CacheEntrySimple::BUSY)
                && (ce->id.valid())	    
 		 && ( ce->flags & CacheEntrySimple::DIRTY ))
@@ -291,11 +257,8 @@ SSACSimpleSharedArray :: flush()
 		ce->wakeup();
 		goto again;
 	    }
-#endif
 	}
-#ifndef NOLOCKSNOFLAGSNOCOUNTERS
 	hashq->lock.releaseLock();
-#endif
     }
     return 0;
 }
@@ -316,20 +279,15 @@ SSACSimpleSharedArray :: snapshot()
     for (i=0; i<_numhashqs; i++)
     {
 	hashq = &(_hashqs[i]);
-#ifndef NOLOCKSNOFLAGSNOCOUNTERS
 	hashq->lock.acquireLock();
 	tr_printf("_hashq[%d].count=%U\n_hashqs[%d].entries: ",i,hashq->count,i);
-#endif
 	if (hashq->entries)
 	    for ( j=0; j<_associativity; j++)
 	    {
 		tr_printf("%d:%d:%U:%lx:",j,
 			  hashq->entries[j].id.id(),
-#ifndef NOLOCKSNOFLAGSNOCOUNTERS
 			  hashq->entries[j].lastused,
-#endif
 			  hashq->entries[j].data);
-#ifndef NOLOCKSNOFLAGSNOCOUNTERS
 		flags=(hashq->entries[j]).flags;
 		if (flags & CacheEntrySimple::BUSY)
 		    printf("B|");
@@ -337,14 +295,11 @@ SSACSimpleSharedArray :: snapshot()
 		if (flags & CacheEntrySimple::DIRTY)
 		    printf("D ");
 		else printf("C ");
-#endif
 	    }
 	else
 	    tr_printf("NULL");
 	tr_printf("\n");
-#ifndef NOLOCKSNOFLAGSNOCOUNTERS
 	hashq->lock.releaseLock();
-#endif
     }
     return 0;
 }
