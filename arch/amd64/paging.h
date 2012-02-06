@@ -23,16 +23,39 @@
  * THE SOFTWARE.
  */
 
+//I wish these had good names, I think I just made these up
+#define PAGE_SIZE (1 << 12) //4k
+#define LARGE_PAGE_SIZE (1 << 21) //2m
+#define HUGE_PAGE_SIZE (1 << 30) //1g
+
 //number of bits to right shift an address and then the number
 // of bits to mask to get the index into the structure
-static const uintptr_t PML4_INDEX_SHIFT = 39;
-static const uintptr_t PML4_INDEX_BITS = 9;
-static const uintptr_t PDPT_INDEX_SHIFT = 30;
-static const uintptr_t PDPT_INDEX_BITS = 9;
-static const uintptr_t PDIR_INDEX_SHIFT = 21;
-static const uintptr_t PDIR_INDEX_BITS = 9;
-static const uintptr_t PTAB_INDEX_SHIFT = 12;
-static const uintptr_t PTAB_INDEX_BITS = 9;
+#define PML4_INDEX_SHIFT (39)
+#define PML4_INDEX_BITS (9)
+
+#define PDPT_INDEX_SHIFT (30)
+#define PDPT_INDEX_BITS (9)
+
+#define PDIR_INDEX_SHIFT (21)
+#define PDIR_INDEX_BITS (9)
+
+#define PTAB_INDEX_SHIFT (12)
+#define PTAB_INDEX_BITS (9)
+
+#define PML4_SIZE (4096)
+#define PDPT_SIZE (4096)
+#define PDIR_SIZE (4096)
+#define PTAB_SIZE (4096)
+
+#define PML4_ALIGN (4096)
+#define PDPT_ALIGN (4096)
+#define PDIR_ALIGN (4096)
+#define PTAB_ALIGN (4096)
+
+#define PML4_NUM_ENTS (PML4_SIZE / sizeof (pml4_ent))
+#define PDPT_NUM_ENTS (PDPT_SIZE / sizeof (pdpt_ent))
+#define PDIR_NUM_ENTS (PDIR_SIZE / sizeof (pd_ent))
+#define PTAB_NUM_ENTS (PTAB_SIZE / sizeof (pt_4k_ent))
 
 typedef union {
   uint64_t raw;
@@ -183,33 +206,18 @@ set_pml4(pml4_ent pml4[512])
 	 );
 }
 
-static inline uint16_t 
-pml4_index(void *addr)
-{
-  uintptr_t val = (uintptr_t)addr;
-  return (val >> PML4_INDEX_SHIFT) & ((1 << PML4_INDEX_BITS) - 1);
-}
+//These are inlines so that I can make some static assertions with them
+#define PML4_INDEX(addr) \
+  ((((uintptr_t)addr) >> PML4_INDEX_SHIFT) & ((1 << PML4_INDEX_BITS) - 1))
 
-static inline uint16_t 
-pdpt_index(void *addr)
-{
-  uintptr_t val = (uintptr_t)addr;
-  return (val >> PDPT_INDEX_SHIFT) & ((1 << PDPT_INDEX_BITS) - 1);
-}
+#define PDPT_INDEX(addr) \
+  ((((uintptr_t)addr) >> PDPT_INDEX_SHIFT) & ((1 << PDPT_INDEX_BITS) - 1))
 
-static inline uint16_t 
-pdir_index(void *addr)
-{
-  uintptr_t val = (uintptr_t)addr;
-  return (val >> PDIR_INDEX_SHIFT) & ((1 << PDIR_INDEX_BITS) - 1);
-}
+#define PDIR_INDEX(addr) \
+  ((((uintptr_t)addr) >> PDIR_INDEX_SHIFT) & ((1 << PDIR_INDEX_BITS) - 1))
 
-static inline uint16_t 
-ptab_index(void *addr)
-{
-  uintptr_t val = (uintptr_t)addr;
-  return (val >> PTAB_INDEX_SHIFT) & ((1 << PTAB_INDEX_BITS) - 1);
-}
+#define PTAB_INDEX(addr) \
+  ((((uintptr_t)addr) >> PTAB_INDEX_SHIFT) & ((1 << PTAB_INDEX_BITS) - 1))
 
 #endif
 

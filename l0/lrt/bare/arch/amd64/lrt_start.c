@@ -23,10 +23,18 @@
 #include <stdbool.h>
 
 #include <arch/amd64/apic.h>
+#include <l0/lrt/bare/arch/amd64/lrt_start.h>
 #include <l0/lrt/bare/arch/amd64/mem.h>
 #include <l0/lrt/bare/arch/amd64/pic.h>
 #include <l0/lrt/bare/arch/amd64/stdio.h>
 #include <l0/lrt/bare/arch/amd64/trans.h>
+
+__asm__ (
+	 ".globl lrt_start_isr\n\t"
+	 "lrt_start_isr:\n\t"
+	 "call lrt_start\n\t"
+	 "iretq"
+	 );
 
 //We get here after some very early initialization occurs:
 // 1. grub boots us into start.S, we put ourselves on a small boot

@@ -29,9 +29,14 @@
 #include <arch/amd64/segmentation.h>
 #include <l0/lrt/bare/arch/amd64/init64.h>
 
-pml4_ent init_pml4[512] __attribute__((aligned(4096), section(".init.data32")));
-pdpt_ent init_pdpt[512] __attribute__((aligned(4096), section(".init.data32")));
-pd_2m_ent init_pdir[4][512] __attribute__((aligned(4096), section(".init.data32")));
+pml4_ent init_pml4[PML4_NUM_ENTS] 
+__attribute__((aligned(PML4_ALIGN), section(".init.data32")));
+
+pdpt_ent init_pdpt[PDPT_NUM_ENTS] 
+__attribute__((aligned(PDPT_ALIGN), section(".init.data32")));
+
+pd_2m_ent init_pdir[4][PDIR_NUM_ENTS]
+__attribute__((aligned(PDIR_ALIGN), section(".init.data32")));
 
 gdt init_gdt __attribute__((section(".init.data32")));
 
@@ -83,16 +88,16 @@ init32(multiboot_info_t *mbi, uint32_t magic)
 
   //FIXME: In the long run consider optimization
   //zero paging structures
-  for (int i = 0; i < 512; i++) {
+  for (int i = 0; i < PML4_NUM_ENTS; i++) {
     init_pml4[i].raw = 0;
   }
 
-  for (int i = 0; i < 512; i++) {
+  for (int i = 0; i < PDPT_NUM_ENTS; i++) {
     init_pdpt[i].raw = 0;
   }
 
   for (int i = 0; i < 4; i++) {
-    for (int j = 0; j < 512; j++) {
+    for (int j = 0; j < PDIR_NUM_ENTS; j++) {
       init_pdir[i][j].raw = 0;
     }
   }
@@ -143,6 +148,8 @@ init32(multiboot_info_t *mbi, uint32_t magic)
   
   load_gdtr(&init_gdt, sizeof(init_gdt));
 
+  //since the GDT is now loaded with a longmode code segment, we must do
+  // a long jump to init64
   __asm__ volatile (
 		    "pushw %w[init32_cs]\n\t"
 		    "pushl %[init64]\n\t"

@@ -27,8 +27,6 @@ ebbos_SOURCES = l0/lrt/bare/arch/amd64/init64.c \
 		l0/lrt/bare/arch/amd64/isr.h \
 		l0/lrt/bare/arch/amd64/isrtbl.c \
 		l0/lrt/bare/arch/amd64/lrt_start.c \
-		l0/lrt/bare/arch/amd64/lrt_start_isr.S \
-		l0/lrt/bare/arch/amd64/lrt_start_isr.h \
 		l0/lrt/bare/arch/amd64/mem.c \
 		l0/lrt/bare/arch/amd64/mem.h \
 		l0/lrt/bare/arch/amd64/pic.c \

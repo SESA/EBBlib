@@ -31,31 +31,30 @@
 // this lets us bring up ebbs such as our memory allocator
 // then we can bring up the other cores as necessary
 
-//These should be virtual addresses
-#define GMem (0xFFFFFFFF00000000) //upper 4GB of memory
-#define LMem (0xFFFFFFFE00000000) //next 4GB of memory
+static uint8_t theGMem[LRT_TRANS_TBLSIZE] 
+__attribute__((aligned(LARGE_PAGE_SIZE)));
 
-static uint8_t theGMem[LRT_TRANS_TBLSIZE] __attribute__((aligned(1 << 21)));
-static uint8_t BSPLMem[LRT_TRANS_TBLSIZE] __attribute__((aligned(1 << 21)));
+static uint8_t BSPLMem[LRT_TRANS_TBLSIZE] 
+__attribute__((aligned(LARGE_PAGE_SIZE)));
 
 // I want to map just a single superpage for each of these,
 // Under the assumption that they are in the top 256 GB of memory
 // (meaning last entry of pml4), then we need to allocate one pdpt
 // entry for each, and one 2MB superpage pdir for each
 
-//I can't use consts, or inlines in my static asserts so...
-_Static_assert(((GMem >> 39) & 9) == ((LMem >> 39) & 9),
+//TODO make those inlines in paging.h into macros so I can do this
+_Static_assert(PML4_INDEX(GMem) == PML4_INDEX(LMem),
 	       "Gmem and Lmem are not within the same pml4 entry");
 
-_Static_assert(((GMem >> 30) & 9) == ((LMem >> 30) & 9),
+_Static_assert(PDPT_INDEX(GMem) != PDPT_INDEX(LMem),
 	       "Gmem and Lmem are within the same pdpt entry");
 
-_Static_assert(LRT_TRANS_TBLSIZE <= (1 << 21),
-	       "Table mapping will not fit within a superpage, "
+_Static_assert(LRT_TRANS_TBLSIZE <= (LARGE_PAGE_SIZE),
+	       "Table mapping will not fit within a large page, "
 	       "fix code accordingly");
 
-static pdpt_ent trans_pdpt[512] __attribute__((aligned(4096)));
-static pd_2m_ent trans_pdir[2][512] __attribute__((aligned(4096)));
+static pdpt_ent trans_pdpt[512] __attribute__((aligned(PAGE_SIZE)));
+static pd_2m_ent trans_pdir[2][512] __attribute__((aligned(PAGE_SIZE)));
 
 void
 lrt_trans_init() {
@@ -63,27 +62,27 @@ lrt_trans_init() {
 
   pml4_ent *pml4 = get_pml4();
   
-  trans_pdir[0][pdir_index((void *)GMem)].present = 1;
-  trans_pdir[0][pdir_index((void *)GMem)].rw = 1;
-  trans_pdir[0][pdir_index((void *)GMem)].ps = 1;
-  trans_pdir[0][pdir_index((void *)GMem)].base = ((uint64_t)theGMem) >> 21;
+  trans_pdir[0][PDIR_INDEX((void *)GMem)].present = 1;
+  trans_pdir[0][PDIR_INDEX((void *)GMem)].rw = 1;
+  trans_pdir[0][PDIR_INDEX((void *)GMem)].ps = 1;
+  trans_pdir[0][PDIR_INDEX((void *)GMem)].base = ((uint64_t)theGMem) >> 21;
   
-  trans_pdir[1][pdir_index((void *)LMem)].present = 1;
-  trans_pdir[1][pdir_index((void *)LMem)].rw = 1;
-  trans_pdir[1][pdir_index((void *)LMem)].ps = 1;
-  trans_pdir[1][pdir_index((void *)LMem)].base = ((uint64_t)BSPLMem) >> 21;
+  trans_pdir[1][PDIR_INDEX((void *)LMem)].present = 1;
+  trans_pdir[1][PDIR_INDEX((void *)LMem)].rw = 1;
+  trans_pdir[1][PDIR_INDEX((void *)LMem)].ps = 1;
+  trans_pdir[1][PDIR_INDEX((void *)LMem)].base = ((uint64_t)BSPLMem) >> 21;
   
-  trans_pdpt[pdpt_index((void *)GMem)].present = 1;
-  trans_pdpt[pdpt_index((void *)GMem)].rw = 1;
-  trans_pdpt[pdpt_index((void *)GMem)].base = ((uint64_t)trans_pdir[0]) >> 12;
+  trans_pdpt[PDPT_INDEX((void *)GMem)].present = 1;
+  trans_pdpt[PDPT_INDEX((void *)GMem)].rw = 1;
+  trans_pdpt[PDPT_INDEX((void *)GMem)].base = ((uint64_t)trans_pdir[0]) >> 12;
 
-  trans_pdpt[pdpt_index((void *)LMem)].present = 1;
-  trans_pdpt[pdpt_index((void *)LMem)].rw = 1;
-  trans_pdpt[pdpt_index((void *)LMem)].base = ((uint64_t)trans_pdir[1]) >> 12;
+  trans_pdpt[PDPT_INDEX((void *)LMem)].present = 1;
+  trans_pdpt[PDPT_INDEX((void *)LMem)].rw = 1;
+  trans_pdpt[PDPT_INDEX((void *)LMem)].base = ((uint64_t)trans_pdir[1]) >> 12;
 
-  pml4[pml4_index((void *)GMem)].present = 1;
-  pml4[pml4_index((void *)GMem)].rw = 1;
-  pml4[pml4_index((void *)GMem)].base = ((uint64_t)trans_pdpt) >> 12;
+  pml4[PML4_INDEX((void *)GMem)].present = 1;
+  pml4[PML4_INDEX((void *)GMem)].rw = 1;
+  pml4[PML4_INDEX((void *)GMem)].base = ((uint64_t)trans_pdpt) >> 12;
 
   //Probably not necessary to invalid the TLB entries but just to be sure
   __asm__ volatile (

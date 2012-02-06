@@ -23,10 +23,16 @@
  * THE SOFTWARE.
  */
 
-#define LRT_TRANS_TBLSIZE (1 << 21) //2 MB = 1 superpage
+#include <arch/amd64/paging.h>
+
+#define LRT_TRANS_PGSIZE (LARGE_PAGE_SIZE) //2 MB
+#define LRT_TRANS_PAGES (1)
+#define LRT_TRANS_TBLSIZE (LRT_TRANS_PGSIZE * LRT_TRANS_PAGES) 
+
+//These should be virtual addresses
+#define GMem (0xFFFFFFFF00000000) //upper 4GB of memory
+#define LMem (0xFFFFFFFE00000000) //next 4GB of memory
 
 extern void lrt_trans_init(void);
-
-
 
 #endif

@@ -1,5 +1,5 @@
-#ifndef L0_LRT_BARE_ARCH_AMD64_LRT_START_ISR_H
-#define L0_LRT_BARE_ARCH_AMD64_LRT_START_ISR_H
+#ifndef L0_LRT_BARE_ARCH_AMD64_LRT_START_H
+#define L0_LRT_BARE_ARCH_AMD64_LRT_START_H
 
 /*
  * Copyright (C) 2011 by Project SESA, Boston University
@@ -23,6 +23,7 @@
  * THE SOFTWARE.
  */
 
-extern void lrt_start_isr();
+//not really a function, because we jump to it
+extern void lrt_start_isr(void);
 
 #endif
