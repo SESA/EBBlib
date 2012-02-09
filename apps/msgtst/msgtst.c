@@ -124,7 +124,7 @@ InitMsgHandlerTst()
 };
 
 
-EBBRC msgtst(void)
+EBBRC ebbmain(void)
 {
   MsgHandlerId id = InitMsgHandlerTst();
 

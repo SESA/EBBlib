@@ -1,5 +1,5 @@
-#ifndef __MSGTST_H__
-#define __MSGTST_H__
+#ifndef __EBBMAIN_H__
+#define __EBBMAIN_H__
 /*
  * Copyright (C) 2011 by Project SESA, Boston University
  *
@@ -21,6 +21,6 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-extern EBBRC msgtst(void);
+extern EBBRC ebbmain(void);
 
 #endif

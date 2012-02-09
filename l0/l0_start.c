@@ -40,7 +40,7 @@
 #include <l0/cobj/CObjEBBRootMulti.h>
 #include <l0/cobj/CObjEBBRootMultiImp.h>
 #include <l1/MsgMgrPrim.h>
-#include <l1/msgtst.h>
+#include <l1/ebbmain.h>
 
 
 extern void trans_init(void);
@@ -61,8 +61,8 @@ ResetEventHandler_handleEvent(void *_self)
   // and then get full blown primitive l0 EBBS up (perhaps by a hot swap)
   EBB_LRT_printf("%s: ADD REST OF INIT CODE HERE!\n", __func__);
 
-  // do some basic tests of messaging
-  msgtst();
+  // call our application
+  ebbmain();
 
   lrt_pic_enableipi();
   return 0;
