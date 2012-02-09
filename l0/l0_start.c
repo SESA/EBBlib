@@ -43,7 +43,6 @@
 #include <l1/msgtst.h>
 
 
-
 extern void trans_init(void);
 
 static EBBRC 
