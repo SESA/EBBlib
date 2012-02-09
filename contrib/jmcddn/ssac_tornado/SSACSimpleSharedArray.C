@@ -4,6 +4,7 @@
 #include "EBBKludge.H"
 #include "SSACSimpleSharedArray.H"
 
+//#define DOTRACE 1
   
 void
 SSACSimpleSharedArray :: HashQueues :: init(const int &numentries)
@@ -11,10 +12,12 @@ SSACSimpleSharedArray :: HashQueues :: init(const int &numentries)
     tassert((!entries),
 	  ass_printf("\nSSACSimpleSharedArray::HashQueues:initq:entries!=0\n"));
 
+#ifdef DOTRACE
     trace( MISC, TR_INFO,
 	   tr_printf(
 	       ">>> SSACSimpleSharedArray::HashQueues::init: on que=%p\n",
 	       this ));
+#endif
     
     entries=new CacheEntrySimple[numentries];
 }
@@ -118,14 +121,14 @@ SSACSimpleSharedArray :: get( CacheObjectId &id, CacheEntry* &ce,
 
     if (ep)
     {
-
+#ifdef DOTRACE
 	trace( MISC, TR_INFO,
 	       tr_printf(
 	   ">>> SSACSimpleSharedArray::get: Hit: id=%d index=%d ep=%p:\n",
 	   theid.id(), theid.index(_numhashqs), ep );
 	       ep->print()
 	       );
-	
+#endif
 	if ( ep->flags & CacheEntrySimple::BUSY )
 	{
 	    hashq->lock.releaseLock();
@@ -146,11 +149,12 @@ SSACSimpleSharedArray :: get( CacheObjectId &id, CacheEntry* &ce,
     else
     {
 	// miss
+#ifdef DOTRACE
 	trace( MISC, TR_INFO,
 	       tr_printf(
 		   ">>> SSACSimpleSharedArray::get: Miss: id=%d index=%d\n",
 		   theid.id(),theid.index(_numhashqs)));
-
+#endif
 	ep=hashq->lruentry(_associativity);
 	
 	if (ep)
@@ -159,13 +163,14 @@ SSACSimpleSharedArray :: get( CacheObjectId &id, CacheEntry* &ce,
 	    {
 		
 		//clean the entry
+#ifdef DOTRACE
 		trace( MISC, TR_INFO,
 		       tr_printf(
 		   ">>> SSACSimpleSharedArray::get:Miss: Cleaning entry:\n"
 			   )
 			//,ep->print()
 			);
-		
+#endif
 		ep->id.save(ep->data);
 		ep->flags &= ~CacheEntrySimple::DIRTY;
 	    }
@@ -176,10 +181,12 @@ SSACSimpleSharedArray :: get( CacheObjectId &id, CacheEntry* &ce,
 	{
 	    // no free elements take the simple way out for the moment
 	    // just pass back an error code
+#ifdef DOTRACE
 	    trace( MISC, TR_INFO,
 		   tr_printf(
 		    ">>> SSACSimpleSharedArray::get: Miss:*NOFREE ENTRIES*\n"
 		       ));
+#endif
 	    SET_CLSCD(rtn,0);
 	    hashq->lock.releaseLock();
 	    return rtn;
@@ -212,18 +219,22 @@ SSACSimpleSharedArray :: putback( CacheEntry* &ce, const putflag &flag )
     hashq->lock.acquireLock();
     if (flag == KEEP)
     {
+#ifdef DOTRACE
 	trace( MISC, TR_INFO,
 	       tr_printf(">>> SSACSimpleSharedArray::putback: KEEP entry:\n");
 	       entry->print()
 	    );
+#endif
     	entry->lastused=hashq->count;
     }
     else
     {
+#ifdef DOTRACE
 	trace( MISC, TR_INFO,
 	       tr_printf(">>> SSACSimpleSharedArray::putback: DISCARD entry:\n");
 	       entry->print()
 	    );
+#endif
 	entry->lastused=0;
     }
     entry->flags &= ~CacheEntrySimple::BUSY;
@@ -252,9 +263,11 @@ SSACSimpleSharedArray :: flush()
                && (ce->id.valid())	    
 		 && ( ce->flags & CacheEntrySimple::DIRTY ))
 	    {
+#ifdef DOTRACE
 		trace( MISC, TR_INFO,
 		       tr_printf(">>> SSACSimpleSharedArray::flush: entry:")//,ce->print()
 		       );
+#endif
 		ce->flags |= CacheEntrySimple::BUSY;
 		hashq->lock.releaseLock();
 		ce->id.save(ce->data);
@@ -273,8 +286,10 @@ SSACSimpleSharedArray :: flush()
 
 SSACSimpleSharedArray :: ~SSACSimpleSharedArray()
 {
+#ifdef DOTRACE
     trace( MISC, TR_INFO,
 	  tr_printf("**** ~SSACSimpleSharedArray ref=%p\n",_ref));
+#endif
     delete[] _hashqs; 
 }
 

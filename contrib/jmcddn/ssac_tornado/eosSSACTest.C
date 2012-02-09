@@ -1,9 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <pthread.h>
 
 #include "EBBKludge.H"
+
+#include "Test.H"
 
 #include "SSACSimpleSharedArray.H"
 
@@ -50,123 +51,156 @@ MySSAC::snapshot()
   return (EBBRC)0;
 }
 
-// simple dumb spin based barrier to make life easier
-class Barrier {
-  int size;
-  volatile int enterCount;
-  volatile int leaveCount;
-  void reset() { enterCount = leaveCount = size; }
-  void leave() {
-     __sync_sub_and_fetch(&leaveCount, 1);
-     if (leaveCount == 0 ) reset();  // last one to leave resets barrier
-  }
+
+class BTest : public Test {
+  Barrier b;
+protected:
+  EBBRC work(int id);
+  EBBRC init() {};
 public:
-  Barrier(int val) : size(val) { reset(); }
-  int enter() {
-    __sync_sub_and_fetch(&enterCount, 1);
-    while (enterCount != 0); // spin
-    leave();
-  }
+  BTest(int n) : Test(n), b(n) {};
 };
 
-struct BarrierTestWorkerArgs {
-  pthread_t tid;
-  int num;
-  int id;
-  Barrier *b;
-};
-
-void *barrierTestWorker(void *arg)
+EBBRC
+BTest::work(int id)
 {
-  TRACE("BEGIN: %p", arg);
-  struct BarrierTestWorkerArgs *parms = (struct BarrierTestWorkerArgs *)arg;
-  
-  for (int i=0; i<2; i++) {
-    if (parms->id != (parms->num - 1) ) {
-      TRACE("%d: Not last worker entering Barrier %p\n", parms->id, parms->b);
-      parms->b->enter();
-      TRACE("%d: Not last worker LEFT Barrier %p\n", parms->id, parms->b);
+  TRACE("%d: BEGIN: %p", id, this);
+  for (int j=0; j<2; j++) {
+    if (id != (numWorkers - 1) ) {
+      TRACE("%d: Not last worker entering Barrier %p\n", id, &b);
+      b.enter();
+      TRACE("%d: Not last worker LEFT Barrier %p\n", id, &b);
     } else {
-      TRACE("%d: LAST worker Sleeping %p\n", parms->id, parms->b);
+      TRACE("%d: LAST worker Sleeping %p\n", id, &b);
       for (volatile int i=0; i<1000000000; i++);
-      TRACE("%d: Last worker entering Barrier %p\n", parms->id, parms->b);
-      parms->b->enter();
-      TRACE("%d: Last worker LEFT Barrier %p\n", parms->id, parms->b);
+      TRACE("%d: Last worker entering Barrier %p\n", id, &b);
+      b.enter();
+      TRACE("%d: Last worker LEFT Barrier %p\n", id, &b);
     }
-    TRACE("%d: Worker doing test AGAIN\n", parms->id, parms->b);   
+    TRACE("%d: Worker doing test AGAIN\n", id, &b);   
   }
-  TRACE("END: %p", arg);
-  return NULL;
+  TRACE("%d: END: %p", id, this);
+  return 0;
 }
+
 
 void 
 BarrierTest(int numWorkers)
 {
   TRACE("BEGIN: %d\n", numWorkers);
-  int i;
-  struct BarrierTestWorkerArgs *args;
-  Barrier bar(numWorkers);
-
-  args = (struct BarrierTestWorkerArgs *)
-    malloc(sizeof(struct BarrierTestWorkerArgs) * numWorkers);  
-  tassert((args != NULL), ass_printf("malloc failed\n"));
-
-  for (i=0; i<numWorkers; i++) {
-    TRACE("crearing i=%d\n", i);
-    args[i].num = numWorkers;
-    args[i].id = i;
-    args[i].b = &bar;
-    if ( pthread_create( &(args[i].tid), NULL, 
-			 barrierTestWorker, (void *)&(args[i])) != 0) {
-      perror("pthread_create");
-      exit(-1);
-    }
-      
-  }
-
-  for (i = 0; i<numWorkers; i++)
-    pthread_join(args[i].tid, NULL );
+ 
+  BTest b(numWorkers);
   
-  free(args);
-  
+  b.doTest();
+
   TRACE("END\n");
 }
 
-void
-SSACSimpleSharedArrayTest(void)
-{
-  EBBRC status;
-  TRACE("BEGIN");
 
-  const int HASHTABLESIZE=128;
+class SSACTest : public Test {
+protected:
+  SSACRef ssac;
+  enum {HASHTABLESIZE=128};
+  EBBRC work(int id);
+  EBBRC init();
+  EBBRC end();
+public:
+  SSACTest(int n): Test(n) {}
+};
+
+EBBRC
+SSACTest::init()
+{
+  TRACE("BEGIN");
+  EBBRC rc;
   CacheObjectIdSimple id(0);
   CacheEntrySimple *entry=0;
+  
+  // just as an initial test call a function of the ssac
+  DREF(ssac)->flush();
+  
+  for (int i=0; i<HASHTABLESIZE; i++) {
+    id = i;
+    rc=DREF(ssac)->get((CacheObjectId &)id,(CacheEntry * &)entry,
+		       SSAC::GETFORWRITE);
+    entry->data = (void *)i;
+    rc=DREF(ssac)->putback((CacheEntry * &)entry, SSAC::KEEP);
+  }
+  TRACE("END");
+  return 0;
+} 
 
-  SSACRef ssac = SSACSimpleSharedArray::create(HASHTABLESIZE);
+EBBRC
+SSACTest::work(int myid) 
+{
+  //  TRACE("BEGIN");
+  EBBRC rc;
+  CacheObjectIdSimple id(0);
+  CacheEntrySimple *entry=0;
+  intptr_t v;
 
-  status=DREF(ssac)->get((CacheObjectId &)id,(CacheEntry * &)entry,
-			 SSAC::GETFORREAD);
-  entry->print();
+  for (int j=0; j<1;j++) {
+    for (int i=0; i<HASHTABLESIZE; i++) {
+      id = i;
+      rc = DREF(ssac)->get((CacheObjectId &)id,(CacheEntry * &)entry,
+			   SSAC::GETFORWRITE);
+      v=(intptr_t)entry->data; v++; entry->data=(void *)v;
+      entry->dirty();
+      rc =DREF(ssac)->putback((CacheEntry * &)entry, SSAC::KEEP);
+    }
+  }
+  //  TRACE("END");
+  return 0;
+}
 
+EBBRC
+SSACTest::end()
+{
+  TRACE("BEGIN");
+  DREF(ssac)->snapshot();
+  printf("Test::end: \n");
+  Test::end();
+  TRACE("END");
+  return 0;
+}
+
+class SSATest : public SSACTest {
+public:
+  SSATest(int n);
+  virtual ~SSATest();
+};
+
+SSATest::SSATest(int n) : SSACTest(n) 
+{
+  ssac = SSACSimpleSharedArray::create(HASHTABLESIZE);
+}
+
+SSATest::~SSATest()
+{
+  // DREF(ssac)->destroy();
+}
+
+void
+SSACSimpleSharedArrayTest(int numWorkers)
+{
+  TRACE("BEGIN");
+  SSATest test(numWorkers);
+  test.doTest();
   TRACE("END");
 }
 
 int 
 main(int argc, char **argv)
 {
-  MySSAC *ssac;
-  EBBRC rc;
-  rc = MySSAC::create(&ssac);
+  int n=4;
 
-  if (rc == 0) {
-    ssac->flush();
-  } else {
-    fprintf(stderr, "ERROR: create failed\n");
-  }
+  if (argc>1) n=atoi(argv[1]);
 
-  SSACSimpleSharedArrayTest();
-
-  BarrierTest(4);
+#if 0
+  BarrierTest(n);
+#endif
+  
+  SSACSimpleSharedArrayTest(n);
 
   return 0;
 }
