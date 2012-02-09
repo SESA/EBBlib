@@ -9,5 +9,13 @@ include net/Makefile.am
 
 bin_PROGRAMS = ebbtest
 
-ebbtest_SOURCES = EBBStart.c $(arch_sources) $(l0_sources) $(lrt_sources) \
-	$(misc_sources) $(net_sources) $(l1_sources)
+lib_LIBRARIES = libebb.a
+
+libebb_a_SOURCES = $(arch_sources) $(l0_sources) $(lrt_sources) \
+  $(misc_sources) $(net_sources) $(l1_sources)
+
+ebbtest_SOURCES = EBBStart.c 
+
+ebbtest_LDADD = ./libebb.a
+
+ebbtest_LINK = $(CXXLINK)
