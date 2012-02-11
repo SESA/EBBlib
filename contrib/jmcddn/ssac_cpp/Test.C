@@ -16,13 +16,13 @@ void *
 testPThreadFunc(void *args)
 {
   struct TestPThreadArgs *arg = (struct TestPThreadArgs *)args;
-  return (void *) arg->test->worker(arg->id);
+  return (size_t *) (void *)arg->test->worker(arg->id);
 }
 
 Test::Test(int n) : numWorkers(n), iterations(0), bar(n) 
 {
   wargs = (struct Test::WArgs *)
-    malloc(sizeof(struct Test::WArgs) * numWorkers);  
+  malloc(sizeof(struct Test::WArgs) * numWorkers);  
   tassert((wargs != NULL), ass_printf("malloc failed\n"));
 }
 
@@ -48,10 +48,9 @@ Test::doWork() {
 
   for (i = 0; i<numWorkers; i++)
     pthread_join(args[i].tid, NULL );
-/**
-	doWork does not appear to make any calls to actual SSAC code
-**/
   free(args);
+
+  return 0;
 }
 
 EBBRC
@@ -66,6 +65,8 @@ Test::worker(int id)
   args->end = now();
 
   bar.enter();
+
+  return 0;
 }
 
 

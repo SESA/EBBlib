@@ -48,17 +48,20 @@ SSACSimpleSharedArray :: HashQueues :: lruentry(const int &numentries)
     
     while (i<numentries)
     {
-	if ( !( entries[i].flags & CacheEntrySimple::BUSY ) )
+	if ( !( entries[i].flags & CacheEntrySimple::BUSY ) ){
 	    if (!ep)
 	    {
 		ep=&(entries[i]);
 		if (!ep->id.valid())
 		    break;
 	    }
-	    else
-		if ( entries[i].lastused < ep->lastused )
+	    else{
+              if ( entries[i].lastused < ep->lastused )
 		    ep=&(entries[i]);
-	i++;
+            }
+        }
+            
+		i++;
     }
     return ep;
 }
@@ -121,14 +124,12 @@ SSACSimpleSharedArray :: get( CacheObjectId &id, CacheEntry* &ce,
 
     if (ep)
     {
-#ifdef DOTRACE
 	trace( MISC, TR_INFO,
 	       tr_printf(
 	   ">>> SSACSimpleSharedArray::get: Hit: id=%d index=%d ep=%p:\n",
 	   theid.id(), theid.index(_numhashqs), ep );
 	       ep->print()
 	       );
-#endif
 	if ( ep->flags & CacheEntrySimple::BUSY )
 	{
 	    hashq->lock.releaseLock();
@@ -149,12 +150,10 @@ SSACSimpleSharedArray :: get( CacheObjectId &id, CacheEntry* &ce,
     else
     {
 	// miss
-#ifdef DOTRACE
 	trace( MISC, TR_INFO,
 	       tr_printf(
 		   ">>> SSACSimpleSharedArray::get: Miss: id=%d index=%d\n",
 		   theid.id(),theid.index(_numhashqs)));
-#endif
 	ep=hashq->lruentry(_associativity);
 	
 	if (ep)
@@ -163,14 +162,12 @@ SSACSimpleSharedArray :: get( CacheObjectId &id, CacheEntry* &ce,
 	    {
 		
 		//clean the entry
-#ifdef DOTRACE
 		trace( MISC, TR_INFO,
 		       tr_printf(
 		   ">>> SSACSimpleSharedArray::get:Miss: Cleaning entry:\n"
 			   )
 			//,ep->print()
 			);
-#endif
 		ep->id.save(ep->data);
 		ep->flags &= ~CacheEntrySimple::DIRTY;
 	    }
@@ -181,12 +178,10 @@ SSACSimpleSharedArray :: get( CacheObjectId &id, CacheEntry* &ce,
 	{
 	    // no free elements take the simple way out for the moment
 	    // just pass back an error code
-#ifdef DOTRACE
 	    trace( MISC, TR_INFO,
 		   tr_printf(
 		    ">>> SSACSimpleSharedArray::get: Miss:*NOFREE ENTRIES*\n"
 		       ));
-#endif
 	    SET_CLSCD(rtn,0);
 	    hashq->lock.releaseLock();
 	    return rtn;

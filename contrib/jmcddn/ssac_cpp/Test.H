@@ -29,6 +29,7 @@ public:
     __sync_sub_and_fetch(&enterCount, 1);
     while (enterCount != 0); // spin
     leave();
+    return 0;
   }
 };
 
@@ -39,9 +40,9 @@ private:
   EBBRC worker(int id);
   EBBRC doWork();
 protected:
-  Barrier bar;
   int numWorkers;
   int iterations;
+  Barrier bar;
   struct WArgs {
     int id;
     unsigned long long start;
@@ -59,6 +60,7 @@ public:
     if (init()<0) return -1;
     doWork();
     end();
+    return 0;
   }
   virtual ~Test();
 };

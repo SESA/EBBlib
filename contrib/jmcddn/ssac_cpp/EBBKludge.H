@@ -5,11 +5,9 @@
 
 #define MISC 			1
 #define TR_INFO 	1
-#define SET_CLSCD /*TODO: add functionality */
+#define SET_CLSCD(A,B) /*TODO: add functionality */
 
 typedef int EBBRC;
-
-/* TODO: make into functional printf wrappers*/
 
 #define tassert(EX,STMT)			\
   if (!(EX)) {					\

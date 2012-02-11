@@ -56,7 +56,7 @@ class BTest : public Test {
   Barrier b;
 protected:
   EBBRC work(int id);
-  EBBRC init() {};
+  EBBRC init() {return 0;};
 public:
   BTest(int n) : Test(n), b(n) {};
 };
@@ -77,7 +77,7 @@ BTest::work(int id)
       b.enter();
       TRACE("%d: Last worker LEFT Barrier %p\n", id, &b);
     }
-    TRACE("%d: Worker doing test AGAIN\n", id, &b);   
+    TRACE("%d: Worker doing test AGAIN %p\n", id, &b);   
   }
   TRACE("%d: END: %p", id, this);
   return 0;
@@ -112,31 +112,30 @@ EBBRC
 SSACTest::init()
 {
   TRACE("BEGIN");
-  EBBRC rc;
   CacheObjectIdSimple id(0);
   CacheEntrySimple *entry=0;
-  
+  EBBRC rc;
   // just as an initial test call a function of the ssac
   DREF(ssac)->flush();
   
-  for (int i=0; i<HASHTABLESIZE; i++) {
+  for (unsigned long i=0; i<HASHTABLESIZE; i++) {
     id = i;
     rc=DREF(ssac)->get((CacheObjectId &)id,(CacheEntry * &)entry,
 		       SSAC::GETFORWRITE);
-    entry->data = (void *)i;
+    entry->data = (void *)i; // TODO: what is this line?
     rc=DREF(ssac)->putback((CacheEntry * &)entry, SSAC::KEEP);
   }
   TRACE("END");
-  return 0;
+  return rc;
 } 
 
 EBBRC
 SSACTest::work(int myid) 
 {
   //  TRACE("BEGIN");
-  EBBRC rc;
   CacheObjectIdSimple id(0);
   CacheEntrySimple *entry=0;
+  EBBRC rc;
   intptr_t v;
 
   for (int j=0; j<1;j++) {
@@ -150,7 +149,7 @@ SSACTest::work(int myid)
     }
   }
   //  TRACE("END");
-  return 0;
+  return rc;
 }
 
 EBBRC

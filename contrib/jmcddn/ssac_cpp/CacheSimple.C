@@ -7,7 +7,7 @@
 CacheObjectDataSimple
 CacheObjectIdSimple :: load()
 {
-    register int i=0;
+    register unsigned int i=0;
     while(i<LOADSPIN) i++; 
     return (void *)long(_id);
 }
@@ -15,7 +15,7 @@ CacheObjectIdSimple :: load()
 EBBRC
 CacheObjectIdSimple :: save(CacheObjectDataSimple data)
 {
-    register int i=0;
+    register unsigned int i=0;
     while(i<SAVESPIN) i++;
     return 0;
 }

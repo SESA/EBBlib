@@ -3,7 +3,7 @@ hdrs = $(patsubst %.c,%.h,$(classes))
 src = eosSSACTest.C $(classes)
 objs = $(patsubst %.C,%.o,$(src))
 libs = -lpthread 
-CXXFLAGS= -g
+CXXFLAGS=-g -O0 -Wall
 
 eosSSACTest: $(objs) $(hdrs)
 	g++ ${CXXFLAGS} $(objs) $(libs) -o eosSSACTest 
