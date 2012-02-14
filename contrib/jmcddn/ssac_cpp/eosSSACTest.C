@@ -8,6 +8,7 @@
 
 #include "SSACSimpleSharedArray.H"
 
+
 class MySSAC : public SSAC {
 public:
   virtual EBBRC get( CacheObjectId &id, CacheEntry* &ce,
@@ -58,7 +59,7 @@ protected:
   EBBRC work(int id);
   EBBRC init() {return 0;};
 public:
-  BTest(int n) : Test(n), b(n) {};
+  BTest(int n) : Test(n), b(n) {}; // TODO: what with the syntax
 };
 
 EBBRC
@@ -105,13 +106,13 @@ protected:
   EBBRC init();
   EBBRC end();
 public:
-  SSACTest(int n): Test(n) {}
+  SSACTest(int n, int m): Test(n,m) {}
 };
 
 EBBRC
 SSACTest::init()
 {
-  TRACE("BEGIN");
+//  TRACE("BEGIN");
   CacheObjectIdSimple id(0);
   CacheEntrySimple *entry=0;
   EBBRC rc;
@@ -125,7 +126,7 @@ SSACTest::init()
     entry->data = (void *)i; // TODO: what is this line?
     rc=DREF(ssac)->putback((CacheEntry * &)entry, SSAC::KEEP);
   }
-  TRACE("END");
+//  TRACE("END");
   return rc;
 } 
 
@@ -155,23 +156,25 @@ SSACTest::work(int myid)
 EBBRC
 SSACTest::end()
 {
-  TRACE("BEGIN");
+ // TRACE("BEGIN");
+#if OUTPUT_TEXT
   DREF(ssac)->snapshot();
-  printf("Test::end: \n");
+  printf("Tests:end: \n");
+#endif
   Test::end();
-  TRACE("END");
+//  TRACE("END");
   return 0;
 }
 
 class SSATest : public SSACTest {
 public:
-  SSATest(int n);
+  SSATest(int n, int m);
   virtual ~SSATest();
 };
 
-SSATest::SSATest(int n) : SSACTest(n) 
+SSATest::SSATest(int n, int m) : SSACTest(n,m) 
 {
-  // where is 'ssac' defined?
+  // init hash table 
   ssac = SSACSimpleSharedArray::create(HASHTABLESIZE);
 }
 
@@ -181,26 +184,28 @@ SSATest::~SSATest()
 }
 
 void
-SSACSimpleSharedArrayTest(int numWorkers)
+SSACSimpleSharedArrayTest(int numWorkers, int numIterations)
 {
-  TRACE("BEGIN");
-  SSATest test(numWorkers);
+//  TRACE("BEGIN");
+  SSATest test(numWorkers, numIterations);
   test.doTest();
-  TRACE("END");
+//  TRACE("END");
 }
 
 int 
 main(int argc, char **argv)
 {
-  int n=4;
+  int n=4; // thread count
+  int m=1; // no. of iterations
 
   if (argc>1) n=atoi(argv[1]);
-
+  if (argc>2) m=atoi(argv[2]);
+  
 #if 0
   BarrierTest(n);
 #endif
   
-  SSACSimpleSharedArrayTest(n);
+  SSACSimpleSharedArrayTest(n,m);
 
   return 0;
 }

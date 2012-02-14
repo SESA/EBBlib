@@ -1,6 +1,9 @@
 #ifndef __TEST_H__
 #define __TEST_H__
 
+#define OUTPUT_TEXT 0
+#define OUTPUT_CSV  1
+
 inline unsigned long long 
 now(void) 
 {
@@ -26,9 +29,9 @@ public:
   Barrier() { init(0); }
   Barrier(int val)  { init(val); }
   int enter() {
-    while(leaveCount != size);
+    while(leaveCount != size); // ensure barrier is empty for reuse
     __sync_sub_and_fetch(&enterCount, 1);
-    while (enterCount != 0); // spin
+    while (enterCount != 0); // FIXME: better-than-spinwait
     leave();
     return 0;
   }
@@ -41,9 +44,9 @@ private:
   EBBRC worker(int id);
   EBBRC doWork();
 protected:
+  Barrier bar;
   int numWorkers;
   int iterations;
-  Barrier bar;
   struct WArgs {
     int id;
     unsigned long long start;
@@ -56,8 +59,9 @@ protected:
   virtual EBBRC end(void);
 public:
   Test(int n);
+  Test(int n, int m);
   EBBRC doTest(void) {
-    
+    //FIXME: do we want to init/end within each iteration of test?
     if (init()<0) return -1;
     doWork();
     end();

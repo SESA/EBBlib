@@ -9,6 +9,7 @@
 struct TestPThreadArgs {
   pthread_t tid;
   int id;
+  int index;
   Test *test;
 };
 
@@ -16,40 +17,49 @@ void *
 testPThreadFunc(void *args)
 {
   struct TestPThreadArgs *arg = (struct TestPThreadArgs *)args;
-  return (size_t *) (void *)arg->test->worker(arg->id);
+  return  (void *) (long) arg->test->worker(arg->index);
 }
 
-Test::Test(int n) : numWorkers(n), iterations(0), bar(n) 
+Test::Test(int n) :  bar(n), numWorkers(n), iterations(1)
 {
   wargs = (struct Test::WArgs *)
   malloc(sizeof(struct Test::WArgs) * numWorkers);  
   tassert((wargs != NULL), ass_printf("malloc failed\n"));
 }
 
+Test::Test(int n, int m) :  bar(n), numWorkers(n), iterations(m)
+{
+  wargs = (struct Test::WArgs *)
+  malloc(sizeof(struct Test::WArgs) * (numWorkers * iterations));  
+  tassert((wargs != NULL), ass_printf("malloc failed\n"));
+}
+
 EBBRC 
 Test::doWork() {
   struct TestPThreadArgs *args;
-  int i;
+  int i,j;
 
-  args = (struct TestPThreadArgs *)
+  // test iteration loop
+  for(j=0; j<iterations; j++){ 
+    args = (struct TestPThreadArgs *)
     malloc(sizeof(struct TestPThreadArgs) * numWorkers);  
-  tassert((args != NULL), ass_printf("malloc failed\n"));
-
-  for (i=0; i<numWorkers; i++) {
-    TRACE("creating i=%d\n", i);
-    args[i].id = i;
-    args[i].test = this;
-    if ( pthread_create( &(args[i].tid), NULL, 
-			 testPThreadFunc, (void *)&(args[i])) != 0) {
-      perror("pthread_create");
-      exit(-1);
+    tassert((args != NULL), ass_printf("malloc failed\n"));
+   for (i=0; i<numWorkers; i++) {
+      TRACE("creating thread #%d\n", i);
+      args[i].id = i;
+      args[i].index = (j*numWorkers)+i;
+      args[i].test = this; // TODO: look up behavior of 'this'
+      if ( pthread_create( &(args[i].tid), NULL, 
+                           testPThreadFunc, (void *)&(args[i])) != 0) {
+        perror("pthread_create");
+        exit(-1);
+      }
     }
+    for (i = 0; i<numWorkers; i++)
+      pthread_join(args[i].tid, NULL );
+    free(args); 
+
   }
-
-  for (i = 0; i<numWorkers; i++)
-    pthread_join(args[i].tid, NULL );
-  free(args);
-
   return 0;
 }
 
@@ -78,8 +88,22 @@ Test::~Test()
 /* virtual */ EBBRC
 Test::end()
 {
+#if OUTPUT_TEXT 
   for (int i=0; i<numWorkers; i++) {
     printf("%d: start=%llu end=%llu\n", i, wargs[i].start, wargs[i].end);
   }
+#endif
+
+#if OUTPUT_CSV
+  int index;
+  printf("Test, Pid, Start, End, Dif\n");
+  for (int i=0; i<iterations; i++)
+    for (int j=0; j<numWorkers; j++){
+      index = (i*numWorkers)+j;
+      printf("%d, %d, %llu, %llu, %llu\n", i, j, wargs[index].start, wargs[index].end, wargs[index].end - wargs[index].start);
+    }
+  
+#endif
+
   return 0;
 }
