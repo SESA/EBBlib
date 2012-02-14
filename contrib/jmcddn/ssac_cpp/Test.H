@@ -26,6 +26,7 @@ public:
   Barrier() { init(0); }
   Barrier(int val)  { init(val); }
   int enter() {
+    while(leaveCount != size);
     __sync_sub_and_fetch(&enterCount, 1);
     while (enterCount != 0); // spin
     leave();
