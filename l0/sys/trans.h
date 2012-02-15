@@ -23,8 +23,9 @@
  */
 
 #include <stdint.h>
-#include <l0/types.h>
+
 #include <l0/const.h>
+#include <l0/types.h>
 
 typedef EBBTrans EBBGTrans;
 

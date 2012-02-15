@@ -24,9 +24,17 @@
 
 #ifdef LRT_ULNX
 #include <lrt/ulnx/assert.h>
+#elif LRT_BARE
+#include <lrt/bare/assert.h>
 #endif
 
 #define EBBAssert LRT_EBBAssert
 #define EBBRCAssert(rc) EBBAssert(EBBRC_SUCCESS(rc))
+
+#ifdef __cplusplus
+#define STATIC_ASSERT static_assert
+#else
+#define STATIC_ASSERT _Static_assert
+#endif
 
 #endif

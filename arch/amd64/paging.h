@@ -23,6 +23,10 @@
  * THE SOFTWARE.
  */
 
+#include <stdint.h>
+
+#include <lrt/assert.h>
+
 //I wish these had good names, I think I just made these up
 #define PAGE_SIZE (1 << 12) //4k
 #define LARGE_PAGE_SIZE (1 << 21) //2m
@@ -75,7 +79,7 @@ typedef union {
   };
 } pml4_ent;
 
-_Static_assert(sizeof(pml4_ent) == 8, "pml4_ent packing issue");
+STATIC_ASSERT(sizeof(pml4_ent) == 8, "pml4_ent packing issue");
 
 typedef union {
   uint64_t raw;
@@ -98,7 +102,7 @@ typedef union {
   };
 } pdpt_1g_ent;
 
-_Static_assert(sizeof(pdpt_1g_ent) == 8, "pdpt_1g_ent packing issue");
+STATIC_ASSERT(sizeof(pdpt_1g_ent) == 8, "pdpt_1g_ent packing issue");
 
 typedef union {
   uint64_t raw;
@@ -118,7 +122,7 @@ typedef union {
   };
 } pdpt_ent;
 
-_Static_assert(sizeof(pdpt_ent) == 8, "pdpt_ent packing issue");
+STATIC_ASSERT(sizeof(pdpt_ent) == 8, "pdpt_ent packing issue");
 
 typedef union {
   uint64_t raw;
@@ -141,7 +145,7 @@ typedef union {
   };
 } pd_2m_ent;
 
-_Static_assert(sizeof(pd_2m_ent) == 8, "pd_2m_ent packing issue");
+STATIC_ASSERT(sizeof(pd_2m_ent) == 8, "pd_2m_ent packing issue");
 
 typedef union {
   uint64_t raw;
@@ -161,7 +165,7 @@ typedef union {
   };
 } pd_ent;
 
-_Static_assert(sizeof(pd_ent) == 8, "pd_ent packing issue");
+STATIC_ASSERT(sizeof(pd_ent) == 8, "pd_ent packing issue");
 
 typedef union {
   uint64_t raw;
@@ -182,7 +186,7 @@ typedef union {
   };
 } pt_4k_ent;
 
-_Static_assert(sizeof(pt_4k_ent) == 8, "pt_4k_ent packing issue");
+STATIC_ASSERT(sizeof(pt_4k_ent) == 8, "pt_4k_ent packing issue");
 
 static inline pml4_ent *
 get_pml4(void)

@@ -1,5 +1,5 @@
-#ifndef __L0_CONST_ASM_H__
-#define __L0_CONST_ASM_H__
+#ifndef LRT_BARE_IO_H
+#define LRT_BARE_IO_H
 /*
  * Copyright (C) 2011 by Project SESA, Boston University
  *
@@ -22,12 +22,19 @@
  * THE SOFTWARE.
  */
 
-#include <l0/lrt/const-asm.h>
+#include <l0/lrt/bare/arch/amd64/stdio.h>
 
-#define EBB_TRANS_MAX_NODES_ASM (1024)
-#define EBB_TRANS_PAGE_SIZE_ASM (4096)
-#define EBB_TRANS_NUM_PAGES_ASM (1024)
-#define EBB_TRANS_MAX_ELS_ASM (LRT_TRANS_MAX_ELS_ASM)
-#define EBB_TRANS_MAX_FUNCS_ASM (256)
+#define EBB_LRT_printf printf
+
+void *
+memset (void *ptr, int value, size_t num)
+{
+  unsigned char c = (unsigned char) value;
+  unsigned char *cptr = ptr;
+  for (int i = 0; i < num; i++) {
+    cptr[i] = c;
+  }
+  return ptr;
+}
 
 #endif

@@ -25,6 +25,7 @@
 #include <arch/amd64/paging.h>
 #include <l0/lrt/bare/arch/amd64/trans.h>
 #include <l0/lrt/bare/arch/amd64/stdio.h>
+#include <lrt/assert.h>
 
 //The idea is to statically allocate global memory and the first
 // processor's local memory and map them into the page table
@@ -43,13 +44,13 @@ __attribute__((aligned(LARGE_PAGE_SIZE)));
 // entry for each, and one 2MB superpage pdir for each
 
 //TODO make those inlines in paging.h into macros so I can do this
-_Static_assert(PML4_INDEX(GMem) == PML4_INDEX(LMem),
+STATIC_ASSERT(PML4_INDEX(GMem) == PML4_INDEX(LMem),
 	       "Gmem and Lmem are not within the same pml4 entry");
 
-_Static_assert(PDPT_INDEX(GMem) != PDPT_INDEX(LMem),
+STATIC_ASSERT(PDPT_INDEX(GMem) != PDPT_INDEX(LMem),
 	       "Gmem and Lmem are within the same pdpt entry");
 
-_Static_assert(LRT_TRANS_TBLSIZE <= (LARGE_PAGE_SIZE),
+STATIC_ASSERT(LRT_TRANS_TBLSIZE <= (LARGE_PAGE_SIZE),
 	       "Table mapping will not fit within a large page, "
 	       "fix code accordingly");
 

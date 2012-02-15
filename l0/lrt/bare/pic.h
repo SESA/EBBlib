@@ -1,5 +1,5 @@
-#ifndef __LRT_CONST_ASM_H__
-#define __LRT_CONST_ASM_H__
+#ifndef L0_LRT_BARE_PIC_H__
+#define L0_LRT_BARE_PIC_H__
 /*
  * Copyright (C) 2011 by Project SESA, Boston University
  *
@@ -22,8 +22,9 @@
  * THE SOFTWARE.
  */
 
-#ifdef LRT_ULNX
-#include <l0/lrt/ulnx/const-asm.h>
-#endif
+//FIXME
+#include <l0/lrt/bare/arch/amd64/pic.h>
+
+#define LRT_PIC_MAX_PICS 128
 
 #endif

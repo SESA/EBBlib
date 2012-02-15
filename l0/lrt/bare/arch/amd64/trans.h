@@ -23,16 +23,81 @@
  * THE SOFTWARE.
  */
 
+#include <stdint.h>
+
 #include <arch/amd64/paging.h>
 
-#define LRT_TRANS_PGSIZE (LARGE_PAGE_SIZE) //2 MB
-#define LRT_TRANS_PAGES (1)
-#define LRT_TRANS_TBLSIZE (LRT_TRANS_PGSIZE * LRT_TRANS_PAGES) 
+#define LRT_TRANS_PAGESIZE (PAGE_SIZE) //4 K
+#define LRT_TRANS_PAGES (512)
+#define LRT_TRANS_TBLSIZE (LRT_TRANS_PAGESIZE * LRT_TRANS_PAGES) 
 
 //These should be virtual addresses
 #define GMem (0xFFFFFFFF00000000) //upper 4GB of memory
 #define LMem (0xFFFFFFFE00000000) //next 4GB of memory
 
 extern void lrt_trans_init(void);
+
+static inline void *
+lrt_trans_gmem(void)
+{
+  return (void *)GMem;
+}
+
+static inline void *
+lrt_trans_lmem(void)
+{
+  return (void *)LMem;
+}
+
+static inline uintptr_t
+lrt_trans_offset(uintptr_t base, uintptr_t t) 
+{
+  return (uintptr_t)(t - base);
+}
+
+static inline uintptr_t
+lrt_trans_idbase(void)
+{
+  return (uintptr_t)LMem;
+}
+
+static inline struct lrt_trans *
+lrt_trans_id2lt(uintptr_t i)
+{
+  return (struct lrt_trans *)i;
+}
+
+static inline uintptr_t
+lrt_trans_lt2id(struct lrt_trans *t)
+{
+  return (uintptr_t)(t);
+}
+
+static inline struct lrt_trans *
+lrt_trans_id2gt(uintptr_t i)
+{
+  return (struct lrt_trans *)(((uintptr_t)lrt_trans_gmem()) + 
+			      lrt_trans_offset(lrt_trans_idbase(), i));
+}
+
+static inline uintptr_t
+lrt_trans_gt2id(struct lrt_trans *t)
+{
+  return (uintptr_t)(lrt_trans_idbase() + 
+		     lrt_trans_offset((uintptr_t)lrt_trans_gmem(),
+				      (uintptr_t)t));
+}
+
+static inline struct lrt_trans *
+lrt_trans_gt2lt(struct lrt_trans *gt)
+{
+  return lrt_trans_id2lt(lrt_trans_gt2id(gt));
+}
+
+static inline struct lrt_trans *
+lrt_trans_lt2gt(struct lrt_trans *lt)
+{
+  return lrt_trans_id2gt(lrt_trans_lt2id(lt));
+}
 
 #endif

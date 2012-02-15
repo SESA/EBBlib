@@ -23,6 +23,8 @@
  * THE SOFTWARE.
  */
 
+extern uintptr_t lrt_pic_myid;
+
 typedef void *lrt_pic_handler; //Should be an address placed in the IDT
 
 extern void __attribute__ ((noreturn)) lrt_pic_init(lrt_pic_handler h);

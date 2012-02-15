@@ -1,6 +1,5 @@
-#ifndef __L0_ULNX_CONST_ASM_H__
-#define __L0_ULNX_CONST_ASM_H__
-
+#ifndef LRT_BARE_ASSERT_H
+#define LRT_BARE_ASSERT_H
 
 /*
  * Copyright (C) 2011 by Project SESA, Boston University
@@ -24,7 +23,16 @@
  * THE SOFTWARE.
  */
 
-#define LRT_MAX_VPS_ASM (4)
-#define LRT_TRANS_MAX_ELS_ASM (LRT_MAX_VPS_ASM)
+#include <stdbool.h>
+#include <l0/lrt/bare/arch/amd64/stdio.h>
+
+#define LRT_EBBAssert(cond)						\
+  ({									\
+  if (!(cond)) {							\
+    if (stdout)								\
+      printf("Assertion failed: at %s, line %d\n", __FILE__, __LINE__);	\
+    while(1) ;								\
+  }									\
+  })
 
 #endif

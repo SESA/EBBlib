@@ -29,6 +29,8 @@
 #include <l0/lrt/bare/arch/amd64/pic.h>
 #include <l0/lrt/bare/arch/amd64/stdio.h>
 
+uintptr_t lrt_pic_myid;
+
 //Vectors 0-31 are reserved by the processor
 //We reserve vectors 32-63 for external interrupts, IPIs, etc.
 //Vectors 64-255 are available
@@ -100,6 +102,8 @@ lrt_pic_init(lrt_pic_handler h)
   //wouldn't have been masked and then we enable interrupts
   //so we must reset the PIT (and we may as well prevent it from firing)
   disable_pit();
+
+  lrt_pic_myid = get_lapic_id();
 
   //Disable the rtc, irq 8 could have fired and therefore
   //wouldn't have been masked and then we enable interrupts

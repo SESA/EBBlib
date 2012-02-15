@@ -151,6 +151,8 @@ init32(multiboot_info_t *mbi, uint32_t magic)
   //since the GDT is now loaded with a longmode code segment, we must do
   // a long jump to init64
   __asm__ volatile (
+		    "andl $0xFFFFFFF0, %%esp\n"
+		    "sub $2, %%esp\n\t" //for alignment!
 		    "pushw %w[init32_cs]\n\t"
 		    "pushl %[init64]\n\t"
 		    "ljmp *(%%esp)"

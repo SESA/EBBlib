@@ -26,6 +26,7 @@
 #include <stdint.h>
 
 #include <arch/amd64/cpu.h>
+#include <lrt/assert.h>
 
 //FIXME: I guess this could be remapped at some point in the future so it
 // shouldn't be a const and perhaps the initial value should be read from
@@ -47,7 +48,7 @@ typedef union {
   };
 } lapic_id_register;
 
-_Static_assert(sizeof(lapic_id_register) == 4, "lapic_id_register packing issue");
+STATIC_ASSERT(sizeof(lapic_id_register) == 4, "lapic_id_register packing issue");
 
 typedef union {
   uint32_t raw;
@@ -60,14 +61,14 @@ typedef union {
   };
 } lapic_version_register;
 
-_Static_assert(sizeof(lapic_version_register) == 4,
+STATIC_ASSERT(sizeof(lapic_version_register) == 4,
 	       "lapic_version_register packing issue");
 
 typedef union {
   uint32_t raw;
 } lapic_eoi_register;
 
-_Static_assert(sizeof(lapic_eoi_register) == 4,
+STATIC_ASSERT(sizeof(lapic_eoi_register) == 4,
 	       "lapic_eoi_register packing issue");
 
 typedef union {
@@ -86,7 +87,7 @@ typedef union {
   };
 } lapic_icr_low;
 
-_Static_assert(sizeof(lapic_icr_low) == 4, "lapic_icr_low packing issue");
+STATIC_ASSERT(sizeof(lapic_icr_low) == 4, "lapic_icr_low packing issue");
 
 typedef union {
   uint32_t raw;
@@ -96,7 +97,7 @@ typedef union {
   };
 } lapic_icr_high;
 
-_Static_assert(sizeof(lapic_icr_high) == 4, "lapic_icr_high packing issue");
+STATIC_ASSERT(sizeof(lapic_icr_high) == 4, "lapic_icr_high packing issue");
 
 //small inline to just do the address computation
 static inline volatile uint32_t *

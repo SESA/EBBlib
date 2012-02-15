@@ -9,5 +9,4 @@ struct TransMemDesc TransMem;
 void
 lrt_trans_init(void)
 {
-  assert(lrt_trans_valid());
 }

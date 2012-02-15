@@ -1,5 +1,6 @@
 AM_CFLAGS = -Wall -Werror
 AM_CCASFLAGS = -m64 -g3 -D ASM_FILE
+AM_CXXFLAGS = -std=gnu++0x
 
 include arch/Makefile.am
 include l0/Makefile.am
@@ -21,12 +22,29 @@ ebbos_CFLAGS = -m64 -ffreestanding -Wall -Werror -nostdlib -nodefaultlibs -g3 \
 ebbos_LDFLAGS = -melf_x86_64 -static -n -z max-page-size=0x1000 \
 	-Wl,--build-id=none \
 	-T $(top_srcdir)/l0/lrt/bare/arch/amd64/link.ld
-ebbos_SOURCES = l0/lrt/bare/arch/amd64/init64.c \
+ebbos_SOURCES = \
+		arch/amd64/apic.h \
+		arch/amd64/asm.h \
+		arch/amd64/cpu.h \
+		arch/amd64/fpr.h \
+		arch/amd64/idt.h \
+		arch/amd64/multiboot.h \
+		arch/amd64/paging.h \
+		arch/amd64/pic.h \
+		arch/amd64/pit.h \
+		arch/amd64/rtc.h \
+		arch/amd64/segmentation.h \
+		arch/amd64/sysio.h \
+		l0/lrt/bare/pic.h \
+		l0/lrt/bare/trans.h \
+		l0/lrt/bare/arch/amd64/init64.c \
+		l0/lrt/bare/arch/amd64/init64.h \
 		l0/lrt/bare/arch/amd64/isr_common.c \
 		l0/lrt/bare/arch/amd64/isr.c \
 		l0/lrt/bare/arch/amd64/isr.h \
 		l0/lrt/bare/arch/amd64/isrtbl.c \
 		l0/lrt/bare/arch/amd64/lrt_start.c \
+		l0/lrt/bare/arch/amd64/lrt_start.h \
 		l0/lrt/bare/arch/amd64/mem.c \
 		l0/lrt/bare/arch/amd64/mem.h \
 		l0/lrt/bare/arch/amd64/pic.c \
@@ -39,8 +57,18 @@ ebbos_SOURCES = l0/lrt/bare/arch/amd64/init64.c \
 		l0/lrt/bare/arch/amd64/string.c \
 		l0/lrt/bare/arch/amd64/string.h \
 		l0/lrt/bare/arch/amd64/trans.c \
-		l0/lrt/bare/arch/amd64/trans.h 
+		l0/lrt/bare/arch/amd64/trans.h \
+		l0/sys/trans.h \
+		l0/sys/trans.c \
+		l0/sys/defFT.c \
+		l0/sys/arch/amd64/defFT.S \
+		lrt/bare/assert.h \
+		lrt/bare/io.h
 ebbos_LDADD = l0/lrt/bare/arch/amd64/init32.o
+EXTRA_DIST = l0/lrt/bare/arch/amd64/link.ld l0/lrt/bare/arch/amd64/grub.cfg \
+	l0/lrt/bare/arch/amd64/init32.c
+
+CLEANFILES = l0/lrt/bare/arch/amd64/init32.o
 
 #TODO DS: configure should check for grub-mkrescue
 ebbos.iso: ebbos $(top_srcdir)/l0/lrt/bare/arch/amd64/grub.cfg

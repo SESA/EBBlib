@@ -1,5 +1,5 @@
-#ifndef L0_LRT_SYS_TRANS_DEF_H
-#define L0_LRT_SYS_TRANS_DEF_H
+#ifndef L0_SYS_TRANS_DEF_H
+#define L0_SYS_TRANS_DEF_H
 
 /*
  * Copyright (C) 2011 by Project SESA, Boston University
@@ -22,6 +22,11 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+
+#include <stdint.h>
+
+#include <l0/types.h>
+#include <l0/lrt/trans.h>
 
 union EBBTransStruct {
   struct {

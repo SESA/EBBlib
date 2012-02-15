@@ -25,6 +25,8 @@
 
 #include <stdint.h>
 
+#include <lrt/assert.h>
+
 typedef union {
   uint64_t raw[2];
   struct {
@@ -41,14 +43,14 @@ typedef union {
   };
 } idtdesc;
 
-_Static_assert(sizeof(idtdesc) == 16, "idtdesc packing issue");
+STATIC_ASSERT(sizeof(idtdesc) == 16, "idtdesc packing issue");
 
 typedef struct {
   uint16_t limit;
   uint64_t base __attribute__((packed));
 } idtr;
 
-_Static_assert(sizeof(idtr) == 10, "idtr packing issue");
+STATIC_ASSERT(sizeof(idtr) == 10, "idtr packing issue");
 
 static inline void
 load_idtr(idtdesc *base, uint16_t limit)
