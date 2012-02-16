@@ -13,6 +13,15 @@ AS_CASE([$host_cpu], [x86_64], [], [powerpc], [], [AC_MSG_ERROR([not on a suppor
 AM_CONDITIONAL([x86_64], [test x$host_cpu == xx86_64])
 AM_CONDITIONAL([powerpc], [test x$host_cpu == xpowerpc])
 
+AC_ARG_ENABLE([baremetal],
+  AS_HELP_STRING([--enable-baremetal], [Enable baremetal build]),
+  [lrt=bare],
+  [lrt=ulnx])
+
+AM_CONDITIONAL(LRT_BARE, test x$lrt = xbare)
+AM_CONDITIONAL(LRT_ULNX, test x$lrt = xulnx)
+
+
 # Checks for programs.
 AC_PROG_CC
 AM_PROG_CC_C_O
@@ -48,11 +57,16 @@ AC_TYPE_UINTPTR_T
 
 
 # Checks for library functions.
-AC_SEARCH_LIBS([pthread_create], [pthread], [],
-				 [AC_MSG_ERROR([pthread library missing])])
-AC_SEARCH_LIBS([pcap_freealldevs], [pcap], [],
-				 [AC_MSG_ERROR([pcap library missing])])
-AC_CHECK_FUNCS([bzero dup2 gethostbyname memset socket strerror])
+AS_IF([test x$lrt = xulnx],
+	    [AC_SEARCH_LIBS([pthread_create],
+	      [pthread],
+	      [],
+	      [AC_MSG_ERROR([pthread library missing])])])
+AS_IF([test x$lrt = xulnx],
+	    [AC_SEARCH_LIBS([pcap_freealldevs],
+	      [pcap],
+	      [],
+	      [AC_MSG_ERROR([pcap library missing])])])
 
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT

@@ -1,6 +1,6 @@
-AM_CFLAGS = -Wall -Werror
+AM_CFLAGS = -std=gnu99 -Wall -Werror -g3
 AM_CCASFLAGS = -m64 -g3 -D ASM_FILE
-AM_CXXFLAGS = -std=gnu++0x
+AM_CXXFLAGS = -std=gnu++0x -g3
 
 include arch/Makefile.am
 include l0/Makefile.am
@@ -8,17 +8,23 @@ include lrt/Makefile.am
 include misc/Makefile.am
 include net/Makefile.am
 
-bin_PROGRAMS = ebbtest
-ebbtest_SOURCES = EBBStart.c $(arch_sources) $(l0_sources) $(lrt_sources) \
-	$(misc_sources) $(net_sources)
-ebbtest_CPPFLAGS = -D LRT_ULNX
-
 noinst_PROGRAMS = ebbos
+
+if LRT_ULNX
+ebbos_SOURCES = EBBStart.c $(arch_sources) $(l0_sources) $(lrt_sources) \
+	$(misc_sources) $(net_sources)
+ebbos_CPPFLAGS = -D LRT_ULNX
+ebbos_CFLAGS = $(AM_CFLAGS)
+ebbos_CXXFLAGS = $(AM_CXXFLAGS)
+else
+if LRT_BARE
 ebbos_DEPENDENCIES = $(top_srcdir)/l0/lrt/bare/arch/amd64/link.ld \
 	l0/lrt/bare/arch/amd64/init32.o
 ebbos_CPPFLAGS = -D LRT_BARE
-ebbos_CFLAGS = -m64 -ffreestanding -Wall -Werror -nostdlib -nodefaultlibs -g3 \
-	-std=gnu99 -O2 -mno-red-zone -mno-mmx -mno-sse -mno-sse2 -mno-sse3
+BAREFLAGS = -m64 -ffreestanding -nostdlib -nodefaultlibs -g3 \
+	-O2 -mno-red-zone -mno-mmx -mno-sse -mno-sse2 -mno-sse3
+ebbos_CFLAGS = $(AM_CFLAGS) $(BAREFLAGS)
+ebbos_CXXFLAGS = $(AMCXXFLAGS) $(BAREFLAGS)
 ebbos_LDFLAGS = -melf_x86_64 -static -n -z max-page-size=0x1000 \
 	-Wl,--build-id=none \
 	-T $(top_srcdir)/l0/lrt/bare/arch/amd64/link.ld
@@ -81,3 +87,5 @@ l0/lrt/bare/arch/amd64/init32.o: $(top_srcdir)/l0/lrt/bare/arch/amd64/init32.c
 		$(CPPFLAGS) $(patsubst -m64, -m32, $(ebbos_CFLAGS)) \
 		-Winline -c -o $@ $<
 	objcopy -g -O elf64-x86-64 $@ $@
+endif
+endif
