@@ -64,7 +64,7 @@ AC_CHECK_FUNCS([bzero dup2 gethostbyname memset socket strerror])
 AC_CONFIG_FILES([Makefile])
 
 # Optional features
-AC_ARG_ENABLE([k42-allocator], AS_HELP_STRING([--enable-k42-allocator], [use the k42 allocator (disabled by default)]),
-  AC_DEFINE([USE_K42_ALLOC], [], [use k42 alloc]),)
+AC_ARG_ENABLE([prim-allocator], AS_HELP_STRING([--enable-prim-allocator], [use the primitive allocator (disabled by default)]),
+  AC_DEFINE([USE_PRIM_ALLOC], [], [use prim alloc]),)
 
 AC_OUTPUT

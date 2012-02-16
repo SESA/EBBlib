@@ -76,7 +76,7 @@ EBBMemMgrPrim_alloc(EBBMemMgrRef _self, uintptr_t size, void **mem, EBB_MEM_POOL
 
 //freeing is a nop in this implementation
 static EBBRC
-EBBMemMgrPrim_free(EBBMemMgrRef _self, void *mem) {
+EBBMemMgrPrim_free(EBBMemMgrRef _self, uintptr_t size, void *mem) {
   return EBBRC_OK;
 }
 
