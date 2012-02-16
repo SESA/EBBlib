@@ -66,6 +66,12 @@ AC_CONFIG_FILES([Makefile])
 # Optional features
 AC_ARG_ENABLE([stupid-prim-alloc],
   AS_HELP_STRING([--enable-stupid-prim-alloc], [use the stupid primitive allocator (disabled by default)]),
-  AC_DEFINE([USE_STUPID_PRIM_ALLOC], [], [use stupid prim alloc]),)
+  memmgrprim=stupid,)
+AC_ARG_ENABLE([rb-prim-alloc],
+  AS_HELP_STRING([--enable-rb-prim-alloc], [use the rb primitive allocator (disabled by default)]),
+  memmgrprim=rb,)
+
+AM_CONDITIONAL([MemMgrPrimStupid], [test x$memmgrprim = xstupid])
+AM_CONDITIONAL([MemMgrPrimRB], [test x$memmgrprim = xrb])
 
 AC_OUTPUT

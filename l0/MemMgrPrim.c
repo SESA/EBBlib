@@ -31,16 +31,5 @@
 #include <l0/cobj/CObjEBB.h>
 #include <l0/MemMgr.h>
 #include <l0/MemMgrPrim.h>
-#include <l0/MemMgrPrimStupid.h>
 
 EBBMemMgrId theEBBMemMgrPrimId;
-
-#ifdef USE_STUPID_PRIM_ALLOC
-
-#include <l0/MemMgrPrimStupid.h>
-
-EBBRC EBBMemMgrPrimInit(void) {
-  return EBBMemMgrPrimStupidInit();
-}
-
-#endif

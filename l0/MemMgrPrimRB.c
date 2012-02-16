@@ -42,7 +42,7 @@
 #include <l0/MemMgrPrim.h>
 #include <l0/lrt/mem.h>
 
-CObject(EBBMemMgrPrimStupid) {
+CObject(EBBMemMgrPrimRB) {
   CObjInterface(EBBMemMgr) *ft;
   CObjEBBRootMultiRef myRoot;
   void *mem;
@@ -50,7 +50,7 @@ CObject(EBBMemMgrPrimStupid) {
 };
 
 static EBBRC
-init_rep(EBBMemMgrPrimStupidRef self, CObjEBBRootMultiRef rootRef, uintptr_t end)
+init_rep(EBBMemMgrPrimRBRef self, CObjEBBRootMultiRef rootRef, uintptr_t end)
 {
   self->mem = (void *)((uintptr_t)self + sizeof(*self));
   self->len = end - (uintptr_t)self->mem;
@@ -61,9 +61,9 @@ init_rep(EBBMemMgrPrimStupidRef self, CObjEBBRootMultiRef rootRef, uintptr_t end
 //just grab from the beginning of the memory and move
 //the pointer forward until we run out
 static EBBRC
-EBBMemMgrPrimStupid_alloc(EBBMemMgrRef _self, uintptr_t size, void **mem, EBB_MEM_POOL pool)
+EBBMemMgrPrimRB_alloc(EBBMemMgrRef _self, uintptr_t size, void **mem, EBB_MEM_POOL pool)
 {
-  EBBMemMgrPrimStupidRef self = (EBBMemMgrPrimStupidRef)_self;
+  EBBMemMgrPrimRBRef self = (EBBMemMgrPrimRBRef)_self;
   if (size > self->len) {
     *mem = NULL; //Do I return some error code here??
   } else {
@@ -76,38 +76,38 @@ EBBMemMgrPrimStupid_alloc(EBBMemMgrRef _self, uintptr_t size, void **mem, EBB_ME
 
 //freeing is a nop in this implementation
 static EBBRC
-EBBMemMgrPrimStupid_free(EBBMemMgrRef _self, uintptr_t size, void *mem) {
+EBBMemMgrPrimRB_free(EBBMemMgrRef _self, uintptr_t size, void *mem) {
   return EBBRC_OK;
 }
 
-CObjInterface(EBBMemMgr) EBBMemMgrPrimStupid_ftable = {
-  .alloc = EBBMemMgrPrimStupid_alloc, 
-  .free = EBBMemMgrPrimStupid_free
+CObjInterface(EBBMemMgr) EBBMemMgrPrimRB_ftable = {
+  .alloc = EBBMemMgrPrimRB_alloc, 
+  .free = EBBMemMgrPrimRB_free
 };
 
 static inline void
-EBBMemMgrPrimStupidSetFT(EBBMemMgrPrimStupidRef o) {o->ft = &EBBMemMgrPrimStupid_ftable; }
+EBBMemMgrPrimRBSetFT(EBBMemMgrPrimRBRef o) {o->ft = &EBBMemMgrPrimRB_ftable; }
 
 
 static EBBRep *
-MemMgrPrimStupid_createRep(CObjEBBRootMultiRef _self)
+MemMgrPrimRB_createRep(CObjEBBRootMultiRef _self)
 {
   EBBAssert(0);
   return NULL;
 }
 
 EBBRC
-EBBMemMgrPrimStupidInit()
+EBBMemMgrPrimRBInit()
 {
   static CObjEBBRootMultiImp theRoot;
   CObjEBBRootMultiImpRef rootRef = &theRoot;
-  EBBMemMgrPrimStupidRef repRef;
+  EBBMemMgrPrimRBRef repRef;
   EBBLTrans *lt;
   EBBRC rc;
   EBBId id;
   
   if (__sync_bool_compare_and_swap(&(theEBBMemMgrPrimId), 0, -1)) {
-    CObjEBBRootMultiImpStaticInit(rootRef, MemMgrPrimStupid_createRep);
+    CObjEBBRootMultiImpStaticInit(rootRef, MemMgrPrimRB_createRep);
     rc = EBBAllocPrimIdBoot(&id);
     EBBRCAssert(rc);
     rc = CObjEBBBindBoot(id, rootRef); 
@@ -122,10 +122,10 @@ EBBMemMgrPrimStupidInit()
   // we are creating this rep to manage so we do the obvious
   // and hack off some memory for the rep itself.
   // "create the rep"
-  repRef = (EBBMemMgrPrimStupidRef)lrt_mem_start();
+  repRef = (EBBMemMgrPrimRBRef)lrt_mem_start();
 
   // initialize the rep memory
-  EBBMemMgrPrimStupidSetFT(repRef); 
+  EBBMemMgrPrimRBSetFT(repRef); 
   init_rep(repRef, (CObjEBBRootMultiRef)rootRef, lrt_mem_end());
 
   // manually install rep into local table so that memory allocations 
@@ -146,7 +146,7 @@ EBBMemMgrPrimStupidInit()
 }
 
 EBBRC EBBMemMgrPrimInit(void) {
-  return EBBMemMgrPrimStupidInit();
+  return EBBMemMgrPrimRBInit();
 }
 
 #if 0
@@ -161,32 +161,32 @@ struct EBBMemMgrData {
   uintptr_t len;
 };
 
-CObject(EBBMemMgrPrimStupidQueen) {
+CObject(EBBMemMgrPrimRBQueen) {
   CObjInterface(EBBMemMgr) *ft;
   CObjEBBRootMulti root;
   struct EBBMemMgrData data;
 };
 
-CObject(EBBMemMgrPrimStupidDrone) {
+CObject(EBBMemMgrPrimRBDrone) {
   CObjInterface(EBBMemMgr) *ft;
-  EBBMemMgrPrimStupidQueenRef *queen;
+  EBBMemMgrPrimRBQueenRef *queen;
   struct EBBMemMgrData data;
 };
 
 EBBRC
-EBBMemMgrPrimStupidInit()
+EBBMemMgrPrimRBInit()
 {
   EBBRC rc;
   EBBId id;
 
-  repRef = (EBBMemMgrPrimStupidRef)lrt_mem_start();
+  repRef = (EBBMemMgrPrimRBRef)lrt_mem_start();
   if (__sync_bool_compare_and_swap(&(theEBBMemMgrPrimId), 0, -1)) {
-    EBBMemMgrPrimStupidQueen_init(repRef, lrt_mem_end());              
+    EBBMemMgrPrimRBQueen_init(repRef, lrt_mem_end());              
     __sync_bool_compare_and_swap(&(theEBBMemMgrPrimId), -1, id);
   } else {   
     // races on root setup is taken care of here
     while (((volatile uintptr_t)theEBBMemMgrPrimId)==-1);
-    EBBMemMgrPrimStupidDrone_init(repRef, lrt_mem_end());              
+    EBBMemMgrPrimRBDrone_init(repRef, lrt_mem_end());              
   }
   theRoot.addRepOn(lrt_pic_id, theRep);               // Add my rep to the Root
   return EBBRC_OK;
