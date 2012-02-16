@@ -64,7 +64,8 @@ AC_CHECK_FUNCS([bzero dup2 gethostbyname memset socket strerror])
 AC_CONFIG_FILES([Makefile])
 
 # Optional features
-AC_ARG_ENABLE([prim-allocator], AS_HELP_STRING([--enable-prim-allocator], [use the primitive allocator (disabled by default)]),
-  AC_DEFINE([USE_PRIM_ALLOC], [], [use prim alloc]),)
+AC_ARG_ENABLE([stupid-prim-alloc],
+  AS_HELP_STRING([--enable-stupid-prim-alloc], [use the stupid primitive allocator (disabled by default)]),
+  AC_DEFINE([USE_STUPID_PRIM_ALLOC], [], [use stupid prim alloc]),)
 
 AC_OUTPUT

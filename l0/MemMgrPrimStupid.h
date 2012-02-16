@@ -1,3 +1,5 @@
+#ifndef __EBB_MEMMGRPRIMSTUPID_H__
+#define __EBB_MEMMGRPRIMSTUPID_H__
 /*
  * Copyright (C) 2011 by Project SESA, Boston University
  *
@@ -20,27 +22,6 @@
  * THE SOFTWARE.
  */
 
-#include <config.h>
-
-#include <stdint.h>
-
-#include <l0/cobj/cobj.h>
-#include <l0/lrt/pic.h>
-#include <l0/lrt/trans.h>
-#include <l0/types.h>
-#include <l0/cobj/CObjEBB.h>
-#include <l0/MemMgr.h>
-#include <l0/MemMgrPrim.h>
-#include <l0/MemMgrPrimStupid.h>
-
-EBBMemMgrId theEBBMemMgrPrimId;
-
-#ifdef USE_STUPID_PRIM_ALLOC
-
-#include <l0/MemMgrPrimStupid.h>
-
-EBBRC EBBMemMgrPrimInit(void) {
-  return EBBMemMgrPrimStupidInit();
-}
+EBBRC EBBMemMgrPrimStupidInit(void);
 
 #endif
