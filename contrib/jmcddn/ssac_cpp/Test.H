@@ -1,8 +1,7 @@
 #ifndef __TEST_H__
 #define __TEST_H__
 
-#define OUTPUT_TEXT 0
-#define OUTPUT_CSV  1
+#define OUTPUT_CSV  
 
 inline unsigned long long 
 now(void) 

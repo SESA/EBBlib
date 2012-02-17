@@ -123,7 +123,7 @@ SSACTest::init()
     id = i;
     rc=DREF(ssac)->get((CacheObjectId &)id,(CacheEntry * &)entry,
 		       SSAC::GETFORWRITE);
-    entry->data = (void *)i; // TODO: what is this line?
+    entry->data = (void *)i; // set data pointer to i TODO: verify
     rc=DREF(ssac)->putback((CacheEntry * &)entry, SSAC::KEEP);
   }
 //  TRACE("END");
@@ -138,7 +138,6 @@ SSACTest::work(int myid)
   CacheEntrySimple *entry=0;
   EBBRC rc;
   intptr_t v;
-
   for (int j=0; j<1;j++) {
     for (int i=0; i<HASHTABLESIZE; i++) {
       id = i;
@@ -157,10 +156,8 @@ EBBRC
 SSACTest::end()
 {
  // TRACE("BEGIN");
-#if OUTPUT_TEXT
   DREF(ssac)->snapshot();
-  printf("Tests:end: \n");
-#endif
+  TRACE("Tests:end: \n");
   Test::end();
 //  TRACE("END");
   return 0;

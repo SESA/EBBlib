@@ -88,22 +88,13 @@ Test::~Test()
 /* virtual */ EBBRC
 Test::end()
 {
-#if OUTPUT_TEXT 
-  for (int i=0; i<numWorkers; i++) {
-    printf("%d: start=%llu end=%llu\n", i, wargs[i].start, wargs[i].end);
-  }
-#endif
-
-#if OUTPUT_CSV
   int index;
-  printf("Test, Pid, Start, End, Dif\n");
+  printf("Test, Process, Start, End, Dif\n");
   for (int i=0; i<iterations; i++)
     for (int j=0; j<numWorkers; j++){
       index = (i*numWorkers)+j;
       printf("%d, %d, %llu, %llu, %llu\n", i, j, wargs[index].start, wargs[index].end, wargs[index].end - wargs[index].start);
     }
   
-#endif
-
   return 0;
 }

@@ -4,6 +4,7 @@
 class SSAC;
 typedef SSAC *SSACRef;
 
+#define DOTRACE 0
 #undef NOLOCKSNOFLAGSNOCOUNTERS
 
 typedef void *CacheObjectDataSimple;

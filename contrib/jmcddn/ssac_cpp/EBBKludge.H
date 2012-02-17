@@ -5,7 +5,7 @@
 
 #define MISC 			1
 #define TR_INFO 	1
-#define SET_CLSCD(A,B) /*TODO: add functionality */
+#define SET_CLSCD(A,B) /*TODO: add functionality / what is this? */
 
 typedef int EBBRC;
 
