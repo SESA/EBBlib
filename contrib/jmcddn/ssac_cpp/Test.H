@@ -36,9 +36,13 @@ public:
   }
 };
 
-
 class Test {
+  static int num_psy_cores(void);
   friend void *testPThreadFunc(void *);
+#ifndef __APPLE__
+  friend void *linux_thread_init(void *args, int processor);
+#endif 
+  friend pthread_t create_bound_thread (pthread_t *tid, int id, void *(*func)(void *), void *arg);
 private:
   EBBRC worker(int id);
   EBBRC doWork();
@@ -52,8 +56,7 @@ protected:
     unsigned long long end;
     Test *theTest;
   } *wargs;
-
-  virtual EBBRC init(void)=0;
+ virtual EBBRC init(void)=0;
   virtual EBBRC work(int id)=0;
   virtual EBBRC end(void);
 public:
