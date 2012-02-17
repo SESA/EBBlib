@@ -242,7 +242,7 @@ MsgMgrPrim_handleIPI(MsgMgrRef _self)
       break;
     }
     // FIXME: retain in a free list?
-    EBBPrimFree(msg);
+    EBBPrimFree(sizeof(MsgStore), msg);
     msg = MsgMgrPrim_dequeueMsgHead(self);
   }
   return EBBRC_OK;
