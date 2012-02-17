@@ -45,7 +45,7 @@ Test::doWork() {
     malloc(sizeof(struct TestPThreadArgs) * numWorkers);  
     tassert((args != NULL), ass_printf("malloc failed\n"));
    for (i=0; i<numWorkers; i++) {
-      TRACE("creating thread #%d\n", i);
+//    TRACE("creating thread #%d\n", i);
       args[i].id = i;
       args[i].index = (j*numWorkers)+i;
       args[i].test = this; // TODO: look up behavior of 'this'

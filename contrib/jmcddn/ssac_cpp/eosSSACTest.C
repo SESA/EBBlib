@@ -156,8 +156,8 @@ EBBRC
 SSACTest::end()
 {
  // TRACE("BEGIN");
-  DREF(ssac)->snapshot();
-  TRACE("Tests:end: \n");
+ // DREF(ssac)->snapshot();
+//  TRACE("Tests:end: \n");
   Test::end();
 //  TRACE("END");
   return 0;
