@@ -26,15 +26,6 @@
 
 #define EBB_LRT_printf printf
 
-void *
-memset (void *ptr, int value, size_t num)
-{
-  unsigned char c = (unsigned char) value;
-  unsigned char *cptr = ptr;
-  for (int i = 0; i < num; i++) {
-    cptr[i] = c;
-  }
-  return ptr;
-}
+void * memset(void *ptr, int value, size_t num);
 
 #endif

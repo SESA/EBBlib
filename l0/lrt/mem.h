@@ -24,6 +24,8 @@
 
 #ifdef LRT_ULNX
 #include <l0/lrt/ulnx/mem.h>
+#else
+#include <l0/lrt/bare/mem.h>
 #endif
 
 #endif

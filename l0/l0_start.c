@@ -51,7 +51,9 @@ ResetEventHandler_handleEvent(void *_self)
   // this object should gather boot information (sysfacts and boot args)
   // and then get full blown primitive l0 EBBS up (perhaps by a hot swap)
   EBB_LRT_printf("%s: ADD REST OF INIT CODE HERE!\n", __func__);
+#ifdef LRT_ULNX
   sleep(10);
+#endif
   LRT_EBBAssert(0);
   return 0;
 };

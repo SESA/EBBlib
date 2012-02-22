@@ -1,5 +1,5 @@
-#ifndef L0_LRT_BARE_ARCH_AMD64_PIC_H
-#define L0_LRT_BARE_ARCH_AMD64_PIC_H
+#ifndef L0_LRT_BARE_ARCH_MEM_H
+#define L0_LRT_BARE_ARCH_MEM_H
 
 /*
  * Copyright (C) 2011 by Project SESA, Boston University
@@ -23,17 +23,7 @@
  * THE SOFTWARE.
  */
 
-extern uintptr_t lrt_pic_myid;
-
-typedef uintptr_t lrt_pic_src;
-typedef void *lrt_pic_handler; //Should be an address placed in the IDT
-
-extern void __attribute__ ((noreturn)) lrt_pic_init(lrt_pic_handler h);
-extern void lrt_pic_mapipi(lrt_pic_handler h);
-extern uint8_t lrt_pic_getIPIvec(void);
-extern void lrt_pic_ipi(uintptr_t id);
-extern intptr_t lrt_pic_mapvec(lrt_pic_src s, uintptr_t vec, lrt_pic_handler h);
-extern uintptr_t lrt_pic_numvec(void);
-extern intptr_t lrt_pic_allocvec(uintptr_t *vec);
+//FIXME:
+#include <l0/lrt/bare/arch/amd64/mem.h>
 
 #endif

@@ -23,6 +23,7 @@
  * THE SOFTWARE.
  */
 
+
 extern uintptr_t lrt_mem_start(void);
 extern uintptr_t lrt_mem_end(void);
 extern void lrt_mem_init(void);

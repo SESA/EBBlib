@@ -168,7 +168,7 @@ get_lapic_eoi_broadcast_suppression(void)
 }
 
 //TODO: There is a bit that we probably want to check that tells us if the ipi
-// was actually send to the lapic or if it is still pending
+// was actually sent to the lapic or if it is still pending
 static inline void
 send_ipi(lapic_icr_low icr_low, lapic_icr_high icr_high)
 {

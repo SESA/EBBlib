@@ -1,3 +1,12 @@
+include lrt/bare/Makefile.am
 include lrt/ulnx/Makefile.am
 
-lrt_sources = lrt/assert.h lrt/io.h lrt/misc.h $(lrt_ulnx_sources)
+lrt_sources = lrt/assert.h lrt/io.h lrt/misc.h
+
+if LRT_ULNX
+lrt_sources += $(lrt_ulnx_sources)
+else
+if LRT_BARE
+lrt_sources += $(lrt_bare_sources)
+endif
+endif

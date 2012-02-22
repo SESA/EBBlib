@@ -61,21 +61,11 @@ init_idt(void)
 
 void __attribute__ ((noreturn))
 lrt_pic_loop(void)
-{
+{  
 
-  //Send ourselves an IPI
-  lapic_icr_low icr_low;
-  icr_low.raw = 0;
-  icr_low.vector = lrt_pic_getIPIvec(); //just picked a vector
-  icr_low.level = 1; //must be for a fixed ipi
-  icr_low.destination_shorthand = 1; //self only
+  //Send an IPI to ourself
+  lrt_pic_ipi(lrt_pic_myid);
 
-  lapic_icr_high icr_high;
-  icr_high.raw = 0;
-
-
-  send_ipi(icr_low, icr_high);
-  
   //After we enable interrupts we just halt, an interrupt should wake us up
   //Once we finish the interrupt, we halt again and repeat
   
@@ -134,3 +124,25 @@ lrt_pic_getIPIvec()
 {
   return IPI_VEC;
 }
+
+void
+lrt_pic_ipi(uintptr_t id)
+{
+  lapic_icr_low icr_low;
+  icr_low.raw = 0;
+  icr_low.vector = lrt_pic_getIPIvec(); //just picked a vector
+  icr_low.level = 1; //must be for a fixed ipi
+  icr_low.destination_shorthand = 0; //no shorthand
+
+  lapic_icr_high icr_high;
+  icr_high.raw = 0;
+  icr_high.destination = id;
+
+  send_ipi(icr_low, icr_high);  
+}
+
+/* intptr_t */
+/* lrt_pic_mapvec(lrt_pic_src s, uintptr_t vec, lrt_pic_handler h) */
+/* { */
+  
+/* } */
