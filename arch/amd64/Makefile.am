@@ -1,3 +1,5 @@
+include arch/amd64/acpica/Makefile.am
+
 arch_amd64_sources = \
 	arch/amd64/apic.h \
 	arch/amd64/asm.h \

@@ -32,7 +32,7 @@ l0/lrt/bare/arch/amd64/init32.o: $(top_srcdir)/l0/lrt/bare/arch/amd64/init32.c
 
 ebbos_DEPENDENCIES = $(top_srcdir)/l0/lrt/bare/arch/amd64/link.ld \
 	l0/lrt/bare/arch/amd64/init32.o
-ebbos_LDADD = l0/lrt/bare/arch/amd64/init32.o
+ebbos_LDADD += l0/lrt/bare/arch/amd64/init32.o
 CLEANFILES = l0/lrt/bare/arch/amd64/init32.o
 
 endif

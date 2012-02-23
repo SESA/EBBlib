@@ -27,6 +27,7 @@ AC_PROG_CC
 AM_PROG_CC_C_O
 AC_PROG_CXX
 AM_PROG_AS
+AC_PROG_RANLIB
 
 # Checks for libraries.
 
