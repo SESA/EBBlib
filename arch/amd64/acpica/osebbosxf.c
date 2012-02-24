@@ -169,7 +169,7 @@ AcpiOsGetRootPointer (void)
   
   status = AcpiFindRootPointer(&addr);
 
-  EBBAssert(status = AE_OK);
+  EBBAssert(status == AE_OK);
   
   return addr;
 }
@@ -217,7 +217,7 @@ ACPI_STATUS
 AcpiOsTableOverride (ACPI_TABLE_HEADER *ExistingTable,
 		     ACPI_TABLE_HEADER **NewTable)
 {
-  EBBAssert(0);
+  *NewTable = NULL;
   return (AE_OK);
 }
 
@@ -243,7 +243,7 @@ AcpiOsPhysicalTableOverride (ACPI_TABLE_HEADER *ExistingTable,
 			     ACPI_PHYSICAL_ADDRESS *NewAddress,
 			     UINT32 *NewTableLength)
 {
-  EBBAssert(0);
+  NewAddress = NULL;
   return (AE_OK);
 }
 
@@ -348,7 +348,7 @@ void *
 AcpiOsMapMemory (ACPI_PHYSICAL_ADDRESS where, ACPI_SIZE length)
 {
   //make sure that it is in the lower 4g of memory
-  if (((uintptr_t)where) + ((uintptr_t)length) <= 0xFFFFFFFF) {
+  if (((uintptr_t)where) + ((uintptr_t)length) > 0xFFFFFFFF) {
     return NULL;
   }
 
@@ -373,7 +373,7 @@ AcpiOsMapMemory (ACPI_PHYSICAL_ADDRESS where, ACPI_SIZE length)
 void
 AcpiOsUnmapMemory (void *where, ACPI_SIZE length)
 {
-  EBBAssert(0);
+  return;
 }
 
 

@@ -24,7 +24,7 @@ ebbos_SOURCES = $(arch_sources) $(l0_lrt_sources) $(lrt_sources) \
 		l0/sys/trans.h \
 		l0/sys/trans.c \
 		l0/sys/defFT.c \
-		l0/sys/arch/amd64/defFT.S
+		l0/sys/arch/amd64/defFT.S 
 
 
 #ebbos_DEPENDENCIES = $(top_srcdir)/l0/lrt/bare/arch/amd64/link.ld \

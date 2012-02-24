@@ -28,6 +28,9 @@
 #include <l0/lrt/bare/arch/amd64/isr.h>
 #include <l0/lrt/bare/arch/amd64/pic.h>
 #include <l0/lrt/bare/arch/amd64/stdio.h>
+#include <lrt/assert.h>
+
+#include <arch/amd64/acpica/include/acpi.h>
 
 uintptr_t lrt_pic_myid;
 
@@ -75,6 +78,9 @@ lrt_pic_loop(void)
   }
 }
 
+#define ACPI_MAX_INIT_TABLES    16
+static ACPI_TABLE_DESC TableArray[ACPI_MAX_INIT_TABLES];
+
 void 
 lrt_pic_init(lrt_pic_handler h)
 {
@@ -101,6 +107,17 @@ lrt_pic_init(lrt_pic_handler h)
   disable_rtc();
 
   enable_lapic();
+
+  ACPI_STATUS status;
+  status = AcpiInitializeTables(TableArray, ACPI_MAX_INIT_TABLES, FALSE);
+  EBBAssert(status == AE_OK);
+
+  ACPI_TABLE_HEADER *table;
+  AcpiGetTable("APIC", 0, &table);
+
+  //Table points to the header, beyond the header are the various interrupt
+  // controller tables, one of which is the I/O APIC, where we get the physical 
+  // address to access it
 
   lrt_pic_mapipi(h);
   

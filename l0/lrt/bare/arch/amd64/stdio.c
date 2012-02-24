@@ -77,6 +77,12 @@ printf(const char *format, ...)
   return rc;
 }
 
+int
+vprintf(const char *format, va_list ap)
+{
+  return vfprintf(stdout, format, ap);
+}
+
 static const unsigned char JUST_LEFT = (1 << 0);
 static const unsigned char POSITIVE_SIGN = (1 << 1);
 static const unsigned char NO_SIGN_SPACE = (1 << 2);

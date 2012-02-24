@@ -30,7 +30,7 @@ l0/lrt/bare/arch/amd64/init32.o: $(top_srcdir)/l0/lrt/bare/arch/amd64/init32.c
 		-Winline -c -o $@ $<
 	objcopy -g -O elf64-x86-64 $@ $@
 
-ebbos_DEPENDENCIES = $(top_srcdir)/l0/lrt/bare/arch/amd64/link.ld \
+ebbos_DEPENDENCIES += $(top_srcdir)/l0/lrt/bare/arch/amd64/link.ld \
 	l0/lrt/bare/arch/amd64/init32.o
 ebbos_LDADD += l0/lrt/bare/arch/amd64/init32.o
 CLEANFILES = l0/lrt/bare/arch/amd64/init32.o
