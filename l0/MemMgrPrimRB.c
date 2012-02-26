@@ -42,41 +42,134 @@
 #include <l0/MemMgrPrim.h>
 #include <l0/lrt/mem.h>
 
+static const uintptr_t RB_MAX_BLOCK_SIZE = (~0ul >> 1);
+
 CObject(EBBMemMgrPrimRB) {
   CObjInterface(EBBMemMgr) *ft;
   CObjEBBRootMultiRef myRoot;
   void *mem;
-  uintptr_t len;
+  uintptr_t end;
 };
+
+// A "Bumper" is stored in the memory immediately before and after an allocated block.
+// We use one bit to store whether the block is used or not, the rest of the bumper is
+// the size of the block.
+typedef union {
+  struct {
+   uintptr_t size : 8 * sizeof(uintptr_t) - 1;
+   uintptr_t used : 1;
+  };
+  uintptr_t raw;
+} PrimRBBumper;
+
+_Static_assert(sizeof(PrimRBBumper) == sizeof(uintptr_t),
+  "PrimRBBumper is of unexpected size");
 
 static EBBRC
 init_rep(EBBMemMgrPrimRBRef self, CObjEBBRootMultiRef rootRef, uintptr_t end)
 {
+  PrimRBBumper *prologue_hdr, *prologue_ftr, *first_block_hdr,
+    *first_block_ftr;
+  
+  // our allocatable memory region starts right after the memory we carved off
+  // for ourselves:
   self->mem = (void *)((uintptr_t)self + sizeof(*self));
-  self->len = end - (uintptr_t)self->mem;
+  // ... but we want it to be sizeof(uintptr_t) aligned, so move it up to the
+  // next boundary if it's not:
+  if((uintptr_t)self->mem % sizeof(uintptr_t) != 0)
+    self->mem += sizeof(uintptr_t) - ((uintptr_t) self->mem % sizeof(uintptr_t));
+
+  // Put a prolouge block at the beginning of minimum size that's considered
+  // in-use. this prevents free from running off the end of our memory when
+  // coalescing.
+  prologue_hdr = self->mem;
+  prologue_ftr = prologue_hdr + 1;
+  prologue_hdr->used = 1;
+  prologue_hdr->size = 2*sizeof(PrimRBBumper);
+  prologue_ftr->raw = prologue_hdr->raw;
+  
+  // We want the first thing after this to be free:
+  first_block_hdr = prologue_ftr + 1;
+  first_block_hdr->used = 0;
+  if(end <= RB_MAX_BLOCK_SIZE)
+    first_block_hdr->size = end - (uintptr_t)first_block_hdr;
+  else
+    first_block_hdr->size = RB_MAX_BLOCK_SIZE;
+
+  first_block_ftr = (PrimRBBumper*)(((uintptr_t)first_block_hdr)
+    + first_block_hdr->size - sizeof(PrimRBBumper));
+  first_block_ftr->raw = first_block_hdr->raw;  
+
+  self->end = end;
   self->myRoot = rootRef;
   return EBBRC_OK;
 }
 
-//just grab from the beginning of the memory and move
-//the pointer forward until we run out
 static EBBRC
 EBBMemMgrPrimRB_alloc(EBBMemMgrRef _self, uintptr_t size, void **mem, EBB_MEM_POOL pool)
 {
   EBBMemMgrPrimRBRef self = (EBBMemMgrPrimRBRef)_self;
-  if (size > self->len) {
-    *mem = NULL; //Do I return some error code here??
-  } else {
-    *mem = self->mem;
-    self->mem += size;
-    self->len -= size;
+  PrimRBBumper *hdr = (PrimRBBumper*)self->mem;
+  PrimRBBumper *ftr;
+ 
+  // adjust size to include header and footer:
+  size += 2 * sizeof(PrimRBBumper);
+  // and make sure it's a multiple of sizeof(uintptr_t) - this will ensure
+  // everything stays aligned.
+  if(size % sizeof(uintptr_t) != 0)
+    size += sizeof(uintptr_t) - (size % sizeof(uintptr_t));
+
+  // find a free block
+  while((uintptr_t)hdr < self->end && (hdr->used || hdr->size < size)) {
+    hdr = (PrimRBBumper*)(((uintptr_t)hdr) + (uintptr_t)hdr->size);
   }
+
+  if((uintptr_t)hdr > self->end) {
+    // couldn't find a block. TODO: maybe return an error code?
+    *mem = NULL;
+  } else {
+    hdr->used = 1;
+    ftr = (PrimRBBumper*)(((uintptr_t)hdr-1) + hdr->size);
+    ftr->raw = hdr->raw;
+    *mem = hdr+1;
+  }
+
   return EBBRC_OK;
 }
 
-//freeing is a nop in this implementation
 static EBBRC
 EBBMemMgrPrimRB_free(EBBMemMgrRef _self, uintptr_t size, void *mem) {
+  PrimRBBumper *hdr, *ftr, *left_hdr, *left_ftr, *right_hdr, *right_ftr;
+
+  hdr = mem;
+  hdr--;
+
+  // TODO: might want to put a sanity check here; we expect size == hdr->size - 2*sizeof(PrimRBBumper).
+  // We may also want to check that mem is within the bounds of our heap.
+
+  // See if we can coalesce to the left:
+  left_ftr = hdr - 1;
+  if(!left_ftr->used) {
+    left_hdr = (PrimRBBumper*)(((uintptr_t)left_ftr+1) - left_ftr->size);
+    left_hdr->size += hdr->size;
+    hdr = left_hdr;
+  }
+
+  // find our footer. update its size.  
+  ftr = (PrimRBBumper*)(((uintptr_t)hdr-1) + hdr->size);
+  ftr->raw = hdr->raw;
+
+  // and the right:
+  right_hdr = ftr + 1;
+  if(!right_hdr->used) {
+    right_ftr = (PrimRBBumper*)(((uintptr_t)right_hdr-1) + right_hdr->size);
+    right_ftr->size += ftr->size;
+    ftr = right_ftr;
+  }
+
+  // flag as free.
+  hdr->used = ftr->used = 0;
+
   return EBBRC_OK;
 }
 
