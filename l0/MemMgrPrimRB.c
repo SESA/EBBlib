@@ -91,7 +91,7 @@ init_rep(EBBMemMgrPrimRBRef self, CObjEBBRootMultiRef rootRef, uintptr_t end)
   // We want the first thing after this to be free:
   first_block_hdr = prologue_ftr + 1;
   first_block_hdr->used = 0;
-  if(end <= RB_MAX_BLOCK_SIZE)
+  if((uintptr_t)first_block_hdr - end <= RB_MAX_BLOCK_SIZE)
     first_block_hdr->size = end - (uintptr_t)first_block_hdr;
   else
     first_block_hdr->size = RB_MAX_BLOCK_SIZE;
