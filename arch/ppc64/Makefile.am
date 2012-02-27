@@ -1,0 +1,1 @@
+arch_powerpc64_sources = arch/ppc64/asdef.h

@@ -22,6 +22,8 @@
 #include <config.h>
 #include <string.h>
 #include <stdint.h>
+#include <inttypes.h>
+
 #include <l0/lrt/types.h>
 #include <l0/cobj/cobj.h>
 #include <lrt/io.h>
@@ -394,7 +396,7 @@ static EBBRC
 EventMgrPrim_dispatchIPI(void *_self, EvntLoc el)
 {
   if (el != MyEL()) {
-    EBB_LRT_printf("%s: sending remote IPI to node %ld\n", 
+    EBB_LRT_printf("%s: sending remote IPI to node %" PRIdPTR "\n", 
 		   __func__,
 		   el);
   }
@@ -413,7 +415,7 @@ EventMgrPrim_dispatchEventLocal(void *_self, uintptr_t eventNo)
   // assume this is atomic
   EventHandlerId handler = self->handlerInfo[eventNo].id;
 
-  EBB_LRT_printf("%s: handling interrupt %ld\n", __func__, eventNo);
+  EBB_LRT_printf("%s: handling interrupt %" PRIdPTR "\n", __func__, eventNo);
   EBBAssert(handler != NULL); 
   EBBCALL(handler, handleEvent); 
   return EBBRC_OK;   
