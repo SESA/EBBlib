@@ -5,7 +5,7 @@ AC_PREREQ(2.61)
 AC_INIT([EBBLib],[0.1],[sesa@lists.xstack.org])
 AC_CONFIG_AUX_DIR([build-aux])
 AM_INIT_AUTOMAKE([foreign subdir-objects -Wall -Werror])
-AC_CONFIG_SRCDIR([EBBStart.c])
+AC_CONFIG_SRCDIR([l0/l0_start.c])
 AC_CONFIG_HEADER([config.h])
 
 AC_CANONICAL_HOST
