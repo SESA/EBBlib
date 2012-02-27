@@ -5,7 +5,7 @@
 
 #include "EBBKludge.H"
 #include "Test.H"
-
+/*test*/
 struct TestPThreadArgs {
   pthread_t tid;
   int id;
