@@ -34,7 +34,12 @@
 #ifdef __cplusplus
 #define STATIC_ASSERT static_assert
 #else
+#if __GNUC__ > 4 || \
+  (__GNUC__ == 4 && __GNUC_MINOR__ > 5)
 #define STATIC_ASSERT _Static_assert
+#else
+#define STATIC_ASSERT(b,s)
+#endif
 #endif
 
 #endif
