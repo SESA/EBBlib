@@ -91,7 +91,7 @@ init_rep(EBBMemMgrPrimRBRef self, CObjEBBRootMultiRef rootRef, uintptr_t end)
   // We want the first thing after this to be free:
   first_block_hdr = prologue_ftr + 1;
   first_block_hdr->used = 0;
-  if((uintptr_t)first_block_hdr - end <= RB_MAX_BLOCK_SIZE)
+  if(end - (uintptr_t)first_block_hdr <= RB_MAX_BLOCK_SIZE)
     first_block_hdr->size = end - (uintptr_t)first_block_hdr;
   else
     first_block_hdr->size = RB_MAX_BLOCK_SIZE;
@@ -111,6 +111,7 @@ EBBMemMgrPrimRB_alloc(EBBMemMgrRef _self, uintptr_t size, void **mem, EBB_MEM_PO
   EBBMemMgrPrimRBRef self = (EBBMemMgrPrimRBRef)_self;
   PrimRBBumper *hdr = (PrimRBBumper*)self->mem;
   PrimRBBumper *ftr;
+  PrimRBBumper *next_hdr, *next_ftr;
  
   // adjust size to include header and footer:
   size += 2 * sizeof(PrimRBBumper);
@@ -124,16 +125,21 @@ EBBMemMgrPrimRB_alloc(EBBMemMgrRef _self, uintptr_t size, void **mem, EBB_MEM_PO
     hdr = (PrimRBBumper*)(((uintptr_t)hdr) + (uintptr_t)hdr->size);
   }
 
-  if((uintptr_t)hdr > self->end) {
-    // couldn't find a block. TODO: maybe return an error code?
+  if((uintptr_t)hdr >= self->end) {
+    // couldn't find a block.
     *mem = NULL;
+    return EBBRC_OUTOFRESOURCES;
   } else {
     hdr->used = 1;
-    ftr = (PrimRBBumper*)(((uintptr_t)hdr-1) + hdr->size);
+    next_ftr = (PrimRBBumper*)(((uintptr_t)hdr) + hdr->size - sizeof(PrimRBBumper));
+    next_ftr->size -= size;
+    hdr->size = size;
+    ftr = (PrimRBBumper*)(((uintptr_t)hdr) + hdr->size - sizeof(PrimRBBumper));
     ftr->raw = hdr->raw;
+    next_hdr = ftr + 1;
+    next_hdr->raw = next_ftr->raw;
     *mem = hdr+1;
   }
-
   return EBBRC_OK;
 }
 
@@ -144,25 +150,25 @@ EBBMemMgrPrimRB_free(EBBMemMgrRef _self, uintptr_t size, void *mem) {
   hdr = mem;
   hdr--;
 
-  // TODO: might want to put a sanity check here; we expect size == hdr->size - 2*sizeof(PrimRBBumper).
-  // We may also want to check that mem is within the bounds of our heap.
+  // TODO: might want to check that mem is within the bounds of our heap, and that
+  // the size is correct.
 
   // See if we can coalesce to the left:
   left_ftr = hdr - 1;
   if(!left_ftr->used) {
-    left_hdr = (PrimRBBumper*)(((uintptr_t)left_ftr+1) - left_ftr->size);
+    left_hdr = (PrimRBBumper*)(((uintptr_t)left_ftr) - left_ftr->size + sizeof(PrimRBBumper));
     left_hdr->size += hdr->size;
     hdr = left_hdr;
   }
 
   // find our footer. update its size.  
-  ftr = (PrimRBBumper*)(((uintptr_t)hdr-1) + hdr->size);
+  ftr = (PrimRBBumper*)(((uintptr_t)hdr) + hdr->size - sizeof(PrimRBBumper));
   ftr->raw = hdr->raw;
 
   // and the right:
   right_hdr = ftr + 1;
   if(!right_hdr->used) {
-    right_ftr = (PrimRBBumper*)(((uintptr_t)right_hdr-1) + right_hdr->size);
+    right_ftr = (PrimRBBumper*)(((uintptr_t)right_hdr) + right_hdr->size - sizeof(PrimRBBumper));
     right_ftr->size += ftr->size;
     ftr = right_ftr;
   }
