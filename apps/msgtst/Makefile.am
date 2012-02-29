@@ -1,5 +1,5 @@
 
-bin_PROGRAMS = apps/msgtst/msgtst
+bin_PROGRAMS += apps/msgtst/msgtst
 
 apps_msgtst_msgtst_SOURCES = apps/msgtst/msgtst.c
 
