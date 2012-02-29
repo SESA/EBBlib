@@ -285,7 +285,7 @@ MsgEventHandler_handleEvent(void *_self)
 };
 
 static EBBRC
-MsgEventHandler_init(void *_self)
+MsgEventHandler_init(void *_self, uintptr_t extra)
 {
   return 0;
 };

@@ -39,43 +39,40 @@
 #include <l0/cobj/CObjEBBRoot.h>
 #include <l0/cobj/CObjEBBRootMulti.h>
 #include <l0/cobj/CObjEBBRootMultiImp.h>
-#include <l1/MsgMgrPrim.h>
-#include <l1/ebbmain.h>
-
 
 extern void trans_init(void);
-
-static EBBRC 
-ResetEventHandler_handleEvent(void *_self)
-{
-  EBBRC rc;
-
-  lrt_pic_ackipi();
-  // initialize the message handler, this will take over the
-  // IPI on this core. 
-  rc = MsgMgrPrim_Init();
-  EBBRCAssert(rc);
-
-  // then invoke a method of BootInfo object on first message
-  // this object should gather boot information (sysfacts and boot args)
-  // and then get full blown primitive l0 EBBS up (perhaps by a hot swap)
-  EBB_LRT_printf("%s: ADD REST OF INIT CODE HERE!\n", __func__);
-
-  // call our application
-  ebbmain();
-
-  lrt_pic_enableipi();
-  return 0;
-};
-static EBBRC
-ResetEventHandler_init(void *_self)
-{
-  return 0;
-};
+extern void l1_start(uintptr_t startinfo);
 
 CObject(ResetEventHandler) {
   CObjInterface(EventHandler) *ft;
   CObjEBBRootMultiRef theRoot;	
+  uintptr_t startInfo;
+};
+
+static EBBRC 
+ResetEventHandler_handleEvent(void *_self)
+{
+  ResetEventHandlerRef self = (ResetEventHandlerRef) _self;
+  
+  lrt_pic_ackipi();
+
+  // call next layer startup code;
+  rc = L1Init(l1);
+  EBBRCAssert(rc);
+
+  EBBCALL(l1, start, self->startInfo);
+
+  lrt_pic_enableipi();
+
+  return 0;
+};
+
+static EBBRC
+ResetEventHandler_init(void *_self, uintptr_t startInfo)
+{
+  ResetEventHandlerRef self = _self;
+  self->startInfo = startInfo;
+  return 0;
 };
 
 
@@ -95,7 +92,7 @@ ResetEventHandler_createRep(CObjEBBRootMultiRef _self) {
 }
 
 static EventHandlerId
-InitResetEventHandler()
+InitResetEventHandler(uintptr_t startInfo)
 {
   CObjEBBRootMultiImpRef rootRef;
   EventHandlerId id;
@@ -112,6 +109,7 @@ InitResetEventHandler()
   } else {
     while (((volatile uintptr_t)theResetEventHandlerId)==-1);
   }
+  (void) COBJ_EBBCALL(theResetEventHandlerId, init, startInfo);
   return theResetEventHandlerId;
 };
 
@@ -122,7 +120,7 @@ InitResetEventHandler()
  * fancy footwork 
  */
 void
-EBB_init()
+EBB_init(uintptr_t startInfo)
 {
   EBBRC rc;
   EventHandlerId ehid; 
@@ -136,8 +134,12 @@ EBB_init()
   rc = EventMgrPrimImpInit();
   EBBRCAssert(rc);
 
-  ehid = InitResetEventHandler();
+  ehid = InitResetEventHandler(startInfo);
   EBBAssert(ehid != NULL);
+
+
+  // JA: FIXME:  IS THIS FIRST REALL EBB CALL BELOW ... SHOULD BE EXPLICITLY MARKED
+  //             AND THE FACTS THAT THAT DEPENDS ON CLEARLY STATED
 
   // this sets up, just on the local processor, IPI to temporarily
   // the first reset event.  The handleEvent will do all 
@@ -148,9 +150,9 @@ EBB_init()
 }
 
 void
-l0_start(void)
+l0_start(uintptr_t startInfo)
 {
   trans_init();
-  EBB_init();
+  EBB_init(startInfo);
 }
 
