@@ -1,4 +1,8 @@
 AM_CFLAGS = -Wall -Werror
+if powerpc64
+AM_CFLAGS += -m64
+AM_CCASFLAGS = -m64
+endif
 
 include apps/Makefile.am
 include arch/Makefile.am

@@ -9,9 +9,11 @@ AC_CONFIG_SRCDIR([l0/l0_start.c])
 AC_CONFIG_HEADER([config.h])
 
 AC_CANONICAL_HOST
-AS_CASE([$host_cpu], [x86_64], [], [powerpc], [], [AC_MSG_ERROR([not on a supported architecture])])
+AS_CASE([$host_cpu], [x86_64], [], [powerpc], [], [powerpc64], [], 
+		     [AC_MSG_ERROR([not on a supported architecture])])
 AM_CONDITIONAL([x86_64], [test x$host_cpu == xx86_64])
 AM_CONDITIONAL([powerpc], [test x$host_cpu == xpowerpc])
+AM_CONDITIONAL([powerpc64], [test x$host_cpu == xpowerpc64])
 #AS_IF([test "x$host_cpu" != "xx86_64" -a "x$host_cpu" != "xpowerpc*"], [AC_MSG_ERROR([not on a supported architecture])])
 AC_DEFINE(LRT_ULNX, [], [Set to indicate that we are running the userland Linux low-level runtime])
 
@@ -53,8 +55,8 @@ AC_TYPE_UINTPTR_T
 # Checks for library functions.
 AC_SEARCH_LIBS([pthread_create], [pthread], [],
 				 [AC_MSG_ERROR([pthread library missing])])
-AC_SEARCH_LIBS([pcap_freealldevs], [pcap], [],
-				 [AC_MSG_ERROR([pcap library missing])])
+dnl AC_SEARCH_LIBS([pcap_freealldevs], [pcap], [],
+dnl 				 [AC_MSG_ERROR([pcap library missing])])
 AC_CHECK_FUNCS([bzero dup2 gethostbyname memset socket strerror])
 
 #PKG_CHECK_MODULES([CHECK], [check >= 0.9.8], [BUILD_TESTS="yes"],
