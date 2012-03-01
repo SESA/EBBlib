@@ -32,4 +32,7 @@
 #include <l0/MemMgr.h>
 #include <l0/MemMgrPrim.h>
 
-EBBMemMgrId theEBBMemMgrPrimId;
+/*
+ * OKRIEGFIXME: we needed to initialize to get this symbol defined, check new compiler
+ */
+EBBMemMgrId theEBBMemMgrPrimId=0;

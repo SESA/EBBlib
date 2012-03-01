@@ -19,6 +19,11 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+
+/* 
+ * this implements a simple first fit allocator as described in 
+ */
+
 #include <config.h>
 
 #include <stdint.h>
@@ -42,9 +47,13 @@
 #include <l0/MemMgrPrim.h>
 #include <l0/lrt/mem.h>
 
-static const uintptr_t RB_MAX_BLOCK_SIZE = (~0ul >> 1);
+/*
+ * this depends on posix compiler, since a long is assumed to be size of a pointer
+ * on 64 bit machines this is 63 bit, else 31 bit
+ */
+static const uintptr_t MAX_BLOCK_SIZE = (~0ul >> 1);
 
-CObject(EBBMemMgrPrimRB) {
+CObject(EBBMemMgrPrimSimple) {
   CObjInterface(EBBMemMgr) *ft;
   CObjEBBRootMultiRef myRoot;
   void *mem;
@@ -60,16 +69,18 @@ typedef union {
    uintptr_t used : 1;
   };
   uintptr_t raw;
-} PrimRBBumper;
+} Bumper;
 
-_Static_assert(sizeof(PrimRBBumper) == sizeof(uintptr_t),
-  "PrimRBBumper is of unexpected size");
+#if 0 // OKRIEGFIXME use the right version of gcc
+_Static_assert(sizeof(Bumper) == sizeof(uintptr_t),
+  "Bumper is of unexpected size");
+#endif
 
 static EBBRC
-init_rep(EBBMemMgrPrimRBRef self, CObjEBBRootMultiRef rootRef, uintptr_t end)
+init_rep(EBBMemMgrPrimSimpleRef self, CObjEBBRootMultiRef rootRef, uintptr_t end)
 {
-  PrimRBBumper *prologue_hdr, *prologue_ftr, *first_block_hdr,
-    *first_block_ftr;
+  Bumper *prologue_hdr, *prologue_ftr, *first_block_hdr,
+    *first_block_ftr, *epilog_hdr, *epilog_ftr;
   
   // our allocatable memory region starts right after the memory we carved off
   // for ourselves:
@@ -79,26 +90,34 @@ init_rep(EBBMemMgrPrimRBRef self, CObjEBBRootMultiRef rootRef, uintptr_t end)
   if((uintptr_t)self->mem % sizeof(uintptr_t) != 0)
     self->mem += sizeof(uintptr_t) - ((uintptr_t) self->mem % sizeof(uintptr_t));
 
-  // Put a prolouge block at the beginning of minimum size that's considered
-  // in-use. this prevents free from running off the end of our memory when
+  // Put a minimum size prolouge block at the beginning of memory that's considered
+  // in-use. this prevents free from going off the beginning of our memory when
   // coalescing.
   prologue_hdr = self->mem;
   prologue_ftr = prologue_hdr + 1;
   prologue_hdr->used = 1;
-  prologue_hdr->size = 2*sizeof(PrimRBBumper);
+  prologue_hdr->size = 2*sizeof(Bumper);
   prologue_ftr->raw = prologue_hdr->raw;
+
+  // Put a epilog block at the end of memory that's considered
+  // in-use. this prevents free from running off the end of our memory when
+  // coalescing.
+  epilog_hdr = (Bumper *)(end - 2*sizeof(Bumper));
+  epilog_ftr = epilog_hdr + 1;
+  epilog_hdr->used = 1;
+  epilog_hdr->size = 2*sizeof(Bumper);
+  epilog_ftr->raw = epilog_hdr->raw;
   
-  // We want the first thing after this to be free:
+  // We want the first thing after prologue to be free:
   first_block_hdr = prologue_ftr + 1;
   first_block_hdr->used = 0;
-  if(end - (uintptr_t)first_block_hdr <= RB_MAX_BLOCK_SIZE)
-    first_block_hdr->size = end - (uintptr_t)first_block_hdr;
-  else
-    first_block_hdr->size = RB_MAX_BLOCK_SIZE;
-
-  first_block_ftr = (PrimRBBumper*)(((uintptr_t)first_block_hdr)
-    + first_block_hdr->size - sizeof(PrimRBBumper));
+  first_block_hdr->size = (uintptr_t)epilog_hdr - (uintptr_t)first_block_hdr;
+  first_block_ftr = (Bumper*)(((uintptr_t)first_block_hdr)
+    + first_block_hdr->size - sizeof(Bumper));
   first_block_ftr->raw = first_block_hdr->raw;  
+
+  // don't handle blocks larger than a pointer can point to
+  EBBAssert(((uintptr_t)epilog_hdr - (uintptr_t)first_block_hdr) <= MAX_BLOCK_SIZE);
 
   self->end = end;
   self->myRoot = rootRef;
@@ -106,23 +125,24 @@ init_rep(EBBMemMgrPrimRBRef self, CObjEBBRootMultiRef rootRef, uintptr_t end)
 }
 
 static EBBRC
-EBBMemMgrPrimRB_alloc(EBBMemMgrRef _self, uintptr_t size, void **mem, EBB_MEM_POOL pool)
+EBBMemMgrPrimSimple_alloc(EBBMemMgrRef _self, uintptr_t size, void **mem, EBB_MEM_POOL pool)
 {
-  EBBMemMgrPrimRBRef self = (EBBMemMgrPrimRBRef)_self;
-  PrimRBBumper *hdr = (PrimRBBumper*)self->mem;
-  PrimRBBumper *ftr;
-  PrimRBBumper *next_hdr, *next_ftr;
+  EBBMemMgrPrimSimpleRef self = (EBBMemMgrPrimSimpleRef)_self;
+  Bumper *hdr = (Bumper*)self->mem;
+  Bumper *ftr;
+  Bumper *next_hdr, *next_ftr;
  
   // adjust size to include header and footer:
-  size += 2 * sizeof(PrimRBBumper);
+  size += 2 * sizeof(Bumper);
   // and make sure it's a multiple of sizeof(uintptr_t) - this will ensure
   // everything stays aligned.
-  if(size % sizeof(uintptr_t) != 0)
+  if(size % sizeof(uintptr_t) != 0) {
     size += sizeof(uintptr_t) - (size % sizeof(uintptr_t));
+  }
 
   // find a free block
   while((uintptr_t)hdr < self->end && (hdr->used || hdr->size < size)) {
-    hdr = (PrimRBBumper*)(((uintptr_t)hdr) + (uintptr_t)hdr->size);
+    hdr = (Bumper*)(((uintptr_t)hdr) + (uintptr_t)hdr->size);
   }
 
   if((uintptr_t)hdr >= self->end) {
@@ -131,10 +151,10 @@ EBBMemMgrPrimRB_alloc(EBBMemMgrRef _self, uintptr_t size, void **mem, EBB_MEM_PO
     return EBBRC_OUTOFRESOURCES;
   } else {
     hdr->used = 1;
-    next_ftr = (PrimRBBumper*)(((uintptr_t)hdr) + hdr->size - sizeof(PrimRBBumper));
+    next_ftr = (Bumper*)(((uintptr_t)hdr) + hdr->size - sizeof(Bumper));
     next_ftr->size -= size;
     hdr->size = size;
-    ftr = (PrimRBBumper*)(((uintptr_t)hdr) + hdr->size - sizeof(PrimRBBumper));
+    ftr = (Bumper*)(((uintptr_t)hdr) + hdr->size - sizeof(Bumper));
     ftr->raw = hdr->raw;
     next_hdr = ftr + 1;
     next_hdr->raw = next_ftr->raw;
@@ -144,48 +164,53 @@ EBBMemMgrPrimRB_alloc(EBBMemMgrRef _self, uintptr_t size, void **mem, EBB_MEM_PO
 }
 
 static EBBRC
-EBBMemMgrPrimRB_free(EBBMemMgrRef _self, uintptr_t size, void *mem) {
-  PrimRBBumper *hdr, *ftr, *left_hdr, *left_ftr, *right_hdr, *right_ftr;
+EBBMemMgrPrimSimple_free(EBBMemMgrRef _self, uintptr_t size, void *mem) {
+  EBBMemMgrPrimSimpleRef self = (EBBMemMgrPrimSimpleRef)_self;
+  Bumper *hdr, *ftr, *left_ftr, *right_hdr;
+  uintptr_t newsize;
 
   hdr = mem;
   hdr--;
+  ftr = (Bumper*)(((uintptr_t)hdr) + hdr->size - sizeof(Bumper));
+  newsize = hdr->size; 
 
-  // TODO: might want to check that mem is within the bounds of our heap, and that
-  // the size is correct.
+
+  // FIXME: return memory to right allocator
+  EBBAssert((mem > self->mem) && (mem < (void *)self->end));
+  // sanity check that size is the same as the recorded
+  if(size % sizeof(uintptr_t) != 0) {
+    size += sizeof(uintptr_t) - (size % sizeof(uintptr_t));
+  }
+  EBBAssert(size == (hdr->size-2*sizeof(Bumper)));
 
   // See if we can coalesce to the left:
   left_ftr = hdr - 1;
   if(!left_ftr->used) {
-    left_hdr = (PrimRBBumper*)(((uintptr_t)left_ftr) - left_ftr->size + sizeof(PrimRBBumper));
-    left_hdr->size += hdr->size;
-    hdr = left_hdr;
+    hdr = (Bumper*)(((uintptr_t)left_ftr) - left_ftr->size + sizeof(Bumper));
+    newsize += hdr->size;
   }
-
-  // find our footer. update its size.  
-  ftr = (PrimRBBumper*)(((uintptr_t)hdr) + hdr->size - sizeof(PrimRBBumper));
-  ftr->raw = hdr->raw;
 
   // and the right:
   right_hdr = ftr + 1;
   if(!right_hdr->used) {
-    right_ftr = (PrimRBBumper*)(((uintptr_t)right_hdr) + right_hdr->size - sizeof(PrimRBBumper));
-    right_ftr->size += ftr->size;
-    ftr = right_ftr;
+    ftr = (Bumper*)(((uintptr_t)right_hdr) + right_hdr->size - sizeof(Bumper));
+    newsize += ftr->size;
   }
 
-  // flag as free.
-  hdr->used = ftr->used = 0;
+  hdr->size = newsize;
+  hdr->used = 0;
+  ftr->raw = hdr->raw;
 
   return EBBRC_OK;
 }
 
-CObjInterface(EBBMemMgr) EBBMemMgrPrimRB_ftable = {
-  .alloc = EBBMemMgrPrimRB_alloc, 
-  .free = EBBMemMgrPrimRB_free
+CObjInterface(EBBMemMgr) EBBMemMgrPrimSimple_ftable = {
+  .alloc = EBBMemMgrPrimSimple_alloc, 
+  .free = EBBMemMgrPrimSimple_free
 };
 
 static inline void
-EBBMemMgrPrimRBSetFT(EBBMemMgrPrimRBRef o) {o->ft = &EBBMemMgrPrimRB_ftable; }
+EBBMemMgrPrimSimpleSetFT(EBBMemMgrPrimSimpleRef o) {o->ft = &EBBMemMgrPrimSimple_ftable; }
 
 
 static EBBRep *
@@ -196,11 +221,11 @@ MemMgrPrimRB_createRep(CObjEBBRootMultiRef _self)
 }
 
 EBBRC
-EBBMemMgrPrimRBInit()
+EBBMemMgrPrimSimpleInit()
 {
   static CObjEBBRootMultiImp theRoot;
   CObjEBBRootMultiImpRef rootRef = &theRoot;
-  EBBMemMgrPrimRBRef repRef;
+  EBBMemMgrPrimSimpleRef repRef;
   EBBLTrans *lt;
   EBBRC rc;
   EBBId id;
@@ -221,10 +246,10 @@ EBBMemMgrPrimRBInit()
   // we are creating this rep to manage so we do the obvious
   // and hack off some memory for the rep itself.
   // "create the rep"
-  repRef = (EBBMemMgrPrimRBRef)lrt_mem_start();
+  repRef = (EBBMemMgrPrimSimpleRef)lrt_mem_start();
 
   // initialize the rep memory
-  EBBMemMgrPrimRBSetFT(repRef); 
+  EBBMemMgrPrimSimpleSetFT(repRef); 
   init_rep(repRef, (CObjEBBRootMultiRef)rootRef, lrt_mem_end());
 
   // manually install rep into local table so that memory allocations 
@@ -245,7 +270,7 @@ EBBMemMgrPrimRBInit()
 }
 
 EBBRC EBBMemMgrPrimInit(void) {
-  return EBBMemMgrPrimRBInit();
+  return EBBMemMgrPrimSimpleInit();
 }
 
 #if 0
@@ -260,32 +285,32 @@ struct EBBMemMgrData {
   uintptr_t len;
 };
 
-CObject(EBBMemMgrPrimRBQueen) {
+CObject(EBBMemMgrPrimSimpleQueen) {
   CObjInterface(EBBMemMgr) *ft;
   CObjEBBRootMulti root;
   struct EBBMemMgrData data;
 };
 
-CObject(EBBMemMgrPrimRBDrone) {
+CObject(EBBMemMgrPrimSimpleDrone) {
   CObjInterface(EBBMemMgr) *ft;
-  EBBMemMgrPrimRBQueenRef *queen;
+  EBBMemMgrPrimSimpleQueenRef *queen;
   struct EBBMemMgrData data;
 };
 
 EBBRC
-EBBMemMgrPrimRBInit()
+EBBMemMgrPrimSimpleInit()
 {
   EBBRC rc;
   EBBId id;
 
-  repRef = (EBBMemMgrPrimRBRef)lrt_mem_start();
+  repRef = (EBBMemMgrPrimSimpleRef)lrt_mem_start();
   if (__sync_bool_compare_and_swap(&(theEBBMemMgrPrimId), 0, -1)) {
-    EBBMemMgrPrimRBQueen_init(repRef, lrt_mem_end());              
+    EBBMemMgrPrimSimpleQueen_init(repRef, lrt_mem_end());              
     __sync_bool_compare_and_swap(&(theEBBMemMgrPrimId), -1, id);
   } else {   
     // races on root setup is taken care of here
     while (((volatile uintptr_t)theEBBMemMgrPrimId)==-1);
-    EBBMemMgrPrimRBDrone_init(repRef, lrt_mem_end());              
+    EBBMemMgrPrimSimpleDrone_init(repRef, lrt_mem_end());              
   }
   theRoot.addRepOn(lrt_pic_id, theRep);               // Add my rep to the Root
   return EBBRC_OK;
