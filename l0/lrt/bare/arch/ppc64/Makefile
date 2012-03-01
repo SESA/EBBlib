@@ -1,7 +1,8 @@
 OBJS := \
 	init.o \
 	isr.o \
-	start.o 
+	start.o \
+	../../uart.o 
 
 LDFLAGS := \
 	-m64 \
@@ -19,7 +20,8 @@ CFLAGS := \
 	-g3 
 
 CPPFLAGS := \
-	-I ../../../../../
+	-I ../../../../../ \
+	-D ARCH_PPC64
 
 ebbos: $(OBJS)
 	gcc $(LDFLAGS) $(OBJS) -o $@ 

@@ -1,118 +1,48 @@
+#include <arch/ppc64/asdef.h>
 #include <arch/ppc64/regs.h>
 
+//exactly 8 opcodes means this is the right size
+#define EX_JUMP(interrupt)	\
+	_IVPR_ ## interrupt:	; \
+	nop			; \
+	mtspr	SPRN_SPRG0, r20	; \
+	mfctr	r20		; \
+	mtspr	SPRN_SPRG1, r20 ; \
+	lis	r20, int_table@h	; \
+	ld	r20, (IV_ ## interrupt) * 8(r20) ; \
+	mtctr	r20			       ; \
+	bctr
+	
 .section .isr, "ax"
 .globl _vec_start
 _vec_start:
-	attn
-	.fill 28
-	attn
-	.fill 28
-	attn
-	.fill 28
-	attn
-	.fill 28
-	attn
-	.fill 28
-	attn
-	.fill 28
-	attn
-	.fill 28
-	attn
-	.fill 28
-	attn
-	.fill 28
-	attn
-	.fill 28
-	attn
-	.fill 28
-	attn
-	.fill 28
-	attn
-	.fill 28
-	attn
-	.fill 28
-	attn
-	.fill 28
-	attn
-	.fill 28
-	attn
-	.fill 28
-	attn
-	.fill 28
-	attn
-	.fill 28
-	attn
-	.fill 28
-	attn
-	.fill 28
-	attn
-	.fill 28
-	attn
-	.fill 28
-	attn
-	.fill 28
-	attn
-	.fill 28
-	attn
-	.fill 28
-	attn
-	.fill 28
-	/*
-	. = (IV_machine_check * 32) + _vec_start
-	attn
-	. = (IV_critical_input * 32) + _vec_start
-	attn
-	. = (IV_debug * 32) + _vec_start
-	attn
-	. = (IV_data_storage * 32) + _vec_start
-	attn
-	. = (IV_instruction_storage * 32) + _vec_start
-	attn
-	. = (IV_external * 32) + _vec_start
-	attn
-	. = (IV_alignment * 32) + _vec_start
-	attn
-	. = (IV_program * 32) + _vec_start
-	attn
-	. = (IV_floating_point_unavailable * 32) + _vec_start
-	attn
-	. = (IV_system_call * 32) + _vec_start
-	attn
-	. = (IV_auxiliary_processor_unavailable * 32) + _vec_start
-	attn
-	. = (IV_decrementer * 32) + _vec_start
-	attn
-	. = (IV_fixed_interval_timer * 32) + _vec_start
-	attn
-	. = (IV_watchdog_timer * 32) + _vec_start
-	attn
-	. = (IV_data_tlb_error * 32) + _vec_start
-	attn
-	. = (IV_instruction_tlb_error * 32) + _vec_start
-	attn
-	. = (IV_vector_unavailable * 32) + _vec_start
-	attn
-	. = (IV_embedded_floating_point_data * 32) + _vec_start
-	attn
-	. = (IV_embedded_floating_point_round * 32) + _vec_start
-	attn
-	. = (IV_embedded_performance_monitor * 32) + _vec_start
-	attn
-	. = (IV_processor_dbell * 32) + _vec_start
-	attn
-	. = (IV_processor_dbell_critical * 32) + _vec_start
-	attn
-	. = (IV_guest_processor_dbell * 32) + _vec_start
-	attn
-	. = (IV_guest_processor_dbell_critical * 32) + _vec_start
-	attn
-	. = (IV_ehv_system_call * 32) + _vec_start
-	attn
-	. = (IV_ehv_privilege * 32) + _vec_start
-	attn
-	. = (IV_lrat_error * 32) + _vec_start
-	attn */
-	// fill the rest with attn instructions
+	EX_JUMP(machine_check)
+	EX_JUMP(critical_input)
+	EX_JUMP(debug) 
+	EX_JUMP(data_storage) 
+	EX_JUMP(instruction_storage) 
+	EX_JUMP(external) 
+	EX_JUMP(alignment) 
+	EX_JUMP(program) 
+	EX_JUMP(floating_point_unavailable) 
+	EX_JUMP(system_call) 
+	EX_JUMP(auxiliary_processor_unavailable) 
+	EX_JUMP(decrementer) 
+	EX_JUMP(fixed_interval_timer) 
+	EX_JUMP(watchdog_timer) 
+	EX_JUMP(data_tlb_error) 
+	EX_JUMP(instruction_tlb_error) 
+	EX_JUMP(vector_unavailable) 
+	EX_JUMP(embedded_floating_point_data)
+	EX_JUMP(embedded_floating_point_round)
+	EX_JUMP(embedded_performance_monitor)
+	EX_JUMP(processor_dbell	) 
+	EX_JUMP(processor_dbell_critical)
+	EX_JUMP(guest_processor_dbell) 
+	EX_JUMP(guest_processor_dbell_critical)
+	EX_JUMP(ehv_system_call) 
+	EX_JUMP(ehv_privilege) 
+	EX_JUMP(lrat_error) 
 	.fill ((_vec_start + 0x1000 - .) / 4), 4, 0x200
-
-_vec_end:
+_vec_end:	
+	
