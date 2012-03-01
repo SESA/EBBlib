@@ -1,6 +1,9 @@
 OBJS := \
 	init.o \
 	isr.o \
+	lrt_start.o \
+	mem.o \
+	pic.o \
 	start.o \
 	../../uart.o 
 

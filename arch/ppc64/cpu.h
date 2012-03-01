@@ -36,6 +36,55 @@ typedef union {
 
 STATIC_ASSERT(sizeof(msr) == 4, "msr packing issue");
 
+static inline msr
+get_msr(void)
+{
+  msr msr;
+  asm volatile (
+		"mfmsr %[msr]"
+		: [msr] "=r" (msr)
+		);
+  return msr;
+}
+
+static inline void
+set_msr(msr msr)
+{
+  asm volatile (
+		"mtmsr %[msr]"
+		:
+		: [msr] "r" (msr)
+		);
+}
+
+static inline void
+set_ivpr(void *addr)
+{
+  asm volatile (
+		"mtivpr %[addr]"
+		:
+		: [addr] "r" (addr)
+		);
+}
+
+#define xstr(s) #s
+#define str(s) xstr(s)
+
+#define get_spr(spr)						\
+  ({								\
+  uint64_t val;							\
+  asm volatile (						\
+		"mfspr %[val]," str(spr)			\
+		: [val] "=r" (val));				\
+  val;								\
+  })
+
+#define set_spr(spr, val)			\
+  asm volatile (				\
+		"mtspr " str(spr) ",%[v]"	\
+		:				\
+		: [v] "r" (val));		
+
 //From A2 Processor User's Manual
 // Preliminary 1.03 page 296
 typedef union {

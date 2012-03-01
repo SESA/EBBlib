@@ -24,79 +24,69 @@
 
 #include <arch/ppc64/cpu.h>
 #include <arch/ppc64/regs.h>
-#include <l0/lrt/bare/uart.h>
-#include <l0/lrt/bare/arch/ppc64/lrt_start.h>
 #include <l0/lrt/bare/arch/ppc64/pic.h>
-#include <lrt/assert.h>
 
-extern uint8_t _vec_start[];
-extern uint8_t _start[];
+/* I only load 16 bits so I need this to be aligned so that
+   there are only 16 significant bits. So I confirm that it
+   is within the first 4GB (no longer than 32 bits) */
+void *int_table[27] __attribute__ ((aligned(1 << 16)));
 
-static inline void __attribute__ ((noreturn))
-panic (void) {
-  asm volatile("attn");
-}
+STATIC_ASSERT(&int_table <= 0xFFFFFFFFULL, 
+	      "int_table not linked at appropriate location");
 
-static inline void
-clear_bss(void) {
-  extern uint8_t sbss[];
-  extern uint8_t ebss[];
-  for (uint8_t *i = sbss; i < ebss; i++) {
-    *i = 0;
+uintptr_t lrt_pic_myid;
+
+typedef union {
+  uint32_t val;
+  struct {
+    uint32_t type :5;
+    uint32_t broadcast :1;
+    uint32_t lpidtag :12;
+    uint32_t pirtag :14;
+  };
+} doorbell;
+
+void __attribute__ ((noreturn))
+lrt_pic_loop(void)
+{
+  //Send an IPI to ourself
+  lrt_pic_ipi(lrt_pic_myid);
+
+  //enable external interrupts
+  msr msr = get_msr();
+  msr.ee = 1;
+  set_msr(msr);
+
+  while (1) {
+    asm volatile("wait");
   }
 }
 
 void __attribute__ ((noreturn))
-init(void)
+lrt_pic_init(lrt_pic_handler h)
 {
-  /* setup IVPR */
-  set_ivpr(_vec_start);
-
-  //start at medium priority
-  asm volatile ("or 2, 2, 2");
-
-  //setup MSR
-  msr msr = get_msr();
-
-  //enable machine check
-  msr.me = 1;
-
-  //make sure external interrupts are off
-  msr.ee = 0;
-
-  //enable fpu
-  msr.fp = 1;
-
-  //enable 64 bit mode
-  msr.cm = 1;
+  lrt_pic_myid = get_spr(SPRN_PIR);
   
-  //set interrupt compute mode
-  epcr epcr;
-  epcr.val = 0;
-  epcr.icm = 1;
-  set_spr(SPRN_EPCR, epcr);
+  lrt_pic_mapipi(h);
+  lrt_pic_loop();
+}
 
-  //write msr
-  set_msr(msr);
+void
+lrt_pic_mapipi(lrt_pic_handler h)
+{
+  int_table[IV_processor_dbell] = h;
+}
 
-  //attn on null pointer jump
-  //FIXME: issue with gcc claiming it will never be NULL
-  /* if (_start == 0) { */
-  /*   asm volatile ( */
-  /* 		  "stw %[attn], 0(0)\n\t" */
-  /* 		  "dcbst 0, %[zero]\n\t" */
-  /* 		  "sync\n\t" */
-  /* 		  "icbi 0, %[zero]\n\t" */
-  /* 		  "isync" */
-  /* 		  : */
-  /* 		  : [attn] "r" (0x200), //opcode for attn */
-  /* 		  : [zero] "r" (0) */
-  /* 		  ); */
-  /* } */
+void
+lrt_pic_ipi(uintptr_t id)
+{
+  doorbell db;
+  db.val = 0;
+  db.pirtag = id;
 
-
-  clear_bss();
-
-  lrt_pic_init(lrt_start_isr);
-
+  asm volatile (
+		"msgsnd %[db]"
+		:
+		: [db] "r" (db)
+		);
 }
