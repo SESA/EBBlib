@@ -26,10 +26,13 @@
 #include <arch/ppc64/regs.h>
 #include <l0/lrt/bare/arch/ppc64/pic.h>
 
+
+#define NUM_INTS (27)
+
 /* I only load 16 bits so I need this to be aligned so that
    there are only 16 significant bits. So I confirm that it
    is within the first 4GB (no longer than 32 bits) */
-void *int_table[27] __attribute__ ((aligned(1 << 16)));
+void *int_table[NUM_INTS] __attribute__ ((aligned(1 << 16)));
 
 STATIC_ASSERT(&int_table <= 0xFFFFFFFFULL, 
 	      "int_table not linked at appropriate location");
@@ -62,9 +65,21 @@ lrt_pic_loop(void)
   }
 }
 
+extern void attn_isr(void);
+asm (
+     ".globl attn_isr\n\t"
+     "attn_isr:\n\t"
+     "attn"
+     );
+
 void __attribute__ ((noreturn))
 lrt_pic_init(lrt_pic_handler h)
 {
+  //Make every interrupt jump to attn
+  for (int i = 0; i < NUM_INTS; i++) {
+    int_table[i] = attn_isr;
+  }
+
   lrt_pic_myid = get_spr(SPRN_PIR);
   
   lrt_pic_mapipi(h);

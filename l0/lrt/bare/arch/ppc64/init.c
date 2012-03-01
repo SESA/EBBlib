@@ -46,6 +46,10 @@ clear_bss(void) {
   }
 }
 
+//This is so I can write to _start without a complaint
+// that it should never be NULL
+#pragma GCC diagnostic ignored "-Waddress"
+
 void __attribute__ ((noreturn))
 init(void)
 {
@@ -80,20 +84,18 @@ init(void)
   set_msr(msr);
 
   //attn on null pointer jump
-  //FIXME: issue with gcc claiming it will never be NULL
-  /* if (_start == 0) { */
-  /*   asm volatile ( */
-  /* 		  "stw %[attn], 0(0)\n\t" */
-  /* 		  "dcbst 0, %[zero]\n\t" */
-  /* 		  "sync\n\t" */
-  /* 		  "icbi 0, %[zero]\n\t" */
-  /* 		  "isync" */
-  /* 		  : */
-  /* 		  : [attn] "r" (0x200), //opcode for attn */
-  /* 		  : [zero] "r" (0) */
-  /* 		  ); */
-  /* } */
-
+  if (_start == 0) {
+    asm volatile (
+  		  "stw %[attn], 0(0)\n\t"
+  		  "dcbst 0, %[zero]\n\t"
+  		  "sync\n\t"
+  		  "icbi 0, %[zero]\n\t"
+  		  "isync"
+  		  :
+  		  : [attn] "r" (0x200), //opcode for attn
+  		    [zero] "r" (0)
+  		  );
+  }
 
   clear_bss();
 

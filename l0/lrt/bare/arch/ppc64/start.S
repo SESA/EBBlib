@@ -6,15 +6,6 @@
 _start:
 	nop
 
-	//lis	r1, ((0xffc000c000) >> 48)
-	//ori	r1, r1, (((0xffc000c000) >> 32) & 0xffff)
-	//rldicr 	r1, r1, 32, 31
-	//oris	r1, r1, (((0xffc000c000) >> 16) & 0xffff)
-	//ori	r1, r1, ((0xffc000c000) & 0xffff)
-
-	//li	r2, 65
-	//stb	r2, 0(r1)
-
 	//load stack into r1
 	lis	r1, _mini_stack@highest
 	ori	r1, r1, _mini_stack@higher

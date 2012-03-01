@@ -49,8 +49,6 @@ lrt_start(void)
   
   lrt_mem_init();
 
-  //FIXME: remove this and figure out why double IPI
-  asm volatile("attn");
 }
 
 
