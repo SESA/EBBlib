@@ -2,6 +2,11 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <pthread.h>
+#ifdef __APPLE__
+#include <sys/sysctl.h>
+#include <mach/mach_interface.h>
+#include <mach/thread_policy.h>
+#endif
 
 #include "EBBKludge.H"
 #include "Test.H"
@@ -67,33 +72,34 @@ linux_thread_init(void *arg)//FIXME: everthing is named args!
 }
 #endif
 
-pthread_t
+int
 create_bound_thread(pthread_t *tid, int id,  void *(*func)(void *), void *arg)
 { 
   int numcores, pid, rc;
   numcores = num_phys_cores();
   pid = id % numcores;  
   
-  if (id < 0 || id >= numcores) return -1;
+  if ((id < 0)) return -1;
 
 #ifdef __APPLE__
   // Apple bind code 
   thread_affinity_policy_data_t affinityinfo;
-  rc = pthread_create_suspended_np(&tid, NULL, func, arg);// TODO: verify value of arg is correct for OSX
+  rc = pthread_create_suspended_np(tid, NULL, func, arg);// TODO: verify value of arg is correct for OSX
   if (rc != 0) {
     perror("pthread_create_suspended_np");
     return -1;
   }
   affinityinfo.affinity_tag = pid+1; // why +1? 
-  rc = thread_policy_set(pthread_mach_thread_np(tids[id]), 
+
+  rc = thread_policy_set(pthread_mach_thread_np(*tid), 
 			 THREAD_AFFINITY_POLICY,
-			 &affinityinfo,
+			 (int *)&affinityinfo,
 			 THREAD_AFFINITY_POLICY_COUNT);
   if (rc != KERN_SUCCESS) {
     perror("thread_policy_set");
     return -1;
   }
-  thread_resume(pthread_mach_thread_np(tids[id]));
+  thread_resume(pthread_mach_thread_np(*tid));
 #else
 
   // Linux bind code here
@@ -143,14 +149,17 @@ Test::doWork() {
       args[i].index = (j*numWorkers)+i;
       args[i].test = this; // TODO: look up behavior of 'this'
 
+#if 0
       if ( pthread_create( &(args[i].tid), NULL, testPThreadFunc, (void *)&(args[i])) != 0) {
         perror("pthread_create");
         exit(-1);
       } 
-     /*if ( create_bound_thread( &(args[i].tid), i, testPThreadFunc, (void *)&(args[i])) < 0) {
+#else 
+      if ( create_bound_thread( &(args[i].tid), i, testPThreadFunc, (void *)&(args[i])) < 0) {
         perror("create_bound_thread");
         exit(-1);
-      }*/
+      }
+#endif
     }
     for (i = 0; i<numWorkers; i++)
       pthread_join(args[i].tid, NULL );

@@ -42,7 +42,7 @@ class Test {
 #ifndef __APPLE__
   friend void *linux_thread_init(void *args, int processor);
 #endif 
-  friend pthread_t create_bound_thread (pthread_t *tid, int id, void *(*func)(void *), void *arg);
+  friend int create_bound_thread (pthread_t *tid, int id, void *(*func)(void *), void *arg);
 private:
   EBBRC worker(int id);
   EBBRC doWork();
