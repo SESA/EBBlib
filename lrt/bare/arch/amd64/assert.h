@@ -1,5 +1,5 @@
-#ifndef LRT_BARE_ASSERT_H
-#define LRT_BARE_ASSERT_H
+#ifndef LRT_BARE_ARCH_AMD64_ASSERT_H
+#define LRT_BARE_ARCH_AMD64_ASSERT_H
 
 /*
  * Copyright (C) 2011 by Project SESA, Boston University
@@ -23,6 +23,16 @@
  * THE SOFTWARE.
  */
 
-#include <lrt/bare/arch/assert.h>
+#include <stdbool.h>
+#include <l0/lrt/bare/arch/amd64/stdio.h>
+
+#define LRT_EBBAssert(cond)						\
+  ({									\
+  if (!(cond)) {							\
+    if (stdout)								\
+      printf("Assertion failed: at %s, line %d\n", __FILE__, __LINE__);	\
+    while(1) ;								\
+  }									\
+  })
 
 #endif

@@ -53,6 +53,12 @@ clear_bss(void) {
 void __attribute__ ((noreturn))
 init(void)
 {
+  /* Enable ATTN */
+  ccr2 ccr2;
+  ccr2.val = get_spr(SPRN_CCR2);
+  ccr2.en_attn = 1;
+  set_spr(SPRN_CCR2, ccr2);
+
   /* setup IVPR */
   set_ivpr(_vec_start);
 

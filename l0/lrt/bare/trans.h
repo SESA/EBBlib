@@ -23,9 +23,11 @@
  * THE SOFTWARE.
  */
 
-//DS FIXME: Make architecture specific includes (need to modify build structure)
+#ifdef ARCH_AMD64
 #include <l0/lrt/bare/arch/amd64/trans.h>
-
+#elif ARCH_PPC64
+#include <l0/lrt/bare/arch/ppc64/trans.h>
+#endif
 
 #include <lrt/assert.h>
 

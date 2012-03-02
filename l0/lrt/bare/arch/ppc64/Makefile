@@ -5,7 +5,13 @@ OBJS := \
 	mem.o \
 	pic.o \
 	start.o \
-	../../uart.o 
+	stdio.o \
+	string.o \
+	trans.o \
+	../../uart.o \
+	../../../../sys/trans.o \
+	../../../../sys/defFT.o \
+	../../../../sys/arch/ppc64/defFT.o
 
 LDFLAGS := \
 	-m64 \
@@ -24,7 +30,8 @@ CFLAGS := \
 
 CPPFLAGS := \
 	-I ../../../../../ \
-	-D ARCH_PPC64
+	-D ARCH_PPC64 \
+	-D LRT_BARE
 
 ebbos: $(OBJS)
 	gcc $(LDFLAGS) $(OBJS) -o $@ 

@@ -1,6 +1,5 @@
-#ifndef LRT_BARE_ASSERT_H
-#define LRT_BARE_ASSERT_H
-
+#ifndef L0_LRT_BARE_ARCH_PPC64_STRING_H
+#define L0_LRT_BARE_ARCH_PPC64_STRING_H
 /*
  * Copyright (C) 2011 by Project SESA, Boston University
  *
@@ -23,6 +22,11 @@
  * THE SOFTWARE.
  */
 
-#include <lrt/bare/arch/assert.h>
+#include <stddef.h>
+
+void bzero(void *ptr, size_t size);
+size_t strlen(const char *s);
+char *strcpy(char * restrict s1, const char * restrict s2);
 
 #endif
+

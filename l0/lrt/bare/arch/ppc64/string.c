@@ -1,6 +1,3 @@
-#ifndef LRT_BARE_ASSERT_H
-#define LRT_BARE_ASSERT_H
-
 /*
  * Copyright (C) 2011 by Project SESA, Boston University
  *
@@ -23,6 +20,33 @@
  * THE SOFTWARE.
  */
 
-#include <lrt/bare/arch/assert.h>
+#include <stddef.h>
 
-#endif
+#include <l0/lrt/bare/arch/ppc64/string.h>
+
+void bzero(void *ptr, size_t size) {
+  size_t i;
+  char *array = ptr;
+  for(i = 0; i < size; i++)
+    array[i] = 0;
+}
+
+
+size_t 
+strlen(const char *s) 
+{
+  size_t rc = 0;
+  while (s[rc]) {
+    ++rc;
+  }
+  return rc;
+}
+
+char *
+strcpy(char * restrict s1, const char * restrict s2 )
+{
+    char * rc = s1;
+    while ((*s1++ = *s2++))
+      ;
+    return rc;
+}

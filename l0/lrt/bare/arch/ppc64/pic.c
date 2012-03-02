@@ -58,7 +58,13 @@ lrt_pic_loop(void)
   //enable external interrupts
   msr msr = get_msr();
   msr.ee = 1;
-  set_msr(msr);
+  //I have to inline this otherwise the link register
+  //is broken on return:
+  asm volatile (
+		"mtmsr %[msr]"
+		:
+		: [msr] "r" (msr)
+		);
 
   while (1) {
     asm volatile("wait");
@@ -82,6 +88,12 @@ lrt_pic_init(lrt_pic_handler h)
 
   lrt_pic_myid = get_spr(SPRN_PIR);
   
+  //enable doorbell
+  ccr2 ccr2;
+  ccr2.val = get_spr(SPRN_CCR2);
+  ccr2.en_pc = 1;
+  set_spr(SPRN_CCR2, ccr2);
+
   lrt_pic_mapipi(h);
   lrt_pic_loop();
 }

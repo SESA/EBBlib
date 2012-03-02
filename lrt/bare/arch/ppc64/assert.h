@@ -1,5 +1,5 @@
-#ifndef LRT_BARE_ASSERT_H
-#define LRT_BARE_ASSERT_H
+#ifndef LRT_ASSERT_BARE_ARCH_PPC64_ASSERT_H
+#define LRT_ASSERT_BARE_ARCH_PPC64_ASSERT_H
 
 /*
  * Copyright (C) 2011 by Project SESA, Boston University
@@ -23,6 +23,13 @@
  * THE SOFTWARE.
  */
 
-#include <lrt/bare/arch/assert.h>
+#include <stdbool.h>
+
+#define LRT_EBBAssert(cond)						\
+  ({									\
+    if (!(cond)) {							\
+      asm volatile("attn");						\
+    }									\
+  })
 
 #endif

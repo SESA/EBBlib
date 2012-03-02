@@ -20,9 +20,11 @@
  * THE SOFTWARE.
  */
 
+#include <l0/sys/trans.h>
 #include <l0/lrt/bare/uart.h>
 #include <l0/lrt/bare/arch/ppc64/lrt_start.h>
 #include <l0/lrt/bare/arch/ppc64/mem.h>
+#include <l0/lrt/bare/arch/ppc64/trans.h>
 
 /* load address of lrt_start and load toc then call it */
 asm (
@@ -42,6 +44,23 @@ asm (
 
 static char *uart_addr = (char *)0xffc000c000ULL;
 
+struct testObj;
+
+struct testObjft {
+  void (*foo)(struct testObj *self);
+};
+
+struct testObj {
+  struct testObjft *ft;
+};
+
+EBBRC
+testMissFunc (EBBRep **rep, EBBLTrans *lt, FuncNum fnum, EBBMissArg arg)
+{
+  uart_write(uart_addr, "Got miss!\n", 10);
+  while(1) ;
+}
+
 void
 lrt_start(void)
 {  
@@ -49,6 +68,16 @@ lrt_start(void)
   
   lrt_mem_init();
 
+  lrt_trans_init();
+
+  trans_init();
+
+  struct testObj **id = (struct testObj **)EBBIdAlloc();
+  EBBIdBind((EBBId)id, testMissFunc, 0);
+
+  EBBId_DREF(id)->ft->foo(EBBId_DREF(id));
+
+  uart_write(uart_addr, "In int\n", 7);
 }
 
 

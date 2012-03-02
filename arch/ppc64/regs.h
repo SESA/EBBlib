@@ -38,7 +38,9 @@
 #define SPRN_DVC1	0x13e
 #define SPRN_DVC2	0x13f
 #define SPRN_TSR	0x150
+#define SPRN_MAS5       0x153
 #define SPRN_TCR	0x154
+#define SPRN_TLB0PS     0x158
 #define SPRN_IVOR0	0x190
 #define SPRN_IVOR1	0x191
 #define SPRN_IVOR2	0x192
@@ -74,6 +76,11 @@
 #define SPRN_MCSRR0	0x23a
 #define SPRN_MCSRR1	0x23b
 #define SPRN_MCSR	0x23c
+#define SPRN_MAS0       0x270
+#define SPRN_MAS1       0x271
+#define SPRN_MAS2       0x272
+#define SPRN_MAS3       0x273
+#define SPRN_MAS6       0x276
 #define SPRN_DAC3	0x351
 #define SPRN_DAC4	0x350
 #define SPRN_IMR	0x370
@@ -81,8 +88,11 @@
 #define SPRN_IAR	0x372
 #define SPRN_PPR32	0x382
 #define SPRN_CELL_TSC	0x399
+#define SPRN_MAS7       0x3b0
 #define SPRN_EPLC	0x3b3
 #define SPRN_EPSC	0x3b4
+#define SPRN_CCR2       0x3f2
+#define SPRN_MMUCR3     0x3ff
 
 /*
  * Interrupt Vector IDs

@@ -1,5 +1,5 @@
-#ifndef LRT_BARE_ASSERT_H
-#define LRT_BARE_ASSERT_H
+#ifndef LRT_BARE_ARCH_ASSERT_H
+#define LRT_BARE_ARCH_ASSERT_H
 
 /*
  * Copyright (C) 2011 by Project SESA, Boston University
@@ -23,6 +23,10 @@
  * THE SOFTWARE.
  */
 
-#include <lrt/bare/arch/assert.h>
+#if ARCH_AMD64
+#include <lrt/bare/arch/amd64/assert.h>
+#elif ARCH_PPC64
+#include <lrt/bare/arch/ppc64/assert.h>
+#endif
 
 #endif

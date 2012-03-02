@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 
+#include <arch/ppc64/regs.h>
 #include <lrt/assert.h>
 
 //From A2 Processor User's Manual
@@ -115,5 +116,26 @@ typedef union {
 } epcr;
 
 STATIC_ASSERT(sizeof(epcr) == 4, "epcr struct packing issue");
+
+typedef union {
+  uint32_t val;
+  struct {
+    uint32_t en_dcr :1;
+    uint32_t en_trace :1;
+    uint32_t en_pc :1;
+    uint32_t ifratsc :9;
+    uint32_t ifrat :1;
+    uint32_t dfratsc :9;
+    uint32_t dfrat :1;
+    uint32_t ucode_dis :1;
+    uint32_t ap :4;
+    uint32_t en_attn :1;
+    uint32_t en_ditc :1;
+    uint32_t en_icswx :1;
+    uint32_t notlb :1;
+  };
+} ccr2;
+
+STATIC_ASSERT(sizeof(ccr2) == 4, "ccr2 struct packing issue");
 
 #endif

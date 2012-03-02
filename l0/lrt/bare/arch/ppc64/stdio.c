@@ -1,6 +1,3 @@
-#ifndef LRT_BARE_ASSERT_H
-#define LRT_BARE_ASSERT_H
-
 /*
  * Copyright (C) 2011 by Project SESA, Boston University
  *
@@ -23,6 +20,15 @@
  * THE SOFTWARE.
  */
 
-#include <lrt/bare/arch/assert.h>
+#include <stdarg.h>
+#include <stddef.h>
+#include <stdint.h>
 
-#endif
+#include <l0/lrt/bare/arch/ppc64/stdio.h>
+#include <l0/lrt/bare/arch/ppc64/string.h>
+
+int
+printf(const char *format, ...)
+{
+  return 0;
+}
