@@ -55,7 +55,7 @@ static num_phys_cores()
   };
  
 void *
-linux_thread_init(void *arg)//FIXME: everthing is named args!
+linux_thread_init(void *arg)
 {
   struct linux_thread_init_arg *a = (struct linux_thread_init_arg *)arg;
   void *(*func)(void *) = a->func;
@@ -68,7 +68,7 @@ linux_thread_init(void *arg)//FIXME: everthing is named args!
     perror("ERROR: Could not set CPU Affinity, exiting...\n");
     exit(-1);
   }
-  return func(a->args);
+  return func(a->args); // BREAK
 }
 #endif
 
@@ -102,13 +102,13 @@ create_bound_thread(pthread_t *tid, int id,  void *(*func)(void *), void *arg)
   thread_resume(pthread_mach_thread_np(*tid));
 #else
 
-  // Linux bind code here
-  struct linux_thread_init_arg *lnxargs;
+  // Linux bind code 
+  struct linux_thread_init_arg *lnxargs; 
+  lnxargs = (linux_thread_init_arg *)calloc(1,sizeof(linux_thread_init_arg));
   lnxargs->func = func;
   lnxargs->args = arg;
   lnxargs->proc = pid;
-  pthread_t temp =0;
-  rc = pthread_create(&temp, NULL, linux_thread_init, (void *)lnxargs);
+  rc = pthread_create(tid, NULL, linux_thread_init, lnxargs);
   if (rc != 0) {
     perror("pthread_create");
     return -1;
