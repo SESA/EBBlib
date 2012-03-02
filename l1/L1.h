@@ -22,17 +22,17 @@
  * THE SOFTWARE.
  */
 
-CObjInterface(L1) {
-  /* send message to id at event location */
-  EBBRC (*start) (L1Ref _self, uintptr_t startinfo);
-};
-
-CObjectDefine(L1) {
+CObject(L1) {
   CObjInterface(L1) *ft;
 };
 
-typedef L1Ref *L1Id;
+CObjInterface(L1) {
+  /* send message to id at event location */
+  EBBRC (*start) (L1Ref _self, uintptr_t startinfo);
+  CObjImplements(MsgHandler);
+};
 
+typedef L1Ref *L1Id;
 extern L1Id theL1Id;
 
 #endif

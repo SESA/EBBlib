@@ -39,9 +39,11 @@
 #include <l0/cobj/CObjEBBRoot.h>
 #include <l0/cobj/CObjEBBRootMulti.h>
 #include <l0/cobj/CObjEBBRootMultiImp.h>
+#include <l1/MsgMgr.h>
+#include <l1/L1.h>
+#include <l1/L1Prim.h>
 
 extern void trans_init(void);
-extern void l1_start(uintptr_t startinfo);
 
 CObject(ResetEventHandler) {
   CObjInterface(EventHandler) *ft;
@@ -52,15 +54,16 @@ CObject(ResetEventHandler) {
 static EBBRC 
 ResetEventHandler_handleEvent(void *_self)
 {
+  EBBRC rc;
   ResetEventHandlerRef self = (ResetEventHandlerRef) _self;
   
   lrt_pic_ackipi();
 
   // call next layer startup code;
-  rc = L1Init(l1);
+  rc = L1PrimInit();
   EBBRCAssert(rc);
 
-  EBBCALL(l1, start, self->startInfo);
+  COBJ_EBBCALL(theL1Id, start, self->startInfo);
 
   lrt_pic_enableipi();
 

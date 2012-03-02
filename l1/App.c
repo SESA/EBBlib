@@ -19,45 +19,18 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-
 #include <config.h>
-#include <stdint.h>
-
-#include <l0/lrt/types.h>
-#include <l0/cobj/cobj.h>
+#include <inttypes.h>
 #include <lrt/io.h>
+#include <lrt/assert.h>
+#include <l0/cobj/cobj.h>
 #include <l0/lrt/pic.h>
 #include <l0/lrt/trans.h>
 #include <l0/types.h>
 #include <l0/sys/trans.h>
-#include <lrt/assert.h>
 #include <l0/cobj/CObjEBB.h>
-#include <l0/EBBMgrPrim.h>
-#include <l0/cobj/CObjEBBUtils.h>
-#include <l0/cobj/CObjEBBRoot.h>
+#include <l0/cobj/CObjEBBRoot.h>x
 #include <l0/cobj/CObjEBBRootMulti.h>
-#include <l0/cobj/CObjEBBRootMultiImp.h>
-#include <l0/EventMgrPrim.h>
-#include <l0/EventMgrPrimImp.h>
-#include <l0/lrt/pic.h>
-#include <l0/MemMgr.h>
-#include <l0/MemMgrPrim.h>
 #include <l1/App.h>
 
-CObject(HelloWorld) {
-  CObjInterface(App) *ft;
-};
-
-EBBRC 
-HelloWorld_start(AppRef _self)
-{
-  EBB_LRT_printf("Hello world!\n");
-  return EBBRC_OK;
-}
-
-CObjInterface(App) HelloWorld_ftable = {
-  .start = HelloWorld_start
-};
-
-APP(HelloWorld);
-
+AppId theApp=0;

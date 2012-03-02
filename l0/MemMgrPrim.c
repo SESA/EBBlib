@@ -96,7 +96,7 @@ MemMgrPrim_createRep(CObjEBBRootMultiRef _self)
   return NULL;
 }
 
-EBBMemMgrRef *theEBBMemMgrPrimId;
+EBBMemMgrId theEBBMemMgrPrimId=0;
 
 EBBRC
 EBBMemMgrPrimInit()

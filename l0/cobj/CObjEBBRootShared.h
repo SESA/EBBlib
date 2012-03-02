@@ -34,4 +34,8 @@ CObjInterface(CObjEBBRootShared)
 };
 
 extern void CObjEBBRootSharedSetFT(CObjEBBRootSharedRef);
+
+extern EBBRC CObjEBBRootSharedCreate(CObjEBBRootSharedRef *rootRef,
+				     EBBRepRef repRef);
+
 #endif

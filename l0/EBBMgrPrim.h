@@ -52,5 +52,6 @@ EBBBindPrimId(EBBId id, EBBMissFunc mf, EBBMissArg arg)
   return COBJ_EBBCALL(theEBBMgrPrimId, BindId, id, mf, arg);
 }
 
+extern EBBRC EBBDestroyPrimId(EBBId id);
 
 #endif

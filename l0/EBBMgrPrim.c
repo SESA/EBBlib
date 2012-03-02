@@ -37,7 +37,7 @@
 #include <l0/MemMgr.h>
 #include <l0/MemMgrPrim.h>
 
-EBBMgrPrimId theEBBMgrPrimId;
+EBBMgrPrimId theEBBMgrPrimId=0;
 
 CObject(EBBMgrPrimImp) {
   CObjInterface(EBBMgrPrim) *ft;
@@ -113,4 +113,25 @@ EBBMgrPrimInit() {
   } else {
     while (((volatile uintptr_t)theEBBMemMgrPrimId)==-1);
   }
+}
+
+EBBRC EBBDestroyPrimId(EBBId id) 
+{
+  EBBRC rc;
+  
+  // destroy needs to unbind id and trigger resource reclaimation
+  //  eg. free unbound id, and
+  //      call root's free method on all appropriate locations
+  // 
+  // unbind should only leave id rebound to null
+  // free id should allow id to be reused
+  // destory unbinds and frees id along with invoke instances specific
+  // free logic
+  rc = COBJ_EBBCALL(theEBBMgrPrimId, UnBindId, id, NULL, NULL);
+  
+  rc = COBJ_EBBCALL(theEBBMgrPrimId, FreeId, id);
+
+  EBB_LRT_printf("%s: NYI: PLEASE FIXME!: none this works\n",
+		 __func__);
+  return rc;
 }

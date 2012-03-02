@@ -27,7 +27,7 @@
 #elif defined LRT_L4
 #endif
 
-extern uint_ptr_t lrt_startinfo_addr(void);
-extern int_ptr_t lrt_startinfo_size(void);
+extern uintptr_t lrt_startinfo_addr(void);
+extern intptr_t lrt_startinfo_size(void);
 
 #endif // __LRTMISC_H__

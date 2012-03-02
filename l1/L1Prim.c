@@ -36,50 +36,175 @@
 #include <l0/EventMgrPrim.h>
 #include <l0/cobj/CObjEBBUtils.h>
 #include <l0/cobj/CObjEBBRoot.h>
+#include <l0/cobj/CObjEBBRootShared.h>
 #include <l0/cobj/CObjEBBRootMulti.h>
 #include <l0/cobj/CObjEBBRootMultiImp.h>
 #include <l0/MemMgr.h>
 #include <l0/MemMgrPrim.h>
 #include <l0/lrt/mem.h>
+#include <l1/MsgMgr.h>
+#include <l1/MsgMgrPrim.h>
 #include <l1/L1.h>
 #include <l1/L1Prim.h>
+#include <l1/App.h>
+#include <lrt/startinfo.h>
+#include <lrt/misc.h>
 
 CObject(L1Prim) {
   CObjInterface(L1) *ft;
   CObjEBBRootMultiRef myRoot;
   char *si;
   intptr_t sisize;
+  CObjectDefine(MsgHandler) startMH;
+  MsgHandlerId startMHId;
 };
 
+#if 1
 EBBRC
-L1Prim_startMsg(void *_self, uintptr_t startinfo)
+L1Prim_MsgHandler_testMH(MsgHandlerRef _self)
 {
-  self = _self;
-  self->si = malloc(lrt_startinfo_size());
-  memcpy(...);
-  
-  rc = AppInit(&id);
-  
-  COBJ_EBBCALL(id, start);
+  return EBBRC_OK;
+}
+#endif
+
+EBBRC
+L1Prim_MsgHandler_startMH(MsgHandlerRef _self, uintptr_t startinfo)
+{
+  EBBRC rc;
+  CObjEBBRootMultiImpRef appRoot;
+  L1PrimRef self = ContainingCOPtr(_self,L1Prim,startMH);  
+
+  // we are done with the startMH we can destroy it
+  // This should induce destruction of the temporary Root we 
+  // created (which of course in this case should not destroy 
+  // the rep which is actually the L1Prim Rep)
+  EBBDestroyPrimId((EBBId)self->startMHId);
+
+  // Add code to make a copy of our start info here
+  if (startinfo) {
+    self->sisize = lrt_startinfo_size();
+    rc = EBBPrimMalloc(self->sisize,
+		       &(self->si), EBB_MEM_DEFAULT);
+    EBBRCAssert(rc);
+    memcpy(self->si, (char *)startinfo, self->sisize);
+  } else {
+    self->si = NULL;
+  }
+
+  if (__sync_bool_compare_and_swap(&theApp, (AppId)0,
+				   (AppId)-1)) {  
+    EBBId id;
+    // create App instance and invoke its start
+    rc = CObjEBBRootMultiImpCreate(&appRoot, App_createRep);
+    EBBRCAssert(rc);
+    rc = EBBAllocPrimId(&id);
+    EBBRCAssert(rc);
+
+    rc = CObjEBBBind(id, appRoot); 
+    EBBRCAssert(rc);
+
+    theApp = (AppId)id;
+  }
+
+  // WE ARE NOW DONE WITH L1 INITIALIZATION : 
+  //    We now  hand-over the start up msg to the appliation
+  //    From this point on everything should be messages/events that are handled
+  //    by appliation level Ebb's
+
+  return COBJ_EBBCALL(theApp, start);
 }
 
 EBBRC
-L1Prim_start(void *_self, uintptr_t startinfo)
+L1Prim_start(L1Ref _self, uintptr_t startinfo)
 {
   EBBRC rc;
-  MsgHandlerId startMsgHdlr;
+  CObjEBBRootSharedRef rootRef;
+  L1PrimRef self = (L1PrimRef) _self;
 
   // initialize the message handler, this will take over the
   // IPI on this core. 
   rc = MsgMgrPrim_Init();
   EBBRCAssert(rc);
 
-  // continue startup for this EL as a message to myself here (on this EL)
-  COBJ_EBBCALL(theMsgMgr, myEL(), theL1Id, startMsg, startinfo);
-
+  // We now allocate a temporary EBB that can be deleted once
+  // we are on the message has been delivered
+  rc = CObjEBBRootSharedCreate(&rootRef, 
+			       (EBBRepRef) &(self->startMH));
   EBBRCAssert(rc);
+
+  // Allocate an id for the startMH
+  rc = EBBAllocPrimId((EBBId *)&(self->startMHId));
+  EBBRCAssert(rc);
+
+  rc = CObjEBBBind((EBBId)self->startMHId, rootRef);
+  EBBRCAssert(rc);
+
+#if 1
+  rc = COBJ_EBBCALL(self->startMHId, msg0);
+  EBBRCAssert(rc);
+#endif
+
+  // continue startup for this EL as a message to myself here (on this EL)
+  rc = COBJ_EBBCALL(theMsgMgrId, 
+		    msg1, MyEL(), self->startMHId, startinfo);
+  EBBRCAssert(rc);
+
+  return EBBRC_OK;
 }
 
 CObjInterface(L1) L1Prim_ftable = {
-  .start = L1Prim_start
+  .start = L1Prim_start,
+  {
+#if 1
+    .msg0 = L1Prim_MsgHandler_testMH,
+#endif
+    .msg1 = L1Prim_MsgHandler_startMH
+  }
 };
+
+void
+setL1PrimFT(L1PrimRef o)
+{
+  o->ft = &L1Prim_ftable;
+  o->startMH.ft = &(L1Prim_ftable.MsgHandler_if);
+}
+
+EBBRepRef
+L1Prim_createRep(CObjEBBRootMultiRef _self)
+{
+  L1PrimRef rep;
+  EBBRC rc;
+
+  rc = EBBPrimMalloc(sizeof(L1Prim), &rep, EBB_MEM_DEFAULT);
+  EBBRCAssert(rc);
+  setL1PrimFT(rep);
+  // all other initialization logic we leave to the start method
+
+  return (EBBRepRef) rep;
+}
+
+EBBRC
+L1PrimInit(void)
+{
+  EBBRC rc;
+  CObjEBBRootMultiImpRef rootRef;
+  EBBId id;
+
+  if (__sync_bool_compare_and_swap(&theL1Id, (L1Id)0,
+				   (L1Id)-1)) {
+    CObjEBBRootMultiImpCreate(&rootRef, 
+			      L1Prim_createRep);
+    
+    rc = EBBAllocPrimId(&id);
+    EBBRCAssert(rc);
+
+    rc = CObjEBBBind(id, rootRef); 
+    EBBRCAssert(rc);
+
+    theL1Id = (L1Id)id;
+  } else {
+    while (((volatile uintptr_t)theL1Id)==-1);
+  }
+
+   return EBBRC_OK;  
+}

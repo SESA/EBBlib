@@ -28,6 +28,8 @@
 #include <l0/cobj/CObjEBB.h>
 #include <l0/cobj/CObjEBBRoot.h>
 #include <l0/cobj/CObjEBBRootShared.h>
+#include <l0/MemMgr.h>
+#include <l0/MemMgrPrim.h>
 
 CObject(CObjEBBRootSharedImp) 
 {
@@ -65,4 +67,18 @@ void
 CObjEBBRootSharedSetFT(CObjEBBRootSharedRef o) 
 {
   o->ft = &CObjEBBRootSharedImp_ftable; 
+}
+
+EBBRC
+CObjEBBRootSharedCreate(CObjEBBRootSharedRef *rootRef, 
+			EBBRepRef repRef)
+{
+  EBBRC rc;
+  
+  rc = EBBPrimMalloc(sizeof(**rootRef), rootRef, EBB_MEM_DEFAULT);
+  if (EBBRC_SUCCESS(rc)) {
+    CObjEBBRootSharedSetFT(*rootRef);
+    (*rootRef)->ft->init(*rootRef, repRef);
+  }
+  return rc;
 }

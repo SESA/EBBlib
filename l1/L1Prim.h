@@ -22,6 +22,6 @@
  * THE SOFTWARE.
  */
 
-extern L1PrimInit(void);
+extern EBBRC L1PrimInit(void);
 
 #endif

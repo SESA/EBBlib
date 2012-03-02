@@ -183,7 +183,6 @@ EBBIdBind(EBBId id, EBBMissFunc mf, EBBMissArg arg) {
 void
 EBBIdUnBind(EBBId id, EBBMissFunc *mf, EBBMissArg *arg) {
   EBB_LRT_printf("%s: NYI\n", __func__);
-  EBBAssert(0);
 }
 
 // at this point translation hardware has been initialized

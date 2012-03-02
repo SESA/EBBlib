@@ -65,7 +65,7 @@ CObject(EventMgrPrimImp){
   uintptr_t ipi_vec_no;
 };
 
-EventMgrPrimId theEventMgrPrimId;
+EventMgrPrimId theEventMgrPrimId=0;
 /*
  * For now, all allocation through a master, need 
  * better way to find and allocate a master.

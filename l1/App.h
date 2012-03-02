@@ -1,3 +1,5 @@
+#ifndef __APP_H__
+#define __APP_H__
 /*
  * Copyright (C) 2011 by Project SESA, Boston University
  *
@@ -20,44 +22,33 @@
  * THE SOFTWARE.
  */
 
-#include <config.h>
-#include <stdint.h>
-
-#include <l0/lrt/types.h>
-#include <l0/cobj/cobj.h>
-#include <lrt/io.h>
-#include <l0/lrt/pic.h>
-#include <l0/lrt/trans.h>
-#include <l0/types.h>
-#include <l0/sys/trans.h>
-#include <lrt/assert.h>
-#include <l0/cobj/CObjEBB.h>
-#include <l0/EBBMgrPrim.h>
-#include <l0/cobj/CObjEBBUtils.h>
-#include <l0/cobj/CObjEBBRoot.h>
-#include <l0/cobj/CObjEBBRootMulti.h>
-#include <l0/cobj/CObjEBBRootMultiImp.h>
-#include <l0/EventMgrPrim.h>
-#include <l0/EventMgrPrimImp.h>
-#include <l0/lrt/pic.h>
-#include <l0/MemMgr.h>
-#include <l0/MemMgrPrim.h>
-#include <l1/App.h>
-
-CObject(HelloWorld) {
+CObject(App) {
   CObjInterface(App) *ft;
 };
 
-EBBRC 
-HelloWorld_start(AppRef _self)
-{
-  EBB_LRT_printf("Hello world!\n");
-  return EBBRC_OK;
-}
-
-CObjInterface(App) HelloWorld_ftable = {
-  .start = HelloWorld_start
+CObjInterface(App) {
+  // this is the primodial message to an application
+  // remember that this is an event driven system so your
+  // job is to simply do your setup work ... including
+  // construction your objects and registering for events you
+  // care about and then return.
+  // On many cores you may not have any work to do here
+  EBBRC (*start) (AppRef _self);
 };
 
-APP(HelloWorld);
+typedef AppRef *AppId;
 
+extern AppId theApp;
+
+extern EBBRep * App_createRep(CObjEBBRootMultiRef _self);
+
+#define APP(REPTYPE)					       \
+EBBRep * App_createRep(CObjEBBRootMultiRef _self)	       \
+{				                               \
+  REPTYPE * repRef;					       \
+  EBBPrimMalloc(sizeof(REPTYPE), &repRef, EBB_MEM_DEFAULT);    \
+  repRef->ft = &REPTYPE ## _ftable;			       \
+  return (EBBRep *)repRef;				       \
+}                                                     
+
+#endif
