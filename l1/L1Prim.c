@@ -50,7 +50,7 @@
 #include <lrt/startinfo.h>
 #include <lrt/misc.h>
 
-#define JAKLUDGE 1
+//#define JAKLUDGE 1
 
 CObject(L1Prim) {
   CObjInterface(L1) *ft;
@@ -104,7 +104,10 @@ L1Prim_MsgHandler_startMH(MsgHandlerRef _self, uintptr_t startinfo)
     rc = CObjEBBBind(id, appRoot); 
     EBBRCAssert(rc);
     theApp = (AppId)id;
+  } else {
+    while (((volatile uintptr_t)theApp)==-1);
   }
+
 
   // WE ARE NOW DONE WITH L1 INITIALIZATION : 
   //    We now  hand-over the start up msg to the appliation
