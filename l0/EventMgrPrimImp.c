@@ -580,21 +580,22 @@ EventMgrPrimImp_createRep(CObjEBBRootMultiImpRef root)
 EBBRC
 EventMgrPrimImpInit(void)
 {
-  static CObjEBBRootMultiImpRef rootRef = 0;
-  EventMgrPrimId id;
+  EBBRC rc;
+  static CObjEBBRootMultiImpRef rootRef;
   EventMgrPrimImpRef repRef;
   EvntLoc myel;
 
   if (__sync_bool_compare_and_swap(&theEventMgrPrimId, (EventMgrPrimId)0,
 				   (EventMgrPrimId)-1)) {
+    EBBId id;
     EBBAssert(MAXEVENTS > lrt_pic_numvec());
-
-    CObjEBBRootMultiImpCreate(&rootRef, EventMgrPrimImp_createRepAssert);
-    id = (EventMgrPrimId)EBBIdAlloc();
-    EBBAssert(id != NULL);
-
-    EBBIdBind((EBBId)id, CObjEBBMissFunc, (EBBMissArg)rootRef);
-    theEventMgrPrimId = id;
+    rc= CObjEBBRootMultiImpCreate(&rootRef, EventMgrPrimImp_createRepAssert);
+    EBBRCAssert(rc);
+    rc = EBBAllocPrimId(&id);
+    EBBRCAssert(rc);
+    rc = EBBBindPrimId(id, CObjEBBMissFunc, (EBBMissArg)rootRef);
+    EBBRCAssert(rc);
+    theEventMgrPrimId = (EventMgrPrimId)id;
   } else {
     while (((volatile uintptr_t)theEventMgrPrimId)==-1);
   }

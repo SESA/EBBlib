@@ -36,6 +36,7 @@
 #include <l0/MemMgrPrim.h>
 #include <l0/EventMgrPrim.h>
 #include <l0/EventMgrPrimImp.h>
+#include <l0/cobj/CObjEBBUtils.h>
 #include <l0/cobj/CObjEBBRoot.h>
 #include <l0/cobj/CObjEBBRootMulti.h>
 #include <l0/cobj/CObjEBBRootMultiImp.h>
@@ -59,7 +60,7 @@ ResetEventHandler_handleEvent(void *_self)
   
   lrt_pic_ackipi();
 
-  // call next layer startup code;
+  // call the next layer startup
   rc = L1PrimInit();
   EBBRCAssert(rc);
 
@@ -97,22 +98,26 @@ ResetEventHandler_createRep(CObjEBBRootMultiRef _self) {
 static EventHandlerId
 InitResetEventHandler(uintptr_t startInfo)
 {
-  CObjEBBRootMultiImpRef rootRef;
-  EventHandlerId id;
+  EBBRC rc;
   static EventHandlerId theResetEventHandlerId=0;
 
   if (__sync_bool_compare_and_swap(&theResetEventHandlerId, (EventHandlerId)0,
 				   (EventHandlerId)-1)) {
-    CObjEBBRootMultiImpCreate(&rootRef, ResetEventHandler_createRep);
-    id = (EventHandlerId)EBBIdAlloc();
-    EBBAssert(id != NULL);
-
-    EBBIdBind((EBBId)id, CObjEBBMissFunc, (EBBMissArg) rootRef);
-    theResetEventHandlerId = id;
+    EBBId id;
+    CObjEBBRootMultiImpRef rootRef;
+    rc = CObjEBBRootMultiImpCreate(&rootRef,
+				  ResetEventHandler_createRep);
+    EBBRCAssert(rc);
+    rc = EBBAllocPrimId(&id);
+    EBBRCAssert(rc);
+    rc = CObjEBBBind(id, rootRef); 
+    EBBRCAssert(rc);
+    theResetEventHandlerId = (EventHandlerId)id;
   } else {
     while (((volatile uintptr_t)theResetEventHandlerId)==-1);
   }
-  (void) COBJ_EBBCALL(theResetEventHandlerId, init, startInfo);
+  rc = COBJ_EBBCALL(theResetEventHandlerId, init, startInfo);
+  EBBRCAssert(rc);
   return theResetEventHandlerId;
 };
 
@@ -131,8 +136,12 @@ EBB_init(uintptr_t startInfo)
   rc = EBBMemMgrPrimInit();
   EBBRCAssert(rc);
 
-  // FIXME: no error?
-  EBBMgrPrimInit();
+  rc = EBBMgrPrimInit();
+  EBBRCAssert(rc);
+
+  // At this point EBBMgr and Ebb Calls should be working
+  //  NOMORE USE OF TRANS OR BOOT INTERFACES TO THESE THINGS
+  //  AND MOST CODE SHOULD BE ON Ebb's
 
   rc = EventMgrPrimImpInit();
   EBBRCAssert(rc);
@@ -140,8 +149,7 @@ EBB_init(uintptr_t startInfo)
   ehid = InitResetEventHandler(startInfo);
   EBBAssert(ehid != NULL);
 
-
-  // JA: FIXME:  IS THIS FIRST REALL EBB CALL BELOW ... SHOULD BE EXPLICITLY MARKED
+  // JA: FIXME:  IS THIS FIRST REAL EBB CALL BELOW ... SHOULD BE EXPLICITLY MARKED
   //             AND THE FACTS THAT THAT DEPENDS ON CLEARLY STATED
 
   // this sets up, just on the local processor, IPI to temporarily

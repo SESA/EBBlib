@@ -38,6 +38,7 @@ extern void trans_init(void);
 }
 #endif
 
+#if 0
 extern uintptr_t myGTableSize(void);
 extern EBBGTrans *myGTable(void);
 extern uintptr_t myLTableSize(void);
@@ -47,9 +48,10 @@ extern void EBBInitLTrans(EBBLTrans *lt);
 extern void initGTable(EBBMissFunc mf, EBBMissArg arg);
 extern void initLTable(void);
 
-extern EBBId EBBIdAlloc(void);
-extern void EBBIdFree(EBBId id);
-extern void EBBIdBind(EBBId id, EBBMissFunc mf, EBBMissArg arg);
-extern void EBBIdUnBind(EBBId id, EBBMissFunc *mf, EBBMissArg *arg); 
+extern EBBId TransEBBIdAlloc(void);
+extern void TransEBBIdFree(EBBId id);
+extern void TransEBBIdBind(EBBId id, EBBMissFunc mf, EBBMissArg arg);
+extern void TransEBBIdUnBind(EBBId id, EBBMissFunc *mf, EBBMissArg *arg); 
+#endif
 
 #endif

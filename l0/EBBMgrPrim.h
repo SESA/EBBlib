@@ -38,7 +38,7 @@ CObjInterface(EBBMgrPrim) {
 typedef EBBMgrPrimRef *EBBMgrPrimId;
 extern EBBMgrPrimId theEBBMgrPrimId;
 
-extern void EBBMgrPrimInit(void);
+extern EBBRC EBBMgrPrimInit(void);
 
 static inline EBBRC
 EBBAllocPrimId(EBBId *id)

@@ -32,10 +32,17 @@
 #include <l0/cobj/CObjEBBRoot.h>
 #include <l0/cobj/CObjEBBRootMulti.h>
 #include <l0/cobj/CObjEBBRootMultiImp.h>
+#include <l0/EBBMgrPrimBoot.h>
 #include <l0/EBBMgrPrim.h>
 #include <l0/cobj/CObjEBBUtils.h>
 #include <l0/MemMgr.h>
 #include <l0/MemMgrPrim.h>
+
+
+extern EBBId TransEBBIdAlloc(void);
+extern void TransEBBIdFree(EBBId id);
+extern void TransEBBIdBind(EBBId id, EBBMissFunc mf, EBBMissArg arg);
+extern void TransEBBIdUnBind(EBBId id, EBBMissFunc *mf, EBBMissArg *arg); 
 
 EBBMgrPrimId theEBBMgrPrimId=0;
 
@@ -46,25 +53,25 @@ CObject(EBBMgrPrimImp) {
 
 static EBBRC
 AllocId (EBBMgrPrimRef _self, EBBId *id) {
-  *id = EBBIdAlloc();
+  *id = TransEBBIdAlloc();
   return EBBRC_OK;
 }
 
 static EBBRC
 FreeId (EBBMgrPrimRef _self, EBBId id) {
-  EBBIdFree(id);
+  TransEBBIdFree(id);
   return EBBRC_OK;
 }
 
 static EBBRC
 BindId (EBBMgrPrimRef _self, EBBId id, EBBMissFunc mf, EBBMissArg arg) {
-  EBBIdBind(id, mf, arg);
+  TransEBBIdBind(id, mf, arg);
   return EBBRC_OK;
 }
 
 static EBBRC
 UnBindId (EBBMgrPrimRef _self, EBBId id, EBBMissFunc *mf, EBBMissArg *arg) {
-  EBBIdUnBind(id, mf, arg);
+  TransEBBIdUnBind(id, mf, arg);
   return EBBRC_OK;
 }
 
@@ -95,24 +102,25 @@ EBBMgrPrimImp_createRep(CObjEBBRootMultiRef _self) {
   return (EBBRep *)repRef;
 }
 
-void 
-EBBMgrPrimInit() {
-  CObjEBBRootMultiImpRef rootRef;
-  EBBMgrPrimId id;
-
+EBBRC
+EBBMgrPrimInit() 
+{
+  EBBRC rc = EBBRC_OK;
   if (__sync_bool_compare_and_swap(&theEBBMgrPrimId, (EBBMgrPrimId)0,
 				   (EBBMgrPrimId)-1)) {
-    CObjEBBRootMultiImpCreate(&rootRef, EBBMgrPrimImp_createRep);
-    
-    id = (EBBMgrPrimId)EBBIdAlloc();
-    EBBAssert(id != NULL);
-    
-    EBBIdBind((EBBId)id, CObjEBBMissFunc, (EBBMissArg) rootRef);
-
-    theEBBMgrPrimId = id;
+    EBBId id;
+    CObjEBBRootMultiImpRef rootRef;
+    rc = CObjEBBRootMultiImpCreate(&rootRef, EBBMgrPrimImp_createRep);
+    EBBRCAssert(rc);
+    rc = EBBAllocPrimIdBoot(&id);
+    EBBRCAssert(rc);
+    rc = EBBBindPrimIdBoot(id, CObjEBBMissFunc, (EBBMissArg)rootRef);
+    EBBRCAssert(rc);
+    theEBBMgrPrimId = (EBBMgrPrimId)id;
   } else {
     while (((volatile uintptr_t)theEBBMemMgrPrimId)==-1);
   }
+  return rc;
 }
 
 EBBRC EBBDestroyPrimId(EBBId id) 
@@ -129,9 +137,12 @@ EBBRC EBBDestroyPrimId(EBBId id)
   // free logic
   rc = COBJ_EBBCALL(theEBBMgrPrimId, UnBindId, id, NULL, NULL);
   
+#if 0
+  // this may have side effects so I am skipping it
   rc = COBJ_EBBCALL(theEBBMgrPrimId, FreeId, id);
+#endif
 
-  EBB_LRT_printf("%s: NYI: PLEASE FIXME!: none this works\n",
+  EBB_LRT_printf("%s: NYI: PLEASE FIXME!: NONE OF THIS WORKS\n",
 		 __func__);
   return rc;
 }

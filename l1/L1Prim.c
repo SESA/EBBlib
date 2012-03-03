@@ -50,6 +50,8 @@
 #include <lrt/startinfo.h>
 #include <lrt/misc.h>
 
+#define JAKLUDGE 1
+
 CObject(L1Prim) {
   CObjInterface(L1) *ft;
   CObjEBBRootMultiRef myRoot;
@@ -59,7 +61,7 @@ CObject(L1Prim) {
   MsgHandlerId startMHId;
 };
 
-#if 1
+#ifdef JAKLUDGE
 EBBRC
 L1Prim_MsgHandler_testMH(MsgHandlerRef _self)
 {
@@ -71,7 +73,6 @@ EBBRC
 L1Prim_MsgHandler_startMH(MsgHandlerRef _self, uintptr_t startinfo)
 {
   EBBRC rc;
-  CObjEBBRootMultiImpRef appRoot;
   L1PrimRef self = ContainingCOPtr(_self,L1Prim,startMH);  
 
   // we are done with the startMH we can destroy it
@@ -94,15 +95,14 @@ L1Prim_MsgHandler_startMH(MsgHandlerRef _self, uintptr_t startinfo)
   if (__sync_bool_compare_and_swap(&theApp, (AppId)0,
 				   (AppId)-1)) {  
     EBBId id;
+    CObjEBBRootMultiImpRef appRoot;
     // create App instance and invoke its start
     rc = CObjEBBRootMultiImpCreate(&appRoot, App_createRep);
     EBBRCAssert(rc);
     rc = EBBAllocPrimId(&id);
     EBBRCAssert(rc);
-
     rc = CObjEBBBind(id, appRoot); 
     EBBRCAssert(rc);
-
     theApp = (AppId)id;
   }
 
@@ -131,15 +131,12 @@ L1Prim_start(L1Ref _self, uintptr_t startinfo)
   rc = CObjEBBRootSharedCreate(&rootRef, 
 			       (EBBRepRef) &(self->startMH));
   EBBRCAssert(rc);
-
-  // Allocate an id for the startMH
   rc = EBBAllocPrimId((EBBId *)&(self->startMHId));
   EBBRCAssert(rc);
-
   rc = CObjEBBBind((EBBId)self->startMHId, rootRef);
   EBBRCAssert(rc);
 
-#if 1
+#ifdef JAKLUDGE
   rc = COBJ_EBBCALL(self->startMHId, msg0);
   EBBRCAssert(rc);
 #endif
@@ -155,7 +152,7 @@ L1Prim_start(L1Ref _self, uintptr_t startinfo)
 CObjInterface(L1) L1Prim_ftable = {
   .start = L1Prim_start,
   {
-#if 1
+#ifdef JAKLUDGE
     .msg0 = L1Prim_MsgHandler_testMH,
 #endif
     .msg1 = L1Prim_MsgHandler_startMH
@@ -186,25 +183,23 @@ L1Prim_createRep(CObjEBBRootMultiRef _self)
 EBBRC
 L1PrimInit(void)
 {
-  EBBRC rc;
-  CObjEBBRootMultiImpRef rootRef;
-  EBBId id;
+  EBBRC rc = EBBRC_OK;
 
   if (__sync_bool_compare_and_swap(&theL1Id, (L1Id)0,
 				   (L1Id)-1)) {
-    CObjEBBRootMultiImpCreate(&rootRef, 
-			      L1Prim_createRep);
-    
+    CObjEBBRootMultiImpRef rootRef;
+    EBBId id;
+    rc = CObjEBBRootMultiImpCreate(&rootRef, 
+				   L1Prim_createRep);
+    EBBRCAssert(rc);
     rc = EBBAllocPrimId(&id);
     EBBRCAssert(rc);
-
     rc = CObjEBBBind(id, rootRef); 
     EBBRCAssert(rc);
-
     theL1Id = (L1Id)id;
   } else {
     while (((volatile uintptr_t)theL1Id)==-1);
   }
 
-   return EBBRC_OK;  
+  return rc;  
 }

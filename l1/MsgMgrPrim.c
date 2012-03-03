@@ -314,18 +314,20 @@ MsgEventHandler_createRep(CObjEBBRootMultiRef _self) {
 static EventHandlerId
 InitMsgEventHandler()
 {
-  CObjEBBRootMultiImpRef rootRef;
-  EventHandlerId id;
   static EventHandlerId theMsgEventHandlerId=0;
 
   if (__sync_bool_compare_and_swap(&theMsgEventHandlerId, (EventHandlerId)0,
 				   (EventHandlerId)-1)) {
-    CObjEBBRootMultiImpCreate(&rootRef, MsgEventHandler_createRep);
-    id = (EventHandlerId)EBBIdAlloc();
-    EBBAssert(id != NULL);
-
-    EBBIdBind((EBBId)id, CObjEBBMissFunc, (EBBMissArg) rootRef);
-    theMsgEventHandlerId = id;
+    EBBRC rc;
+    CObjEBBRootMultiImpRef rootRef;
+    EBBId id;
+    rc = CObjEBBRootMultiImpCreate(&rootRef, MsgEventHandler_createRep);
+    EBBRCAssert(rc);
+    rc = EBBAllocPrimId(&id);
+    EBBRCAssert(rc);
+    rc = EBBBindPrimId(id, CObjEBBMissFunc, (EBBMissArg)rootRef);
+    EBBRCAssert(rc);
+    theMsgEventHandlerId = (EventHandlerId)id;
   } else {
     while (((volatile uintptr_t)theMsgEventHandlerId)==-1);
   }
@@ -376,16 +378,18 @@ MsgMgrPrim_Init(void)
 {
   static CObjEBBRootMultiImpRef rootRef = 0;
   MsgMgrPrimRef repRef;
-  MsgMgrId id;
 
   if (__sync_bool_compare_and_swap(&theMsgMgrId, (MsgMgrId)0,
 				   (MsgMgrId)-1)) {
-    CObjEBBRootMultiImpCreate(&rootRef, MsgMgrPrim_createRepAssert);
-    id = (MsgMgrId)EBBIdAlloc();
-    EBBAssert(id != NULL); 
-
-    EBBIdBind((EBBId)id, CObjEBBMissFunc, (EBBMissArg) rootRef);
-    theMsgMgrId = id;
+    EBBRC rc;
+    EBBId id;
+    rc = CObjEBBRootMultiImpCreate(&rootRef, MsgMgrPrim_createRepAssert);
+    EBBRCAssert(rc);
+    rc = EBBAllocPrimId(&id);
+    EBBRCAssert(rc); 
+    rc = EBBBindPrimId(id, CObjEBBMissFunc, (EBBMissArg) rootRef);
+    EBBRCAssert(rc); 
+    theMsgMgrId = (MsgMgrId)id;
   } else {
     while (((volatile uintptr_t)theMsgMgrId)==-1);
   }
@@ -394,7 +398,8 @@ MsgMgrPrim_Init(void)
   // over the event locally for IPI even before anyone sends a message from
   // this event location
   repRef = MsgMgrPrim_createRep(rootRef);
-  rootRef->ft->addRepOn((CObjEBBRootMultiRef)rootRef, MyEL(), (EBBRep *)repRef);
+  rootRef->ft->addRepOn((CObjEBBRootMultiRef)rootRef, MyEL(),
+			(EBBRep *)repRef);
 
   return EBBRC_OK;
 }
