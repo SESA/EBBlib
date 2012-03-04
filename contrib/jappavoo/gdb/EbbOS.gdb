@@ -1,4 +1,18 @@
 set output-radix 16
+set print pretty on
+
+define hook-stop
+disable breakpoints
+end
+
+define hook-run
+enable breakpoints
+end
+
+define hook-continue
+enable breakpoints
+end
+
 
 # pass SIGINT to EbbOS process
 handle SIGINT nostop pass
@@ -87,9 +101,9 @@ document IDMROOT
 IDMROOT <id>: assume the id is to a multi EBB then print it out as one
 end
 
-define EBB
-  ID2GT $arg0
-  set $gt=$
+define decodegt
+  set $gt=$arg0
+#FIXME:  Add more conditions eg tests for free and more tests on mf
   GTROOT $gt
   set $mf = $
   if ($mf)->handleMiss == $sharedMF
@@ -99,6 +113,14 @@ define EBB
       GTMROOT $gt
     end
   end
+end
+document decodegt
+decodegt <gt>: try and intelligently decode the gt
+end
+
+define ebb
+  ID2GT $arg0
+  decodegt $
 end
   
 define blrt
@@ -157,17 +179,20 @@ document bstartup
 bstartup: put breakpoints on key points along startup
 end
 
-define gdbEbbOS
-# this is a kludge figure out what symbols are really worth getting
-  ptype struct lrt_trans
-  set $multiMF=CObjEBBRootMulti_handleMiss	
-  set $sharedMF=CObjEBBRootSharedImp_handleMiss
+define EbbOS
+    if &TransMem != 0
+      #this is a kludge figure out a better way
+      ptype struct lrt_trans
+      set $multiMF=CObjEBBRootMulti_handleMiss	
+      set $sharedMF=CObjEBBRootSharedImp_handleMiss
+      set prompt (EbbOS)\040
+    end
 end
-document gdbEbbOS
-gdbEbbOS: call this first to preload some symbols that will make your
-          life easier
+document EbbOS
+EbbOS: EbbOS debugging
 end
 
 define hookpost-file
-  gdbEbbOS
+  EbbOS
 end
+
