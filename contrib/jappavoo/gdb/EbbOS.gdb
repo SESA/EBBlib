@@ -4,39 +4,103 @@ set output-radix 16
 handle SIGINT nostop pass
 
 define ID2GT
-#  p *((struct lrt_trans *)lrt_trans_id2gt($arg0))
-  p *((EBBGTrans *)lrt_trans_id2gt($arg0))
+  p ((EBBGTrans *)lrt_trans_id2gt($arg0))
 end
 document ID2GT
 ID2GT <id>: prints the global translation entry associated with <id>
 end
 
+define GTMF
+  p ((EBBGTrans *)$arg0)->mf
+end
+document GTMF
+GTMF <gt>: print the missfunction assoicated with the <gt>
+end
+
 define IDMF
-  p ((EBBGTrans *)lrt_trans_id2gt($arg0))->mf
+  ID2GT $arg0
+  GTMF $
 end
 document IDMF
 IDMF <id>: prints the miss function bound to <id>
 end
 
+define GTARG
+  p ((EBBGTrans *)$arg0)->arg
+end
+document GTARG
+GTARG <gt>: print the arg field of the gt 
+end
+
 define IDARG
-  p ((EBBGTrans *)lrt_trans_id2gt($arg0))->arg
+  ID2GT $arg0
+  GTARG $
 end
 document IDARG
 IDARG <id>: prints the miss argument bound to <id>
 end
 
+define GTROOT
+  GTARG $arg0
+  p *(((CObjEBBRootRef)($))->ft) 
+end
+document GTROOT
+GTROOT <gt>: print function table to identify the root of the <gt>
+end
+
 define IDROOT
-   p *(((CObjEBBRootRef)(((EBBGTrans *)lrt_trans_id2gt($arg0))->arg))->ft)
+  ID2GT $arg0
+  GTROOT $  
+end
+document IDROOT
+IDROOT <id>: print function table to identify the root of the <id>   
+end
+
+define GTSROOT
+   GTARG $arg0
+   p *((CObjEBBRootSharedImpRef)($))
+end
+document GTSROOT
+GTSROOT <gt>: assume the gt is to a shared EBB then print it out the root as one
 end
 
 define IDSROOT
-   p *((CObjEBBRootSharedImpRef)(((EBBGTrans *)lrt_trans_id2gt($arg0))->arg))
+  ID2GT $arg0
+  GTSROOT $
+end
+document IDSROOT
+IDSROOT <id>: assume the id is to a shared EBB the print out the root as one
 end
 
+define GTMROOT
+   GTARG $arg0
+   p *((CObjEBBRootMultiImpRef)($))
+end
+document GTMROOT
+GTMROOT <gt>: assume the gt is to a multi EBB then print it out as one
+end
 define IDMROOT
-   p *((CObjEBBRootMultiImpRef)(((EBBGTrans *)lrt_trans_id2gt($arg0))->arg))
+   ID2GT $arg0
+   GTMROOT $
+end
+document IDMROOT
+IDMROOT <id>: assume the id is to a multi EBB then print it out as one
 end
 
+define EBB
+  ID2GT $arg0
+  set $gt=$
+  GTROOT $gt
+  set $mf = $
+  if ($mf)->handleMiss == $sharedMF
+    GTSROOT $gt
+  else 
+    if ($mf)->handleMiss == $multiMF
+      GTMROOT $gt
+    end
+  end
+end
+  
 define blrt
   break lrt_start
 end
@@ -94,10 +158,16 @@ bstartup: put breakpoints on key points along startup
 end
 
 define gdbEbbOS
-# 
-  ptype struct lrt_trans	
+# this is a kludge figure out what symbols are really worth getting
+  ptype struct lrt_trans
+  set $multiMF=CObjEBBRootMulti_handleMiss	
+  set $sharedMF=CObjEBBRootSharedImp_handleMiss
 end
 document gdbEbbOS
 gdbEbbOS: call this first to preload some symbols that will make your
           life easier
+end
+
+define hookpost-file
+  gdbEbbOS
 end
