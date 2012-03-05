@@ -50,6 +50,7 @@ protected:
   Barrier bar;
   int numWorkers;
   int iterations;
+  bool bindThread;
   struct WArgs {
     int id;
     unsigned long long start;
@@ -57,13 +58,13 @@ protected:
     Test *theTest;
   } *wargs;
  virtual EBBRC init(void)=0;
-  virtual EBBRC work(int id)=0;
-  virtual EBBRC end(void);
+ virtual EBBRC work(int id)=0;
+ virtual EBBRC end(void);
 public:
   Test(int n);
   Test(int n, int m);
+  Test(int n, int m, bool p);
   EBBRC doTest(void) {
-    //FIXME: do we want to init/end within each iteration of test?
     if (init()<0) return -1;
     doWork();
     end();
