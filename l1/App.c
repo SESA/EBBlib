@@ -29,7 +29,7 @@
 #include <l0/types.h>
 #include <l0/sys/trans.h>
 #include <l0/cobj/CObjEBB.h>
-#include <l0/cobj/CObjEBBRoot.h>x
+#include <l0/cobj/CObjEBBRoot.h>
 #include <l0/cobj/CObjEBBRootMulti.h>
 #include <l1/App.h>
 
