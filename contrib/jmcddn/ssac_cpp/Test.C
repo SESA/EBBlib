@@ -53,7 +53,7 @@ static num_phys_cores()
     void *args;
     int proc; 
   };
- 
+
 void *
 linux_thread_init(void *arg)
 {
@@ -68,7 +68,7 @@ linux_thread_init(void *arg)
     perror("ERROR: Could not set CPU Affinity, exiting...\n");
     exit(-1);
   }
-  return func(a->args); // BREAK
+  return func(a->args); 
 }
 #endif
 
@@ -104,7 +104,7 @@ create_bound_thread(pthread_t *tid, int id,  void *(*func)(void *), void *arg)
 
   // Linux bind code 
   struct linux_thread_init_arg *lnxargs; 
-  lnxargs = (linux_thread_init_arg *)calloc(1,sizeof(linux_thread_init_arg));
+  lnxargs = (linux_thread_init_arg *)calloc(1,sizeof(linux_thread_init_arg));// FIXME: memory leak... 
   lnxargs->func = func;
   lnxargs->args = arg;
   lnxargs->proc = pid;
@@ -133,6 +133,13 @@ Test::Test(int n, int m) :  bar(n), numWorkers(n), iterations(m)
   tassert((wargs != NULL), ass_printf("malloc failed\n"));
 }
 
+Test::Test(int n, int m, bool p) :  bar(n), numWorkers(n), iterations(m), bindThread(p)
+{
+  wargs = (struct Test::WArgs *)
+  malloc(sizeof(struct Test::WArgs) * (numWorkers * iterations));  
+  tassert((wargs != NULL), ass_printf("malloc failed\n"));
+}
+
 EBBRC 
 Test::doWork() {
   struct TestPThreadArgs *args;
@@ -148,19 +155,19 @@ Test::doWork() {
       args[i].id = i;
       args[i].index = (j*numWorkers)+i;
       args[i].test = this; // TODO: look up behavior of 'this'
-
-#if 0
+    // create bound threads if specified
+    if (!bindThread){
       if ( pthread_create( &(args[i].tid), NULL, testPThreadFunc, (void *)&(args[i])) != 0) {
-        perror("pthread_create");
-        exit(-1);
+	    perror("pthread_create");
+	    exit(-1);
       } 
-#else 
+    }else{ 
       if ( create_bound_thread( &(args[i].tid), i, testPThreadFunc, (void *)&(args[i])) < 0) {
-        perror("create_bound_thread");
-        exit(-1);
+	    perror("create_bound_thread");
+	    exit(-1);
       }
-#endif
     }
+  }
     for (i = 0; i<numWorkers; i++)
       pthread_join(args[i].tid, NULL );
       free(args); 
