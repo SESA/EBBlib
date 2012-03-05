@@ -546,7 +546,7 @@ EventMgrPrimImp_createRep(CObjEBBRootMultiImpRef root)
   int i; 
   EventMgrPrimImpRef repRef;
 
-  EBBPrimMalloc(sizeof(*repRef), &repRef, EBB_MEM_DEFAULT);
+  EBBRCAssert(EBBPrimMalloc(sizeof(*repRef), &repRef, EBB_MEM_DEFAULT));
   EventMgrPrimSetFT(repRef);
   repRef->theRoot = (CObjEBBRootMultiRef)root;
   repRef->ipi_vec_no = lrt_pic_getIPIvec();
@@ -589,7 +589,7 @@ EventMgrPrimImpInit(void)
 				   (EventMgrPrimId)-1)) {
     EBBId id;
     EBBAssert(MAXEVENTS > lrt_pic_numvec());
-    rc= CObjEBBRootMultiImpCreate(&rootRef, EventMgrPrimImp_createRepAssert);
+    rc = CObjEBBRootMultiImpCreate(&rootRef, EventMgrPrimImp_createRepAssert);
     EBBRCAssert(rc);
     rc = EBBAllocPrimId(&id);
     EBBRCAssert(rc);

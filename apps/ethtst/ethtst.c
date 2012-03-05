@@ -1,5 +1,3 @@
-#ifndef __EBB_MEMMGRPRIM_H__
-#define __EBB_MEMMGRPRIM_H__
 /*
  * Copyright (C) 2011 by Project SESA, Boston University
  *
@@ -21,23 +19,45 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#ifdef __cplusplus
-extern "C" {
-#endif
-extern EBBRC EBBMemMgrPrimInit(void);
-#ifdef __cplusplus
-}
-#endif
-extern EBBMemMgrId theEBBMemMgrPrimId;
 
-static inline EBBRC
-EBBPrimMalloc(uintptr_t size, void *mem, EBB_MEM_POOL pool) {
-  return COBJ_EBBCALL(theEBBMemMgrPrimId, alloc, size, (void **)mem, pool);
-}
+#include <config.h>
+#include <stdint.h>
 
-static inline EBBRC
-EBBPrimFree(uintptr_t size, void *mem) {
-  return COBJ_EBBCALL(theEBBMemMgrPrimId, free, size, mem);
-}
+#include <l0/lrt/types.h>
+#include <l0/cobj/cobj.h>
+#include <lrt/io.h>
+#include <l0/lrt/pic.h>
+#include <l0/lrt/trans.h>
+#include <l0/types.h>
+#include <l0/sys/trans.h>
+#include <lrt/assert.h>
+#include <l0/cobj/CObjEBB.h>
+#include <l0/EBBMgrPrim.h>
+#include <l0/cobj/CObjEBBUtils.h>
+#include <l0/cobj/CObjEBBRoot.h>
+#include <l0/cobj/CObjEBBRootMulti.h>
+#include <l0/cobj/CObjEBBRootMultiImp.h>
+#include <l0/EventMgrPrim.h>
+#include <l0/EventMgrPrimImp.h>
+#include <l0/lrt/pic.h>
+#include <l0/MemMgr.h>
+#include <l0/MemMgrPrim.h>
+#include <net/EthTypeMgr.h>
+#include <net/EthMgr.h>
+#include <net/EthMgrPrim.h>
 
-#endif
+EthMgrId theEthMgr;
+
+EBBRC ebbmain(void)
+{
+  EBBRC rc;
+
+  EBB_LRT_printf("%s: START\n", __func__);
+
+  rc = EthMgrPrimCreate(&theEthMgr, "eth1");
+  EBBRCAssert(rc);
+
+  EBB_LRT_printf("%s: END\n", __func__);
+  
+  return EBBRC_OK;
+}
