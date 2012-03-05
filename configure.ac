@@ -66,6 +66,7 @@ AC_CHECK_FUNCS([bzero dup2 gethostbyname memset socket strerror])
 AC_CONFIG_FILES([Makefile])
 
 # Optional features
+memmgrprim=none
 AC_ARG_ENABLE([stupid-prim-alloc],
   AS_HELP_STRING([--enable-stupid-prim-alloc], [use the stupid primitive allocator (disabled by default)]),
   memmgrprim=stupid,)
@@ -75,5 +76,7 @@ AC_ARG_ENABLE([simple-prim-alloc],
 
 AM_CONDITIONAL([MemMgrPrimStupid], [test x$memmgrprim = xstupid])
 AM_CONDITIONAL([MemMgrPrimSimple], [test x$memmgrprim = xsimple])
+
+AS_IF([test x$memmgrprim = xnone], AC_MSG_ERROR([You must choose exactly one primitive memory allocator.]),)
 
 AC_OUTPUT
