@@ -1,17 +1,17 @@
 set output-radix 16
 set print pretty on
 
-define hook-stop
-disable breakpoints
-end
+# define hook-stop
+# disable breakpoints
+# end
 
-define hook-run
-enable breakpoints
-end
+# define hook-run
+# enable breakpoints
+# end
 
-define hook-continue
-enable breakpoints
-end
+# define hook-continue
+# enable breakpoints
+# end
 
 
 # pass SIGINT to EbbOS process
