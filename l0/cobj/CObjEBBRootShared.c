@@ -75,7 +75,7 @@ CObjEBBRootSharedCreate(CObjEBBRootSharedRef *rootRef,
 {
   EBBRC rc;
   
-  rc = EBBPrimMalloc(sizeof(**rootRef), rootRef, EBB_MEM_DEFAULT);
+  rc = EBBPrimMalloc(sizeof(CObjEBBRootSharedImp), rootRef, EBB_MEM_DEFAULT);
   if (EBBRC_SUCCESS(rc)) {
     CObjEBBRootSharedSetFT(*rootRef);
     (*rootRef)->ft->init(*rootRef, repRef);
