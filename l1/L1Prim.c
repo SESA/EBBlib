@@ -54,7 +54,6 @@
 
 CObject(L1Prim) {
   CObjInterface(L1) *ft;
-  CObjEBBRootMultiRef myRoot;
   char *si;
   intptr_t sisize;
   CObjectDefine(MsgHandler) startMH;
