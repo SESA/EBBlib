@@ -1,11 +1,13 @@
 include arch/amd64/acpica/Makefile.am
 
 arch_amd64_sources = \
+	arch/amd64/acpi.h \
 	arch/amd64/apic.h \
 	arch/amd64/asm.h \
 	arch/amd64/cpu.h \
 	arch/amd64/fpr.h \
 	arch/amd64/idt.h \
+	arch/amd64/ioapic.h \
 	arch/amd64/multiboot.h \
 	arch/amd64/paging.h \
 	arch/amd64/pic.h \

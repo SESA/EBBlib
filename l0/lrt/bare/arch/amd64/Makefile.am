@@ -1,4 +1,6 @@
 l0_lrt_bare_arch_amd64_sources = \
+	l0/lrt/bare/arch/amd64/acpi.c \
+	l0/lrt/bare/arch/amd64/acpi.h \
 	l0/lrt/bare/arch/amd64/init64.c \
 	l0/lrt/bare/arch/amd64/init64.h \
 	l0/lrt/bare/arch/amd64/isr_common.c \

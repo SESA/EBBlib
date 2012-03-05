@@ -28,10 +28,8 @@
 #include <arch/amd64/cpu.h>
 #include <lrt/assert.h>
 
-//FIXME: I guess this could be remapped at some point in the future so it
-// shouldn't be a const and perhaps the initial value should be read from
-// the correct MSR when the lapic is enabled
-static volatile uint32_t * const LAPIC_BASE = (uint32_t *)0xFEE00000;
+//FIXME: This should be set dynamically probably
+static volatile uint32_t *LAPIC_BASE = (uint32_t *)0xfee00000;
 
 //offsets
 static const uint32_t LAPIC_ID_REGISTER = 0x20;

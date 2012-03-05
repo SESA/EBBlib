@@ -1,0 +1,1 @@
+lrt_bare_arch_ppc64_sources = lrt/bare/arch/ppc64/assert.h
