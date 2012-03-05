@@ -148,7 +148,9 @@ MsgMgrPrim_msg0(MsgMgrRef _self, EvntLoc loc, MsgHandlerId id)
   rc = MsgMgrPrim_findTarget(self, loc, &target);
   EBBRCAssert(rc);
 
-  EBBPrimMalloc(sizeof(*msg), &msg, EBB_MEM_DEFAULT);
+  rc = EBBPrimMalloc(sizeof(*msg), &msg, EBB_MEM_DEFAULT);
+  EBBRCAssert(rc);
+
   msg->id = id;
   msg->numargs = 0;
   
@@ -172,6 +174,7 @@ MsgMgrPrim_msg1(MsgMgrRef _self, EvntLoc loc, MsgHandlerId id, uintptr_t a1)
   msg->id = id;
   msg->numargs = 1;
   msg->args[0] = a1;
+  // target->enqueueMsg(msg);
   MsgMgrPrim_enqueueMsg(target, msg);
   return EBBRC_OK;
 }
