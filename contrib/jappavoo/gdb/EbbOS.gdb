@@ -118,9 +118,30 @@ document decodegt
 decodegt <gt>: try and intelligently decode the gt
 end
 
+define cobj
+  set $f=((EBBFunc *)(*(EBBRepRef)$arg0))
+  set $i=0 
+  set $n=1
+
+  if $argc == 2
+    set $n=$arg1
+  end
+
+  while $i<$n
+    p $f[$i]
+    set $i=$i+1
+  end
+end
+document cobj
+funcs <cobj> [n=1]: takes a pointer to an cobj and prints n of the funcs of its interface
+end
+
 define ebb
   ID2GT $arg0
   decodegt $
+end
+document ebb
+ebb <id>:  takes and id and attempts to decode it and provide info about it
 end
   
 define blrt
@@ -195,4 +216,6 @@ end
 define hookpost-file
   EbbOS
 end
+
+EbbOS
 
