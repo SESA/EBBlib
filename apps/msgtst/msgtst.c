@@ -44,6 +44,7 @@
 #include <l0/MemMgrPrim.h>
 #include <l1/MsgMgr.h>
 #include <l1/MsgMgrPrim.h>
+#include <l1/App.h>
 
 // write a simple message handler
 // make call to the message handler
@@ -105,18 +106,20 @@ MsgHandlerTst_createRep(CObjEBBRootMultiRef _self) {
 static MsgHandlerId
 InitMsgHandlerTst()
 {
-  CObjEBBRootMultiImpRef rootRef;
-  MsgHandlerId id;
   static MsgHandlerId theMsgHandlerTstId=0;
 
   if (__sync_bool_compare_and_swap(&theMsgHandlerTstId, (MsgHandlerId)0,
 				   (MsgHandlerId)-1)) {
-    CObjEBBRootMultiImpCreate(&rootRef, MsgHandlerTst_createRep);
-    id = (MsgHandlerId)EBBIdAlloc();
-    EBBAssert(id != NULL);
-
-    EBBIdBind((EBBId)id, CObjEBBMissFunc, (EBBMissArg) rootRef);
-    theMsgHandlerTstId = id;
+    EBBRC rc;
+    CObjEBBRootMultiImpRef rootRef;
+    EBBId id;
+    rc = CObjEBBRootMultiImpCreate(&rootRef, MsgHandlerTst_createRep);
+    EBBRCAssert(rc);
+    rc = EBBAllocPrimId(&id);
+    EBBRCAssert(rc);
+    rc = CObjEBBBind(id, rootRef); 
+    EBBRCAssert(rc);
+    theMsgHandlerTstId = (MsgHandlerId)id;
   } else {
     while (((volatile uintptr_t)theMsgHandlerTstId)==-1);
   }
@@ -124,7 +127,12 @@ InitMsgHandlerTst()
 };
 
 
-EBBRC ebbmain(void)
+CObject(MsgTst) {
+  CObjInterface(App) *ft;
+};
+
+EBBRC 
+MsgTst_start(AppRef _self)
 {
   MsgHandlerId id = InitMsgHandlerTst();
 
@@ -137,3 +145,9 @@ EBBRC ebbmain(void)
 
   return EBBRC_OK;
 }
+
+CObjInterface(App) MsgTst_ftable = {
+  .start = MsgTst_start
+};
+
+APP(MsgTst);

@@ -44,11 +44,17 @@
 #include <l0/MemMgrPrim.h>
 #include <l1/MsgMgr.h>
 #include <l1/MsgMgrPrim.h>
+#include <l1/App.h>
 
 // Do some basic testing of the primitive memory allocator.
 
-EBBRC ebbmain(void)
-{ 
+CObject(PrimAllocTst) {
+  CObjInterface(App) *ft;
+};
+
+EBBRC 
+PrimAllocTst_start(AppRef _self)
+{
   uintptr_t i, j;
   void *ptrs[128];
   
@@ -71,6 +77,12 @@ EBBRC ebbmain(void)
       }
     }
   }
-
   return EBBRC_OK;
 }
+
+CObjInterface(App) PrimAllocTst_ftable = {
+  .start = PrimAllocTst_start
+};
+
+APP(PrimAllocTst);
+
