@@ -1,0 +1,32 @@
+#!/bin/sh -e
+
+while [ ! -d .git ] && [ ! "$PWD" = "/" ] ; do
+  cd ..
+done
+
+if [ ! -d .git ] ; then
+  echo "Error : not in source directory" >&2
+  exit 1
+fi
+
+autoreconf -i
+
+opwd="$PWD"
+
+if [ -d ../distcheck-build ] ; then
+  # the distcheck makes some read-only files, make them writeable so we can delete.
+  chmod u+w -R ../distcheck-build
+  rm -r ../distcheck-build
+fi
+
+mkdir ../distcheck-build
+cd ../distcheck-build
+
+"$opwd"/configure --enable-simple-prim-alloc
+DISTCHECK_CONFIGURE_FLAGS='--enable-simple-prim-alloc' make distcheck
+DISTCHECK_CONFIGURE_FLAGS='--enable-stupid-prim-alloc' make distcheck
+cd "$opwd"
+
+chmod u+w -R ../distcheck-build
+rm -r ../distcheck-build
+

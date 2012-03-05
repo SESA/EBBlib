@@ -6,7 +6,7 @@ include l0/sys/Makefile.am
 l0_ebbmgrprim_sources = l0/EBBMgrPrim.c l0/EBBMgrPrim.h l0/EBBMgrPrimBoot.c \
 	l0/EBBMgrPrimBoot.h
 l0_eventmgrprim_sources = l0/EventMgrPrim.h l0/EventMgrPrimImp.c l0/EventMgrPrimImp.h
-l0_memmgrprimstupid_sources = l0/MemMgrPrimStupid.h l0/MemMgrPrimStupid.c
+l0_memmgrprimstupid_sources = l0/MemMgrPrimStupid.c
 l0_memmgrprimsimple_sources = l0/MemMgrPrimSimple.c
 
 l0_membaseprim = l0/MemMgr.h l0/MemMgrPrim.c l0/MemMgrPrim.h 
