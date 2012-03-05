@@ -12,12 +12,20 @@ noinst_PROGRAMS = ebbos
 ebbos_CFLAGS = $(AM_CFLAGS)
 ebbos_CXXFLAGS = $(AM_CXXFLAGS)
 
+if x86_64
+AM_CPPFLAGS = -D ARCH_AMD64
+else
+if powerpc64
+AM_CPPFLAGS = -D ARCH_PPC64
+endif
+endif
+
 if LRT_ULNX
 ebbos_SOURCES = $(arch_sources) $(l0_sources) $(lrt_sources) \
 	$(misc_sources) $(net_sources)
 # ebbos_SOURCES = EBBStart.c $(arch_sources) $(l0_sources) $(lrt_sources) \
 # 	$(misc_sources) $(net_sources)
-ebbos_CPPFLAGS = -D LRT_ULNX
+ebbos_CPPFLAGS = $(AM_CPPFLAGS) -D LRT_ULNX
 else
 if LRT_BARE
 ebbos_SOURCES = $(arch_sources) $(l0_lrt_sources) $(lrt_sources) \
@@ -29,7 +37,7 @@ ebbos_SOURCES = $(arch_sources) $(l0_lrt_sources) $(lrt_sources) \
 
 #ebbos_DEPENDENCIES = $(top_srcdir)/l0/lrt/bare/arch/amd64/link.ld \
 	l0/lrt/bare/arch/amd64/init32.o
-ebbos_CPPFLAGS = -D LRT_BARE
+ebbos_CPPFLAGS = $(AM_CPPFLAGS) -D LRT_BARE
 BAREFLAGS = -m64 -ffreestanding -nostdlib -nodefaultlibs -g3 \
 	-O2 -mno-red-zone -mno-mmx -mno-sse -mno-sse2 -mno-sse3
 ebbos_CFLAGS += $(BAREFLAGS)

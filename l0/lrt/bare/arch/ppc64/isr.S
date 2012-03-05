@@ -33,7 +33,7 @@
 	lis	r20, int_table@h	; \
 	ld	r20, (IV_ ## interrupt) * 8(r20) ; \
 	mtctr	r20			       ; \
-	bctr
+	b	ivpr_common
 	
 .section .isr, "ax"
 .globl _vec_start
@@ -67,4 +67,10 @@ _vec_start:
 	EX_JUMP(lrat_error) 
 	.fill ((_vec_start + 0x1000 - .) / 4), 4, 0x200
 _vec_end:	
-	
+
+	//r20 is available, ctr holds our branch location
+ivpr_common:
+	mfmsr	r20
+	ori 	r20, r20, (1 << 13) //enable floating point
+	mtmsr	r20
+	bctr

@@ -18,19 +18,19 @@ defaultFuncCommon:
 	std r8, 0x58(r1)
 	std r9, 0x60(r1)
 	std r10, 0x68(r1)
-	//stfd	f1,((-1)*8)(r1)			// save parameter fprs
-	//stfd	f2,((-2)*8)(r1)	
-	//stfd	f3,((-3)*8)(r1)
-	//stfd	f4,((-4)*8)(r1)
-	//stfd	f5,((-5)*8)(r1)
-	//stfd	f6,((-6)*8)(r1)
-	//stfd	f7,((-7)*8)(r1)
-	//stfd	f8,((-8)*8)(r1)
-	//stfd	f9,((-9)*8)(r1)
-	//stfd	f10,((-10)*8)(r1)
-	//stfd	f11,((-11)*8)(r1)
-	//stfd	f12,((-12)*8)(r1)
-	//stfd	f13,((-13)*8)(r1)
+	stfd	f1,((-1)*8)(r1)			// save parameter fprs
+	stfd	f2,((-2)*8)(r1)	
+	stfd	f3,((-3)*8)(r1)
+	stfd	f4,((-4)*8)(r1)
+	stfd	f5,((-5)*8)(r1)
+	stfd	f6,((-6)*8)(r1)
+	stfd	f7,((-7)*8)(r1)
+	stfd	f8,((-8)*8)(r1)
+	stfd	f9,((-9)*8)(r1)
+	stfd	f10,((-10)*8)(r1)
+	stfd	f11,((-11)*8)(r1)
+	stfd	f12,((-12)*8)(r1)
+	stfd	f13,((-13)*8)(r1)
 	la r3, 0x30(r1) //first param: &this
 	mr r4, r11 //second param: method number
 	stdu r1, -(0x70+(13*8))(r1) //push frame

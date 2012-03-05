@@ -12,6 +12,7 @@ AC_CANONICAL_HOST
 AS_CASE([$host_cpu], [x86_64], [], [powerpc], [], [AC_MSG_ERROR([not on a supported architecture])])
 AM_CONDITIONAL([x86_64], [test x$host_cpu == xx86_64])
 AM_CONDITIONAL([powerpc], [test x$host_cpu == xpowerpc])
+AM_CONDITIONAL([powerpc64], [test x$host_cpu == xpowerpc64])
 
 AC_ARG_ENABLE([baremetal],
   AS_HELP_STRING([--enable-baremetal], [Enable baremetal build]),

@@ -2,7 +2,7 @@ if LRT_BARE
 noinst_LIBRARIES = libacpica.a
 ebbos_LDADD = libacpica.a
 ebbos_DEPENDENCIES = libacpica.a
-libacpica_a_CPPFLAGS = -D LRT_BARE -I $(top_srcdir)/arch/amd64/acpica/include
+libacpica_a_CPPFLAGS = $(AM_CPPFLAGS) -D LRT_BARE -I $(top_srcdir)/arch/amd64/acpica/include
 libacpica_a_CFLAGS = $(BAREFLAGS)
 libacpica_a_SOURCES = \
 	arch/amd64/acpica/osebbosxf.c \
