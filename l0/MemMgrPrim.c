@@ -23,7 +23,6 @@
 #include <config.h>
 
 #include <stdint.h>
-
 #include <l0/cobj/cobj.h>
 #include <l0/lrt/pic.h>
 #include <l0/lrt/trans.h>
@@ -31,8 +30,6 @@
 #include <l0/cobj/CObjEBB.h>
 #include <l0/MemMgr.h>
 #include <l0/MemMgrPrim.h>
+#include <l0/lrt/mem.h>
 
-/*
- * OKRIEGFIXME: we needed to initialize to get this symbol defined, check new compiler
- */
 EBBMemMgrId theEBBMemMgrPrimId=0;

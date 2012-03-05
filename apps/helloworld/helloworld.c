@@ -19,66 +19,45 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+
 #include <config.h>
 #include <stdint.h>
+
+#include <l0/lrt/types.h>
+#include <l0/cobj/cobj.h>
+#include <lrt/io.h>
 #include <l0/lrt/pic.h>
 #include <l0/lrt/trans.h>
 #include <l0/types.h>
-#include <l0/cobj/cobj.h>
+#include <l0/sys/trans.h>
+#include <lrt/assert.h>
 #include <l0/cobj/CObjEBB.h>
+#include <l0/EBBMgrPrim.h>
+#include <l0/cobj/CObjEBBUtils.h>
 #include <l0/cobj/CObjEBBRoot.h>
-#include <l0/cobj/CObjEBBRootShared.h>
+#include <l0/cobj/CObjEBBRootMulti.h>
+#include <l0/cobj/CObjEBBRootMultiImp.h>
+#include <l0/EventMgrPrim.h>
+#include <l0/EventMgrPrimImp.h>
+#include <l0/lrt/pic.h>
 #include <l0/MemMgr.h>
 #include <l0/MemMgrPrim.h>
+#include <l1/App.h>
 
-CObject(CObjEBBRootSharedImp) 
-{
-  CObjInterface(CObjEBBRootShared) *ft;
-  EBBRep *theRep;
+CObject(HelloWorld) {
+  CObjInterface(App) *ft;
 };
 
-//What you want to do here is install theRep into the EBBLTrans
-//then set obj to point to theRep (obj is really of type Object **)
-//Then simply return EBBRC_OK and the default func will
-//handle the rest. Return any failure code to have the call fail
-EBBRC
-CObjEBBRootSharedImp_handleMiss(CObjEBBRootRef _self, EBBRep **obj, EBBLTrans *lt, 
-			     FuncNum fnum)
+EBBRC 
+HelloWorld_start(AppRef _self)
 {
-  CObjEBBRootSharedImpRef self = (CObjEBBRootSharedImpRef)_self;
-  EBBCacheObj(lt, self->theRep);
-  *obj = self->theRep;
+  EBB_LRT_printf("Hello world!\n");
   return EBBRC_OK;
 }
 
-void
-CObjEBBRootSharedImp_init(CObjEBBRootSharedRef _self, EBBRep *rep)
-{
-  CObjEBBRootSharedImpRef self = (CObjEBBRootSharedImpRef)_self;
-  self->theRep = rep;
-}
-
-CObjInterface(CObjEBBRootShared) CObjEBBRootSharedImp_ftable = {
-  { CObjEBBRootSharedImp_handleMiss },
-  CObjEBBRootSharedImp_init
+CObjInterface(App) HelloWorld_ftable = {
+  .start = HelloWorld_start
 };
 
-void
-CObjEBBRootSharedSetFT(CObjEBBRootSharedRef o) 
-{
-  o->ft = &CObjEBBRootSharedImp_ftable; 
-}
+APP(HelloWorld);
 
-EBBRC
-CObjEBBRootSharedCreate(CObjEBBRootSharedRef *rootRef, 
-			EBBRepRef repRef)
-{
-  EBBRC rc;
-  
-  rc = EBBPrimMalloc(sizeof(CObjEBBRootSharedImp), rootRef, EBB_MEM_DEFAULT);
-  if (EBBRC_SUCCESS(rc)) {
-    CObjEBBRootSharedSetFT(*rootRef);
-    (*rootRef)->ft->init(*rootRef, repRef);
-  }
-  return rc;
-}

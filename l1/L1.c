@@ -1,5 +1,3 @@
-#ifndef __EBBMAIN_H__
-#define __EBBMAIN_H__
 /*
  * Copyright (C) 2011 by Project SESA, Boston University
  *
@@ -21,6 +19,23 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-extern EBBRC ebbmain(void);
+#include <config.h>
+#include <inttypes.h>
+#include <lrt/io.h>
+#include <lrt/assert.h>
+#include <l0/lrt/types.h>
+#include <l0/cobj/cobj.h>
+#include <l0/lrt/pic.h>
+#include <l0/lrt/trans.h>
+#include <l0/types.h>
+#include <l0/sys/trans.h>
+#include <l0/types.h>
+#include <l0/cobj/CObjEBB.h>
+#include <l0/EventMgrPrim.h>
+#include <l0/cobj/CObjEBBRoot.h>
+#include <l0/cobj/CObjEBBRootMulti.h>
+#include <l0/cobj/CObjEBBRootMultiImp.h>
+#include <l1/MsgMgr.h>
+#include <l1/L1.h>
 
-#endif
+L1Id theL1Id=0;

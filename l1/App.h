@@ -1,5 +1,5 @@
-#ifndef __EBB_TRANS_H__
-#define __EBB_TRANS_H__
+#ifndef __APP_H__
+#define __APP_H__
 /*
  * Copyright (C) 2011 by Project SESA, Boston University
  *
@@ -22,36 +22,33 @@
  * THE SOFTWARE.
  */
 
-#include <stdint.h>
-#include <l0/types.h>
-#include <l0/const.h>
+CObject(App) {
+  CObjInterface(App) *ft;
+};
 
-typedef EBBTrans EBBGTrans;
+CObjInterface(App) {
+  // this is the primodial message to an application
+  // remember that this is an event driven system so your
+  // job is to simply do your setup work ... including
+  // construction your objects and registering for events you
+  // care about and then return.
+  // On many cores you may not have any work to do here
+  EBBRC (*start) (AppRef _self);
+};
 
-extern EBBFunc EBBDefFT[EBB_TRANS_MAX_FUNCS];
+typedef AppRef *AppId;
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-extern void trans_init(void);
-#ifdef __cplusplus
-}
-#endif
+extern AppId theApp;
 
-#if 0
-extern uintptr_t myGTableSize(void);
-extern EBBGTrans *myGTable(void);
-extern uintptr_t myLTableSize(void);
-extern EBBLTrans *myLTable(void);
-extern void EBBInitGTrans(EBBGTrans *gt, EBBMissFunc mf, EBBMissArg arg);
-extern void EBBInitLTrans(EBBLTrans *lt);
-extern void initGTable(EBBMissFunc mf, EBBMissArg arg);
-extern void initLTable(void);
+extern EBBRep * App_createRep(CObjEBBRootMultiRef _self);
 
-extern EBBId TransEBBIdAlloc(void);
-extern void TransEBBIdFree(EBBId id);
-extern void TransEBBIdBind(EBBId id, EBBMissFunc mf, EBBMissArg arg);
-extern void TransEBBIdUnBind(EBBId id, EBBMissFunc *mf, EBBMissArg *arg); 
-#endif
+#define APP(REPTYPE)					       \
+EBBRep * App_createRep(CObjEBBRootMultiRef _self)	       \
+{				                               \
+  REPTYPE * repRef;					       \
+  EBBPrimMalloc(sizeof(REPTYPE), &repRef, EBB_MEM_DEFAULT);    \
+  repRef->ft = &REPTYPE ## _ftable;			       \
+  return (EBBRep *)repRef;				       \
+}                                                     
 
 #endif

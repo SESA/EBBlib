@@ -1,5 +1,5 @@
-#ifndef __EBB_TRANS_H__
-#define __EBB_TRANS_H__
+#ifndef __LRTSTARTINFO_H__
+#define __LRTSTARTINFO_H__
 /*
  * Copyright (C) 2011 by Project SESA, Boston University
  *
@@ -22,36 +22,12 @@
  * THE SOFTWARE.
  */
 
-#include <stdint.h>
-#include <l0/types.h>
-#include <l0/const.h>
-
-typedef EBBTrans EBBGTrans;
-
-extern EBBFunc EBBDefFT[EBB_TRANS_MAX_FUNCS];
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-extern void trans_init(void);
-#ifdef __cplusplus
-}
+#ifdef LRT_ULNX
+#include <lrt/ulnx/startinfo.h>
+#elif defined LRT_L4
 #endif
 
-#if 0
-extern uintptr_t myGTableSize(void);
-extern EBBGTrans *myGTable(void);
-extern uintptr_t myLTableSize(void);
-extern EBBLTrans *myLTable(void);
-extern void EBBInitGTrans(EBBGTrans *gt, EBBMissFunc mf, EBBMissArg arg);
-extern void EBBInitLTrans(EBBLTrans *lt);
-extern void initGTable(EBBMissFunc mf, EBBMissArg arg);
-extern void initLTable(void);
+extern uintptr_t lrt_startinfo_addr(void);
+extern intptr_t lrt_startinfo_size(void);
 
-extern EBBId TransEBBIdAlloc(void);
-extern void TransEBBIdFree(EBBId id);
-extern void TransEBBIdBind(EBBId id, EBBMissFunc mf, EBBMissArg arg);
-extern void TransEBBIdUnBind(EBBId id, EBBMissFunc *mf, EBBMissArg *arg); 
-#endif
-
-#endif
+#endif // __LRTMISC_H__

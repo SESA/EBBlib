@@ -1,5 +1,5 @@
-#ifndef __EBB_TRANS_H__
-#define __EBB_TRANS_H__
+#ifndef __L1_H__
+#define __L1_H__
 /*
  * Copyright (C) 2011 by Project SESA, Boston University
  *
@@ -22,36 +22,17 @@
  * THE SOFTWARE.
  */
 
-#include <stdint.h>
-#include <l0/types.h>
-#include <l0/const.h>
+CObject(L1) {
+  CObjInterface(L1) *ft;
+};
 
-typedef EBBTrans EBBGTrans;
+CObjInterface(L1) {
+  /* send message to id at event location */
+  EBBRC (*start) (L1Ref _self, uintptr_t startinfo);
+  CObjImplements(MsgHandler);
+};
 
-extern EBBFunc EBBDefFT[EBB_TRANS_MAX_FUNCS];
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-extern void trans_init(void);
-#ifdef __cplusplus
-}
-#endif
-
-#if 0
-extern uintptr_t myGTableSize(void);
-extern EBBGTrans *myGTable(void);
-extern uintptr_t myLTableSize(void);
-extern EBBLTrans *myLTable(void);
-extern void EBBInitGTrans(EBBGTrans *gt, EBBMissFunc mf, EBBMissArg arg);
-extern void EBBInitLTrans(EBBLTrans *lt);
-extern void initGTable(EBBMissFunc mf, EBBMissArg arg);
-extern void initLTable(void);
-
-extern EBBId TransEBBIdAlloc(void);
-extern void TransEBBIdFree(EBBId id);
-extern void TransEBBIdBind(EBBId id, EBBMissFunc mf, EBBMissArg arg);
-extern void TransEBBIdUnBind(EBBId id, EBBMissFunc *mf, EBBMissArg *arg); 
-#endif
+typedef L1Ref *L1Id;
+extern L1Id theL1Id;
 
 #endif

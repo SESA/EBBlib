@@ -45,10 +45,16 @@
 #include <net/EthTypeMgr.h>
 #include <net/EthMgr.h>
 #include <net/EthMgrPrim.h>
+#include <l1/App.h>
 
 EthMgrId theEthMgr;
 
-EBBRC ebbmain(void)
+CObject(EthTst) {
+  CObjInterface(App) *ft;
+};
+
+EBBRC 
+EthTst_start(AppRef _self)
 {
   EBBRC rc;
 
@@ -58,6 +64,11 @@ EBBRC ebbmain(void)
   EBBRCAssert(rc);
 
   EBB_LRT_printf("%s: END\n", __func__);
-  
   return EBBRC_OK;
 }
+
+CObjInterface(App) EthTst_ftable = {
+  .start = EthTst_start
+};
+
+APP(EthTst);

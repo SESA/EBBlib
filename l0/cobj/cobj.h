@@ -47,4 +47,16 @@
       
 /* #define COBJ_CALL(o,f, ...) (CObjFtable(o)->f(o, ##__VA_ARGS__)) */
 
+// The folloing macro can be used to obtain a pointer to an object that 
+// contains another object:
+//      addr is the this pointer that you currently know
+//      ctype is the type of the outer or containing object
+//      field is the field name of interior object in the containing
+//            object.
+// FIXME: JA: Not really happy with this name or its semantics exactly
+//            but for the moment it will allow us to explore nested 
+//            objects
+#define ContainingCOPtr(addr, ctype, field) \
+  ((ctype *)(((uintptr_t)addr) - (__builtin_offsetof(ctype, field))))
+
 #endif

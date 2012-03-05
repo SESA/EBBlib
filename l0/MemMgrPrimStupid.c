@@ -161,32 +161,32 @@ struct EBBMemMgrData {
   uintptr_t len;
 };
 
-CObject(EBBMemMgrPrimStupidQueen) {
+CObject(EBBMemMgrPrimQueen) {
   CObjInterface(EBBMemMgr) *ft;
   CObjEBBRootMulti root;
   struct EBBMemMgrData data;
 };
 
-CObject(EBBMemMgrPrimStupidDrone) {
+CObject(EBBMemMgrPrimDrone) {
   CObjInterface(EBBMemMgr) *ft;
-  EBBMemMgrPrimStupidQueenRef *queen;
+  EBBMemMgrPrimQueenRef *queen;
   struct EBBMemMgrData data;
 };
 
 EBBRC
-EBBMemMgrPrimStupidInit()
+EBBMemMgrPrimInit()
 {
   EBBRC rc;
   EBBId id;
 
-  repRef = (EBBMemMgrPrimStupidRef)lrt_mem_start();
+  repRef = (EBBMemMgrPrimRef)lrt_mem_start();
   if (__sync_bool_compare_and_swap(&(theEBBMemMgrPrimId), 0, -1)) {
-    EBBMemMgrPrimStupidQueen_init(repRef, lrt_mem_end());              
+    EBBMemMgrPrimQueen_init(repRef, lrt_mem_end());              
     __sync_bool_compare_and_swap(&(theEBBMemMgrPrimId), -1, id);
   } else {   
     // races on root setup is taken care of here
     while (((volatile uintptr_t)theEBBMemMgrPrimId)==-1);
-    EBBMemMgrPrimStupidDrone_init(repRef, lrt_mem_end());              
+    EBBMemMgrPrimDrone_init(repRef, lrt_mem_end());              
   }
   theRoot.addRepOn(lrt_pic_id, theRep);               // Add my rep to the Root
   return EBBRC_OK;
