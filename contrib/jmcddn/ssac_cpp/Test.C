@@ -60,11 +60,14 @@ linux_thread_init(void *arg)
   struct linux_thread_init_arg *a = (struct linux_thread_init_arg *)arg;
   void *(*func)(void *) = a->func;
   int processor = a->proc;
-  cpu_set_t mask;
+  cpu_set_t *mask;
+  size_t mask_size; 
   // Pin process to cpu
-  CPU_ZERO( &mask );
-  CPU_SET(processor, &mask);
-  if (sched_setaffinity(0, sizeof(mask), &mask) == -1) {
+  mask = CPU_ALLOC(1); // one processor per thread 
+  CPU_ZERO( mask );
+  mask_size = CPU_ALLOC_SIZE(1); // one processor per thread 
+  CPU_SET(processor, mask);
+  if (pthread_setaffinity_np(pthread_self(), mask_size, mask) == -1) {//sched_setaffinity(0, mask_size,mask) == -1) {
     perror("ERROR: Could not set CPU Affinity, exiting...\n");
     exit(-1);
   }
