@@ -50,8 +50,6 @@
 #include <lrt/startinfo.h>
 #include <lrt/misc.h>
 
-//#define JAKLUDGE 1
-
 CObject(L1Prim) {
   CObjInterface(L1) *ft;
   char *si;
@@ -60,13 +58,6 @@ CObject(L1Prim) {
   MsgHandlerId startMHId;
 };
 
-#ifdef JAKLUDGE
-EBBRC
-L1Prim_MsgHandler_testMH(MsgHandlerRef _self)
-{
-  return EBBRC_OK;
-}
-#endif
 
 EBBRC
 L1Prim_MsgHandler_startMH(MsgHandlerRef _self, uintptr_t startinfo)
@@ -138,11 +129,6 @@ L1Prim_start(L1Ref _self, uintptr_t startinfo)
   rc = CObjEBBBind((EBBId)self->startMHId, rootRef);
   EBBRCAssert(rc);
 
-#ifdef JAKLUDGE
-  rc = COBJ_EBBCALL(self->startMHId, msg0);
-  EBBRCAssert(rc);
-#endif
-
   // continue startup for this EL as a message to myself here (on this EL)
   rc = COBJ_EBBCALL(theMsgMgrId, 
 		    msg1, MyEL(), self->startMHId, startinfo);
@@ -154,9 +140,6 @@ L1Prim_start(L1Ref _self, uintptr_t startinfo)
 CObjInterface(L1) L1Prim_ftable = {
   .start = L1Prim_start,
   {
-#ifdef JAKLUDGE
-    .msg0 = L1Prim_MsgHandler_testMH,
-#endif
     .msg1 = L1Prim_MsgHandler_startMH
   }
 };
