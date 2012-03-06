@@ -27,6 +27,8 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <inttypes.h>
+#include <strings.h>
+#include <assert.h>
 
 #include <l0/lrt/pic.h>
 #include <l0/lrt/mem.h>
@@ -37,7 +39,8 @@ extern void l0_start(uintptr_t startinfo);
 static struct start_args_t {
   intptr_t cores;
   volatile intptr_t cores_to_start;
-  uintptr_t startinfo;
+  uintptr_t start_info;
+  intptr_t start_info_size;
 } start_args;
 
 enum { LRT_STARTINFO_SIZE=4096 };
@@ -45,13 +48,13 @@ enum { LRT_STARTINFO_SIZE=4096 };
 extern uintptr_t
 lrt_startinfo(void)
 {
-  return start_args.startinfo;
+  return start_args.start_info;
 }
 
 extern intptr_t
 lrt_startinfo_size(void)
 {
-  return LRT_STARTINFO_SIZE;
+  return start_args.start_info_size;
 }
 
 // first code to be runnining on an interrupt
@@ -74,50 +77,101 @@ void lrt_start(void)
   l0_start(lrt_startinfo());
 }
 
-uintptr_t
-startinfo(char *fn) 
+static void
+dumpstartargs(void)
 {
-  static char lrt_startinfo[LRT_STARTINFO_SIZE];
-  int fd, n;
-  uintptr_t addr = 0;
+  uintptr_t s;
+  int argc, i;
+  char *data = (char *)start_args.start_info;
+  
+  fprintf(stderr, "start_args.start_info_size=%" PRIdPTR "\n", 
+	  start_args.start_info_size);
 
-  fd=open(fn, O_RDONLY);
-  if (fd == -1) fprintf(stderr, "%s: error opening startinfo fd=%d (%s)\n",
-			__func__, fd, fn);
-  else {
-    n = read(fd, lrt_startinfo, LRT_STARTINFO_SIZE);
-    if (n<0) fprintf(stderr, "%s: error reading startinfo from fd=%d (%s)\n",
-		     __func__, fd, fn);
-    else {
-      fprintf(stderr, "%s: startinfo: %d bytes read from %s\n", __func__,
-	      n, fn);
+  if (start_args.start_info_size) {
+    assert(start_args.start_info_size >= sizeof(int));
+    argc = *((int *)data); data += sizeof(int);
+    s = sizeof(int);
+    for (i=0; i<argc; i++) {
+      fprintf(stderr, "argv[%d]=%s\n", i, data);
+      while (*data != '\0') { data++; s++; }
+      data++; s++;
     }
-    close(fd);
-    addr = (uintptr_t)lrt_startinfo;
+    i=0;
+    while (s<start_args.start_info_size) {
+      fprintf(stderr, "environ[%d]=%s\n", i, data);
+      while (*data != '\0') { data++; s++; }
+      data++; s++;
+    }
   }
-  return addr;
+}
+
+void
+startinfo(int argc, char **argv, char **environ, 
+	  uintptr_t *addr, intptr_t *size) 
+{
+  char *data, *cur;
+  int s, i;
+
+  s = sizeof(int); // add bytes for argc
+  for (i=0; i<argc; i++) {
+    s += strlen(argv[i]); 
+    s++; // add one for nul
+  }
+
+  for (i=0; environ[i]!=0; i++) {
+    s += strlen(environ[i]);
+    s++; // add one for nul
+  }
+
+  data = (char *)malloc(s);
+  assert(data);
+  cur = data;
+
+  // first bytes are for argc
+  *((int *)cur) = argc;
+  cur+=sizeof(int);
+
+  // followed by argv data
+  for (i=0; i<argc; i++) {
+    cur = stpcpy(cur, argv[i]);
+    cur++;
+  }
+
+  // followed by environment data
+  for (i=0; environ[i]!=0; i++) {
+    cur = stpcpy(cur, environ[i]);
+    cur++;
+  }
+
+  assert(s==(cur-data));
+
+  *addr = (uintptr_t)data;
+  *size = (uintptr_t)s;
 }
 
 //DS KLUDGE: I make main a weak symbol so that testing can overwrite the symbol
 // but still link with all the code
 __attribute__ ((weak)) 
 int
-main(int argc, char **argv) 
+main(int argc, char **argv, char **environ) 
 {
+  fprintf(stderr, "%s: start!\n", __func__); 
+
   start_args.cores = 1;
   start_args.cores_to_start = 0;
-  start_args.startinfo = 0;
-
+  start_args.start_info = 0;
+  start_args.start_info_size = 0;
+  
   if (argc>1) {
     start_args.cores=atoi(argv[1]);
     start_args.cores_to_start = start_args.cores -1;
   }
 
-  if (argc==3) {
-    start_args.startinfo = startinfo(argv[2]);
-  }
+  startinfo(argc, argv, environ,
+	    &start_args.start_info, &start_args.start_info_size);
 
-  fprintf(stderr, "%s: start!\n", __func__); 
+  dumpstartargs();
+
   lrt_pic_init(lrt_start);
   return -1;
 }
