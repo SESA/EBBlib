@@ -20,28 +20,29 @@ AM_CPPFLAGS = -D ARCH_PPC64
 endif
 endif
 
-if LRT_ULNX
 ebbos_SOURCES = $(arch_sources) $(l0_sources) $(lrt_sources) \
 	$(misc_sources) $(net_sources)
+
+if LRT_ULNX
 # ebbos_SOURCES = EBBStart.c $(arch_sources) $(l0_sources) $(lrt_sources) \
 # 	$(misc_sources) $(net_sources)
 ebbos_CPPFLAGS = $(AM_CPPFLAGS) -D LRT_ULNX
 else
 if LRT_BARE
-ebbos_SOURCES = $(arch_sources) $(l0_lrt_sources) $(lrt_sources) \
-		l0/sys/trans.h \
-		l0/sys/trans.c \
-		l0/sys/defFT.c \
-		l0/sys/arch/amd64/defFT.S 
+# ebbos_SOURCES = $(arch_sources) $(l0_lrt_sources) $(lrt_sources) \
+# 		l0/sys/trans.h \
+# 		l0/sys/trans.c \
+# 		l0/sys/defFT.c \
+# 		l0/sys/arch/amd64/defFT.S 
 
 
 #ebbos_DEPENDENCIES = $(top_srcdir)/l0/lrt/bare/arch/amd64/link.ld \
 	l0/lrt/bare/arch/amd64/init32.o
 ebbos_CPPFLAGS = $(AM_CPPFLAGS) -D LRT_BARE
 BAREFLAGS = -m64 -ffreestanding -nostdlib -nodefaultlibs -g3 \
-	-O2 -mno-red-zone -mno-mmx -mno-sse -mno-sse2 -mno-sse3
+	-mno-red-zone -mno-mmx -mno-sse -mno-sse2 -mno-sse3
 ebbos_CFLAGS += $(BAREFLAGS)
-ebbos_CXXFLAGS += $(BAREFLAGS)
+ebbos_CXXFLAGS += $(BAREFLAGS) -fno-exceptions -fno-rtti -fno-stack-protector
 ebbos_LDFLAGS = -melf_x86_64 -static -n -z max-page-size=0x1000 \
 	-Wl,--build-id=none \
 	-T $(top_srcdir)/l0/lrt/bare/arch/amd64/link.ld

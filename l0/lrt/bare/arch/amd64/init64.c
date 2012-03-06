@@ -63,11 +63,19 @@ init64(multiboot_info_t *mbi) {
 		    [zero] "r" (0x0)
 		    );
 
+  //Initialize ctors
+  extern char start_ctors[];
+  extern char end_ctors[];
+  void (*ctor) (void) = (void (*) (void))start_ctors;
+  while ((char *)ctor < end_ctors) {
+    ctor();
+  }
+
   /* serial init */
   serial_init(COM1, &com1);
   stdout = &com1;
   printf("Initializing the pic\n");
   lrt_pic_init(lrt_start_isr);
 
-  panic();
+  EBBAssert(0);
 }

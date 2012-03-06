@@ -1,5 +1,3 @@
-#ifndef L0_LRT_BARE_ARCH_AMD64_STDIO_H
-#define L0_LRT_BARE_ARCH_AMD64_STDIO_H
 /*
  * Copyright (C) 2011 by Project SESA, Boston University
  *
@@ -22,40 +20,9 @@
  * THE SOFTWARE.
  */
 
-#include <stdarg.h>
-#include <stddef.h>
-#include <stdint.h>
+#include <lrt/assert.h>
 
-static const int EOF = -1;
-
-typedef struct {
-  uintptr_t cookie;
-  int (*write)(uintptr_t, const char *, int);
-} FILE;  
-
-extern FILE *stdout;
-extern FILE *stdin;
-extern FILE *stderr;
-
-extern int fputc(int c, FILE *stream);
-extern int fputs(const char *s, FILE *stream);
-extern int putc(int c, FILE *stream);
-extern int putchar(int c);
-extern int puts(const char *s);
-
-extern
-#ifdef __cplusplus
-"C"
-#endif
-int printf(const char *format, ...);
-extern int fprintf(FILE *stream, const char *format, ...);
-extern int sprintf(char *str, const char *format, ...);
-extern int snprintf(char *str, size_t size, const char *format, ...);
-
-/* stdarg */
-extern int vprintf(const char *format, va_list ap);
-extern int vfprintf(FILE *stream, const char *format, va_list ap);
-extern int vsprintf(char *str, const char *format, va_list ap);
-extern int vsnprintf(char *str, size_t size, const char *format, va_list ap);
-
-#endif
+void __cxa_pure_virtual()
+{
+  EBBAssert(0);
+}

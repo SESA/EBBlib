@@ -41,7 +41,7 @@ __attribute__((aligned(PDIR_ALIGN), section(".init.data32")));
 gdt init_gdt __attribute__((section(".init.data32")));
 
 //TODO DS: Maybe this should do something?
-static inline void __attribute__ ((noreturn))
+static inline void __attribute__ ((section(".init.text32"),noreturn))
 panic(void)
 {
   while(1)

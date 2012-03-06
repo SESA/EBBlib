@@ -119,18 +119,24 @@ static inline void
 enable_lapic(void)
 {
   uint64_t lapic_base;
+  uint32_t low, high;
   __asm__ volatile (
 	 "rdmsr"
-	 : "=A" (lapic_base)
+	 : "=a" (low), "=d" (high)
 	 : "c" (MSR_LAPIC_BASE)
 	 );
+  
+  lapic_base = ((uint64_t)high << 32) | low;
 
   lapic_base |= MSR_LAPIC_BASE_GLOBAL_ENABLE;
+
+  low = lapic_base & 0xFFFFFFFF;
+  high = (lapic_base >> 32) & 0xFFFFFFFF;
 
   __asm__ volatile (
 	 "wrmsr"
 	 :
-	 : "A" (lapic_base), "c" (MSR_LAPIC_BASE)
+	 : "a" (low), "d" (high), "c" (MSR_LAPIC_BASE)
 	 );
 }
 

@@ -45,6 +45,7 @@ acpi_init()
 
   uint32_t size = madt_ptr->header.Length - sizeof(madt);
   uint8_t *ptr = (uint8_t *)(madt_ptr + 1);
+  uint8_t ioapics = 0;
   do {
     if (*ptr == PROCESSOR_LOCAL_APIC) {
       lapic_structure *ls = (lapic_structure *)ptr;
@@ -55,7 +56,8 @@ acpi_init()
       ioapic_structure *is = (ioapic_structure *)ptr;
       size -= is->length;
       ptr += is->length;
-      init_ioapic((uint32_t *)(uintptr_t)is->ioapic_address);
+      init_ioapic((ioapic *)(uintptr_t)is->ioapic_address);
+      EBBAssert(++ioapics < 2);
       EBB_LRT_printf("found ioapic table\n");
     } else if (*ptr == INTERRUPT_SOURCE_OVERRIDE) {
       iso_structure *is = (iso_structure *)ptr;

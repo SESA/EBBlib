@@ -569,7 +569,7 @@ EventMgrPrimImpInit(void)
 
   if (__sync_bool_compare_and_swap(&theEventMgrPrimId, (EventMgrPrimId)0,
 				   (EventMgrPrimId)-1)) {
-    EBBAssert(MAXEVENTS > lrt_pic_numvec());
+    EBBAssert(MAXEVENTS >= lrt_pic_numvec());
 
     CObjEBBRootMultiImpCreate(&rootRef, EventMgrPrimImp_createRep);
     id = (EventMgrPrimId)EBBIdAlloc();

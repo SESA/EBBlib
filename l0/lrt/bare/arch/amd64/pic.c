@@ -20,8 +20,9 @@
  * THE SOFTWARE.
  */
 
-#include <arch/amd64/idt.h>
 #include <arch/amd64/apic.h>
+#include <arch/amd64/idt.h>
+#include <arch/amd64/ioapic.h>
 #include <arch/amd64/pic.h>
 #include <arch/amd64/pit.h>
 #include <arch/amd64/rtc.h>
@@ -30,6 +31,7 @@
 #include <l0/lrt/bare/arch/amd64/pic.h>
 #include <l0/lrt/bare/arch/amd64/stdio.h>
 #include <lrt/assert.h>
+#include <lrt/io.h>
 
 uintptr_t lrt_pic_myid;
 
@@ -39,6 +41,16 @@ uintptr_t lrt_pic_myid;
 static const uint8_t IPI_VEC = 32;
 
 idtdesc idt[256] __attribute__ ((aligned(8)));
+
+static inline void
+idt_map_vec(uint8_t vec, lrt_pic_handler h) {
+  idt[vec].offset_low = ((uintptr_t)h) & 0xFFFF;
+  idt[vec].offset_high = ((uintptr_t)h) >> 16;
+  idt[vec].selector = 0x8; //Our code segment
+  idt[vec].ist = 0;
+  idt[vec].type = 0xe;
+  idt[vec].p = 1;
+}  
 
 static inline void 
 init_idt(void)
@@ -50,12 +62,7 @@ init_idt(void)
   }
   
   for (int i = 0; i < 256; i++) {
-    idt[i].offset_low = (((uint64_t*)isrtbl)[i] & 0xFFFF);
-    idt[i].offset_high = (((uint64_t*)isrtbl)[i] >> 16);
-    idt[i].selector = 0x8; //Our code segment
-    idt[i].ist = 0;
-    idt[i].type = 0xe;
-    idt[i].p = 1;
+    idt_map_vec(i, isrtbl[i]);
   }
   
   load_idtr(idt, sizeof(idt));
@@ -80,11 +87,7 @@ lrt_pic_loop(void)
 void 
 lrt_pic_init(lrt_pic_handler h)
 {
-  if (!has_lapic()) {
-    printf("No lapic support, panicing\n");
-    while(1)
-      ;
-  }
+  EBBAssert(has_lapic());
   
   init_idt();
 
@@ -113,13 +116,7 @@ lrt_pic_init(lrt_pic_handler h)
 void
 lrt_pic_mapipi(lrt_pic_handler h)
 {
-  uint64_t ptr = (uint64_t)h;
-  idt[lrt_pic_getIPIvec()].offset_low = (ptr & 0xFFFF);
-  idt[lrt_pic_getIPIvec()].offset_high = (ptr >> 16);
-  idt[lrt_pic_getIPIvec()].selector = 0x8; //Our code segment
-  idt[lrt_pic_getIPIvec()].ist = 0;
-  idt[lrt_pic_getIPIvec()].type = 0xe;
-  idt[lrt_pic_getIPIvec()].p = 1;
+  idt_map_vec(lrt_pic_getIPIvec(), h);
 }
 
 uint8_t 
@@ -144,8 +141,30 @@ lrt_pic_ipi(uintptr_t id)
   send_ipi(icr_low, icr_high);  
 }
 
-/* intptr_t */
-/* lrt_pic_mapvec(lrt_pic_src s, uintptr_t vec, lrt_pic_handler h) */
-/* { */
+intptr_t
+lrt_pic_mapvec(lrt_pic_src s, uintptr_t vec, lrt_pic_handler h)
+{
+  EBB_LRT_printf("%s: untested code!!!\n", __func__);
+  EBB_LRT_printf("%s: Also, no SMP support\n", __func__);
+  EBBAssert(0);
+
+  EBBAssert((vec >= 0) && (vec < lrt_pic_numvec()));
+  idt_map_vec(vec, h);
+  ioapic_map_vec(s, vec);
+  ioapic_enable_interrupt(s);
   
-/* } */
+  return 0;
+}
+
+uintptr_t
+lrt_pic_numvec()
+{
+  return 256;
+}
+
+intptr_t
+lrt_pic_allocvec(uintptr_t *vec)
+{
+  EBB_LRT_printf("%s: NYI", __func__);
+  EBBAssert(0);
+}

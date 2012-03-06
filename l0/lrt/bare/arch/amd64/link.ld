@@ -42,15 +42,22 @@ SECTIONS
 	.text ALIGN (4K) :
 	{
 		*(.text);
+		*(.gnu.linkonce.t*);
 	}
 
 	.rodata ALIGN (4K) : 
 	{
-		*(.rodata)
+		start_ctors = .;
+		*(.ctor*)
+		end_ctors = .;
+		
+		*(.rodata*)
+		*(.gnu.linkonce.r*)
 	}
 	.data ALIGN (4K) : 
 	{
 		*(.data)
+		*(.gnu.linkonce.d*)
 	}
 
 	.bss : 
@@ -58,14 +65,15 @@ SECTIONS
 		sbss = .;
 		*(COMMON)
 		*(.bss)
+		*(.gnu.linkonce.b*)
 		ebss = .;
 	}
 
 	/DISCARD/ :
 	{
+		*(.comment);
 		*(.eh_frame);
 		*(.note*);
-		*(.comment);
 	}
 	kend = .;
 }

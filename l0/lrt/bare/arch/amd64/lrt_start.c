@@ -30,16 +30,6 @@
 #include <l0/lrt/bare/arch/amd64/trans.h>
 #include <l0/sys/trans.h>
 
-//This is the bit of asm that we hit on the initial IPI
-// it just calls lrt_start
-__asm__ (
-	 ".globl lrt_start_isr\n\t"
-	 "lrt_start_isr:\n\t"
-	 "andq $0xFFFFFFFFFFFFFFF0, %rsp\n\t" //for alignment!
-	 "call lrt_start\n\t"
-	 "iretq"
-	 );
-
 //We get here after some very early initialization occurs:
 // 1. grub boots us into start.S, we put ourselves on a small boot
 //     stack and call init32 in init32.c
@@ -49,22 +39,7 @@ __asm__ (
 // 3. init64.c initializes the "pic" and sends an ipi to ourself which goes
 //     through lrt_start_isr.S and then gets here
 
-struct testObj;
-
-struct testObjft {
-  void (*foo)(struct testObj *self);
-};
-
-struct testObj {
-  struct testObjft *ft;
-};
-
-EBBRC
-testMissFunc (EBBRep **rep, EBBLTrans *lt, FuncNum fnum, EBBMissArg arg)
-{
-  printf("Got miss!\n");
-  while(1) ;
-}
+extern void l0_start(void);
 
 //We assume the early boot stack is enough until later on when, for example,
 // the event manager gets us on an event and an associated stack. 
@@ -76,13 +51,7 @@ lrt_start(void)
   lrt_mem_init();
   lrt_trans_init();
 
-  //DS: This should call to l0_start but for now I'm kludging until stuff works
-  trans_init();
-
-  struct testObj **id = (struct testObj **)EBBIdAlloc();
-  EBBIdBind((EBBId)id, testMissFunc, 0);
-
-  EBBId_DREF(id)->ft->foo(EBBId_DREF(id));
+  l0_start();
   
   //Because we get here on an IPI, we need to send an eoi before returning
   // to the assembly which does our iretq
