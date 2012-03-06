@@ -33,4 +33,4 @@
 #include <l0/cobj/CObjEBBRootMulti.h>
 #include <l1/App.h>
 
-AppId theApp=0;
+AppId theAppId=0;

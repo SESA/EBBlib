@@ -29,6 +29,9 @@ CObject(L1) {
 CObjInterface(L1) {
   /* send message to id at event location */
   EBBRC (*start) (L1Ref _self, uintptr_t startinfo);
+  EBBRC (*argc) (L1Ref _self, int *argc);
+  EBBRC (*argv) (L1Ref _self, char ***argv);
+  EBBRC (*environ) (L1Ref _self, char ***environ);
   CObjImplements(MsgHandler);
 };
 

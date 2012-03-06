@@ -53,7 +53,8 @@ CObject(PrimAllocTst) {
 };
 
 EBBRC 
-PrimAllocTst_start(AppRef _self)
+PrimAllocTst_start(AppRef _self, int argc, char **argv,
+		   char **environ)
 {
   uintptr_t i, j;
   void *ptrs[128];

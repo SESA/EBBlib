@@ -132,7 +132,8 @@ CObject(MsgTst) {
 };
 
 EBBRC 
-MsgTst_start(AppRef _self)
+MsgTst_start(AppRef _self, int argc, char **argv, 
+	     char **environ)
 {
   MsgHandlerId id = InitMsgHandlerTst();
 

@@ -52,13 +52,69 @@
 
 CObject(L1Prim) {
   CObjInterface(L1) *ft;
-  char *si;
+  int argc;
+  int environc;
+  char **argv;
+  char **environ;
   intptr_t sisize;
+  char *si;
   CObjectDefine(MsgHandler) startMH;
   MsgHandlerId startMHId;
 };
 
+static void
+initArgvAndEnv(L1PrimRef self) 
+{
+  EBBRC rc;
+  int i;
+  intptr_t s;
+  char *edata, *data;
 
+  self->argc = 0;
+  self->environc = 0;
+  self->argv = NULL;
+  self->environ = NULL;
+
+  if (self->sisize >= sizeof(int)) {
+      data = self->si;
+      // we assume that startinfo is of the format we expect
+      // FIXME: might want to do something fancier
+      self->argc = *((int *)data); data += sizeof(int);
+      s = sizeof(int);
+      
+      rc = EBBPrimMalloc(self->argc*sizeof(char *), 
+			 &(self->argv), EBB_MEM_DEFAULT);
+      EBBRCAssert(rc);
+      for (i=0; i<self->argc; i++) {
+	self->argv[i] = data;
+	while (*data != '\0') { data++; s++; }
+	data++; s++;
+      }
+      
+      self->environc=0;
+      edata=data;
+      while (s < self->sisize) {
+	while (*edata != '\0') { edata++; s++; }
+	edata++; s++; self->environc++;
+      }
+      // environc is one greater than number of entries 
+      // we malloc this many so that we have space for the null 
+      // terminating entry
+      rc = EBBPrimMalloc(self->environc*sizeof(char *), 
+			 &(self->environ), EBB_MEM_DEFAULT);
+      EBBRCAssert(rc);
+      self->environc--;  // environc tracks number of non null entries
+      edata = data;
+      for (i=0; i<=self->environc; i++) {
+	self->environ[i] = edata;
+	while (*edata != '\0') edata++;
+	edata++;
+      }
+      self->environ[i] = NULL; // put null in last extra entry
+      EBBAssert(s == self->sisize && i-1 == self->environc);
+    }
+}
+    
 EBBRC
 L1Prim_MsgHandler_startMH(MsgHandlerRef _self, uintptr_t startinfo)
 {
@@ -80,9 +136,12 @@ L1Prim_MsgHandler_startMH(MsgHandlerRef _self, uintptr_t startinfo)
     memcpy(self->si, (char *)startinfo, self->sisize);
   } else {
     self->si = NULL;
+    self->sisize = 0;
   }
 
-  if (__sync_bool_compare_and_swap(&theApp, (AppId)0,
+  initArgvAndEnv(self);
+
+  if (__sync_bool_compare_and_swap(&theAppId, (AppId)0,
 				   (AppId)-1)) {  
     EBBId id;
     CObjEBBRootMultiImpRef appRoot;
@@ -93,9 +152,9 @@ L1Prim_MsgHandler_startMH(MsgHandlerRef _self, uintptr_t startinfo)
     EBBRCAssert(rc);
     rc = CObjEBBBind(id, appRoot); 
     EBBRCAssert(rc);
-    theApp = (AppId)id;
+    theAppId = (AppId)id;
   } else {
-    while (((volatile uintptr_t)theApp)==-1);
+    while (((volatile uintptr_t)theAppId)==-1);
   }
 
 
@@ -104,7 +163,7 @@ L1Prim_MsgHandler_startMH(MsgHandlerRef _self, uintptr_t startinfo)
   //    From this point on everything should be messages/events that are handled
   //    by appliation level Ebb's
 
-  return COBJ_EBBCALL(theApp, start);
+  return COBJ_EBBCALL(theAppId, start, self->argc, self->argv, self->environ);
 }
 
 EBBRC
@@ -137,10 +196,37 @@ L1Prim_start(L1Ref _self, uintptr_t startinfo)
   return EBBRC_OK;
 }
 
+EBBRC 
+L1Prim_argc(L1Ref _self, int *argc)
+{
+  L1PrimRef self = (L1PrimRef)_self;
+  *argc = self->argc;
+  return EBBRC_OK;
+}
+
+EBBRC 
+L1Prim_argv(L1Ref _self, char ***argv)
+{
+  L1PrimRef self = (L1PrimRef)_self;
+  *argv = self->argv;
+  return EBBRC_OK;
+}
+
+EBBRC 
+L1Prim_environ(L1Ref _self, char ***environ)
+{
+  L1PrimRef self = (L1PrimRef)_self;
+  *environ = self->environ;
+  return EBBRC_OK;
+}
+
 CObjInterface(L1) L1Prim_ftable = {
-  .start = L1Prim_start,
+  .start   = L1Prim_start,
+  .argc    = L1Prim_argc,
+  .argv    = L1Prim_argv,
+  .environ = L1Prim_environ,
   {
-    .msg1 = L1Prim_MsgHandler_startMH
+    .msg1  = L1Prim_MsgHandler_startMH
   }
 };
 

@@ -15,7 +15,7 @@ opwd="$PWD"
 
 if [ -d ../distcheck-build ] ; then
   # the distcheck makes some read-only files, make them writeable so we can delete.
-  chmod u+w -R ../distcheck-build
+  chmod -R u+w ../distcheck-build
   rm -r ../distcheck-build
 fi
 
@@ -27,6 +27,6 @@ DISTCHECK_CONFIGURE_FLAGS='--enable-simple-prim-alloc' make distcheck
 DISTCHECK_CONFIGURE_FLAGS='--enable-stupid-prim-alloc' make distcheck
 cd "$opwd"
 
-chmod u+w -R ../distcheck-build
+chmod -R u+w ../distcheck-build
 rm -r ../distcheck-build
 

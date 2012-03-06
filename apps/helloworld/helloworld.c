@@ -48,10 +48,22 @@ CObject(HelloWorld) {
   CObjInterface(App) *ft;
 };
 
+static void 
+dumpArgsAndEnviron(int argc, char **argv, char **environ)
+{
+  int i;
+  for (i=0; i<argc; i++) EBB_LRT_printf("argv[%d]=%s\n", i, argv[i]);
+  for (i=0; environ[i]!=NULL; i++) EBB_LRT_printf("environ[%d]=%s\n", 
+						  i, environ[i]);
+}
+
 EBBRC 
-HelloWorld_start(AppRef _self)
+HelloWorld_start(AppRef _self, int argc, char **argv, 
+		 char **environ)
 {
   EBB_LRT_printf("Hello world!\n");
+  dumpArgsAndEnviron(argc, argv, environ);
+  EBB_LRT_printf("%s: PASSED\n", argv[0]);
   return EBBRC_OK;
 }
 

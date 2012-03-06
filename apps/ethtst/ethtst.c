@@ -54,7 +54,8 @@ CObject(EthTst) {
 };
 
 EBBRC 
-EthTst_start(AppRef _self)
+EthTst_start(AppRef _self, int argc, char **argv, 
+	     char **environ)
 {
   EBBRC rc;
 

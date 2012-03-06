@@ -33,12 +33,13 @@ CObjInterface(App) {
   // construction your objects and registering for events you
   // care about and then return.
   // On many cores you may not have any work to do here
-  EBBRC (*start) (AppRef _self);
+  EBBRC (*start) (AppRef _self, int argc, char **argv, 
+		  char **environ);
 };
 
 typedef AppRef *AppId;
 
-extern AppId theApp;
+extern AppId theAppId;
 
 extern EBBRep * App_createRep(CObjEBBRootMultiRef _self);
 

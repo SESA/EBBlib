@@ -77,14 +77,15 @@ void lrt_start(void)
   l0_start(lrt_startinfo());
 }
 
-static void
+__attribute__ ((unused)) static void
 dumpstartargs(void)
 {
   uintptr_t s;
   int argc, i;
   char *data = (char *)start_args.start_info;
   
-  fprintf(stderr, "start_args.start_info_size=%" PRIdPTR "\n", 
+  fprintf(stderr, "%s: start_args.start_info_size=%" PRIdPTR "\n",
+	  __func__,
 	  start_args.start_info_size);
 
   if (start_args.start_info_size) {
@@ -100,8 +101,9 @@ dumpstartargs(void)
     while (s<start_args.start_info_size) {
       fprintf(stderr, "environ[%d]=%s\n", i, data);
       while (*data != '\0') { data++; s++; }
-      data++; s++;
+      data++; s++; i++;
     }
+    assert(s==start_args.start_info_size);
   }
 }
 
@@ -170,7 +172,7 @@ main(int argc, char **argv, char **environ)
   startinfo(argc, argv, environ,
 	    &start_args.start_info, &start_args.start_info_size);
 
-  dumpstartargs();
+  //  dumpstartargs();
 
   lrt_pic_init(lrt_start);
   return -1;
