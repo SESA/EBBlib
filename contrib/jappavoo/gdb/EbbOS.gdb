@@ -200,6 +200,14 @@ document bstartup
 bstartup: put breakpoints on key points along startup
 end
 
+define theebbs 
+  info variables the
+end
+document theebbs
+theebbs: prints out the names of any variables that have 'the' in the name such as 
+         our typically well known ebbs
+end
+
 define EbbOS
     if &TransMem != 0
       #this is a kludge figure out a better way
