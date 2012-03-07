@@ -77,9 +77,6 @@ EthMgrPrim_bind(void *_self, uint16_t type, EthTypeMgrId id)
 {
   return EBBRC_GENERIC_FAILURE;
 }
-
-#define ContainingCOPtr(addr, ctype, field) \
-  ((EthMgrPrim *)(((uintptr_t)addr) - (__builtin_offsetof(ctype, field))))
   
 static EBBRC 
 EthMgrPrim_handleEvent(void *_self)

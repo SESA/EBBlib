@@ -1,0 +1,63 @@
+#!/bin/ksh
+#set -x
+name1=$1
+name2=$2 
+name3=$3
+fields='Cycles Instructions iStall iL2Stall dStall dL2Stall iL1Miss iL2Miss dL1Miss dL2Miss'
+#fields='Cycles Instructions iStall iL2Stall dStall dL2Stall'
+#fields='iL1Miss iL2Miss dL1Miss dL2Miss'
+#fields='Cycles Instructions'
+#fields='dL2DirtyMiss'
+#fields='Cycles'
+numfields=$(echo "$fields" | wc -w)
+#stats='total per'
+stats='per'
+tmpdir=/tmp
+hieght=2.0
+width=2.0
+cols=3
+rows=4
+hgap=$(echo "scale=3;(8.0 - $cols * $width) / ( $cols + 1 )" | bc )
+vgap=$(echo "scale=3;(11.0 - $rows * $hieght)/ ($rows + 1)" | bc )
+
+for stat in $stats
+do
+xoffset=0
+yoffset=$(echo "scale=3;(($rows - 1) * $hieght) + ($vgap * $rows)" | bc )
+tmpfile=$tmpdir/$$.$stat.jgraph
+count=0
+fcount=0;
+#args *.$name.[1-8].slog *.$name.slog
+for field in $fields
+do
+   (( fcount = fcount + 1))
+#  workerstats -t linegraph -s $stat -f $field $name.[1-8].slog | jgraph -P > $field.$stat.$name.graph.ps
+#  workerstats -t linegraph -s $stat -f $field $name.[1-8].slog $name.16.slog | jgraph -P > $field.$stat.$name.graph.ps
+   echo "$stat:$field"
+   if (( fcount == numfields ))
+   then
+#     workerstats -t linegraph -h $hieght -w $width -x $xoffset  -y $yoffset -s $stat -f $field -i $name1.[1-8].slog >> $tmpfile
+#     workerstats -t linegraph -h $hieght -w $width -x $xoffset  -y $yoffset -s $stat -f $field -i $name1.[1-8].slog $name1.16.slog >> $tmpfile
+     workerstats -t linegraph -h $hieght -w $width -x $xoffset  -y $yoffset -s $stat -f $field -i $name1.[1-8].slog $name1.16.slog $name2.[1-8].slog $name2.16.slog >> $tmpfile
+#     workerstats -t linegraph -h $hieght -w $width -x $xoffset  -y $yoffset -s $stat -f $field -i $name1.[1-8].slog $name2.[1-8].slog >> $tmpfile
+   else
+#     workerstats -t linegraph -h $hieght -w $width -x $xoffset  -y $yoffset -s $stat -f $field $name1.[1-8].slog  >> $tmpfile
+#     workerstats -t linegraph -h $hieght -w $width -x $xoffset  -y $yoffset -s $stat -f $field $name1.[1-8].slog $name1.16.slog >> $tmpfile
+     workerstats -t linegraph -h $hieght -w $width -x $xoffset  -y $yoffset -s $stat -f $field $name1.[1-8].slog $name1.16.slog $name2.[1-8].slog $name2.16.slog >> $tmpfile
+#     workerstats -t linegraph -h $hieght -w $width -x $xoffset  -y $yoffset -s $stat -f $field $name1.[1-8].slog $name2.[1-8].slog >> $tmpfile
+   fi
+   (( count = count + 1))
+   if (( count == cols ))
+   then
+       (( count = 0 ))
+       yoffset=$(echo "scale=3;$yoffset - $vgap - $hieght" | bc )
+       (( xoffset = 0 ))
+   else
+       xoffset=$(echo "scale=3;$xoffset + $width + $hgap" | bc )
+   fi
+done
+#jgraph -P $tmpfile > $name1.$stat.graph.ps
+jgraph -P $tmpfile > $name1.$name2.$stat.graph.ps
+#cat $tmpfile > $name1.$name2.$stat.graph.jgraph
+rm $tmpfile
+done

@@ -34,12 +34,12 @@ l0/lrt/bare/arch/amd64/init32.o: $(top_srcdir)/l0/lrt/bare/arch/amd64/init32.c
 		-Winline -c -o $@ $<
 	objcopy -g -O elf64-x86-64 $@ $@
 
-ebbos_DEPENDENCIES += $(top_srcdir)/l0/lrt/bare/arch/amd64/link.ld \
+libebb_a_DEPENDENCIES += $(top_srcdir)/l0/lrt/bare/arch/amd64/link.ld \
 	l0/lrt/bare/arch/amd64/init32.o
-ebbos_LDADD += l0/lrt/bare/arch/amd64/init32.o
-CLEANFILES = l0/lrt/bare/arch/amd64/init32.o
+libebb_a_LIBADD += l0/lrt/bare/arch/amd64/init32.o
+CLEANFILES += l0/lrt/bare/arch/amd64/init32.o
 
 endif
 
-EXTRA_DIST = l0/lrt/bare/arch/amd64/link.ld l0/lrt/bare/arch/amd64/grub.cfg \
+EXTRA_DIST += l0/lrt/bare/arch/amd64/link.ld l0/lrt/bare/arch/amd64/grub.cfg \
 	l0/lrt/bare/arch/amd64/init32.c

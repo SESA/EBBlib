@@ -1,0 +1,71 @@
+#!/bin/sh	-- perl
+eval 'exec perl -S $0 ${1+"$@"}'
+    if 0;
+
+require "getopts.pl";
+
+$LockTotal = 1;
+$BreakDown = 0;
+
+&Getopts('pb');
+($opt_p) && ($LockTotal=0);
+($opt_b) && ($BreakDown=1);
+
+$name = $ARGV[0];
+
+open(FILES, "ls ${name}*.slog |");
+@files=<FILES>;
+close(FILES);
+
+$numworkers=0;
+
+foreach $f (@files) {
+#  print "$f";
+  open(FILE, "$f");
+  $sum=0;  
+  while (<FILE>) {
+    chop;
+      /^\*.*NumWorkers = (.*) .*/ && ($numworkers=$1);
+      if ($LockTotal==1) {
+	  /^\*.*STATS.*Lock: Total.* cycles.* (.*)=(\d+)/ && do {
+	    if ($BreakDown==1) {
+              $sum{"Locks.$1"}=$sum{"Locks.$1"} + $2;
+            } else {
+              $sum{"Locks"}=$sum{"Locks"} + $2;
+            }
+          }
+       } else {
+          /^\*.*STATS.*Lock: (.*) cycles.* (.*)=(\d+)/ && do {
+	    if ($BreakDown==1) {
+                ($_ !~ /^\*.*STATS.*Lock: Total.*/) && ($sum{"$1.$2"}=$sum{"$1.$2"} + $3);
+            } else {
+              ($_ !~ /^\*.*STATS.*Lock: Total.*/) && ($sum{"$1"}=$sum{"$1"} + $3)
+            }
+          }
+       }
+   } 
+   close(FILE);
+
+
+   foreach $name (keys %sum) {
+      $workers=$numworkers;
+      $stats{$name}="$stats{$name}\n$sum{$name}"; 
+      while ($workers > 1 ) {
+        $stats{$name}="$stats{$name}\n0"; 
+        $workers--; 
+      }
+      $stats{$name}="$stats{$name}\n"; 
+      $sum{$name}=0;
+   }
+
+}
+
+foreach $lock (keys %stats) {
+  $outfile=$lock;
+  $outfile =~ s/,/_/g;
+  $outfile =~ s/\s/_/g;
+
+  open(OUT,">${outfile}.cycles") || die "Failed to open ${outfile}.cycles\n";
+  print OUT  "$outfile\n$stats{$lock}\n";
+  close(OUT);
+}

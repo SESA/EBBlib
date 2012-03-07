@@ -153,7 +153,7 @@ initLTable() {
 }
 
 EBBId
-EBBIdAlloc() {
+TransEBBIdAlloc() {
   EBBGTrans *gt;
   uintptr_t i, len;
 
@@ -170,22 +170,21 @@ EBBIdAlloc() {
 }
 
 void
-EBBIdFree(EBBId id) {
+TransEBBIdFree(EBBId id) {
   EBBGTrans *gt = id2gt(id);
   gt->free = ALLOCATED;
 }
 
 void
-EBBIdBind(EBBId id, EBBMissFunc mf, EBBMissArg arg) {
+TransEBBIdBind(EBBId id, EBBMissFunc mf, EBBMissArg arg) {
   EBBGTrans *gt = id2gt(id);
   gt->mf = mf;
   gt->arg = arg;
 }
 
 void
-EBBIdUnBind(EBBId id, EBBMissFunc *mf, EBBMissArg *arg) {
+TransEBBIdUnBind(EBBId id, EBBMissFunc *mf, EBBMissArg *arg) {
   EBB_LRT_printf("%s: NYI\n", __func__);
-  EBBAssert(0);
 }
 
 // at this point translation hardware has been initialized

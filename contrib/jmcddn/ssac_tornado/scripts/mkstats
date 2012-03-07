@@ -1,0 +1,8 @@
+#!/bin/ksh
+name=$1
+
+ls *.$name.*slog | while read file
+do
+  echo $file > $file.stats
+  stats $file >> $file.stats
+done

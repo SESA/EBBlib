@@ -64,7 +64,13 @@ locked_FindRepOn(CObjEBBRootMultiImpRef self, uintptr_t el)
 
   EBBAssert(self->lock!=0);
   rd = self->head;
-  while (rd && rd->el == el) rep=rd->rep;
+  while (rd) {
+    if (rd->el == el) {
+      rep=rd->rep;
+      break;
+    }
+    rd = rd->next;
+  }
   return rep;
 }
 
@@ -121,8 +127,21 @@ RepListNode *
 CObjEBBRootMulti_nextRep(CObjEBBRootMultiRef _self, RepListNode *curr, 
 			 EBBRep **rep)
 {
-  EBBRCAssert(0);
-  return NULL;
+  CObjEBBRootMultiImpRef self = (CObjEBBRootMultiImpRef)_self;
+  RepListNode *ret;
+
+  if (curr==NULL) {
+    ret = self->head;
+  } else {
+    ret = curr->next;
+  }
+
+  if (ret != NULL) {
+    *rep = ret->rep;
+  } else {
+    *rep = NULL;
+  }
+  return ret;
 }
 
 static

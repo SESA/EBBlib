@@ -47,7 +47,7 @@
  */
 CObjInterface(EventHandler) {
   EBBRC (*handleEvent) (void *_self);
-  EBBRC (*init) (void *_self);
+  EBBRC (*init) (void *_self, uintptr_t extra);
 };
 
 CObject(EventHandler) {

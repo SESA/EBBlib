@@ -1,0 +1,78 @@
+#!/bin/ksh
+#set -x
+if [[ $# != 1 ]]
+then
+   echo "USAGE: SSACbatchtst <testnumber>"
+   exit
+fi
+
+SIMOSEXE=nsimos
+KERNEL=SSACtest
+
+STARTCPU=1
+THEENDCPU=16
+RAM=64
+MEMMODEL=Numa
+HOST=$(hostname)
+PREFIX="${HOST%%.*}:${RAM}:2way:"
+
+# TEST PARMS
+HASHTABLESIZE="128"
+NUMREQUESTS="4096"
+FORCEREMOTE="1"
+INITLOCALONLY="1"
+PERREQDELAY="5000"
+FRACTIONWRITEVALUES="0.05"
+FRACTIONHOTVALUES="0.0"
+FRACTIONLOCALVALUES="8.0"
+FRACTIONLOCALMISSVALUES="0.0"
+FRACTIONREMOTEMISSVALUES="0.0"
+
+
+TESTNUMBERS="0 1 2"
+set -A TESTNAMES Shared Replicated Partitioned
+
+for testnum in $TESTNUMBERS
+do
+  if [[ $1 = $testnum ]]
+  then
+       TESTNUMBER=$1
+  fi
+done
+
+if [[ -z "$TESTNUMBER" ]]
+then
+   echo "ERROR:  Unsupported test number: $1"
+   exit
+fi
+
+
+for FRACTIONWRITE in $FRACTIONWRITEVALUES
+do
+   for FRACTIONHOT in $FRACTIONHOTVALUES
+   do
+      for FRACTIONLOCAL in $FRACTIONLOCALVALUES
+      do
+         for FRACTIONLOCALMISS in $FRACTIONLOCALMISSVALUES
+         do 
+            for FRACTIONREMOTEMISS in $FRACTIONREMOTEMISSVALUES
+            do
+		testname="${PREFIX}${TESTNAMES[TESTNUMBER]}:d${PERREQDELAY}:w${FRACTIONWRITE}:h${FRACTIONHOT}:l${FRACTIONLOCAL}:lm${FRACTIONLOCALMISS}:rm${FRACTIONREMOTEMISS}"
+		if [[ $FORCEREMOTE == "0" ]]
+		then
+		   testname="${testname}:NFR"
+                fi
+		if [[ $INITLOCALONLY == "0" ]]
+		then
+                   testname="${testname}:NLI"
+                fi
+	        testname=$(echo $testname | sed 's/\./_/g');
+	        ENDCPU=$THEENDCPU
+                echo "$KERNEL - $testname - $STARTCPU:$ENDCPU"
+                runtst -N -l -x $SIMOSEXE  -2 -M $MEMMODEL -s BYWORKER -R $RAM -n "$testname" -c $STARTCPU:$ENDCPU -P "HASHTABLESIZE=${HASHTABLESIZE},NUMREQUESTS=${NUMREQUESTS},FRACTIONHOT=${FRACTIONHOT},FRACTIONWRITE=${FRACTIONWRITE},FRACTIONLOCAL=${FRACTIONLOCAL},FRACTIONLOCALMISS=${FRACTIONLOCALMISS},FRACTIONREMOTEMISS=${FRACTIONREMOTEMISS},PERREQDELAY=${PERREQDELAY},FORCEREMOTE=${FORCEREMOTE},INITLOCALONLY=${INITLOCALONLY},TEST=${TESTNUMBER}" $KERNEL
+            done
+	 done
+      done
+   done
+done
+

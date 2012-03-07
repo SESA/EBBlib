@@ -1,0 +1,40 @@
+#!/bin/sh	-- perl
+eval 'exec perl -S $0 ${1+"$@"}'
+    if 0;
+
+$name = $ARGV[0];
+#print "$name\n";
+
+open(FILES, "ls ${name}*.slog |");
+@files=<FILES>;
+close(FILES);
+
+$numworkers=0;
+
+foreach $f (@files) {
+#  print "$f";
+  open(FILE, "$f");
+  while (<FILE>) {
+      $workers=$numworkers;
+      /^\*.*NumWorkers = (.*) .*/ && ($numworkers=$1);
+      /^\*.*STATS.*OBJ.*0x\S+ (.*) cycles=(\d+)/ && do {
+         $stats{$1}="$stats{$1}\n$2";  
+	 while ($workers > 1 ) {
+            $stats{$1}="$stats{$1}\n0"; 
+	    $workers--; 
+         }
+	 $stats{$1}="$stats{$1}\n"; 
+       }
+  }
+  close(FILE);
+}
+
+foreach $method (keys %stats) {
+  $outfile=$method;
+  $outfile =~ s/,/_/g;
+  $outfile =~ s/\s/_/g;
+  open(OUT,">${outfile}.cycles") || die "Failed to open $outfile\n";
+
+  print OUT  "$outfile\n$stats{$method}\n";
+  close(OUT);
+}

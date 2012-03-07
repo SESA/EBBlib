@@ -1,0 +1,5 @@
+#!/stumm/i/i/thacks/ben/perl/bin/perl5
+
+while (<STDIN>) {
+   /[0-9]* [0-9]*: PC (.*)$/ && (print "$1\n");
+}

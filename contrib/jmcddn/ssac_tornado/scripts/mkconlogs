@@ -1,0 +1,6 @@
+#!/bin/ksh
+
+ls *.slog | while read file
+do
+   printConsole -f $file | sed '/.*\*\*\*\* STATS:/s/^[^\*]*//g' >> $LOGFILE > ${file%%slog}sconlog
+done

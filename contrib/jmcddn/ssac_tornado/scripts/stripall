@@ -1,0 +1,6 @@
+#!/bin/ksh
+
+ls *.inst | while read file
+do
+  cat $file | stripinst > $file.strip
+done

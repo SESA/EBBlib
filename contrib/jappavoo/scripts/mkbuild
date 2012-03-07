@@ -1,4 +1,6 @@
 #!/bin/bash
+# my script for setting up a friendly build tree
+
 #set -x
 DEBUGDIRS="debug ndebug partdebug"
 
@@ -51,7 +53,7 @@ do
     flags="-O2 -g"
     ;;
   esac
-  echo "../../../$dir/configure 'CFLAGS=$flags' 'CXXFLAGS=$flags' $XFLG" > $sysdir/$dl/doconfig
+  echo "../../../$dir/configure 'CFLAGS=$flags' --enable-simple-prim-alloc 'CXXFLAGS=$flags' $XFLG" > $sysdir/$dl/doconfig
   (cd $sysdir/$dl; . doconfig)
 done
 

@@ -1,0 +1,286 @@
+#!/bin/ksh 
+#set -x
+export TMPDIR=${TMPDIR:-/tmp}
+export KERNELDIR=${KERNELDIR:-$HOME/Work/cotst}
+export TCLDIR=${TCLDIR:-$KERNELDIR/tcl} 
+export RESULTSDIR=${RESULTSDIR:-$KERNELDIR/results}
+export SIMOSLOGDIR=${SIMOSLOGDIR:-$RESULTSDIR/simoslogs}
+export HWLOGDIR=${HWLOGDIR:-$RESULTSDIR/hwlogs}
+export SCONSOLELOGDIR=${SCONSOLELOGDIR:-$RESULTSDIR/sconsole}
+export HCONSOLELOGDIR=${HCONSOLELOGDIR:-$RESULTSDIR/hconsole}
+#export SIMOSCPUMODEL=${SIMOSCPUMODEL:-"EMBRA_PAGE"}
+export SIMOSCPUMODEL=${SIMOSCPUMODEL:-"MIPSY"}
+export SIMOS=${SIMOS:-simos}
+#export SIMOSSTATS=${SIMOSSTATS:-"NOSTATS"}
+export SIMOSINSTTRACE=${SIMOSINSTTRACE:-"OFF"}
+export SIMOSDEBUG=${SIMOSDEBUG:-"NOBREAK"}
+export ORGDIR=${ORGDIR:-$(pwd)}
+export SIMOSSTATIONS=${SIMOSSTATIONS:-1}
+export INITFILE=${INITFILE:-$TCLDIR/runtsttemplate.simos}
+#export SIMOSMEMMODEL=${SIMOSMEMMODEL:-"Perfect"}
+export SIMOSMEMMODEL=${SIMOSMEMMODEL:-"Numa"}
+export SIMOSDETAILLEVEL=${SIMOSDETAILLEVEL:-"2"}
+export SIMOSPCACHETRACE=${SIMOSPCACHETRACE:-"OFF"}
+export SIMOSSCACHETRACE=${SIMOSSCACHETRACE:-"OFF"}
+export SIMOSL2ASSOC=${SIMOSL2ASSOC:-1}
+export SIMOSDASSOC=${SIMOSDASSOC:-1}
+export SIMOSIASSOC=${SIMOSIASSOC:-1}
+export CONSOLE=${CONSOLE:-sconsole}
+export HCONSOLE=${HCONSOLE:-nconsole}
+export SIMOSMEMPERSTATION=${SIMOSMEMPERSTATION:-64}
+export SIMOSKERNELARGSFILE=${SIMOSKERNELARGSFILE:-$TMPDIR/$$.runtst.kparms}
+export SIMOSCONSOLETIMEOUT=${SIMOSCONSOLETIMEOUT:-3}
+export TESTNAME=${TESTNAME:-testname}
+export KARGS="0"
+export PROGLOAD=""
+ORGMAXBATCH=4
+integer procsperstation=4
+
+origargs="$@"
+
+integer optcount=0
+while getopts "g2tpilx:N:s:r:n:c:S:m:M:d:D:H:R:P:B:A:L:" OPT
+do
+  case $OPT in
+     ("g")   export DEBUG=1; (( optcount=optcount + 1));;
+     ("2")   export TWOS=1; (( optcount=optcount + 1));;
+     ("x")   export SIMOS="$OPTARG"; (( optcount=optcount + 2 ));;
+     ("s")   export SIMOSSTATS="$OPTARG";  (( optcount=optcount + 2 ));;
+     ("t")   export SIMOSINSTTRACE="ON"; (( optcount=optcount + 1 ));;
+     ("p")   export SIMOSPCACHETRACE="ON"; (( optcount=optcount + 1 ));;
+     ("i")   export SIMOSSCACHETRACE="ON"; (( optcount=optcount + 1 ));;
+     ("l")   export LOGCONSOLE=1; (( optcount=optcount + 1 ));;
+     ("n")   export TESTNAME="$OPTARG"; (( optcount=optcount + 2 ));;
+     ("c")   export CPURANGE="$OPTARG"; (( optcount=optcount + 2 ));;
+     ("S")   export SIMOSSTATIONS="$OPTARG"; (( optcount=optcount + 2 ));;
+     ("m")   export SIMOSCPUMODEL="$OPTARG"; (( optcount=optcount + 2 ));;
+     ("r")   export SIMOSCHECKPOINT="-r $OPTARG"; (( optcount=optcount + 2 ));;
+     ("M")   export SIMOSMEMMODEL="$OPTARG"; (( optcount=optcount + 2 ));;
+     ("N")          procsperstation=$OPTARG; (( optcount=optcount + 2 ));;
+     ("d")   export SIMOSDETAILLEVEL="$OPTARG"; (( optcount=optcount + 2 ));;
+     ("D")   export SIMOSDEBUG="$OPTARG"; (( optcount=optcount + 2 ));;
+     ("H")   export NUMAHOST="$OPTARG"; (( optcount=optcount + 2 ));;
+     ("R")   export SIMOSMEMPERSTATION="$OPTARG"; (( optcount=optcount + 2 ));;
+     ("A")   export SIMOSL2ASSOC="$OPTARG"; (( optcount=optcount + 2 ));;
+     ("P")   export KARGS="$OPTARG"; (( optcount=optcount + 2 ));;
+     ("B")   export ORGMAXBATCH="$OPTARG"; (( optcount=optcount + 2 ));;
+     ("L")   export PROGLOAD="$OPTARG"; (( optcount=optcount + 2 ));;
+  esac
+done
+
+if [[ $SIMOSL2ASSOC -eq 2 ]]
+then
+    export SIMOSIASSOC=2
+    export SIMOSDASSOC=2
+    export SIMOS=${SIMOS}2way
+fi
+
+if [[ $SIMOSL2ASSOC -eq 4 ]]
+then
+    export SIMOSIASSOC=4
+    export SIMOSDASSOC=4
+    export SIMOS=${SIMOS}4way
+fi
+
+
+shift $optcount
+
+if [[ $# != 1 ]]
+then
+   echo "USAGE: runtst [-x simosexecutable] [-l] [-s statstype [-t] [-p] [i]] [-N procs] [-R ram] [-n testname] [-c n|n:p] -S n  <kernel>"
+   echo "   -x simos|simos-n32 defaults to simos"
+   echo "   -s BYWORKER"
+   echo "   -2 This flag indicates that only powers of 2 should be used for cpu values (except 1)"
+   echo "   -t This flag indicates if instruction tracing for the stat type chosen should be turned on"
+   echo "   -p This flag indicates primary cache dumps should be made at the start and end of the test, driver and workers"
+   echo "   -i This flag indicates that secondary instruction cache misses for the workers should be recorded in the log"
+   echo "   -l This flag causes all console output to be saved to files"
+   echo "   -n <testname> name that will be appended to the kernel to form the output log names"
+   echo "   -c <cpurange> where range is of the form n or n:p defults to 1"
+   echo "   -S <number of stations>" 
+   echo "   -r <checkpoint prefix>" 
+   echo "   -m <simos cpu model> defaults to MIPSY" 
+   echo "   -M <simos memory model> defaults to Numa" 
+   echo "   -A <associativity> Associativity of L2 Cache"
+   echo "   -N <procs_per_station> defaults to all in one stations"
+   echo "   -d <simos detail level> defaults to 2" 
+   echo "   -R <simos size of per station RAM> defaults to 64 Meg"
+   echo "   -D <break point address> simos style address on which to place a break point"
+   echo "   -H This flag indicates that the kernel should be run on the Hardware"
+   echo "   -P <KARGS> This data is passed to the kernel via KParms.args limit is 800 bytes"
+   echo "   -B <maximum> number to batch at once" 
+   echo "   -L <prog list> list of programs to load (excluding kernel)" 
+   exit 
+fi
+
+export KERNEL=$1
+export SIMOSTEST=$KERNEL
+
+if [[ $KARGS = "0" ]]
+then
+  PROGLOAD="../../tornado/os/servers/nfs/nfs ../../tornado/os/servers/pty/pty"
+fi
+ 
+if [[ -z $TESTNAME ]]
+then
+   export TESTNAME=$KERNEL
+else
+   export TESTNAME=$KERNEL.$TESTNAME
+fi
+
+integer startcpu
+integer endcpu
+integer cpu
+if [[ -z $CPURANGE ]]
+then
+  startcpu=1; endcpu=1
+else 
+  startcpu=`echo $CPURANGE | cut -d: -f1`
+  endcpu=`echo $CPURANGE | cut -d: -f2`
+  if (( endcpu == 0 )) 
+  then
+    endcpu=$startcpu
+  fi
+fi
+
+if [[ -n $NUMAHOST ]]
+then
+   export GIZMO=$NUMAHOST
+fi
+cd $KERNELDIR    
+
+if [[ -n $LOGCONSOLE && -z $NUMAHOST ]]
+then
+  killall $CONSOLE
+  export SIMOSCONSOLETIMEOUT=3 
+#  cpu=1;
+#  while (( cpu < endcpu ))
+#  do
+#    export LOGFILE=$SCONSOLELOGDIR/$TESTNAME.$cpu
+#    $CONSOLE $(hostname) '+'$cpu > $LOGFILE 2>&1 &
+#    (( cpu = cpu + 1 ))
+#  done
+fi 
+  
+
+cpu=$startcpu;
+
+(( MAXBATCH = ORGMAXBATCH ))
+(( batchcount = 0 ))
+
+while (( cpu <= endcpu ))
+do  
+    if [[ -z $NUMAHOST ]]
+    then
+       export LOGFILE=$SIMOSLOGDIR/$TESTNAME.$cpu.slog
+       export SIMOSCPUS=$cpu
+#       if (( MAXBATCH == ORGMAXBATCH && (endcpu - cpu + 1) < MAXBATCH ))
+#       then
+#          (( MAXBATCH = endcpu - cpu + 1 ))
+#       fi
+       if [[ $procsperstation -ne 0 ]]
+       then
+          export SIMOSSTATIONS=$(( cpu / procsperstation ))
+          if (( (cpu % procsperstation) > 0 ))
+          then
+            (( SIMOSSTATIONS=SIMOSSTATIONS + 1 ))
+          fi
+       fi
+    #  echo "$SIMOS -z $INITFILE  -l $LOGFILE $SIMOSCHECKPOINT"
+       if [[ -z $LOGCONSOLE ]]
+       then
+           if [[ -z $DEBUG ]]; then
+	      $SIMOS -z $INITFILE  -l $LOGFILE $SIMOSCHECKPOINT
+	   else
+              echo "$SIMOS -z $INITFILE  -l $LOGFILE $SIMOSCHECKPOINT"
+	      dbx $SIMOS_DIR/src/cpus/simos/SIMOS-$CPU/$SIMOS
+	   fi
+#          gdb $SIMOS
+       else
+#         if (( batchcount < (MAXBATCH - 1) ))
+#         then  
+#	     $SIMOS -z $INITFILE  -l $LOGFILE $SIMOSCHECKPOINT >$SCONSOLELOGDIR/$TESTNAME.$cpu 2>&1 </dev/null &
+#             (( batchcount = batchcount + 1 ))
+#         else
+             $SIMOS -z $INITFILE  -l $LOGFILE $SIMOSCHECKPOINT >$SCONSOLELOGDIR/$TESTNAME.$cpu 2>&1 </dev/null
+#	     (( batchcount = 0 ))
+#         fi
+       fi
+    else
+      hcpuoffset=12;
+      hcpu=0;
+      while (( hcpu < cpu ))
+      do
+         export LOGFILE=$HWLOGDIR/$TESTNAME.$cpu.hlog.$hcpu
+         connum=$((hcpu + hcpuoffset))
+	 conlet=`bc <<EOF
+scale=0
+obase=16
+ibase=10
+$connum
+EOF
+`
+	 conlet=`echo $conlet | tr "[A-Z]" "[a-z]"`
+         $HCONSOLE -a cons${conlet} > $LOGFILE 2>&1 &
+         (( hcpu = hcpu + 1 ))
+      done
+      if [[ -z $LOGCONSOLE ]]
+      then
+          dload $cpu $KARGS
+      else
+          dload $cpu $KARGS > $HCONSOLELOGDIR/$TESTNAME.$cpu 2>&1
+      fi
+      bootlog=0
+      while ! grep 'ALL DONE WITH ALL TESTS' $HWLOGDIR/$TESTNAME.$cpu.hlog.$bootlog  >/dev/null 2>&1
+      do
+          if grep 'Found only [0-9]* out of [0-9]* requested processors; giving up' $HWLOGDIR/$TESTNAME.$cpu.hlog.$bootlog  >/dev/null 2>&1
+          then
+              echo "**** ERROR: Hardware Failure Aborting test"
+              break;
+          fi
+	  sleep 10
+      done
+      kill `/usr/bin/ps -u $USER -f | grep " $HCONSOLE -a" | grep -v grep | awk '{print $2}'`
+      #killall "$HCONSOLE"
+      hcpu=0
+      export LOGFILE=$HWLOGDIR/$TESTNAME.$cpu.hlog
+      echo "=================================================================" >> $LOGFILE
+      echo "=================================================================" >> $LOGFILE
+      echo "RUN with args: $origargs" >> $LOGFILE
+      while (( hcpu < cpu ))
+      do
+         echo "------------ number $hcpu ------------------------------------------" >> $LOGFILE
+
+         cat ${LOGFILE}.$hcpu | sed '/.*\*\*\*\* STATS:/s/^[^\*]*//g' >> $LOGFILE
+	 rm ${LOGFILE}.$hcpu
+         (( hcpu = hcpu + 1 ))
+      done
+
+  fi
+  if [[ -z $TWOS ]]
+  then 
+      (( cpu = cpu + 1 ))
+  else
+     (( cpu = cpu * 2 ))
+  fi
+done
+
+
+#if [[ -n $LOGCONSOLE ]]
+#then
+#jobs -l | while read one two three rest
+#do
+#    if [[ $two = "+" || $two = "-" ]]
+#    then
+#       kill $three
+#    else
+#       kill $two
+#    fi
+#done
+#fi 
+
+#rm $SIMOSKERNELARGSFILE 
+#stty sane
+cd $ORGDIR
+
+

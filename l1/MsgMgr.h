@@ -63,13 +63,18 @@ CObjInterface(MsgMgr) {
 
   EBBRC (*msg3) (MsgMgrRef _self, EvntLoc loc, MsgHandlerId id, 
 		 uintptr_t a1, uintptr_t a2, uintptr_t a3);
+
+  /* this is only called by corresponding event handler */
+  EBBRC (*handleIPI) (MsgMgrRef _self);
 };
 
 CObjectDefine(MsgMgr) {
   CObjInterface(MsgMgr) *ft;
 };
 
-// the ID of the one and only Primative MsgHandler
 typedef MsgMgrRef *MsgMgrId;
+
+// the ID of the one and only Primative MsgHandler
+extern MsgMgrId theMsgMgrId;
 
 #endif

@@ -22,6 +22,8 @@
 #include <config.h>
 #include <string.h>
 #include <stdint.h>
+#include <inttypes.h>
+
 #include <l0/lrt/types.h>
 #include <l0/cobj/cobj.h>
 #include <lrt/io.h>
@@ -63,7 +65,7 @@ CObject(EventMgrPrimImp){
   uintptr_t ipi_vec_no;
 };
 
-EventMgrPrimId theEventMgrPrimId;
+EventMgrPrimId theEventMgrPrimId=0;
 /*
  * For now, all allocation through a master, need 
  * better way to find and allocate a master.
@@ -394,7 +396,7 @@ static EBBRC
 EventMgrPrim_dispatchIPI(void *_self, EvntLoc el)
 {
   if (el != MyEL()) {
-    EBB_LRT_printf("%s: sending remote IPI to node %ld\n", 
+    EBB_LRT_printf("%s: sending remote IPI to node %" PRIdPTR "\n", 
 		   __func__,
 		   el);
   }
@@ -404,7 +406,7 @@ EventMgrPrim_dispatchIPI(void *_self, EvntLoc el)
 
 /*
  * This should go away once we have proper implementation of vector
- * function that should inline this
+ * function that should inline this.  Should also buy stack here...
  */
 static EBBRC
 EventMgrPrim_dispatchEventLocal(void *_self, uintptr_t eventNo) 
@@ -413,7 +415,7 @@ EventMgrPrim_dispatchEventLocal(void *_self, uintptr_t eventNo)
   // assume this is atomic
   EventHandlerId handler = self->handlerInfo[eventNo].id;
 
-  EBB_LRT_printf("%s: handling interrupt %ld\n", __func__, eventNo);
+  EBB_LRT_printf("%s: handling interrupt %" PRIdPTR "\n", __func__, eventNo);
   EBBAssert(handler != NULL); 
   EBBCALL(handler, handleEvent); 
   return EBBRC_OK;   
@@ -487,14 +489,20 @@ EventMgrPrim_registerHandler(void *_self, uintptr_t eventNo,
   return rc;
 }
 
+/* 
+ * IPI is different from other handlers, since it is a purely local
+ * operation, i.e., both at the pic and in the EventMgr we are going
+ * to a different handler for IPIs on each processor.  This is
+ * necessary since we remap IPIs on different processors as we go
+ * through the initialization.  I assume, for now, that all other
+ * interrupts are globally allocated and are the same on all ELs
+ * (Event Locations).
+ */
 static EBBRC
 EventMgrPrim_registerIPIHandler(void *_self, EventHandlerId handler)
 {
   EventMgrPrimImpRef self = (EventMgrPrimImpRef)_self;
 
-  /* 
-   * FIXME: this is a local operation, make it global in next commit 
-   */
   self->handlerInfo[self->ipi_vec_no].id = handler;
 
   // map vector in pic
@@ -525,14 +533,22 @@ EventMgrPrimSetFT(EventMgrPrimImpRef o)
 }
 
 static EBBRep *
-EventMgrPrimImp_createRep(CObjEBBRootMultiRef root) 
+EventMgrPrimImp_createRepAssert(CObjEBBRootMultiRef root) 
+{
+  EBBAssert(0);
+  return NULL;
+}
+
+
+static EventMgrPrimImpRef
+EventMgrPrimImp_createRep(CObjEBBRootMultiImpRef root) 
 {
   int i; 
   EventMgrPrimImpRef repRef;
 
-  EBBPrimMalloc(sizeof(*repRef), &repRef, EBB_MEM_DEFAULT);
+  EBBRCAssert(EBBPrimMalloc(sizeof(*repRef), &repRef, EBB_MEM_DEFAULT));
   EventMgrPrimSetFT(repRef);
-  repRef->theRoot = root;
+  repRef->theRoot = (CObjEBBRootMultiRef)root;
   repRef->ipi_vec_no = lrt_pic_getIPIvec();
   spin_lock(&repRef->lock);
   if (__sync_bool_compare_and_swap(&theEventMgrPrimMaster, 
@@ -558,28 +574,37 @@ EventMgrPrimImp_createRep(CObjEBBRootMultiRef root)
     spin_unlock(&repRef->lock);
     spin_unlock(&mstr->lock);
   }
-  return (EBBRep *)repRef;
+  return repRef;
 }
 
 EBBRC
 EventMgrPrimImpInit(void)
 {
-  CObjEBBRootMultiImpRef rootRef;
-  EventMgrPrimId id;
+  EBBRC rc;
+  static CObjEBBRootMultiImpRef rootRef;
+  EventMgrPrimImpRef repRef;
+  EvntLoc myel;
 
   if (__sync_bool_compare_and_swap(&theEventMgrPrimId, (EventMgrPrimId)0,
 				   (EventMgrPrimId)-1)) {
+    EBBId id;
     EBBAssert(MAXEVENTS >= lrt_pic_numvec());
-
-    CObjEBBRootMultiImpCreate(&rootRef, EventMgrPrimImp_createRep);
-    id = (EventMgrPrimId)EBBIdAlloc();
-    EBBAssert(id != NULL);
-
-    EBBIdBind((EBBId)id, CObjEBBMissFunc, (EBBMissArg) rootRef);
-    theEventMgrPrimId = id;
+    rc = CObjEBBRootMultiImpCreate(&rootRef, EventMgrPrimImp_createRepAssert);
+    EBBRCAssert(rc);
+    rc = EBBAllocPrimId(&id);
+    EBBRCAssert(rc);
+    rc = EBBBindPrimId(id, CObjEBBMissFunc, (EBBMissArg)rootRef);
+    EBBRCAssert(rc);
+    theEventMgrPrimId = (EventMgrPrimId)id;
   } else {
     while (((volatile uintptr_t)theEventMgrPrimId)==-1);
   }
+  // It makes no sense to handle miss on this object lazily, since it will 
+  // always be invoked on every node, everything is in an event
+  repRef = EventMgrPrimImp_createRep(rootRef);
+  myel = MyEL();
+  
+  rootRef->ft->addRepOn((CObjEBBRootMultiRef)rootRef, myel, (EBBRep *)repRef);
   return EBBRC_OK;
 };
 

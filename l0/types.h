@@ -47,6 +47,7 @@ typedef enum {
 // It should be of type EBBRep *
 typedef EBBRC (*EBBFunc) (void *);
 typedef EBBFunc *EBBRep;
+typedef EBBRep *EBBRepRef;
 
 typedef uintptr_t FuncNum;
 typedef uintptr_t EBBMissArg;

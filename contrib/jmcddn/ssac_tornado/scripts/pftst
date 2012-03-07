@@ -1,0 +1,68 @@
+#!/bin/ksh
+#set -x
+
+integer optcount=0
+while getopts "H:s:a:t" OPT
+do
+  case $OPT in
+     ("H") HARDWARE="$OPTARG"; (( optcount=optcount + 2 ));;
+     ("s") SCENARIO="$OPTARG"; (( optcount=optcount + 2 ));;
+     ("a") ASSOC="$OPTARG"; (( optcount=optcount + 2 ));;
+     ("t") TESTING=1; (( optcount=optcount + 1 ));;
+  esac
+done
+
+shift $optcount
+
+if [[ $# = "1" ]]
+then
+   CPUS=$1
+else
+   CPUS=1
+fi
+
+
+if [[ $SCENARIO = "1" ]]
+then
+    SCENARIO="S1"
+    PARMS='3 1 0 100 1 10'
+elif [[  $SCENARIO = "2" ]]
+then
+    SCENARIO="S2"
+    PARMS='3 1 0 100 2 10'
+elif [[  $SCENARIO = "3" ]]
+then
+    SCENARIO="S3"
+    PARMS='3 1 0 100 3 10'
+elif [[  $SCENARIO = "4" ]]
+then
+    SCENARIO="S4"
+    PARMS='3 1 0 100 4 10'
+else 
+    TESTING=1
+    SCENARIO="S4"
+    PARMS='3 1 0 3 4 1'
+fi
+
+TPARMS=$(echo "$PARMS" | sed 's/ /:/g')
+
+
+if [[ -z $HARDWARE ]]
+then
+#runtst -l -A 4 -n "pftst.$SCENARIO.4way.$TPARMS.$(hostname)" -s pftst -P "$PARMS" -L pmem -c $CPUS kern
+    if [[ -z $TESTING ]]
+    then
+       if [[ -z $ASSOC ]]
+       then
+        runtst -l  -n "pftst.$SCENARIO.$TPARMS.$(hostname)" -s pftst -P "$PARMS" -L pmem -c $CPUS kern
+	else
+        runtst -l -A $ASSOC -n "pftst.$SCENARIO.${ASSOC}way.$TPARMS.$(hostname)" -s pftst -P "$PARMS" -L pmem -c $CPUS kern
+       fi
+    else
+      runtst -m EMBRA_PAGE -n "pftst.TEST.$SCENARIO.$TPARMS.$(hostname)" -P "$PARMS" -L pmem -c $CPUS kern
+      stty sane
+    fi
+else
+runtst -H $HARDWARE -l -n "pftst.$SCENARIO.$TPARMS.$HARDWARE" -P "$PARMS" -L pmem -c $CPUS kern
+fi
+

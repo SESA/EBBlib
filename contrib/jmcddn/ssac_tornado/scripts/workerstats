@@ -1,0 +1,504 @@
+#!/stumm/i/i/thacks/ben/perl/bin/perl5
+
+require "getopt.pl";
+
+if (defined($ENV{'SIMOS_DIR'})) { 
+    unshift(@INC,"$ENV{'SIMOS_DIR'}/src/apps/scripts");
+}
+
+require "tree.prl";
+
+$USAGE="workerstats -u -l -f Cycles|Instructions|SR_FIELD -t plain|table|linegraph|bargraph -L log|linear  -s raw|average|total|per -p value  -c caption logfiles
+-u prints usage
+-l list SR_FIELDS (must provide a logfile)
+-f comma seperated list of fields to for statitic (default is Cycles)
+-t selects type of output (default is plain)
+-L use linear or log  scale for y axis (default is linear)
+-s selects statistic type  (default is raw)
+-c caption for graph or table type
+-p value used when calculating per results (total/value) default is 4096
+logfiles produced by runtst script";
+
+
+@fields=("Cycles");
+$outputtype="plain";
+$statistic="raw";
+$linetype="solid";
+$marktype="circle";
+$yaxistype="linear";
+$yaxismin=0;
+%srfields={};
+$perdivisor=4096;
+$perwhat="request";
+$heigth=4.0;
+$width=4.0;
+$xtranslate=0.0;
+$ytranslate=0.0;
+
+&Getopt('ifLutscpPhwxy');
+
+($opt_f =~ /(.+)/) && (@fields=split(/,/,$opt_f));
+($opt_t =~ /(.+)/) && ($outputtype=$1);
+($opt_s =~ /(.+)/) && ($statistic=$1);
+($opt_c =~ /(.+)/) && ($caption=$1);
+($opt_L =~ /(.+)/) && ($yaxistype=$1,$yaxismin=1);
+($opt_p =~ /(.+)/) && ($perdivisor=$1);
+($opt_P =~ /(.+)/) && ($perwhat=$1);
+($opt_h =~ /(.+)/) && ($hieght=$1);
+($opt_w =~ /(.+)/) && ($width=$1);
+($opt_x =~ /(.+)/) && ($xtranslate=$1);
+($opt_y =~ /(.+)/) && ($ytranslate=$1);
+($opt_i =~ /(.+)/) && ($legend=1);
+($opt_u) && (print STDERR "$USAGE\n",exit);
+
+
+$FILE=$ARGV[0];
+%rawstats={};
+%stats={};
+
+$kernel='';
+$testname='';
+$cpus='';
+$xtitle='';
+$vtitie='';
+$caption='';
+
+sub grepstats 
+{
+    local ($file) = @_;
+
+    open(IN,$file);
+    while (<IN>) 
+    {
+	/^\*\*\*\* STATS: Worker_(\d+)_(0x.+):.* Total ($field)=(\d+)/ && ($rawstats{$1}=$4);
+    }
+    close(IN);
+}
+
+sub loadsrfields 
+{
+    local ($file) = @_;
+    local ($i)=(0);
+    open(IN,$file);
+    while (<IN>)
+    {
+	if (/^TIMING: SR_FIELDS (.+)/)
+	{
+	    for $f (split(/\s/,$1))
+	    {
+		$srfields{$f}=$i;
+		$i++;
+	    }
+	    close(IN);
+	    return;
+	}
+    }
+    die "Can not load SR_FIELDS from $file.  Ensure that you have included \"log [timing fields]\" in your simos tcl files.";
+    close(IN);
+}
+
+sub printsrfields 
+{
+    local ($file) = @_;
+    open(IN,$file);
+    print "SR_FIELDS gathered by simos timing tree facility\nThese are gathered for each worker and any maybe used\nas the field parameter:\n";
+    while (<IN>)
+    {
+	if (/^TIMING: SR_FIELDS (.+)/)
+	{
+	    for $f (split(/\s/,$1))
+	    {
+		print "$f\n";
+	    }
+	    close(IN);
+	    return;
+	}
+    }
+    die "Can not load SR_FIELDS from $file.  Ensure that you have included \"log [timing fields]\" in your simos tcl files.";
+    close(IN);
+}
+				
+sub srstats
+{
+    local ($file) = @_;
+    local (@srvals);
+    &loadsrfields($file);
+    open(IN,$file);
+    while (<IN>) 
+    {
+	if (/^TIMING: SR_BUCKET (worker_.*)/) 
+	{
+	    @srvals=split(/\s/,$1);
+	    ($srvals[$srfields{"bucketName"}]=~/worker_(\d+)_(.*)/);
+	    $rawstats{$1}=$srvals[$srfields{$field}];
+	}
+    }
+    close(IN);    
+}
+
+sub processstats
+{
+    local($worker);
+
+    if ($statistic=~/raw/)
+    {
+	for $worker (keys %rawstats)
+	{
+	    
+	    $stats{$worker}=$rawstats{$worker};
+	}
+	$xtitle="Worker";
+	$ytitle="$field";
+    }
+    if ($statistic=~/average/)
+    {
+	local($i,$val,$min,$max)=(0,0,0,0);
+	for $worker (keys %rawstats)
+	{
+	    if ($i==0) 
+	    {
+		$min=$rawstats{$worker};
+		$max=$rawstats{$worker};
+	    } else {
+		$max=$rawstats{$worker} if ($rawstats{$worker}>$max);
+		$min=$rawstats{$worker} if ($rawstats{$worker}<$min); 
+	    }
+	    $val+=$rawstats{$worker};
+	    $i++;
+	}
+	$val/=$i;
+	$stats{$cpus}="$val $min $max";
+	$xtitle="Number of Processors";
+	$ytitle="$field";
+    }
+    if ($statistic =~/total/ || $statistic =~ /per/)
+    {
+	local($val)=(0);
+	for $worker (keys %rawstats)
+	{
+	    $val+=$rawstats{$worker};
+	}
+	$stats{$cpus}="$val";
+
+        if ( $statistic =~ /per/ )
+	{
+	    $stats{$cpus}/=$perdivisor;
+	    $ytitle="$field per $perwhat";
+	    
+	}
+	else
+	{
+	    $ytitle="Total $field";
+	}
+	$xtitle="Number of Processors";
+    }
+}
+
+sub parsefilename
+{
+    local($file)=@_;
+    
+    if ($file =~ /(.*)\.(.*)\.(\d+)\..*log/) 
+    {
+	$kernel=$1;
+	$testname=$2;
+	$cpus=$3;
+    }
+    else
+    {
+	die "filename $file is not of proper format expecting \"kernel.testname.numberofcpus.slog\"\n";
+    }
+}
+
+
+
+$columnspec='';
+sub printtable
+{
+    local($line,$total,$fieldcount,$totalfields)=@_;
+    local(@astats,$i);
+    if ($line==1) 
+    {
+	#print headerinfo
+	if ($fieldcount==1) 
+	{
+	    ($columnspec="||c|c",$heading="$xtitle & $ytitle")  if ($statistic =~ /raw/ || $statistic=~ /total/ || $statistic=~ /per/);
+	    ($columnspec="||c|c|c|c",$heading="$xtitle & \\multicolumn{3}{c|}{$ytitle}") if ($statistic =~ /average/);
+	}
+	else
+	{
+	    ($columnspec="$columnspec|c",$heading="$heading & $ytitle")  if ($statistic =~ /raw/ || $statistic =~ /total/ || $statistic =~ /per/);
+	    if ($statistic =~ /average/)
+	    {
+		$columnspec="$columnspec|c|c|c";
+		$heading="$heading & \\multicolumn{3}";
+		if ($fieldcount == $totalfields) 
+		{
+		    $heading="$heading\{c\|\|\}{$ytitle}";
+		}
+		else
+		{
+		    $heading="$heading\{c\|\}{$ytitle}";
+		}
+	    }
+	}
+	if ($fieldcount==$totalfields)
+	{
+	    print "\\begin{tabular}{$columnspec||}\\hline\\hline\n";
+	    if ($statistic =~ /average/)
+	    {
+		$i=3*$totalfields+1;
+		print "$heading \\\\ \\cline{2-$i}\n";
+		$i = 0;
+		while ( $i < $totalfields )
+		{
+		    print "& avg & min & max";
+		    $i++;
+		}
+		print "\\\\ \\hline\\hline\n";
+	    } else 
+	    {
+		print "$heading \\\\ \\hline\\hline\n";
+	    }
+	}
+    }
+
+    for $key (sort keys %stats)
+    {
+	if ($fieldcount==1)
+	{
+	    $output{$key}="$key & $stats{$key}" if ($statistic =~ /raw/ || $statistic =~ /total/);
+	    $output{$key}=sprintf("%d & %.2f",$key,$stats{$key}) if ($statistic =~ /per/ );
+	    ((@astats)=split(/\s/,$stats{$key}), $output{$key}=sprintf "%d & %.2f & %.2f & %.2f",$key,$astats[0],$astats[1],$astats[2])
+		if ($statistic =~ /average/);
+	}
+	else 
+	{
+	    $output{$key}="$output{$key} & $stats{$key}" if ($statistic =~ /raw/ || $statistic =~ /total/);
+	    $output{$key}=sprintf("%s & %.2f",$output{$key},$stats{$key}) if ($statistic =~ /per/ );
+	    ((@astats)=split(/\s/,$stats{$key}), $i=sprintf(" & %.2f & %.2f & %.2f",$astats[0],$astats[1],$astats[2]), $output{$key}="$output{$key}$i")
+		if ($statistic =~ /average/);
+	}
+    }
+
+    if ($fieldcount==$totalfields)
+    {
+	for $key (sort keys %stats)
+	{
+	    print "$output{$key} \\\\ \\hline\n";
+	}
+    }
+
+    if ($line == $total && $fieldcount == $totalfields)
+    {
+	if (!$caption) 
+	{
+	    $caption="$kernel: $testname";
+	    $caption="$caption: values for each worker" if ($statistic =~ /raw/);
+	    $caption="$caption: totals" if ($statistic =~ /total/);
+	    $caption="$caption: per $perwhat" if ($statistic =~ /per/);
+	    $caption="$caption: One Worker per Processor results reported as average over all Workers" 
+		if ($statistic =~ /average/);
+
+	}
+	print "\\hline\n%\\caption{$caption}\n\\end{tabular}\n";
+    }
+}
+@linetype=("solid", "dotted", "dashed", "longdash", "dotdash", "dotdotdash", "dotdotdashdash");
+$curve=0;
+sub printlinegraph 
+{
+    local($line,$total,$fieldcount,$totalfields,$newcurve)=@_;
+    local(@astats);
+    
+    if ($line==1) 
+    {
+	print "newgraph x_translate $xtranslate y_translate $ytranslate\n";
+        if ($legend)
+	{
+	    print "legend on\n";
+	} 
+        else 
+        {
+	    print "legend off\n";
+	}
+    }
+
+    if ($newcurve)
+    {
+        print "newcurve\n    marktype $marktype\n    linetype $linetype[$curve]\n    label : $newcurve\n";
+	print "    pts\n" if ($statistic =~ /raw/ || $statistic =~ /total/ || $statistic =~ /per/ );
+	print "    y_epts\n"  if ($statistic =~ /average/);
+        $curve=$curve+1;
+    }
+
+    for $key (sort keys %stats)
+    {
+	print "    $key $stats{$key}\n" if ($statistic =~ /raw/ || $statistic =~ /total/ || $statistic =~ /per/);
+	((@astats)=split(/\s/,$stats{$key}), printf "    %d %.2f %.2f %.2f\n",$key,$astats[0],$astats[1],$astats[2])
+	    if ($statistic =~ /average/);
+    }
+
+    if (!$caption) 
+    {
+	$caption="$kernel: $testname";
+	$caption="$caption: $field values for each worker" if ($statistic =~ /raw/);
+	$caption="$caption: Total $field values for all workers" if ($statistic =~ /total/);
+	$caption="$caption: $field per $perwhat" if ($statistic =~ /per/);
+	$caption="$caption: One Worker per Processor results reported as $field averaged over all Workers" 
+	    if ($statistic =~ /average/);
+
+    }
+#    print "xaxis size $width label : $xtitle\nyaxis size $hieght $yaxistype min $yaxismin  label : $ytitle\ntitle : $caption\n" if ($line == $total);
+    print "xaxis size $width\n yaxis size $hieght $yaxistype min $yaxismin\ntitle : $ytitle\n" if ($line == $total);
+}
+
+sub printbargraph 
+{
+    local($line,$total,$fieldcount,$totalfields)=@_;
+    local(@astats);
+    
+    if ($line==1) 
+    {
+	print "newgraph\n  newcurve\n    marktype $marktype\n    linetype $linetype\n";
+	print "    pts\n" if ($statistic =~ /raw/ || $statistic =~ /total/ );
+	print "    y_epts\n"  if ($statistic =~ /average/);
+    }
+
+    for $key (sort keys %stats)
+    {
+	print "$key $stats{$key}\n" if ($statistic =~ /raw/ || $statistic =~ /total/ );
+	((@astats)=split(/\s/,$stats{$key}), printf "%d %.2f %.2f %.2f\n",$key,$astats[0],$astats[1],$astats[2])
+	    if ($statistic =~ /average/);
+    }
+    if (!$caption) 
+    {
+	$caption="$kernel: $testname";
+	$caption="$caption: $field values for each worker" if ($statistic =~ /raw/);
+	$caption="$caption: Total $field values for all workers" if ($statistic =~ /total/);
+	$caption="$caption: One Worker per Processor results reported as $field averaged over all Workers" 
+	    if ($statistic =~ /average/);
+
+    }
+    print "xaxis label : $xtitle\nyaxis $yaxistype min $yaxismin  label : $ytitle\ntitle : $caption" if ($line == $total);
+
+
+}
+
+$heading='';
+%output={};
+
+sub printplain
+{
+    local($line,$total,$fieldcount,$totalfields)=@_;
+    local($key);
+
+    if ($line==1)
+    {
+	if ($fieldcount==1)
+	{
+	    print "kernel:$kernel testname:$testname\n";
+	    $heading="$xtitle\t$ytitle";
+	} else {
+	    $heading="$heading\t$ytitle";
+	}
+	print "$heading\n" if ($fieldcount==$totalfields);
+	
+    }
+    for $key (sort keys %stats)
+    {
+	if ($fieldcount==1)
+	{
+	    $output{$key}="$key\t$stats{$key}";
+	} else {
+	    $output{$key}="$output{$key}\t$stats{$key}";
+	}
+    }
+    
+    if ($fieldcount==$totalfields)
+    {
+	for $key (sort keys %stats)
+	{
+	    print "$output{$key}\n";
+	}
+    }
+}
+
+$count=1;
+$total=@ARGV;
+$fieldcount=1;
+$totalfields=@fields;
+
+if ($opt_l) 
+{
+    &printsrfields($ARGV[0]);
+    exit;
+}
+
+if ($outputtype =~ /linegraph/ && $totalfields > 1)
+{
+    print "Do not support graphing of multiple fields (try one at a time) yet!\n";
+    exit;
+}
+
+if (!@ARGV) {
+    print STDERR "$USAGE\n";
+    exit;
+}
+
+$oldkernel='';
+$oldtestname='';
+
+for $FILE (@ARGV)
+{
+    $kernel='';
+    $testname='';
+    $cpus='';
+    $fieldcount=1;
+    $newcurve='';
+#Perfile stuff
+    &parsefilename($FILE);
+    if ( $testname ne $oldtestname )
+    {
+	$newcurve=$testname;
+    }
+
+    if ( $kernel ne $oldkernel )
+    {
+	$newcurve=$kernel;
+    }
+       
+    for $field (@fields)
+    {
+
+	%rawstats={};
+	%stats={};
+
+	#Per fields stuff
+	if ( $field=~/Cycles/ || $field=~/Instructions/ || $field=~/StarttoEnd/ ) 
+	{
+	    &grepstats($FILE);
+	}
+	else 
+	{
+	    &srstats($FILE);
+	}
+	
+	&processstats();
+        
+	&printplain($count,$total,$fieldcount,$totalfields) if ( $outputtype=~/plain/ );
+
+	&printtable($count,$total,$fieldcount,$totalfields) if ( $outputtype=~/table/ );
+
+	&printlinegraph($count,$total,$fieldcount,$totalfields,$newcurve) if ( $outputtype=~/linegraph/);
+
+	&printbargraph($count,$total,$fieldcount,$totalfields) if ( $outputtype=~/bargraph/);
+
+	$fieldcount++;
+    }
+    $oldkernel=$kernel;
+    $oldtestname=$testname;
+    $count++;
+}
+
+

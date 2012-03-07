@@ -1,0 +1,146 @@
+#!/stumm/i/i/thacks/ben/perl/bin/perl5
+$fields='Cycles,iStall,excStall,scNakStall,dStall,dL2RemoteStall';
+@fieldnames=('Other', 'iStall','excStall','scNakStall','dStallLocal','dStallRemote');
+
+%fill=( "Other", "fill 1 pattern solid",
+      "iStall", "fill .60 pattern solid",
+       "excStall", "fill .30 pattern solid",
+       "scNakStall", "fill 0 pattern stripe 0",
+      "dStallLocal", "fill 0 pattern stripe -45",
+      "dStallRemote", "fill 0 pattern solid");
+
+$stat='per';
+$height=2.0;
+$width=2.0;
+$textoffset=-0.75;
+$maxy=0;
+$maxx=0;
+%bars={};
+$yaxistitle='Cycles';
+
+sub printhead {
+ print "newgraph\n";
+}
+
+sub numerically { $a <=> $b; }
+
+sub printbars {
+    local($proc,$startx,$glabelx,$fn,$t,$barname,$details,$value,$t);
+    local(%curvenum)={};
+    local($count)=0;
+    local(@tests)=();
+
+    for $fn (reverse @fieldnames) {
+	print "newcurve\n  label : $fn\n  marksize 1\n  marktype xbar\n  $fill{$fn}\n";
+        $curvenum{$fn}=$count;
+        $count++;
+    }
+    $curx=0.5;
+    for $proc (sort numerically (keys %bars)) {
+        $startx=$curx;
+	@tests=split(' ',$bars{$proc});
+        for $t (@tests) {
+	    $t =~ /\((.*)\)(.*)/ && ($barname=$1,$details=$2);
+            for $d (split(':',$details))
+	    {
+              	$d =~ /(.*);(.*)/ && ($fn=$1,$value=$2);
+                print "curve $curvenum{$fn}\n  pts $curx $value\n";
+                ($value>$maxy) && ($maxy=$value);
+	    }
+	    $curx++;
+         }    
+        $glabelx=$startx + (($curx-$startx-1)/2.0);
+#        print " curx=$curx startx=$startx glabelx=$glabelx\n";
+	print "xaxis hash_at $glabelx hash_label at $glabelx : $proc\n";
+        $curx+=0.5;
+    }
+    $maxx=$curx-1.5;
+}
+
+sub printtail {
+ print "xaxis min 0 size $width no_auto_hash_labels no_auto_hash_marks label : Processors\n";
+ print "yaxis min 0 size $height label : $yaxistitle\n";
+ $texty=($maxy/$height) * $textoffset;
+ $textx=$maxx/2;
+ print "newstring fontsize 7 hjc vjc x $textx  y $texty :\nWithin each group the bars are ordered:\\\n";
+ for $name (@names) {
+  print "$name\\\n"
+  }
+}
+
+sub createbar {
+ local($test,$proc,$s)=@_;
+ local(@stats)=split('\s',$s);
+ local($count)=0;
+ local(%values)={};
+ local(@tmp,$fn,$tfn)=();
+ chop(@stats);
+ 
+ if ($bars{$proc}) {
+     $bars{$proc}="$bars{$proc} ($test)";
+ } else {
+     $bars{$proc}="($test)";
+ }
+ 
+ $values{$fieldnames[0]}=shift(@stats);
+ $count++;
+ for $stat (@stats)
+ {
+
+     $values{$fieldnames[$count]}=$stat;
+     if ($fieldnames[$count]=~/dStallRemote/) {
+	 $values{"dStallLocal"}-=$stat;
+     } else {
+            $values{$fieldnames[0]}-=$stat;
+	}
+     $count++;
+ }
+
+ @tmp=@fieldnames;
+ 
+ while (@tmp) {
+     $fn=pop(@tmp);
+     for $tfn (@tmp) {
+	 $values{$fn}+=$values{$tfn};
+     }
+ }
+ 
+ $count=0;
+ for $fn (reverse @fieldnames) {
+     ($count && $count!=@fieldnames) && ($bars{$proc}="$bars{$proc}:");
+     $bars{$proc}="$bars{$proc}$fn;$values{$fn}";
+     $count++;
+ }
+}
+
+for $name (@ARGV)
+{
+    $named=0;
+   if ($name =~ /(.*)\((.*)\)/) {
+       $name=$1;
+       push(@names,$2);
+       $named=1;
+   }
+   open(FILES, "ls ${name}*.slog | sort -t. +2 -4 -n |");
+   @files=<FILES>;
+   close(FILES);
+   chop(@files);
+   $files=join(' ', @files);
+   open(STATS, "workerstats -s $stat -f $fields $files |");
+   while (<STATS>) {
+       chop;
+       if (/kernel:(.*) .*testname:(.*)/) {
+	   $kernel=$1; $test=$2;
+           ($named==0) && push(@names, $kernel);
+	   print "(* $name *)\n";
+       }
+       /(\d+)\s(.*)/ && createbar($kernel,$1,$2);
+       print "  (* $_ *)\n";
+   }
+   close(STATS);
+}
+
+printhead();
+printbars();
+printtail();
+

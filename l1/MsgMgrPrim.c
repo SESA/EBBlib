@@ -21,23 +21,27 @@
  */
 #include <config.h>
 #include <stdint.h>
+#include <l0/lrt/types.h>
+#include <l0/cobj/cobj.h>
 #include <lrt/io.h>
 #include <l0/lrt/pic.h>
-#include <lrt/assert.h>
-#include <l0/cobj/cobj.h>
+#include <l0/lrt/trans.h>
 #include <l0/types.h>
+#include <l0/sys/trans.h>
+#include <lrt/assert.h>
 #include <l0/cobj/CObjEBB.h>
 #include <l0/EBBMgrPrim.h>
-#include <l0/MemMgr.h> 
-#include <l0/MemMgrPrim.h>
+#include <l0/cobj/CObjEBBUtils.h>
+#include <l0/cobj/CObjEBBRoot.h>
+#include <l0/cobj/CObjEBBRootMulti.h>
+#include <l0/cobj/CObjEBBRootMultiImp.h>
 #include <l0/EventMgrPrim.h>
-
+#include <l0/EventMgrPrimImp.h>
+#include <l0/lrt/pic.h>
+#include <l0/MemMgr.h>
+#include <l0/MemMgrPrim.h>
 #include <l1/MsgMgr.h>
 #include <l1/MsgMgrPrim.h>
-
-// FIXME: need this to do IPI, do we really want to do these inline and bypass
-//   EventMgr???
-#include __LRTINC(pic.h)
 
 
 /* -- start routines & types to be implemented, put somewhere global*/
@@ -64,6 +68,7 @@ enum{MAXARGS = 3};
 
 typedef struct MsgStore_struc {
   struct MsgStore_struc *next;
+  MsgHandlerId id;
   uintptr_t numargs;
   uintptr_t args[MAXARGS];
 } MsgStore;
@@ -97,6 +102,19 @@ MsgMgrPrim_enqueueMsg(MsgMgrPrimRef target, MsgStore *msg)
   return EBBRC_OK;
 }
 
+static MsgStore *
+MsgMgrPrim_dequeueMsgHead(MsgMgrPrimRef target)
+{
+  MsgStore *msg;
+  spinLock(&target->mml);
+  msg = target->msgqueue;
+  if (msg != NULL) {
+    target->msgqueue = msg->next;
+  }
+  spinUnlock(&target->mml);
+  return msg;
+}
+
 static EBBRC
 MsgMgrPrim_findTarget(MsgMgrPrimRef self, EvntLoc loc, MsgMgrPrimRef *target)
 {
@@ -104,9 +122,10 @@ MsgMgrPrim_findTarget(MsgMgrPrimRef self, EvntLoc loc, MsgMgrPrimRef *target)
   MsgMgrPrimRef rep = NULL;
   rep = self->reps[loc];
   if (rep == NULL) {
-    for (node = self->theRoot->ft->nextRep(self->theRoot, 0, &rep);
+    for (node = self->theRoot->ft->nextRep(self->theRoot, 0, (EBBRep **)&rep);
 	 node != NULL; 
-	 node = self->theRoot->ft->nextRep(self->theRoot, node, &rep)) {
+	 node = self->theRoot->ft->nextRep(self->theRoot, node, 
+					   (EBBRep **)&rep)) {
       EBBAssert(rep != NULL);
       if (rep->eventLoc == loc) break;
     }
@@ -129,7 +148,10 @@ MsgMgrPrim_msg0(MsgMgrRef _self, EvntLoc loc, MsgHandlerId id)
   rc = MsgMgrPrim_findTarget(self, loc, &target);
   EBBRCAssert(rc);
 
-  EBBPrimMalloc(sizeof(*msg), &msg, EBB_MEM_DEFAULT);
+  rc = EBBPrimMalloc(sizeof(*msg), &msg, EBB_MEM_DEFAULT);
+  EBBRCAssert(rc);
+
+  msg->id = id;
   msg->numargs = 0;
   
   MsgMgrPrim_enqueueMsg(target, msg);
@@ -149,14 +171,17 @@ MsgMgrPrim_msg1(MsgMgrRef _self, EvntLoc loc, MsgHandlerId id, uintptr_t a1)
 
   rc = EBBPrimMalloc(sizeof(*msg), &msg, EBB_MEM_DEFAULT);
   EBBRCAssert(rc);
+  msg->id = id;
   msg->numargs = 1;
   msg->args[0] = a1;
+  // target->enqueueMsg(msg);
   MsgMgrPrim_enqueueMsg(target, msg);
   return EBBRC_OK;
 }
 
 static EBBRC 
-MsgMgrPrim_msg2(MsgMgrRef _self, EvntLoc loc, MsgHandlerId id, uintptr_t a1, uintptr_t a2)
+MsgMgrPrim_msg2(MsgMgrRef _self, EvntLoc loc, MsgHandlerId id, uintptr_t a1, 
+		uintptr_t a2)
 {
   MsgMgrPrimRef self = (MsgMgrPrimRef)_self;
   MsgStore *msg;  
@@ -168,6 +193,7 @@ MsgMgrPrim_msg2(MsgMgrRef _self, EvntLoc loc, MsgHandlerId id, uintptr_t a1, uin
 
   rc = EBBPrimMalloc(sizeof(*msg), &msg, EBB_MEM_DEFAULT);
   EBBRCAssert(rc);
+  msg->id = id;
   msg->numargs = 2;
   msg->args[0] = a1;
   msg->args[1] = a2;
@@ -189,6 +215,7 @@ MsgMgrPrim_msg3(MsgMgrRef _self, EvntLoc loc, MsgHandlerId id,
 
   rc = EBBPrimMalloc(sizeof(*msg), &msg, EBB_MEM_DEFAULT);
   EBBRCAssert(rc);
+  msg->id = id;
   msg->numargs = 3;
   msg->args[0] = a1;
   msg->args[1] = a2;
@@ -197,11 +224,39 @@ MsgMgrPrim_msg3(MsgMgrRef _self, EvntLoc loc, MsgHandlerId id,
   return EBBRC_OK;
 };
 
+static EBBRC 
+MsgMgrPrim_handleIPI(MsgMgrRef _self)
+{
+  MsgMgrPrimRef self = (MsgMgrPrimRef)_self;
+  MsgStore *msg = MsgMgrPrim_dequeueMsgHead(self);
+  while (msg != NULL) {
+    switch(msg->numargs) {
+    case 0:
+      COBJ_EBBCALL(msg->id, msg0);
+      break;
+    case 1:
+      COBJ_EBBCALL(msg->id, msg1, msg->args[0]);
+      break;
+    case 2:
+      COBJ_EBBCALL(msg->id, msg2, msg->args[0], msg->args[1]);
+      break;
+    case 3:
+      COBJ_EBBCALL(msg->id, msg3, msg->args[0], msg->args[1], msg->args[2]);
+      break;
+    }
+    // FIXME: retain in a free list?
+    EBBPrimFree(sizeof(MsgStore), msg);
+    msg = MsgMgrPrim_dequeueMsgHead(self);
+  }
+  return EBBRC_OK;
+}
+
 CObjInterface(MsgMgr) MsgMgrPrim_ftable = {
   .msg0 = MsgMgrPrim_msg0,
   .msg1 = MsgMgrPrim_msg1,
   .msg2 = MsgMgrPrim_msg2,
-  .msg3 = MsgMgrPrim_msg3
+  .msg3 = MsgMgrPrim_msg3,
+  .handleIPI = MsgMgrPrim_handleIPI
 };
 
 static inline void
@@ -209,43 +264,145 @@ MsgMgrPrim_SetFT(MsgMgrPrimRef o)
 {
   o->ft = &MsgMgrPrim_ftable;
 }
+
+
+MsgMgrId theMsgMgrId;
+
+static EBBRC 
+MsgEventHandler_handleEvent(void *_self)
+{
+  EBBRC rc;
+  // ack that we are handing interrupt
+  lrt_pic_ackipi();
+
+  rc = COBJ_EBBCALL(theMsgMgrId, handleIPI);
+
+  // we are re-enabling interrupts before returning to event mgr
+  // not obvious yet if we should be doing this here, or lower down, 
+  // but its at least reasonable that we want to execute an entire message
+  // disabled. Note, a whole chain of messages may be invoked here, so, 
+  // the implicit assumption is that  you re-disable interrupts if you enable
+  // them at the end of a message. 
+  lrt_pic_enableipi();
+  return rc; 
+};
+
+static EBBRC
+MsgEventHandler_init(void *_self, uintptr_t extra)
+{
+  return 0;
+};
+
+CObject(MsgEventHandler) {
+  CObjInterface(EventHandler) *ft;
+  CObjEBBRootMultiRef theRoot;	
+};
+
+
+static CObjInterface(EventHandler) MsgEventHandler_ftable = {
+  .handleEvent = MsgEventHandler_handleEvent,
+  .init = MsgEventHandler_init
+};
+
+static EBBRep *
+MsgEventHandler_createRep(CObjEBBRootMultiRef _self) {
+  MsgEventHandlerRef repRef;
+  EBBPrimMalloc(sizeof(*repRef), &repRef, EBB_MEM_DEFAULT);
+  repRef->ft = &MsgEventHandler_ftable;
+  repRef->theRoot = _self;
+  //  initGTable(EventMgrPrimErrMF, 0);
+  return (EBBRep *)repRef;
+}
+
+static EventHandlerId
+InitMsgEventHandler()
+{
+  static EventHandlerId theMsgEventHandlerId=0;
+
+  if (__sync_bool_compare_and_swap(&theMsgEventHandlerId, (EventHandlerId)0,
+				   (EventHandlerId)-1)) {
+    EBBRC rc;
+    CObjEBBRootMultiImpRef rootRef;
+    EBBId id;
+    rc = CObjEBBRootMultiImpCreate(&rootRef, MsgEventHandler_createRep);
+    EBBRCAssert(rc);
+    rc = EBBAllocPrimId(&id);
+    EBBRCAssert(rc);
+    rc = EBBBindPrimId(id, CObjEBBMissFunc, (EBBMissArg)rootRef);
+    EBBRCAssert(rc);
+    theMsgEventHandlerId = (EventHandlerId)id;
+  } else {
+    while (((volatile uintptr_t)theMsgEventHandlerId)==-1);
+  }
+  return theMsgEventHandlerId;
+};
+
+static EBBRep *
+MsgMgrPrim_createRepAssert(CObjEBBRootMultiRef root)
+{
+  EBBAssert(0);
+  return NULL;
+}
+
 /*
- * routine called by distributed root on a miss
- * to create/return a representative on a core
+ * Create/return a representative on a core
  */
-static void *
-MsgMgrPrim_createRep(CObjEBBRootMultiRef _theRoot)
+static MsgMgrPrimRef
+MsgMgrPrim_createRep(CObjEBBRootMultiImpRef root)
 {
   MsgMgrPrimRef repRef;
+  EventHandlerId ehid; 
+
   EBBPrimMalloc(sizeof(*repRef), &repRef, EBB_MEM_DEFAULT);
   MsgMgrPrim_SetFT(repRef);
   int i;
 
-  repRef->eventLoc = EventMgrPrim_GetMyEL();
+  repRef->eventLoc = MyEL();
   repRef->mml = 0;
   repRef->msgqueue = 0;
   for (i=0; i<LRT_PIC_MAX_PICS ; i++ ) {
     repRef->reps[i] = NULL;
   }
-  repRef->theRoot = _theRoot;
+  repRef->theRoot = (CObjEBBRootMultiRef)root;
+
+  ehid = InitMsgEventHandler();
+  EBBAssert(ehid != NULL);
+  
+  EBB_LRT_printf("%s: msg event hander taking over ipi interrupt\n", 
+		 __func__);
+  COBJ_EBBCALL(theEventMgrPrimId, registerIPIHandler, ehid);
+  COBJ_EBBCALL(theEventMgrPrimId, dispatchIPI, MyEL());
+
   return repRef;
 };
 
-
 EBBRC
-MsgMgrPrim_Create(MsgMgrId *id)
+MsgMgrPrim_Init(void)
 {
-  EBBRC rc;
-  CObjEBBRootMultiRef rootRef;
-  EBBPrimMalloc(sizeof(*rootRef), &rootRef, EBB_MEM_DEFAULT);
-  CObjEBBRootMultiSetFT(rootRef);
-  rootRef->ft->init(rootRef, MsgMgrPrim_createRep);
+  static CObjEBBRootMultiImpRef rootRef = 0;
+  MsgMgrPrimRef repRef;
 
-  rc = EBBAllocPrimId(id);
-  //  EBBRCAssert(rc);
+  if (__sync_bool_compare_and_swap(&theMsgMgrId, (MsgMgrId)0,
+				   (MsgMgrId)-1)) {
+    EBBRC rc;
+    EBBId id;
+    rc = CObjEBBRootMultiImpCreate(&rootRef, MsgMgrPrim_createRepAssert);
+    EBBRCAssert(rc);
+    rc = EBBAllocPrimId(&id);
+    EBBRCAssert(rc); 
+    rc = EBBBindPrimId(id, CObjEBBMissFunc, (EBBMissArg) rootRef);
+    EBBRCAssert(rc); 
+    theMsgMgrId = (MsgMgrId)id;
+  } else {
+    while (((volatile uintptr_t)theMsgMgrId)==-1);
+  }
 
-  rc = CObjEBBBind(*id, rootRef);
-  //  EBBRCAssert(rc);
+  // initialize the msgmgr rep on this core, since we need to take
+  // over the event locally for IPI even before anyone sends a message from
+  // this event location
+  repRef = MsgMgrPrim_createRep(rootRef);
+  rootRef->ft->addRepOn((CObjEBBRootMultiRef)rootRef, MyEL(),
+			(EBBRep *)repRef);
 
   return EBBRC_OK;
 }
