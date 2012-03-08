@@ -133,7 +133,7 @@ L1Prim_MsgHandler_startMH(MsgHandlerRef _self, uintptr_t startinfo)
     rc = EBBPrimMalloc(self->sisize,
 		       &(self->si), EBB_MEM_DEFAULT);
     EBBRCAssert(rc);
-    memcpy(self->si, (char *)startinfo, self->sisize);
+    __builtin_memcpy(self->si, (char *)startinfo, self->sisize);
   } else {
     self->si = NULL;
     self->sisize = 0;

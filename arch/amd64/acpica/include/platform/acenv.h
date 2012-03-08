@@ -116,6 +116,8 @@
 #ifndef __ACENV_H__
 #define __ACENV_H__
 
+#include <config.h>
+
 /*
  * Environment configuration. The purpose of this file is to interface ACPICA
  * to the local environment. This includes compiler-specific, OS-specific,

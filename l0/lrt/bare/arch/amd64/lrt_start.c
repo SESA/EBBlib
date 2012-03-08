@@ -20,6 +20,9 @@
  * THE SOFTWARE.
  */
 
+#include <config.h>
+
+#include <stdint.h>
 #include <stdbool.h>
 
 #include <arch/amd64/apic.h>
@@ -29,6 +32,8 @@
 #include <l0/lrt/bare/arch/amd64/stdio.h>
 #include <l0/lrt/bare/arch/amd64/trans.h>
 #include <l0/sys/trans.h>
+#include <lrt/assert.h>
+#include <lrt/io.h>
 
 //We get here after some very early initialization occurs:
 // 1. grub boots us into start.S, we put ourselves on a small boot
@@ -56,4 +61,18 @@ lrt_start(void)
   //Because we get here on an IPI, we need to send an eoi before returning
   // to the assembly which does our iretq
   send_eoi();
+}
+
+uintptr_t
+lrt_startinfo_addr()
+{
+  EBB_LRT_printf("%s: NYI", __func__);
+  EBBAssert(0);
+}
+
+intptr_t
+lrt_startinfo_size()
+{
+  EBB_LRT_printf("%s: NYI", __func__);
+  EBBAssert(0);
 }

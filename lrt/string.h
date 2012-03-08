@@ -1,5 +1,6 @@
-#ifndef __ULNX_BOOTINFO_H__
-#define __ULNX_BOOTINFO_H__
+#ifndef LRT_STRING_H
+#define LRT_STRING_H
+
 /*
  * Copyright (C) 2011 by Project SESA, Boston University
  *
@@ -22,6 +23,8 @@
  * THE SOFTWARE.
  */
 
-// ulnx does not add anything special 
+#include <stddef.h>
+
+void *memcpy(void *dest, const void *src, size_t n);
 
 #endif

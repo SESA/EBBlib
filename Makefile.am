@@ -7,6 +7,7 @@ AM_CFLAGS += -m64
 AM_CCASFLAGS += -m64
 endif
 
+# Make these blank so that they can be added to
 CLEANFILES =
 EXTRA_DIST =
 noinst_LIBRARIES =
@@ -16,9 +17,10 @@ lib_LIBRARIES = libebb.a
 libebb_a_SOURCES = $(arch_sources) $(l0_sources) $(lrt_sources) \
   $(misc_sources) $(net_sources) $(l1_sources)
 
-# Make these blank so that they can be added to
-libebb_a_LIBADD =
+libebb_a_LIBADD = 
 libebb_a_DEPENDENCIES = 
+
+ebbos_libs = libebb.a
 
 if LRT_BARE
 

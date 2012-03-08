@@ -29,9 +29,9 @@ if LRT_BARE
 
 #TODO DS: Should have some proper dependency tracking here
 l0/lrt/bare/arch/amd64/init32.o: $(top_srcdir)/l0/lrt/bare/arch/amd64/init32.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ebbos_CPPFLAGS) \
-		$(CPPFLAGS) $(patsubst -m64, -m32, $(ebbos_CFLAGS)) \
-		-Winline -c -o $@ $<
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
+		$(CPPFLAGS) $(patsubst -m64, -m32, $(AM_CFLAGS)) \
+		$(CFLAGS) -Winline -c -o $@ $<
 	objcopy -g -O elf64-x86-64 $@ $@
 
 libebb_a_DEPENDENCIES += $(top_srcdir)/l0/lrt/bare/arch/amd64/link.ld \

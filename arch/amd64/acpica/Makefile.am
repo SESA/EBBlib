@@ -1,8 +1,8 @@
 if LRT_BARE
 noinst_LIBRARIES += libacpica.a
-libebb_a_LIBADD += libacpica.a
-libebb_a_DEPENDENCIES += libacpica.a
-libacpica_a_CPPFLAGS = $(AM_CPPFLAGS) -I $(top_srcdir)/arch/amd64/acpica/include
+ebbos_libs += libacpica.a
+libacpica_a_CFLAGS = $(BAREFLAGS)
+libacpica_a_CPPFLAGS = -I $(top_srcdir)/arch/amd64/acpica/include
 libacpica_a_SOURCES = \
 	arch/amd64/acpica/osebbosxf.c \
 	arch/amd64/acpica/components/disassembler/dmobject.c \

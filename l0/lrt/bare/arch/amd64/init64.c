@@ -20,6 +20,8 @@
  * THE SOFTWARE.
  */
 
+#include <config.h>
+
 #include <stdint.h>
 
 #include <arch/amd64/apic.h>

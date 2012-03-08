@@ -20,6 +20,8 @@
  * THE SOFTWARE.
  */
 
+#include <config.h>
+
 #include <stdint.h>
 
 #include <l0/lrt/pic.h>

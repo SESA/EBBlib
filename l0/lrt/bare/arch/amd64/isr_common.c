@@ -20,11 +20,15 @@
  * THE SOFTWARE.
  */
 
+#include <config.h>
+
+#include <stdint.h>
+
 #include <l0/lrt/bare/arch/amd64/isr.h>
-#include <l0/lrt/bare/arch/amd64/stdio.h>
 #include <lrt/assert.h>
+#include <lrt/io.h>
 
 void isr_common(uint64_t int_no) {
-  printf("interrupt #%ld.\n", int_no);
+  EBB_LRT_printf("interrupt #%ld.\n", int_no);
   EBBAssert(0);
 }

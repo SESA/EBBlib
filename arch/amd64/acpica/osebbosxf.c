@@ -114,6 +114,9 @@
  *
  * Note: Use #define __APPLE__ for OS X generation.
  */
+
+#include <config.h>
+
 #include <stdint.h>
 
 #include <lrt/assert.h>

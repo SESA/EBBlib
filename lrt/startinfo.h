@@ -22,12 +22,7 @@
  * THE SOFTWARE.
  */
 
-#ifdef LRT_ULNX
-#include <lrt/ulnx/startinfo.h>
-#elif defined LRT_L4
-#endif
-
 extern uintptr_t lrt_startinfo_addr(void);
 extern intptr_t lrt_startinfo_size(void);
 
-#endif // __LRTMISC_H__
+#endif

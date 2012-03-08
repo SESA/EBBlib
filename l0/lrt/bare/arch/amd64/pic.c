@@ -20,6 +20,10 @@
  * THE SOFTWARE.
  */
 
+#include <config.h>
+
+#include <stdint.h>
+
 #include <arch/amd64/apic.h>
 #include <arch/amd64/idt.h>
 #include <arch/amd64/ioapic.h>
@@ -125,7 +129,7 @@ lrt_pic_getIPIvec()
   return IPI_VEC;
 }
 
-void
+intptr_t
 lrt_pic_ipi(uintptr_t id)
 {
   lapic_icr_low icr_low;
@@ -139,6 +143,7 @@ lrt_pic_ipi(uintptr_t id)
   icr_high.destination = id;
 
   send_ipi(icr_low, icr_high);  
+  return 1;
 }
 
 intptr_t
@@ -164,6 +169,20 @@ lrt_pic_numvec()
 
 intptr_t
 lrt_pic_allocvec(uintptr_t *vec)
+{
+  EBB_LRT_printf("%s: NYI", __func__);
+  EBBAssert(0);
+}
+
+void
+lrt_pic_ackipi()
+{
+  EBB_LRT_printf("%s: NYI", __func__);
+  EBBAssert(0);
+}
+
+void
+lrt_pic_enableipi()
 {
   EBB_LRT_printf("%s: NYI", __func__);
   EBBAssert(0);

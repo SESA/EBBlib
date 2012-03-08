@@ -20,6 +20,8 @@
  * THE SOFTWARE.
  */
 
+#include <config.h>
+
 #include <lrt/assert.h>
 
 void __cxa_pure_virtual()
