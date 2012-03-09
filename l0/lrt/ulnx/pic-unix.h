@@ -36,52 +36,48 @@
  */
 
 #ifdef __APPLE__
-enum {FIRST_VECFD = 128};
+//enum {FIRST_VECFD = 128};
+enum {FIRST_VECFD = 16};
 #else
 enum {FIRST_VECFD = 16};
 #endif
-// make sure interrupt vector below supports this number of bits
-enum {NUM_MAPPABLE_VEC = 15};
-// reserve 2 : 1 for ipi and 1 additional
+// reserve 2 : 1 for ipi and 1 for reset
+
 enum {NUM_RES_VEC = 2};
+// make sure interrupt vector below supports this number of bits
+// enum {NUM_MAPPABLE_VEC = FD_SETSIZE - (FIRST_VECFD + 1)  - NUM_RES_VEC };
+enum {NUM_MAPPABLE_VEC = 32};
 enum {RES0_VEC = (NUM_MAPPABLE_VEC)};
 enum {RES1_VEC = (RES0_VEC + 1)};
 enum {IPI_VEC = (RES0_VEC)};
 enum {RST_VEC = (RES1_VEC)};
 enum {NUM_VEC = (NUM_MAPPABLE_VEC + NUM_RES_VEC)};
 
-/* 
- * A very simple bitvector for interrupts.  If we can have more than 
- * 64 sources, switch to using a generic implemnetation.
- */
-typedef uint64_t lrt_pic_unix_ints;
+typedef fd_set lrt_pic_unix_ints;
 
-inline static void lrt_pic_unix_intr_clear(lrt_pic_unix_ints *sp) { *sp=0; }
-
-inline static void 
-lrt_pic_unix_ints_set(lrt_pic_unix_ints *sp, unsigned i) { 
-  *sp |= (uint64_t)1 << (i%64); 
+static inline void lrt_pic_unix_ints_clear(lrt_pic_unix_ints *s) {
+  FD_ZERO(s); 
+}
+static inline void lrt_pic_unix_ints_set(lrt_pic_unix_ints *s, unsigned i) {
+  FD_SET(i,s); 
+}
+static inline void lrt_pic_unix_ints_remove(lrt_pic_unix_ints *s, unsigned i) { 
+FD_CLR(i,s); 
 }
 
-inline static void 
-lrt_pic_unix_ints_remove(lrt_pic_unix_ints *s, unsigned i) {
-  *s &= ~((uint64_t)1 << (i%64));
-}
-
-inline static uintptr_t 
-lrt_pic_unix_ints_test(lrt_pic_unix_ints s, unsigned i) {
-  return ((s & (uint64_t)1 << (i%64)) != 0);
+static inline uintptr_t lrt_pic_unix_ints_test(lrt_pic_unix_ints *s, unsigned i) { 
+  return FD_ISSET(i,s); 
 }
 
 void lrt_pic_unix_wakeup(uintptr_t lcore);
 int lrt_pic_unix_init();
 
 uintptr_t lrt_pic_unix_addcore(void *(*routine)(void *), void *arg);	
-int lrt_pic_unix_enable(uintptr_t src, uintptr_t vec);
+int lrt_pic_unix_locked_enable(uintptr_t src, uintptr_t vec);
 
 // blocks for interrupt, on success returns number interrupts 
 // and bitvector of pending interrupts
-int lrt_pic_unix_blockforinterrupt(lrt_pic_unix_ints *sp);
+int lrt_pic_unix_blockforinterrupt(lrt_pic_unix_ints *s);
 
 // FIXME: get rid of this
 uintptr_t lrt_pic_unix_getlcoreid();	/* for base thread FIXME, get rid off */

@@ -30,6 +30,7 @@ struct unix_pic {
   int maxfd;
 } upic;
 
+
 void 
 lrt_pic_unix_wakeup(uintptr_t lcore)
 {
@@ -49,9 +50,6 @@ lrt_pic_unix_init()
   int fd[FIRST_VECFD];
   struct sigaction sa;
   sigset_t blockset;
-
-  // we have simple 64 bit vector right now
-  assert(NUM_MAPPABLE_VEC <= 64);
 
   // zero the unix specific pic info
   bzero(&upic, sizeof(upic));
@@ -73,7 +71,9 @@ lrt_pic_unix_init()
     tmpfd=dup(fd[0]);
     if (tmpfd != (FIRST_VECFD+i)) {
       fprintf(stderr, "ERROR: file %s line %d: runtime tromping over fd space\n"
-	      "\tsuggest you increase the FIRST_VECFD\n", __FILE__, __LINE__);
+	      "\tsuggest you increase the FIRST_VECFD NUM_VEC=%d "
+	      "tmpfd=%d i=%d FIRST_VECFD=%d\n"
+	      , __FILE__, __LINE__, NUM_VEC, tmpfd, i, FIRST_VECFD);
       return -1;
     }
   }
@@ -122,7 +122,7 @@ lrt_pic_unix_addcore(void *(*routine)(void *), void *arg)
  * Make the new FD the FD for this vector
  */
 int
-lrt_pic_unix_enable(uintptr_t src, uintptr_t vec)
+lrt_pic_unix_locked_enable(uintptr_t src, uintptr_t vec)
 {
   int i;
   i = dup2(src, vec+FIRST_VECFD);
@@ -139,13 +139,13 @@ lrt_pic_unix_enable(uintptr_t src, uintptr_t vec)
 }
 
 int 
-lrt_pic_unix_blockforinterrupt(lrt_pic_unix_ints *sp)
+lrt_pic_unix_blockforinterrupt(lrt_pic_unix_ints *s)
 {
   fd_set rfds, efds;
   sigset_t emptyset;
   int i, v=0, rc, numintr=0;
 
-  lrt_pic_unix_intr_clear(sp);
+  lrt_pic_unix_ints_clear(s);
 
 #ifdef __APPLE__
   struct timespec tout;
@@ -183,7 +183,7 @@ lrt_pic_unix_blockforinterrupt(lrt_pic_unix_ints *sp)
   
   for (i = FIRST_VECFD,v=0; i <= upic.maxfd; i++, v++) {
     if ((FD_ISSET(i, &efds) || (FD_ISSET(i, &rfds)))) {
-      lrt_pic_unix_ints_set(sp, v);
+      lrt_pic_unix_ints_set(s, v);
       numintr++;
     }
   }
