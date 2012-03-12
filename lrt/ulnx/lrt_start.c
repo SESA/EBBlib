@@ -21,6 +21,7 @@
  */
 #include <config.h>
 
+#define _GNU_SOURCE //need this for stpcpy
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/stat.h>

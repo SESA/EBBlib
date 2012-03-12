@@ -7,6 +7,11 @@ AM_CFLAGS += -m64
 AM_CCASFLAGS += -m64
 endif
 
+if powerpc
+AM_CFLAGS += -m32
+AM_CCASFLAGS += -m32
+endif
+
 # Make these blank so that they can be added to
 CLEANFILES =
 EXTRA_DIST =
