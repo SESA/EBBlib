@@ -28,16 +28,6 @@
 #include <arch/amd64/cpu.h>
 #include <lrt/assert.h>
 
-//FIXME: This should be set dynamically probably
-static volatile uint32_t *LAPIC_BASE = (uint32_t *)0xfee00000;
-
-//offsets
-static const uint32_t LAPIC_ID_REGISTER = 0x20;
-static const uint32_t LAPIC_VERSION_REGISTER = 0x30;
-static const uint32_t LAPIC_EOI_REGISTER = 0xB0;
-static const uint32_t LAPIC_ICR_LOW = 0x300;
-static const uint32_t LAPIC_ICR_HIGH = 0x310;
-
 typedef union {
   uint32_t raw;
   struct {
@@ -97,13 +87,82 @@ typedef union {
 
 STATIC_ASSERT(sizeof(lapic_icr_high) == 4, "lapic_icr_high packing issue");
 
-//small inline to just do the address computation
-static inline volatile uint32_t *
-lapic_addr(uint32_t offset) {
-  uintptr_t ptr = (uintptr_t)LAPIC_BASE;
-  ptr += offset;
-  return (volatile uint32_t *) ptr;
-}
+typedef union {
+  uint32_t raw[256];
+  struct {
+    volatile uint32_t reserved0 __attribute__((aligned(16)));
+    volatile uint32_t reserved1 __attribute__((aligned(16)));
+    volatile lapic_id_register lir __attribute__((aligned(16)));
+    volatile lapic_version_register lvr __attribute__((aligned(16)));
+    volatile uint32_t reserved2 __attribute__((aligned(16)));
+    volatile uint32_t reserved3 __attribute__((aligned(16)));
+    volatile uint32_t reserved4 __attribute__((aligned(16)));
+    volatile uint32_t reserved5 __attribute__((aligned(16)));
+    volatile uint32_t tpr __attribute__((aligned(16)));
+    volatile uint32_t apr __attribute__((aligned(16)));
+    volatile uint32_t ppr __attribute__((aligned(16)));
+    volatile lapic_eoi_register ler __attribute__((aligned(16)));
+    volatile uint32_t rrd __attribute__((aligned(16)));
+    volatile uint32_t ldr __attribute__((aligned(16)));
+    volatile uint32_t dfr __attribute__((aligned(16)));
+    volatile uint32_t sivr __attribute__((aligned(16)));
+    volatile uint32_t isr_31_0 __attribute__((aligned(16)));
+    volatile uint32_t isr_63_32 __attribute__((aligned(16)));
+    volatile uint32_t isr_95_64 __attribute__((aligned(16)));
+    volatile uint32_t isr_127_96 __attribute__((aligned(16)));
+    volatile uint32_t isr_159_128 __attribute__((aligned(16)));
+    volatile uint32_t isr_191_160 __attribute__((aligned(16)));
+    volatile uint32_t isr_223_192 __attribute__((aligned(16)));
+    volatile uint32_t isr_255_224 __attribute__((aligned(16)));
+    volatile uint32_t tmr_31_0 __attribute__((aligned(16)));
+    volatile uint32_t tmr_63_32 __attribute__((aligned(16)));
+    volatile uint32_t tmr_95_64 __attribute__((aligned(16)));
+    volatile uint32_t tmr_127_96 __attribute__((aligned(16)));
+    volatile uint32_t tmr_159_128 __attribute__((aligned(16)));
+    volatile uint32_t tmr_191_160 __attribute__((aligned(16)));
+    volatile uint32_t tmr_223_192 __attribute__((aligned(16)));
+    volatile uint32_t tmr_255_224 __attribute__((aligned(16)));
+    volatile uint32_t irr_31_0 __attribute__((aligned(16)));
+    volatile uint32_t irr_63_32 __attribute__((aligned(16)));
+    volatile uint32_t irr_95_64 __attribute__((aligned(16)));
+    volatile uint32_t irr_127_96 __attribute__((aligned(16)));
+    volatile uint32_t irr_159_128 __attribute__((aligned(16)));
+    volatile uint32_t irr_191_160 __attribute__((aligned(16)));
+    volatile uint32_t irr_223_192 __attribute__((aligned(16)));
+    volatile uint32_t irr_255_224 __attribute__((aligned(16)));
+    volatile uint32_t esr __attribute__((aligned(16)));
+    volatile uint32_t reserved6 __attribute__((aligned(16)));
+    volatile uint32_t reserved7 __attribute__((aligned(16)));
+    volatile uint32_t reserved8 __attribute__((aligned(16)));
+    volatile uint32_t reserved9 __attribute__((aligned(16)));
+    volatile uint32_t reserved10 __attribute__((aligned(16)));
+    volatile uint32_t reserved11 __attribute__((aligned(16)));
+    volatile uint32_t lvt_cmci __attribute__((aligned(16)));
+    volatile lapic_icr_low lil __attribute__((aligned(16)));
+    volatile lapic_icr_high lih __attribute__((aligned(16)));
+    volatile uint32_t lvt_timer __attribute__((aligned(16)));
+    volatile uint32_t lvt_thermal __attribute__((aligned(16)));
+    volatile uint32_t lvt_pmc __attribute__((aligned(16)));
+    volatile uint32_t lvt_lint0 __attribute__((aligned(16)));
+    volatile uint32_t lvt_lint1 __attribute__((aligned(16)));
+    volatile uint32_t lvt_error __attribute__((aligned(16)));
+    volatile uint32_t init_count __attribute__((aligned(16)));
+    volatile uint32_t current_count __attribute__((aligned(16)));
+    volatile uint32_t reserved12 __attribute__((aligned(16)));
+    volatile uint32_t reserved13 __attribute__((aligned(16)));
+    volatile uint32_t reserved14 __attribute__((aligned(16)));
+    volatile uint32_t reserved15 __attribute__((aligned(16)));
+    volatile uint32_t dcr __attribute__((aligned(16)));
+    volatile uint32_t reserved16 __attribute__((aligned(16)));
+  };
+} lapic;
+
+//just one sanity check
+STATIC_ASSERT(offsetof(lapic, lih) == 0x310, "lapic alignment issue");
+STATIC_ASSERT(sizeof(lapic) == 1024, "lapic packing issue");
+
+//FIXME: This should be set dynamically probably
+static lapic *LAPIC_BASE = (lapic *)0xfee00000;
 
 static inline bool
 has_lapic(void)
@@ -143,32 +202,25 @@ enable_lapic(void)
 static inline uint32_t
 get_lapic_id(void)
 {
-  lapic_id_register lir = (lapic_id_register)(*lapic_addr(LAPIC_ID_REGISTER));
-  return lir.lapicid;
+  return LAPIC_BASE->lir.lapicid;
 }
 
 static inline uint32_t
 get_lapic_version(void)
 {
-  lapic_version_register lvr = 
-    (lapic_version_register)*lapic_addr(LAPIC_VERSION_REGISTER);
-  return lvr.version;
+  return LAPIC_BASE->lvr.version;
 }
 
 static inline uint32_t
 get_lapic_max_lvt_entry(void)
 {
-  lapic_version_register lvr = 
-    (lapic_version_register)*lapic_addr(LAPIC_VERSION_REGISTER);
-  return lvr.max_lvt_entry;
+  return LAPIC_BASE->lvr.max_lvt_entry;
 }
 
 static inline uint32_t
 get_lapic_eoi_broadcast_suppression(void)
 {
-  lapic_version_register lvr = 
-    (lapic_version_register)*lapic_addr(LAPIC_VERSION_REGISTER);
-  return lvr.eoi_broadcast_suppression;
+   return LAPIC_BASE->lvr.eoi_broadcast_suppression;
 }
 
 //TODO: There is a bit that we probably want to check that tells us if the ipi
@@ -177,22 +229,16 @@ static inline void
 send_ipi(lapic_icr_low icr_low, lapic_icr_high icr_high)
 {
   //IPI is fired on the lowest dword being set so we set high first
-  volatile lapic_icr_high *icrh = 
-    (lapic_icr_high *)lapic_addr(LAPIC_ICR_HIGH);
-  icrh->raw = icr_high.raw;
+  LAPIC_BASE->lih.raw = icr_high.raw;
 
-  volatile lapic_icr_low *icrl = 
-    (lapic_icr_low *)lapic_addr(LAPIC_ICR_LOW);
-  icrl->raw = icr_low.raw;
+  LAPIC_BASE->lil.raw = icr_low.raw;
 }
 
 //To send an eoi any write to the eoi register will do
 static inline void
 send_eoi(void)
 {
-  volatile lapic_eoi_register *eoir =
-    (lapic_eoi_register *)lapic_addr(LAPIC_EOI_REGISTER);
-  eoir->raw = 0;
+  LAPIC_BASE->ler.raw = 0;
 }
 
 #endif

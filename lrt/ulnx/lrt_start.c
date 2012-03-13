@@ -31,11 +31,10 @@
 #include <string.h>
 #include <assert.h>
 
+#include <l0/l0_start.h>
 #include <l0/lrt/pic.h>
 #include <l0/lrt/mem.h>
 #include <l0/lrt/trans.h>
-
-extern void l0_start(uintptr_t startinfo);
 
 static struct start_args_t {
   intptr_t cores;
@@ -152,9 +151,6 @@ startinfo(int argc, char **argv, char **environ,
   *size = (uintptr_t)s;
 }
 
-//DS KLUDGE: I make main a weak symbol so that testing can overwrite the symbol
-// but still link with all the code
-__attribute__ ((weak)) 
 int
 main(int argc, char **argv, char **environ) 
 {

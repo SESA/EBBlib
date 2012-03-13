@@ -25,7 +25,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#include <arch/amd64/apic.h>
+#include <l0/l0_start.h>
 #include <l0/lrt/bare/arch/amd64/lrt_start.h>
 #include <l0/lrt/bare/arch/amd64/mem.h>
 #include <l0/lrt/bare/arch/amd64/pic.h>
@@ -44,8 +44,6 @@
 // 3. init64.c initializes the "pic" and sends an ipi to ourself which goes
 //     through lrt_start_isr.S and then gets here
 
-extern void l0_start(void);
-
 //We assume the early boot stack is enough until later on when, for example,
 // the event manager gets us on an event and an associated stack. 
 void 
@@ -56,11 +54,11 @@ lrt_start(void)
   lrt_mem_init();
   lrt_trans_init();
 
-  l0_start();
+  l0_start(0);
   
   //Because we get here on an IPI, we need to send an eoi before returning
   // to the assembly which does our iretq
-  send_eoi();
+  lrt_pic_ackipi();
 }
 
 uintptr_t

@@ -170,20 +170,24 @@ lrt_pic_numvec()
 intptr_t
 lrt_pic_allocvec(uintptr_t *vec)
 {
-  EBB_LRT_printf("%s: NYI", __func__);
+  EBB_LRT_printf("%s: NYI\n", __func__);
   EBBAssert(0);
 }
 
 void
 lrt_pic_ackipi()
 {
-  EBB_LRT_printf("%s: NYI", __func__);
-  EBBAssert(0);
+  send_eoi();
+}
+
+static void
+lrt_pic_enable(uint8_t vec)
+{
+  idt[vec].p = 1;
 }
 
 void
 lrt_pic_enableipi()
 {
-  EBB_LRT_printf("%s: NYI", __func__);
-  EBBAssert(0);
+  lrt_pic_enable(IPI_VEC);
 }
