@@ -20,62 +20,51 @@
  * THE SOFTWARE.
  */
 
-OUTPUT_ARCH(i386:x86-64)
-OUTPUT_FORMAT(elf64-x86-64)
-ENTRY(_start)
+#include <arch/ppc32/asdef.h>
+#include <arch/ppc32/bpcore/ppc450_core.h>
+	
+	.globl _start
+	.section .init.text, "ax"
+	.balign 8
+_start:
+	nop
 
-SECTIONS
-{
-	. = 0x00100000;	
-	kstart = .;
-		  
-	.init32 : 
-	{
-		/* the mb_header has to be in the first 8k
-		 * of the file so I put it here.
-		 */
-		*(.mb_header); 
-		*(.init.startup32);
-		*(.init.text32);
-		*(.init.data32);
-	}
-	.text ALIGN (4K) :
-	{
-		*(.text);
-		*(.gnu.linkonce.t*);
-	}
+	mfspr	r21, SPRN_PIR
+	cmpwi	r21, 0
+	bgto	spin_secondary
+	
+	//load stack into r1
+	lis	r1, _mini_stack@h
+	ori	r1, r1, _mini_stack@l
+	subi	r1, r1, 112 //ask about this
 
-	.rodata ALIGN (4K) : 
-	{
-		start_ctors = .;
-		*(.ctor*)
-		end_ctors = .;
-		
-		*(.rodata*)
-		*(.gnu.linkonce.r*)
-	}
-	.data ALIGN (4K) : 
-	{
-		*(.data)
-		*(.gnu.linkonce.d*)
-	}
+	//load init addr into r20
+	lis	r20, init@h
+	ori	r20, r20, init@l
+	
+	ld	r2, 8(r20) //load TOC value
+	ld	r20, 0(r20) //now call it
+	mtctr	r20
+	bctrl
+	attn
 
-	.bss : 
-	{
-		sbss = .;
-		*(COMMON)
-		*(.bss)
-		*(.gnu.linkonce.b*)
-		ebss = .;
-	}
-
-	/DISCARD/ :
-	{
-		/* *(.debug*); */
-		*(.comment);
-		*(.eh_frame);
-		*(.note*);
-	}
-	kend = .;
-}
-
+entry_secondary: .long -1
+spin_secondary:
+	bl 	1f
+1:
+	mflr 	r1
+	subi 	r1, r1, 8 //get entry word
+2:
+	dcbi	0, r1
+	lwz	r2, 0(r1)
+	addi	r3, r2, 1
+	cmpwi	r3, 0
+	beq	2b
+	iccci	0, 0
+	mtlr	r2
+	blr
+	
+	.section .init.stack
+	.align 16
+	.space 0x4000
+_mini_stack:

@@ -1,3 +1,6 @@
+#ifndef ARCH_PPC64_SYSIO_H
+#define ARCH_PPC64_SYSIO_H
+
 /*
  * Copyright (C) 2011 by Project SESA, Boston University
  *
@@ -20,62 +23,29 @@
  * THE SOFTWARE.
  */
 
-OUTPUT_ARCH(i386:x86-64)
-OUTPUT_FORMAT(elf64-x86-64)
-ENTRY(_start)
+#include <stdint.h>
 
-SECTIONS
-{
-	. = 0x00100000;	
-	kstart = .;
-		  
-	.init32 : 
-	{
-		/* the mb_header has to be in the first 8k
-		 * of the file so I put it here.
-		 */
-		*(.mb_header); 
-		*(.init.startup32);
-		*(.init.text32);
-		*(.init.data32);
-	}
-	.text ALIGN (4K) :
-	{
-		*(.text);
-		*(.gnu.linkonce.t*);
-	}
-
-	.rodata ALIGN (4K) : 
-	{
-		start_ctors = .;
-		*(.ctor*)
-		end_ctors = .;
-		
-		*(.rodata*)
-		*(.gnu.linkonce.r*)
-	}
-	.data ALIGN (4K) : 
-	{
-		*(.data)
-		*(.gnu.linkonce.d*)
-	}
-
-	.bss : 
-	{
-		sbss = .;
-		*(COMMON)
-		*(.bss)
-		*(.gnu.linkonce.b*)
-		ebss = .;
-	}
-
-	/DISCARD/ :
-	{
-		/* *(.debug*); */
-		*(.comment);
-		*(.eh_frame);
-		*(.note*);
-	}
-	kend = .;
+static inline uint8_t
+sysIn8(char *addr) {
+  uint8_t byte;
+  asm volatile (
+		"lbz %[b], 0(%[ea])\n\t"
+		"eieio"
+		: [b] "=r" (byte)
+		: [ea] "b" (addr)
+		);
+  return byte;
 }
 
+static inline void
+sysOut8(char *addr, uint8_t byte) {
+  asm volatile (
+		"stb %[b], 0(%[ea])\n\t"
+		"eieio"
+		: 
+		: [b] "r" (byte),
+		  [ea] "b" (addr)
+		);
+}
+
+#endif

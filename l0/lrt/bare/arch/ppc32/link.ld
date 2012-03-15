@@ -20,44 +20,32 @@
  * THE SOFTWARE.
  */
 
-OUTPUT_ARCH(i386:x86-64)
-OUTPUT_FORMAT(elf64-x86-64)
+OUTPUT_ARCH(powerpc:common)
 ENTRY(_start)
 
 SECTIONS
 {
-	. = 0x00100000;	
+	. = 0x0
 	kstart = .;
-		  
-	.init32 : 
+	
+	.init :
 	{
-		/* the mb_header has to be in the first 8k
-		 * of the file so I put it here.
-		 */
-		*(.mb_header); 
-		*(.init.startup32);
-		*(.init.text32);
-		*(.init.data32);
+		*(.init.text);
+		*(.init.stack);
 	}
-	.text ALIGN (4K) :
+
+	.text ALIGN (4k) :
 	{
 		*(.text);
-		*(.gnu.linkonce.t*);
 	}
 
 	.rodata ALIGN (4K) : 
 	{
-		start_ctors = .;
-		*(.ctor*)
-		end_ctors = .;
-		
-		*(.rodata*)
-		*(.gnu.linkonce.r*)
+		*(.rodata)
 	}
 	.data ALIGN (4K) : 
 	{
 		*(.data)
-		*(.gnu.linkonce.d*)
 	}
 
 	.bss : 
@@ -65,17 +53,14 @@ SECTIONS
 		sbss = .;
 		*(COMMON)
 		*(.bss)
-		*(.gnu.linkonce.b*)
 		ebss = .;
 	}
 
 	/DISCARD/ :
 	{
-		/* *(.debug*); */
-		*(.comment);
 		*(.eh_frame);
 		*(.note*);
+		*(.comment);
 	}
-	kend = .;
+	kend = .;	
 }
-

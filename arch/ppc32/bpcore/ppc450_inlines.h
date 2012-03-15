@@ -19,7 +19,7 @@
 
 
 
-#include <common/namespace.h>
+#include <arch/ppc32/common/namespace.h>
 
 #if !defined(__ASSEMBLY__) && !defined(__BGP_HOST_COMPILED__) && !defined(__MAMBO__)
 
