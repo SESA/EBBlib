@@ -106,7 +106,7 @@ STATIC_ASSERT(offsetof(CObjInterface(EventMgrPrim), dispatchEventLocal) == 0x20,
       "pushq %rsp;"							\
       "pushq (%rsp);"							\
       "andq $-0x10, %rsp;"						\
-      "movq theEventMgrPrimId@GOTPCREL(%RIP), %rax;"					\
+      "movq theEventMgrPrimId, %rax;"					\
       "movq $" str(i) ", %rsi;"						\
       "movq (%rax), %rdi;"						\
       "movq (%rdi), %rax;"						\
