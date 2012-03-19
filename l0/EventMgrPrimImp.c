@@ -20,7 +20,6 @@
  * THE SOFTWARE.
  */
 #include <config.h>
-#include <string.h>
 #include <stdint.h>
 #include <inttypes.h>
 
@@ -97,18 +96,25 @@ void vf_common(uintptr_t i)
 #define str(s) xstr(s)
 #define xstr(s) #s
 
-#define VFUNC(i)					\
-  extern void vf##i(void);				\
-  asm(							\
-      ".globl vf" str(i) "\n\t"				\
-      "vf" str(i) ":\n\t"				\
-      "pushq %rsp\n\t"					\
-      "pushq (%rsp)\n\t"				\
-      "andq $-0x10, %rsp\n\t"				\
-      "movq $" str(i) ", %rdi\n\t"			\
-      "call vf_common\n\t"				\
-      "movq 8(%rsp), %rsp\n\t"				\
+STATIC_ASSERT(offsetof(CObjInterface(EventMgrPrim), dispatchEventLocal) == 0x20,
+	      "VFUNC relies on this offset being 0x20!");
+#define VFUNC(i)							\
+  extern void vf##i(void);						\
+  asm(									\
+      ".globl vf" str(i) ";"						\
+      "vf" str(i) ":;"							\
+      "pushq %rsp;"							\
+      "pushq (%rsp);"							\
+      "andq $-0x10, %rsp;"						\
+      "movq theEventMgrPrimId@GOTPCREL(%RIP), %rax;"					\
+      "movq $" str(i) ", %rsi;"						\
+      "movq (%rax), %rdi;"						\
+      "movq (%rdi), %rax;"						\
+      "movq 0x20(%rax),%rax;"						\
+      "call *%rax;"							\
+      "movq 8(%rsp), %rsp;"						\
       "iretq");
+
 #endif
 VFUNC(0);
 VFUNC(1);

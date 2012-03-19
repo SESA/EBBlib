@@ -69,6 +69,57 @@ AC_TYPE_UINT64_T
 AC_TYPE_UINTMAX_T
 AC_TYPE_UINTPTR_T
 
+# C feature checks
+AC_LANG_C
+
+ac_save_CFLAGS="$CFLAGS"
+CFLAGS="$CFLAGS -std=gnu99"
+AC_COMPILE_IFELSE(
+	[AC_LANG_PROGRAM([[]],[[;]])],
+	[std_gnu_99=yes],
+	[AC_MSG_WARN([no --std=gnu99])])
+CFLAGS="$ac_save_CFLAGS"
+AM_CONDITIONAL(STD_GNU_99, test x$std_gnu_99 = xyes)
+
+ac_save_CFLAGS="$CFLAGS"
+CFLAGS="$CFLAGS -std=gnu99"
+AC_COMPILE_IFELSE(
+	[AC_LANG_PROGRAM([[_Static_assert(1,"");]],[[;]])],
+	[cc_static_assert=yes],
+	[AC_MSG_WARN([no c static assertions])])
+CFLAGS="$ac_save_CFLAGS"
+AS_IF([test x$cc_static_assert = xyes], 
+	    [AC_DEFINE([HAS_C_STATIC_ASSERT], [1], [can use _Static_assert in C])])
+
+# CXX feature checks
+AC_LANG_CPLUSPLUS
+ac_save_CXXFLAGS="$CXXFLAGS"
+CXXFLAGS="$CXXFLAGS -std=gnu++0x"
+AC_COMPILE_IFELSE(
+	[AC_LANG_PROGRAM([[]],[[;]])],
+	[std_gnuxx_0x=yes],
+	[AC_MSG_WARN([no --std=gnu++0x])])
+CXXFLAGS="$ac_save_CXXFLAGS"
+AM_CONDITIONAL(STD_GNUXX_0x, test x$std_gnuxx_0x = xyes)
+
+ac_save_CXXFLAGS="$CXXFLAGS"
+CXXFLAGS="$CXXFLAGS -ffreestanding -Wall -Werror"
+AC_COMPILE_IFELSE(
+	[AC_LANG_PROGRAM([[]],[[;]])],
+	[gxx_ffreestanding=yes],
+	[AC_MSG_WARN([no -ffreestanding])])
+CXXFLAGS="$ac_save_CXXFLAGS"
+AM_CONDITIONAL(CXX_FFREESTANDING, test x$gxx_ffreestanding = xyes)
+
+ac_save_CXXFLAGS="$CXXFLAGS"
+CXXFLAGS="$CXXFLAGS -std=gnu++0x"
+AC_COMPILE_IFELSE(
+	[AC_LANG_PROGRAM([[static_assert(1,"");]],[[;]])],
+	[cxx_static_assert=yes],
+	[AC_MSG_WARN([no c++ static assertions])])
+CXXFLAGS="$ac_save_CXXFLAGS"
+AS_IF([test x$cxx_static_assert = xyes], 
+	    [AC_DEFINE([HAS_CXX_STATIC_ASSERT], [1], [can use static_assert in C++])])
 
 # Checks for library functions.
 AS_IF([test x$lrt = xulnx],

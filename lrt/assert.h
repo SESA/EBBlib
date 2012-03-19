@@ -22,6 +22,8 @@
  * THE SOFTWARE.
  */
 
+#include <config.h>
+
 #ifdef LRT_ULNX
 #include <lrt/ulnx/assert.h>
 #elif LRT_BARE
@@ -32,14 +34,17 @@
 #define EBBRCAssert(rc) EBBAssert(EBBRC_SUCCESS(rc))
 
 #ifdef __cplusplus
-#define STATIC_ASSERT static_assert
-#else
-#if __GNUC__ > 4 || \
-  (__GNUC__ == 4 && __GNUC_MINOR__ > 5)
-#define STATIC_ASSERT _Static_assert
-#else
-#define STATIC_ASSERT(b,s)
-#endif
+  #if HAS_CXX_STATIC_ASSERT
+    #define STATIC_ASSERT static_assert
+  #else
+    #define STATIC_ASSERT(b,s)
+  #endif
+#else //C
+  #if HAS_C_STATIC_ASSERT
+    #define STATIC_ASSERT _Static_assert
+  #else
+    #define STATIC_ASSERT(b,s)
+  #endif
 #endif
 
 #endif
