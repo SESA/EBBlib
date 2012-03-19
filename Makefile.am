@@ -37,10 +37,10 @@ AM_LDFLAGS = -melf_x86_64 -static -n -z max-page-size=0x1000 \
 	-Wl,--build-id=none \
 	-T $(top_srcdir)/l0/lrt/bare/arch/amd64/link.ld
 
-# #TODO DS: configure should check for grub-mkrescue
-# ebbos.iso: ebbos $(top_srcdir)/l0/lrt/bare/arch/amd64/grub.cfg
-# 	grub-mkrescue -o ebbos.iso -graft-points boot/ebbos=ebbos \
-# 	boot/grub/grub.cfg=$(top_srcdir)/l0/lrt/bare/arch/amd64/grub.cfg
+#TODO DS: configure should check for grub-mkrescue
+%.iso: % $(top_srcdir)/l0/lrt/bare/arch/amd64/grub.cfg
+	grub-mkrescue -o $@ -graft-points boot/ebbos=$< \
+	boot/grub/grub.cfg=$(top_srcdir)/l0/lrt/bare/arch/amd64/grub.cfg
 
 endif
 

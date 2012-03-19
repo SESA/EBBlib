@@ -4,9 +4,11 @@
 AC_PREREQ(2.61)
 AC_INIT([EBBLib],[0.1],[sesa-developers@googlegroups.com])
 AC_CONFIG_AUX_DIR([build-aux])
-AM_INIT_AUTOMAKE([foreign subdir-objects -Wall -Werror])
+AM_INIT_AUTOMAKE([foreign subdir-objects -Wall -Werror -Wno-portability])
 AC_CONFIG_SRCDIR([l0/l0_start.c])
 AC_CONFIG_HEADER([config.h])
+#AC_CONFIG_MACRO_DIR([m4])
+m4_include([m4/check_gnu_make.m4])
 
 AC_CANONICAL_HOST
 AS_CASE([$host_cpu], [x86_64], 
@@ -38,6 +40,7 @@ AM_PROG_CC_C_O
 AC_PROG_CXX
 AM_PROG_AS
 AC_PROG_RANLIB
+AC_CHECK_GNU_MAKE
 
 # Checks for libraries.
 
