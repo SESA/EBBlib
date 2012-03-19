@@ -26,6 +26,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <assert.h>
+#include <signal.h>
 
 #include <inttypes.h>
 #include <l0/lrt/ulnx/pic-unix.h>
