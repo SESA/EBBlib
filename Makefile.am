@@ -1,6 +1,14 @@
-AM_CFLAGS = -std=gnu99 -Wall -Werror -g3
-AM_CCASFLAGS = -m64 -g3 -D ASM_FILE
-AM_CXXFLAGS = -std=gnu++0x -g3
+AM_CFLAGS = -Wall -Werror -g3
+if STD_GNU_99
+AM_CFLAGS += -std=gnu99
+endif
+
+AM_CCASFLAGS = -D ASM_FILE -g3
+
+AM_CXXFLAGS = -Wall -Werror -g3
+if STD_GNUXX_0x
+AM_CXXFLAGS += -std=gnu++0x 
+endif
 
 if powerpc64
 AM_CFLAGS += -m64
