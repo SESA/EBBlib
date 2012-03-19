@@ -81,12 +81,35 @@ EventMgrPrimImpRef theEventMgrPrimMaster = NULL;
 // etc.  This function will eventually be per-rep, and will
 // as part of the invocation grab the event stack out fo the rep.
 // FIXME: make this a per-rep strucutre
+#ifdef LRT_ULNX
 #define VFUNC(i)					\
-static void vf##i(void)		    		        \
-{							\
- EBBCALL(theEventMgrPrimId, dispatchEventLocal, i);     \
-}		
+  static void vf##i(void)				\
+  {							\
+    EBBCALL(theEventMgrPrimId, dispatchEventLocal, i);	\
+  }		
+#elif ARCH_AMD64
+//FIXME: This burns all sorts of register state without
+// saving it. Need to discuss this.
+void vf_common(uintptr_t i)
+{
+ EBBCALL(theEventMgrPrimId, dispatchEventLocal, i);
+}
+#define str(s) xstr(s)
+#define xstr(s) #s
 
+#define VFUNC(i)					\
+  extern void vf##i(void);				\
+  asm(							\
+      ".globl vf" str(i) "\n\t"				\
+      "vf" str(i) ":\n\t"				\
+      "pushq %rsp\n\t"					\
+      "pushq (%rsp)\n\t"				\
+      "andq $-0x10, %rsp\n\t"				\
+      "movq $" str(i) ", %rdi\n\t"			\
+      "call vf_common\n\t"				\
+      "movq 8(%rsp), %rsp\n\t"				\
+      "iretq");
+#endif
 VFUNC(0);
 VFUNC(1);
 VFUNC(2);
@@ -588,7 +611,7 @@ EventMgrPrimImpInit(void)
   if (__sync_bool_compare_and_swap(&theEventMgrPrimId, (EventMgrPrimId)0,
 				   (EventMgrPrimId)-1)) {
     EBBId id;
-    EBBAssert(MAXEVENTS > lrt_pic_numvec());
+    EBBAssert(MAXEVENTS >= lrt_pic_numvec());
     rc = CObjEBBRootMultiImpCreate(&rootRef, EventMgrPrimImp_createRepAssert);
     EBBRCAssert(rc);
     rc = EBBAllocPrimId(&id);

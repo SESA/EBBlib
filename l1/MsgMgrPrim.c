@@ -371,7 +371,6 @@ MsgMgrPrim_createRep(CObjEBBRootMultiImpRef root)
   EBB_LRT_printf("%s: msg event hander taking over ipi interrupt\n", 
 		 __func__);
   COBJ_EBBCALL(theEventMgrPrimId, registerIPIHandler, ehid);
-  COBJ_EBBCALL(theEventMgrPrimId, dispatchIPI, MyEL());
 
   return repRef;
 };

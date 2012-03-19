@@ -21,7 +21,7 @@
  */
 
 #include <config.h>
-#include <stdint.h>
+#include <inttypes.h>
 
 #include <l0/lrt/types.h>
 #include <l0/cobj/cobj.h>
@@ -65,16 +65,16 @@ PrimAllocTst_start(AppRef _self, int argc, char **argv,
       // XXX: we pass a null EBB_MEM_POOL here; this is exploiting temporary
       // knowledge that the impelmentations don't use this parameter.
       if(EBBPrimMalloc(j, &ptrs[j], (EBB_MEM_POOL)NULL) != EBBRC_OK) {
-        EBB_LRT_printf("allocation failed: i = %lu, j = %lu.\n", i, j);
+        EBB_LRT_printf("allocation failed: i = %" PRIuPTR ", j = %" PRIuPTR".\n", i, j);
       } else {
-        EBB_LRT_printf("allocated pointer %lx for i = %lu, j = %lu\n", (uintptr_t)ptrs[j], i, j);
+        EBB_LRT_printf("allocated pointer %" PRIxPTR " for i = %" PRIuPTR ", j = %" PRIuPTR "\n", (uintptr_t)ptrs[j], i, j);
       }
     }
     for(j = 1; j < 128; j++) {
       if(EBBPrimFree(j, ptrs[j]) != EBBRC_OK) {
-        EBB_LRT_printf("free failed: i = %lu, j = %lu.\n", i, j);
+        EBB_LRT_printf("free failed: i = %" PRIuPTR ", j = %" PRIuPTR ".\n", i, j);
       } else {
-        EBB_LRT_printf("freed pointer %lx for i = %lu, j = %lu\n", (uintptr_t)ptrs[j], i, j);
+        EBB_LRT_printf("freed pointer %" PRIxPTR " for i = %" PRIuPTR ", j = %" PRIuPTR "\n", (uintptr_t)ptrs[j], i, j);
       }
     }
   }

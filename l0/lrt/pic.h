@@ -24,6 +24,8 @@
 
 #ifdef LRT_ULNX
 #include <l0/lrt/ulnx/pic.h>
+#elif LRT_BARE
+#include <l0/lrt/bare/pic.h>
 #endif
 
 #endif

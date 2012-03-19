@@ -20,8 +20,10 @@
  * THE SOFTWARE.
  */
 
-#include <config.h>
 #include <inttypes.h>
+#include <stddef.h>
+
+#include <config.h>
 #include <lrt/io.h>
 #include <lrt/misc.h>
 #include <lrt/assert.h>
@@ -85,7 +87,7 @@ gt2id(EBBGTrans *gt) {
 static inline
 EBBGTrans *
 id2gt(EBBId id) {
-  return (EBBGTrans *)lrt_trans_id2gt((lrt_transid) id);
+  return (EBBGTrans *)lrt_trans_id2gt((uintptr_t)id);
 }
 
 void
@@ -192,6 +194,6 @@ void
 trans_init(void)
 {
   EBBAssert(sysTransValidate());
-  LRT_bzero((void *)mygmem(), mygmem_size());
+  __builtin_bzero((void *)mygmem(), mygmem_size());
   initLTable();
 }

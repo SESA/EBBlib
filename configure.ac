@@ -2,20 +2,37 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.61)
-AC_INIT([EBBLib],[0.1],[sesa@lists.xstack.org])
+AC_INIT([EBBLib],[0.1],[sesa-developers@googlegroups.com])
 AC_CONFIG_AUX_DIR([build-aux])
-AM_INIT_AUTOMAKE([foreign subdir-objects -Wall -Werror])
+AM_INIT_AUTOMAKE([foreign subdir-objects -Wall -Werror -Wno-portability])
 AC_CONFIG_SRCDIR([l0/l0_start.c])
 AC_CONFIG_HEADER([config.h])
+#AC_CONFIG_MACRO_DIR([m4])
+m4_include([m4/check_gnu_make.m4])
 
 AC_CANONICAL_HOST
-AS_CASE([$host_cpu], [x86_64], [], [powerpc], [], [powerpc64], [], 
+AS_CASE([$host_cpu], [x86_64], 
+		     [AC_DEFINE([ARCH_AMD64], [1], [x86_64 architecture])],
+		     [powerpc], 
+		     [AC_DEFINE([ARCH_PPC], [1], [powerpc32 architecture])],
+		     [powerpc64], 
+		     [AC_DEFINE([ARCH_PPC64], [1], [powerpc64 architecture])], 
 		     [AC_MSG_ERROR([not on a supported architecture])])
 AM_CONDITIONAL([x86_64], [test x$host_cpu == xx86_64])
 AM_CONDITIONAL([powerpc], [test x$host_cpu == xpowerpc])
 AM_CONDITIONAL([powerpc64], [test x$host_cpu == xpowerpc64])
-#AS_IF([test "x$host_cpu" != "xx86_64" -a "x$host_cpu" != "xpowerpc*"], [AC_MSG_ERROR([not on a supported architecture])])
-AC_DEFINE(LRT_ULNX, [], [Set to indicate that we are running the userland Linux low-level runtime])
+
+AC_ARG_ENABLE([baremetal],
+  AS_HELP_STRING([--enable-baremetal], [Enable baremetal build]),
+  [lrt=bare],
+  [lrt=ulnx])
+
+AS_CASE([$lrt], [bare], [AC_DEFINE([LRT_BARE], [1], [Baremetal LRT])],
+		[ulnx], [AC_DEFINE([LRT_ULNX], [1], [Baremetal ULNX])])
+
+AM_CONDITIONAL(LRT_BARE, test x$lrt = xbare)
+AM_CONDITIONAL(LRT_ULNX, test x$lrt = xulnx)
+
 
 # Checks for programs.
 AC_PROG_CC
@@ -23,6 +40,7 @@ AM_PROG_CC_C_O
 AC_PROG_CXX
 AM_PROG_AS
 AC_PROG_RANLIB
+AC_CHECK_GNU_MAKE
 
 # Checks for libraries.
 
@@ -53,15 +71,16 @@ AC_TYPE_UINTPTR_T
 
 
 # Checks for library functions.
-AC_SEARCH_LIBS([pthread_create], [pthread], [],
-				 [AC_MSG_ERROR([pthread library missing])])
-dnl AC_SEARCH_LIBS([pcap_freealldevs], [pcap], [],
-dnl 				 [AC_MSG_ERROR([pcap library missing])])
-AC_CHECK_FUNCS([bzero dup2 gethostbyname memset socket strerror])
-
-#PKG_CHECK_MODULES([CHECK], [check >= 0.9.8], [BUILD_TESTS="yes"],
-#			   AC_MSG_WARN([Check not found; cannot run unit tests!])
-#			   [BUILD_TESTS="no"])
+AS_IF([test x$lrt = xulnx],
+	    [AC_SEARCH_LIBS([pthread_create],
+	      [pthread],
+	      [],
+	      [AC_MSG_ERROR([pthread library missing])])])
+AS_IF([test x$lrt = xulnx],
+	    [AC_SEARCH_LIBS([pcap_freealldevs],
+	      [pcap],
+	      [],
+	      [AC_MSG_ERROR([pcap library missing])])])
 
 AC_CONFIG_FILES([Makefile])
 

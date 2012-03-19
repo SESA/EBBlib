@@ -18,6 +18,6 @@ if MemMgrPrimSimple
 l0_memmgrprim_sources = $(l0_membaseprim) $(l0_memmgrprimsimple_sources)
 endif
 
-l0_sources = l0/const-asm.h l0/const.h l0/types.h l0/l0_start.c $(l0_ebbmgrprim_sources) \
+l0_sources = l0/const.h l0/types.h l0/l0_start.c l0/l0_start.h $(l0_ebbmgrprim_sources) \
 	$(l0_eventmgrprim_sources) $(l0_memmgrprim_sources) $(l0_cobj_sources) \
 	$(l0_cplus_sources) $(l0_lrt_sources) $(l0_sys_sources)

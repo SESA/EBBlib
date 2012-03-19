@@ -1,5 +1,6 @@
 #ifndef __LRT_TRANS_H__
 #define __LRT_TRANS_H__
+
 /*
  * Copyright (C) 2011 by Project SESA, Boston University
  *
@@ -22,8 +23,31 @@
  * THE SOFTWARE.
  */
 
+//forward declaration for the lrt specific headers
+struct lrt_trans;
+
 #ifdef LRT_ULNX
 #include <l0/lrt/ulnx/trans.h>
+#elif LRT_BARE
+#include <l0/lrt/bare/trans.h>
 #endif
+
+#include <lrt/assert.h>
+
+// this has been sized for the future use
+// doing multi-node translations
+// eg.  some bits used as a key map to a node
+//      some bits used as a key map to a 
+//      lrt_trans pointer
+
+struct lrt_trans {
+  uint64_t vals[4];
+};
+
+#define LRT_TRANS_NUMIDS_PERPAGE \
+  (LRT_TRANS_PAGESIZE / sizeof(struct lrt_trans))
+
+STATIC_ASSERT(sizeof(struct lrt_trans) * LRT_TRANS_NUMIDS_PERPAGE == 
+	       LRT_TRANS_PAGESIZE, "translation table size mismatch!");
 
 #endif

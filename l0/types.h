@@ -22,9 +22,11 @@
  * THE SOFTWARE.
  */
 
-/* #ifndef NULL */
-/* #define NULL ((void *)0) */
-/* #endif /\* ! NULL *\/ */
+#include <stdint.h>
+
+#include <l0/lrt/trans.h>
+
+union EBBTransStruct;
 
 typedef union EBBTransStruct EBBTrans;
 typedef EBBTrans EBBLTrans;
@@ -67,7 +69,7 @@ extern void EBBCacheObj(EBBLTrans *lt, EBBRep *obj);
 static inline 
 EBBLTrans * 
 EBBIdToLTrans(EBBId id) {
-  return (EBBLTrans *)lrt_trans_id2lt((lrt_transid)id);
+  return (EBBLTrans *)lrt_trans_id2lt((uintptr_t)id);
 }
 
 static inline 

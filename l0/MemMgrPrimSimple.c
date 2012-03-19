@@ -254,7 +254,7 @@ EBBMemMgrPrimSimpleInit()
 
   // manually install rep into local table so that memory allocations 
   // can work immediate without recursion
-  lt = (EBBLTrans *)lrt_trans_id2lt((lrt_transid)theEBBMemMgrPrimId);
+  lt = (EBBLTrans *)lrt_trans_id2lt((uintptr_t)theEBBMemMgrPrimId);
   EBBCacheObj(lt, (EBBRep *)repRef); 
 
   // it is now safe to call the allocator assuming that the 
