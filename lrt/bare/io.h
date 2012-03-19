@@ -22,11 +22,12 @@
  * THE SOFTWARE.
  */
 
+#include <stddef.h>
 #include <l0/lrt/bare/arch/amd64/stdio.h>
 
 #define EBB_LRT_printf printf
 #define EBB_LRT_vprintf vprintf
 
-void * memset(void *ptr, int value, size_t num);
+void *memset(void *ptr, int value, size_t num);
 
 #endif

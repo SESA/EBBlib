@@ -100,7 +100,7 @@ STATIC_ASSERT(sizeof(ioredirect) == 8, "ioredirect packing issue");
 static inline ioredirect
 ioapic_read_ioredirect(uint8_t interrupt)
 {
-  EBBAssert((interrupt >= 0) && (interrupt <= 23));
+  EBBAssert(interrupt <= 23);
   
   //2 registers per interrupt
   uint32_t reg = IOAPIC_REDTBL_START + (interrupt * 2);
@@ -116,7 +116,7 @@ ioapic_read_ioredirect(uint8_t interrupt)
 static inline void
 ioapic_write_ioredirect(uint8_t interrupt, ioredirect ior)
 {
-  EBBAssert((interrupt >= 0) && (interrupt <= 23));
+  EBBAssert(interrupt <= 23);
 
   //2 registers per interrupt
   uint32_t reg = IOAPIC_REDTBL_START + (interrupt * 2);

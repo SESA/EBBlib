@@ -103,6 +103,15 @@ CXXFLAGS="$ac_save_CXXFLAGS"
 AM_CONDITIONAL(STD_GNUXX_0x, test x$std_gnuxx_0x = xyes)
 
 ac_save_CXXFLAGS="$CXXFLAGS"
+CXXFLAGS="$CXXFLAGS -ffreestanding -Wall -Werror"
+AC_COMPILE_IFELSE(
+	[AC_LANG_PROGRAM([[]],[[;]])],
+	[gxx_ffreestanding=yes],
+	[AC_MSG_WARN([no -ffreestanding])])
+CXXFLAGS="$ac_save_CXXFLAGS"
+AM_CONDITIONAL(CXX_FFREESTANDING, test x$gxx_ffreestanding = xyes)
+
+ac_save_CXXFLAGS="$CXXFLAGS"
 CXXFLAGS="$CXXFLAGS -std=gnu++0x"
 AC_COMPILE_IFELSE(
 	[AC_LANG_PROGRAM([[static_assert(1,"");]],[[;]])],

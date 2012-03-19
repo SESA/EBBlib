@@ -20,7 +20,6 @@
  * THE SOFTWARE.
  */
 #include <config.h>
-#include <string.h>
 #include <stdint.h>
 #include <inttypes.h>
 
@@ -107,7 +106,7 @@ STATIC_ASSERT(offsetof(CObjInterface(EventMgrPrim), dispatchEventLocal) == 0x20,
       "pushq %rsp;"							\
       "pushq (%rsp);"							\
       "andq $-0x10, %rsp;"						\
-      "movq theEventMgrPrimId, %rax;"					\
+      "movq theEventMgrPrimId@GOTPCREL(%RIP), %rax;"					\
       "movq $" str(i) ", %rsi;"						\
       "movq (%rax), %rdi;"						\
       "movq (%rdi), %rax;"						\

@@ -37,8 +37,12 @@ ebbos_libs = libebb.a
 
 if LRT_BARE
 
-BAREFLAGS = -m64 -ffreestanding -nostdlib -nodefaultlibs -g3 \
+BAREFLAGS = -m64 -nostdlib -nodefaultlibs -g3 \
 	-mno-red-zone -mno-mmx -mno-sse -mno-sse2 -mno-sse3
+if CXX_FFREESTANDING
+BAREFLAGS += -ffreestanding
+endif
+
 AM_CFLAGS += $(BAREFLAGS)
 AM_CXXFLAGS += $(BAREFLAGS) -fno-exceptions -fno-rtti -fno-stack-protector
 AM_LDFLAGS = -melf_x86_64 -static -n -z max-page-size=0x1000 \
