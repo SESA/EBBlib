@@ -170,7 +170,10 @@ main(int argc, char **argv, char **environ)
 	    &start_args.start_info, &start_args.start_info_size);
 
   //  dumpstartargs();
-
+#ifdef LRT_STANDALONE_TEST
+  LRT_STANDALONE_TEST
+#else
   lrt_pic_init(lrt_start);
+#endif
   return -1;
 }
