@@ -22,6 +22,8 @@
  * THE SOFTWARE.
  */
 
+#include <config.h>
+
 #ifdef LRT_ULNX
 #include <lrt/ulnx/assert.h>
 #elif LRT_BARE
