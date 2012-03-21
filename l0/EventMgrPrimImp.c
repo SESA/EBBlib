@@ -447,6 +447,9 @@ EventMgrPrim_dispatchEventLocal(void *_self, uintptr_t eventNo)
   EBB_LRT_printf("%s: handling interrupt %" PRIdPTR "\n", __func__, eventNo);
   EBBAssert(handler != NULL); 
   EBBCALL(handler, handleEvent); 
+
+  // FIXME: do we want to do this automatically here?
+  lrt_pic_enable(eventNo);
   return EBBRC_OK;   
 }
 
@@ -515,6 +518,9 @@ EventMgrPrim_registerHandler(void *_self, uintptr_t eventNo,
 
  done:
   spin_unlock(&master->lock);
+
+  // FIXME: need to discuss if this is the right place to enable event
+  lrt_pic_enable(eventNo);
   return rc;
 }
 

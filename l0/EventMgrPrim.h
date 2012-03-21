@@ -79,7 +79,6 @@ CObjInterface(EventMgrPrim) {
 			    uintptr_t isrc);
   EBBRC (*registerIPIHandler) (void *_self, EventHandlerId handler);
 
-
   EBBRC (*allocEventNo) (void *_self, uintptr_t *eventNoPtr);
 
   EBBRC (*dispatchIPI) (void *_self, EvntLoc el);
