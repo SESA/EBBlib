@@ -150,11 +150,7 @@ lrt_pic_unix_blockforinterrupt(lrt_pic_unix_ints *s)
 #ifdef __APPLE__
   struct timespec tout;
   bzero(&tout, sizeof(tout));
-#if 0
   tout.tv_nsec = 100000000; // .1 seconds
-#else
-  tout.tv_sec = 1000; // 
-#endif
 #endif
 
   FD_COPY(&upic.fdset, &rfds);
@@ -186,13 +182,14 @@ lrt_pic_unix_blockforinterrupt(lrt_pic_unix_ints *s)
 #endif
   
   for (i = FIRST_VECFD,v=0; i <= upic.maxfd; i++, v++) {
+#if 0 // debugging crap on what was signalled
     if (FD_ISSET(i, &efds)) {
       fprintf(stderr, "---efds i is %d\n", i);
     }
     if (FD_ISSET(i, &rfds)) {
       fprintf(stderr, "---rfds i is %d\n", i);
     }
-
+#endif
     if ((FD_ISSET(i, &efds) || (FD_ISSET(i, &rfds)))) {
       lrt_pic_unix_ints_set(s, v);
       numintr++;
