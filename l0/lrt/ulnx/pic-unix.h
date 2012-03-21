@@ -36,8 +36,8 @@
  */
 
 #ifdef __APPLE__
-//enum {FIRST_VECFD = 128};
-enum {FIRST_VECFD = 16};
+enum {FIRST_VECFD = 128};
+//enum {FIRST_VECFD = 16};
 #else
 enum {FIRST_VECFD = 16};
 #endif
