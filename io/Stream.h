@@ -1,5 +1,5 @@
-#ifndef __COBJ_EBB_H__
-#define __COBJ_EBB_H__
+#ifndef __STREAM_H__
+#define __STREAM_H__
 /*
  * Copyright (C) 2011 by Project SESA, Boston University
  *
@@ -22,16 +22,17 @@
  * THE SOFTWARE.
  */
 
-extern EBBRC CObjEBBMissFunc(EBBRep **, EBBLTrans *, FuncNum, EBBMissArg);
+// Simple Character Oriented Stream Type
 
-#define COBJ_EBBCALL(id, method, ...) \
-  (EBBId_DREF(id)->ft->method(EBBId_DREF(id), ##__VA_ARGS__))
+EBBType(Stream) {
+  EBBRC (*open) (StreamRef _self);
+  EBBRC (*close) (StreamRef _self);
+  EBBRC (*read) (StreamRef _self, char *buf, intptr_t len);
+  EBBRC (*write) (StreamRef _self, char *buf, intptr_t len);
+  EBBRC (*flush) (StreamRef _self);
+};
 
-#define EBBType(TYPE)				\
-  CObject(TYPE) {				\
-    CObjInterface(TYPE) *ft;			\
-  };						\
-  typedef TYPE ## Ref *TYPE ## Id;		\
-  CObjInterface(TYPE)
+#endif 
 
-#endif
+
+ 
