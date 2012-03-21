@@ -639,8 +639,10 @@ pselecttst(void)
     rc=waitkey();
     if (rc==1) {
       c=fgetc(stdin);
-      write(STDOUT_FILENO, &c, 1);
-      write(STDOUT_FILENO, "\n", 1);
+      rc = write(STDOUT_FILENO, &c, 1);
+      assert(rc==1);
+      rc = write(STDOUT_FILENO, "\n", 1);
+      assert(rc==1);
       if (c=='q') break;
     } else {
       fprintf(stderr,"THAT's ODD waitkey returned %d", rc);
