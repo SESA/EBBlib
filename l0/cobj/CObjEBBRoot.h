@@ -22,12 +22,7 @@
  * THE SOFTWARE.
  */
 
-CObject(CObjEBBRoot)
-{
-  CObjInterface(CObjEBBRoot) *ft;
-};
-
-CObjInterface(CObjEBBRoot) 
+COBJ_EBBType(CObjEBBRoot) 
 {
   EBBRC (*handleMiss)(CObjEBBRootRef self, EBBRep **obj,
 		      EBBLTrans *lt, FuncNum fnum);

@@ -45,16 +45,10 @@
  * Any existing ebbs that want to handle events must be
  * frontended by an event handler EBB
  */
-CObjInterface(EventHandler) {
-  EBBRC (*handleEvent) (void *_self);
-  EBBRC (*init) (void *_self, uintptr_t extra);
+COBJ_EBBType(EventHandler) {
+  EBBRC (*handleEvent) (EventHandlerRef _self);
+  EBBRC (*init) (EventHandlerRef _self, uintptr_t extra);
 };
-
-CObject(EventHandler) {
-  CObjInterface(EventHandler) *ft;
-};
-
-typedef EventHandlerRef *EventHandlerId;
 
 /*
  * You need to be able to get the event location of the node you are
@@ -73,7 +67,7 @@ inline static EvntLoc MyEL() { return lrt_pic_myid; }
  * key local to eventmgr for allocating specific reserved events/interrupt
  * sources
  */
-CObjInterface(EventMgrPrim) {
+COBJ_EBBType(EventMgrPrim) {
   EBBRC (*registerHandler) (void *_self, uintptr_t eventNo,
 			    EventHandlerId handler, 
 			    uintptr_t isrc);
@@ -87,11 +81,6 @@ CObjInterface(EventMgrPrim) {
   EBBRC (*dispatchEventLocal) (void *_self, uintptr_t eventNo);
 };
 
-CObject(EventMgrPrim) {
-  CObjInterface(EventMgrPrim) *ft;
-};
-
-typedef EventMgrPrimRef *EventMgrPrimId;
 // the ID of the one and only event manager
 extern EventMgrPrimId theEventMgrPrimId;
 

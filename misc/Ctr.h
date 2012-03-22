@@ -22,18 +22,10 @@
  * THE SOFTWARE.
  */
 
-CObject(EBBCtr);
-
-CObjInterface(EBBCtr) {
+COBJ_EBBType(EBBCtr) {
   EBBRC (*inc)  (EBBCtrRef _self);
   EBBRC (*dec)  (EBBCtrRef _self);
   EBBRC (*val)  (EBBCtrRef _self, uintptr_t *v);
 };
-
-CObjectDefine(EBBCtr) {
-  CObjInterface(EBBCtr) *ft;
-};
-
-typedef EBBCtrRef *EBBCtrId;
 
 #endif

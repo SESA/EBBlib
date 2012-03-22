@@ -22,14 +22,12 @@
  * THE SOFTWARE.
  */
 
-CObject(MsgHandler);
-
 /* 
  * All Message handling ebbs must conform to these types
  * Any existing ebbs that want to handle messages must be
  * frontended by an message handler EBB
  */
-CObjInterface(MsgHandler) {
+COBJ_EBBType(MsgHandler) {
   /* routines to handle messages sent to me */
   EBBRC (*msg0) (MsgHandlerRef _self);
   EBBRC (*msg1) (MsgHandlerRef _self, uintptr_t a1);
@@ -37,21 +35,13 @@ CObjInterface(MsgHandler) {
   EBBRC (*msg3) (MsgHandlerRef _self, uintptr_t a1, uintptr_t a2, uintptr_t a3);
 };
 
-CObjectDefine(MsgHandler) {
-  CObjInterface(MsgHandler) *ft;
-};
-
-typedef MsgHandlerRef *MsgHandlerId;
-
-CObject(MsgMgr);
-
 /*
  * To send a message to another event location (e.g., core), specify 
  * location, and the ID of the handler object at the target side. This 
  * will normally be the mechanism to start computation on another node 
  * and create local reps as the computation faults on them.
  */
-CObjInterface(MsgMgr) {
+COBJ_EBBType(MsgMgr) {
   /* send message to id at event location */
   EBBRC (*msg0) (MsgMgrRef _self, EvntLoc loc, MsgHandlerId id);
 
@@ -68,11 +58,6 @@ CObjInterface(MsgMgr) {
   EBBRC (*handleIPI) (MsgMgrRef _self);
 };
 
-CObjectDefine(MsgMgr) {
-  CObjInterface(MsgMgr) *ft;
-};
-
-typedef MsgMgrRef *MsgMgrId;
 
 // the ID of the one and only Primative MsgHandler
 extern MsgMgrId theMsgMgrId;

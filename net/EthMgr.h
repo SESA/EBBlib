@@ -30,16 +30,10 @@ struct EthernetHeader {
   uint16_t type;
 };
 
-CObjInterface(EthMgr) {
+COBJ_EBBType(EthMgr) {
   EBBRC (*init)  (void *_self);
   EBBRC (*bind)  (void *_self, uint16_t type, EthTypeMgrId id);
   CObjImplements(EventHandler);
 };
-
-CObject(EthMgr) {
-  CObjInterface(EthMgr) *ft;
-};
-
-typedef EthMgrRef *EthMgrId;
 
 #endif  // __ETH_MGR_H__

@@ -41,7 +41,8 @@
 #include <misc/CtrPrimDistributed.h>
 
 CObject(EBBCtrPrimDistributed) {
-  CObjInterface(EBBCtr) *ft;
+  COBJ_EBBFuncTbl(EBBCtr);
+
   uintptr_t localValue;
   CObjEBBRootMultiRef theRoot;
 };

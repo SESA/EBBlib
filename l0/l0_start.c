@@ -47,13 +47,14 @@
 extern void trans_init(void);
 
 CObject(ResetEventHandler) {
-  CObjInterface(EventHandler) *ft;
+  COBJ_EBBFuncTbl(EventHandler);
+
   CObjEBBRootMultiRef theRoot;	
   uintptr_t startInfo;
 };
 
 static EBBRC 
-ResetEventHandler_handleEvent(void *_self)
+ResetEventHandler_handleEvent(EventHandlerRef _self)
 {
   EBBRC rc;
   ResetEventHandlerRef self = (ResetEventHandlerRef) _self;
@@ -72,9 +73,9 @@ ResetEventHandler_handleEvent(void *_self)
 };
 
 static EBBRC
-ResetEventHandler_init(void *_self, uintptr_t startInfo)
+ResetEventHandler_init(EventHandlerRef _self, uintptr_t startInfo)
 {
-  ResetEventHandlerRef self = _self;
+  ResetEventHandlerRef self = (ResetEventHandlerRef)_self;
   self->startInfo = startInfo;
   return 0;
 };

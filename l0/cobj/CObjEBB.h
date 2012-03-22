@@ -27,11 +27,23 @@ extern EBBRC CObjEBBMissFunc(EBBRep **, EBBLTrans *, FuncNum, EBBMissArg);
 #define COBJ_EBBCALL(id, method, ...) \
   (EBBId_DREF(id)->ft->method(EBBId_DREF(id), ##__VA_ARGS__))
 
-#define EBBType(TYPE)				\
+// Introduces a new CObject Ebb type -> generates all associated cobject types
+#define COBJ_EBBType(TYPE)			\
   CObject(TYPE) {				\
     CObjInterface(TYPE) *ft;			\
   };						\
   typedef TYPE ## Ref *TYPE ## Id;		\
   CObjInterface(TYPE)
 
+// given a EBB Type will generate the appropriate cobject function table pointer
+#define COBJ_EBBFuncTbl(TYPE) CObjInterface(TYPE) *ft;
+
+/*
+#define COBJ_EBBImp_START(TYPE,IMP)		\
+  CObject(TYPE ## IMP) {			\
+  CObjInterface(TYPE) *ft;			\
+  struct 
+
+#define COBJ_EBBImp_END ; }
+*/
 #endif

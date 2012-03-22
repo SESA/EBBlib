@@ -54,7 +54,8 @@
 static const uintptr_t MAX_BLOCK_SIZE = (~0ul >> 1);
 
 CObject(EBBMemMgrPrimSimple) {
-  CObjInterface(EBBMemMgr) *ft;
+  COBJ_EBBFuncTbl(EBBMemMgr);
+
   CObjEBBRootMultiRef myRoot;
   void *mem;
   uintptr_t end;

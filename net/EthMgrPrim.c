@@ -53,11 +53,12 @@
 #define NUMETHTYPES (1<<(sizeof(uint16_t) * 8))
 
 CObject(EvHdlr) {
-  CObjInterface(EventHandler) *ft;
+  COBJ_EBBFuncTbl(EventHandler);
 }; 
 
 CObject(EthMgrPrim) {
-  CObjInterface(EthMgr) *ft;
+  COBJ_EBBFuncTbl(EthMgr);
+
   EthTypeMgrId typeMgrs[NUMETHTYPES];
   CObjectDefine(EvHdlr) evHdlr;
   EventHandlerId hdlrId;
@@ -79,7 +80,7 @@ EthMgrPrim_bind(void *_self, uint16_t type, EthTypeMgrId id)
 }
   
 static EBBRC 
-EthMgrPrim_handleEvent(void *_self)
+EthMgrPrim_handleEvent(EventHandlerRef _self)
 {
   EthMgrPrim *self = ContainingCOPtr(_self,EthMgrPrim,evHdlr);
   ethlib_nic_readpkt();

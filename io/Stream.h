@@ -25,11 +25,10 @@
 // Simple Character Oriented Stream Type
 
 EBBType(Stream) {
-  EBBRC (*open) (StreamRef _self);
-  EBBRC (*close) (StreamRef _self);
-  EBBRC (*read) (StreamRef _self, char *buf, intptr_t len);
+  EBBRC (*read)  (StreamRef _self, char *buf, intptr_t len);
   EBBRC (*write) (StreamRef _self, char *buf, intptr_t len);
   EBBRC (*flush) (StreamRef _self);
+  EBBRC (*close) (StreamRef _self);
 };
 
 #endif 

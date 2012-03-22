@@ -43,7 +43,7 @@
 #include <l0/lrt/mem.h>
 
 CObject(EBBMemMgrPrimStupid) {
-  CObjInterface(EBBMemMgr) *ft;
+  COBJ_EBBFuncTbl(EBBMemMgr);
   CObjEBBRootMultiRef myRoot;
   void *mem;
   uintptr_t len;

@@ -22,14 +22,8 @@
  * THE SOFTWARE.
  */
 
-CObjInterface(EthTypeMgr) {
+COBJ_EBBType(EthTypeMgr) {
   EBBRC (*handlePacket)(void *_self);
 };
-
-CObject(EthTypeMgr) {
-  CObjInterface(EthTypeMgr) *ft;
-};
-
-typedef EthTypeMgr *EthTypeMgrId;
 
 #endif  // __ETH_TYPE_MGR_H__

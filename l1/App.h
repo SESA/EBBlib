@@ -22,11 +22,7 @@
  * THE SOFTWARE.
  */
 
-CObject(App) {
-  CObjInterface(App) *ft;
-};
-
-CObjInterface(App) {
+COBJ_EBBType(App) {
   // this is the primodial message to an application
   // remember that this is an event driven system so your
   // job is to simply do your setup work ... including
@@ -36,8 +32,6 @@ CObjInterface(App) {
   EBBRC (*start) (AppRef _self, int argc, char **argv, 
 		  char **environ);
 };
-
-typedef AppRef *AppId;
 
 extern AppId theAppId;
 

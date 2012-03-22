@@ -51,7 +51,8 @@
 #include <lrt/misc.h>
 
 CObject(L1Prim) {
-  CObjInterface(L1) *ft;
+  COBJ_EBBFuncTbl(L1);
+
   int argc;
   int environc;
   char **argv;

@@ -40,13 +40,10 @@
 
 #define EBBCALL(id, method, ...) COBJ_EBBCALL(id, method, ##__VA_ARGS__)
 
-CObject(EBBCtrPrim);
-typedef EBBCtrPrimRef *EBBCtrPrimId;
-
-CObjectDefine(EBBCtrPrim) {
-  CObjInterface(EBBCtr) *ft;
+CObject(EBBCtrPrim) {
+  COBJ_EBBFuncTbl(EBBCtr);
   uintptr_t v;
-  EBBCtrPrimId id;
+  EBBCtrId id;
 };
 
 extern CObjInterface(EBBCtr) EBBCtrPrim_ftable;

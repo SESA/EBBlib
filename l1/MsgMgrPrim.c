@@ -75,7 +75,8 @@ typedef struct MsgStore_struc {
 
 
 CObject(MsgMgrPrim) {
-  CObjInterface(MsgMgr) *ft;
+  COBJ_EBBFuncTbl (MsgMgr);
+
   uintptr_t eventLoc;
   LockType mml;
   MsgStore *msgqueue; 
@@ -269,7 +270,7 @@ MsgMgrPrim_SetFT(MsgMgrPrimRef o)
 MsgMgrId theMsgMgrId;
 
 static EBBRC 
-MsgEventHandler_handleEvent(void *_self)
+MsgEventHandler_handleEvent(EventHandlerRef _self)
 {
   EBBRC rc;
   // ack that we are handing interrupt
@@ -288,7 +289,7 @@ MsgEventHandler_handleEvent(void *_self)
 };
 
 static EBBRC
-MsgEventHandler_init(void *_self, uintptr_t extra)
+MsgEventHandler_init(EventHandlerRef _self, uintptr_t extra)
 {
   return 0;
 };
