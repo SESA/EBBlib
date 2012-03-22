@@ -25,18 +25,22 @@ ENTRY(_start)
 
 SECTIONS
 {
-	. = 0x0
+	. = 0x0;
 	kstart = .;
-	
+
 	.init :
 	{
 		*(.init.text);
 		*(.init.stack);
 	}
+	.isr :
+	{
+		*(.isr);
+	}	
 
 	.text ALIGN (4k) :
 	{
-		*(.text);
+		*(.text)
 	}
 
 	.rodata ALIGN (4K) : 
