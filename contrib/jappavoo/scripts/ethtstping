@@ -1,0 +1,41 @@
+#!/bin/bash
+
+function myIPAddrs
+{
+   local net
+   local ip
+   local rest
+   local rc
+
+   # If no argument all configured ip address are returned
+   # otherwise only for the speccified interface
+   ifconfig $1 2> /dev/null | grep 'inet addr' | while read net ip rest
+   do
+     ip=${ip##addr:}
+     if [[ $ip != 127.0.0.1 ]]
+     then
+        echo $ip
+     fi
+   done
+}
+
+count=$1
+if=$2
+
+if [[ -z $count || -z $if ]]
+then
+  echo "USAGE: $0 <count> <iface>"
+  exit 0
+fi
+
+ip=$(myIPAddrs $if)
+
+if [[ -z $ip ]]
+then
+  echo "ERROR: $if no ip associated with it"
+  exit 0
+fi
+
+ip=${ip%.*}
+sudo ping -f -b -i 0.1 -w 0 -W 0 -c $count ${ip}.255
+exit $?
