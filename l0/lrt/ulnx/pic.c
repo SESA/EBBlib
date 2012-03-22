@@ -410,14 +410,17 @@ lrt_pic_loop()
     
     // handle all interrupts in bit vector returned by HW
     for (v=0;v<NUM_VEC;v++) {
-      if (lrt_pic_unix_ints_test(&intrSet, v) && lpic->enabled[v]) {
-	numintr--;
-	if (lpic->lvecs[v]) {
-	  lpic->lvecs[v]();
-	} else {
-	  fprintf(stderr, "ERROR: %s: spurious interrupt on %d\n", __func__, v);
+      if (numintr <= 0) break;
+      if (lrt_pic_unix_ints_test(&intrSet, v)) {
+	if (lpic->enabled[v]) {
+	  lrt_pic_disable(v);
+	  numintr--;
+	  if (lpic->lvecs[v]) {
+	    lpic->lvecs[v]();
+	  } else {
+	    fprintf(stderr, "ERROR: %s: spurious interrupt on %d\n", __func__, v);
+	  }
 	}
-	if(numintr<=0) break;
       }
     }
   }
@@ -566,6 +569,8 @@ lrt_pic_standalone_test_ipi(void)
   lrt_pic_enableipi();
 }
 
+static uintptr_t stdin_vec = 0;
+
 static void 
 lrt_pic_standalone_test_stdin(void)
 {
@@ -573,12 +578,12 @@ lrt_pic_standalone_test_stdin(void)
   char c=getc(stdin);
   printf("%c\n", c);
   printf("%s: END\n", __func__);
+  lrt_pic_enable(stdin_vec);
 }
 
 static void
 lrt_pic_standalone_test_start(void)
 {
-  uintptr_t vec;
   intptr_t rc;
 
   printf("%s: started\n", __func__);
@@ -587,13 +592,14 @@ lrt_pic_standalone_test_start(void)
 
   lrt_pic_mapipi(lrt_pic_standalone_test_ipi);
 
-  rc = lrt_pic_allocvec(&vec);
+  rc = lrt_pic_allocvec(&stdin_vec);
   assert(rc==1);
-  printf("allocated vec=%" PRIdPTR "\n", vec);
+  printf("allocated vec=%" PRIdPTR "\n", stdin_vec);
   
-  rc = lrt_pic_mapvec(STDIN_FILENO, vec, lrt_pic_standalone_test_stdin);
+  rc = lrt_pic_mapvec(STDIN_FILENO, stdin_vec, lrt_pic_standalone_test_stdin);
   assert(rc==1);
-  printf("allocated vec=%" PRIdPTR " to STDIN_FILENO\n", vec);
+  printf("allocated vec=%" PRIdPTR " to STDIN_FILENO\n", stdin_vec);
+  lrt_pic_enable(stdin_vec);
   //  lrt_pic_ipi(lrt_pic_myid);
 }
 
@@ -633,8 +639,10 @@ pselecttst(void)
     rc=waitkey();
     if (rc==1) {
       c=fgetc(stdin);
-      write(STDOUT_FILENO, &c, 1);
-      write(STDOUT_FILENO, "\n", 1);
+      rc = write(STDOUT_FILENO, &c, 1);
+      assert(rc==1);
+      rc = write(STDOUT_FILENO, "\n", 1);
+      assert(rc==1);
       if (c=='q') break;
     } else {
       fprintf(stderr,"THAT's ODD waitkey returned %d", rc);
