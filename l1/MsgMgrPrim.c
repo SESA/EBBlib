@@ -88,8 +88,10 @@ CObject(MsgMgrPrim) {
   CObjectDefine(EvHdlr) evHdlr;
 
   EvntLoc eventLoc;
-  LockType mml;
+  LockType msgqueuelock;
   MsgStore *msgqueue; 
+  LockType freelistlock;
+  MsgStore *freelist; 
   // FIXME: abstract at event mgr
   MsgMgrPrimRef reps[LRT_PIC_MAX_PICS];
   // reference to the single root
@@ -100,13 +102,13 @@ static EBBRC
 MsgMgrPrim_enqueueMsg(MsgMgrPrimRef target, MsgStore *msg)
 {
   uintptr_t queueempty = 1;
-  spinLock(&target->mml);
+  spinLock(&target->msgqueuelock);
   if (target->msgqueue != NULL) {
     queueempty = 0;
   }
   msg->next = target->msgqueue;
   target->msgqueue = msg;
-  spinUnlock(&target->mml);
+  spinUnlock(&target->msgqueuelock);
   if (queueempty) {
     SendIPIEvent(target->eventLoc);
   }
@@ -117,12 +119,12 @@ static MsgStore *
 MsgMgrPrim_dequeueMsgHead(MsgMgrPrimRef target)
 {
   MsgStore *msg;
-  spinLock(&target->mml);
+  spinLock(&target->msgqueuelock);
   msg = target->msgqueue;
   if (msg != NULL) {
     target->msgqueue = msg->next;
   }
-  spinUnlock(&target->mml);
+  spinUnlock(&target->msgqueuelock);
   return msg;
 }
 
@@ -154,12 +156,41 @@ allocMsg(MsgMgrPrimRef self)
 {
   EBBRC rc;
   MsgStore *msg;  
+  spinLock(&self->freelistlock);
+  msg = self->freelist;
+  if (msg != NULL) {
+    self->freelist = msg->next; 
+    spinUnlock(&self->freelistlock);
+    msg->home = MyEL();
+    // EBB_LRT_printf("%s:%s found free message\n", __FILE__, __func__);
+    return msg ;
+  }
+  spinUnlock(&self->freelistlock);
+
+  // EBB_LRT_printf("%s:%s freelist empty, allocating new msg\n", __FILE__, __func__);
+
+  // need to allocate another message 
   rc = EBBPrimMalloc(sizeof(*msg), &msg, EBB_MEM_DEFAULT);
   EBBRCAssert(rc);
 
   msg->home = MyEL();
 
   return msg;
+}
+
+static void
+freeMsg(MsgMgrPrimRef self, MsgStore *msg)
+{
+  EBBRC rc;
+  MsgMgrPrimRef target; 
+
+  rc = MsgMgrPrim_findTarget(self, msg->home, &target);
+  EBBRCAssert(rc);
+
+  spinLock(&target->freelistlock);
+  msg->next = target->freelist;
+  target->freelist = msg;
+  spinUnlock(&target->freelistlock);
 }
 
 static EBBRC 
@@ -268,7 +299,7 @@ MsgMgrPrim_handleEvent(EventHandlerRef _self)
       break;
     }
     // FIXME: retain in a free list?
-    EBBPrimFree(sizeof(MsgStore), msg);
+    freeMsg(self, msg);
     msg = MsgMgrPrim_dequeueMsgHead(self);
   }
   // we are re-enabling interrupts before returning to event mgr
@@ -319,8 +350,10 @@ MsgMgrPrim_createRep(CObjEBBRootMultiImpRef rootRefMM,
   int i;
 
   repRef->eventLoc = MyEL();
-  repRef->mml = 0;
+  repRef->msgqueuelock = 0;
   repRef->msgqueue = 0;
+  repRef->freelistlock = 0;
+  repRef->freelist = 0;
   for (i=0; i<LRT_PIC_MAX_PICS ; i++ ) {
     repRef->reps[i] = NULL;
   }
