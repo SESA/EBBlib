@@ -71,6 +71,7 @@ enum{MAXARGS = 3};
 
 typedef struct MsgStore_struc {
   struct MsgStore_struc *next;
+  EvntLoc home;			/* node this was allocated on */
   MsgHandlerId id;
   uintptr_t numargs;
   uintptr_t args[MAXARGS];
@@ -148,6 +149,19 @@ MsgMgrPrim_findTarget(MsgMgrPrimRef self, EvntLoc loc, MsgMgrPrimRef *target)
   return EBBRC_OK;
 }
 
+static MsgStore *
+allocMsg(MsgMgrPrimRef self)
+{
+  EBBRC rc;
+  MsgStore *msg;  
+  rc = EBBPrimMalloc(sizeof(*msg), &msg, EBB_MEM_DEFAULT);
+  EBBRCAssert(rc);
+
+  msg->home = MyEL();
+
+  return msg;
+}
+
 static EBBRC 
 MsgMgrPrim_msg0(MsgMgrRef _self, EvntLoc loc, MsgHandlerId id)
 {
@@ -159,9 +173,7 @@ MsgMgrPrim_msg0(MsgMgrRef _self, EvntLoc loc, MsgHandlerId id)
   rc = MsgMgrPrim_findTarget(self, loc, &target);
   EBBRCAssert(rc);
 
-  rc = EBBPrimMalloc(sizeof(*msg), &msg, EBB_MEM_DEFAULT);
-  EBBRCAssert(rc);
-
+  msg = allocMsg(self);
   msg->id = id;
   msg->numargs = 0;
   
@@ -180,8 +192,7 @@ MsgMgrPrim_msg1(MsgMgrRef _self, EvntLoc loc, MsgHandlerId id, uintptr_t a1)
   rc = MsgMgrPrim_findTarget(self, loc, &target);
   EBBRCAssert(rc);
 
-  rc = EBBPrimMalloc(sizeof(*msg), &msg, EBB_MEM_DEFAULT);
-  EBBRCAssert(rc);
+  msg = allocMsg(self);
   msg->id = id;
   msg->numargs = 1;
   msg->args[0] = a1;
@@ -202,8 +213,7 @@ MsgMgrPrim_msg2(MsgMgrRef _self, EvntLoc loc, MsgHandlerId id, uintptr_t a1,
   rc = MsgMgrPrim_findTarget(self, loc, &target);
   EBBRCAssert(rc);
 
-  rc = EBBPrimMalloc(sizeof(*msg), &msg, EBB_MEM_DEFAULT);
-  EBBRCAssert(rc);
+  msg = allocMsg(self);
   msg->id = id;
   msg->numargs = 2;
   msg->args[0] = a1;
@@ -224,8 +234,7 @@ MsgMgrPrim_msg3(MsgMgrRef _self, EvntLoc loc, MsgHandlerId id,
   rc = MsgMgrPrim_findTarget(self, loc, &target);
   EBBRCAssert(rc);
 
-  rc = EBBPrimMalloc(sizeof(*msg), &msg, EBB_MEM_DEFAULT);
-  EBBRCAssert(rc);
+  msg = allocMsg(self);
   msg->id = id;
   msg->numargs = 3;
   msg->args[0] = a1;
