@@ -1,4 +1,5 @@
 #!/bin/bash
+# simple script for testing the ethtest application
 
 function myIPAddrs
 {
