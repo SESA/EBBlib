@@ -86,7 +86,7 @@ CObject(MsgMgrPrim) {
 
   CObjectDefine(EvHdlr) evHdlr;
 
-  uintptr_t eventLoc;
+  EvntLoc eventLoc;
   LockType mml;
   MsgStore *msgqueue; 
   // FIXME: abstract at event mgr

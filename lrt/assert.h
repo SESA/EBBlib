@@ -31,6 +31,7 @@
 #endif
 
 #define EBBAssert LRT_EBBAssert
+#define EBBWAssert LRT_EBBWAssert
 #define EBBRCAssert(rc) EBBAssert(EBBRC_SUCCESS(rc))
 
 #ifdef __cplusplus
