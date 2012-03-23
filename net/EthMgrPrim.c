@@ -131,7 +131,6 @@ EthMgrPrimCreate(EthMgrId *id, char *nic)
   EBBRCAssert(rc);
 
   // setup the EthMgr on a second id that services the EventHander Interface
-  // FIXME: take a look at ~/SESA/EBBlib/l0/cobj/cobjtest.c to clean up multiple inheritence
   EBBPrimMalloc(sizeof(*rootRef), &rootRef, EBB_MEM_DEFAULT);
   CObjEBBRootSharedSetFT(rootRef);
   rootRef->ft->init(rootRef, (EBBRep *)&(repRef->evHdlr));

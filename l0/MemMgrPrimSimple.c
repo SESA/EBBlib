@@ -29,6 +29,7 @@
 #include <stdint.h>
 #include <stddef.h>
 
+#include <lrt/ulnx/io.h>
 #include <lrt/assert.h>
 #include <l0/lrt/types.h>
 #include <l0/cobj/cobj.h>
@@ -177,7 +178,12 @@ EBBMemMgrPrimSimple_free(EBBMemMgrRef _self, uintptr_t size, void *mem) {
 
 
   // FIXME: return memory to right allocator
-  EBBAssert((mem > self->mem) && (mem < (void *)self->end));
+  // EBBAssert((mem > self->mem) && (mem < (void *)self->end));
+  if ( (mem < self->mem) || (mem > (void *)self->end) ) {
+    EBB_LRT_printf("FIXME: %s, not yet returning memory to right location\n", 
+		   __func__);
+  }
+
   // sanity check that size is the same as the recorded
   if(size % sizeof(uintptr_t) != 0) {
     size += sizeof(uintptr_t) - (size % sizeof(uintptr_t));
