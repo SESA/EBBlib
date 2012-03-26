@@ -1,5 +1,6 @@
 OBJS := \
 	init.o \
+	isr.o \
 	start.o
 
 LDFLAGS := \
@@ -29,7 +30,7 @@ ebbos: $(OBJS)
 	gcc $(CPPFLAGS) $(CFLAGS) -c -o $@ $<
 
 %.o: %.S
-	gcc $(CPPFLAGS) $(CFLAGS) -c -o $@ $<
+	gcc $(CPPFLAGS) -D __ASSEMBLY__ $(CFLAGS) -c -o $@ $<
 
 clean:
 	-rm ebbos
