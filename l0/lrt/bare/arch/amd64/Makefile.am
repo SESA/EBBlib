@@ -18,10 +18,6 @@ l0_lrt_bare_arch_amd64_sources = \
 	l0/lrt/bare/arch/amd64/serial.c \
 	l0/lrt/bare/arch/amd64/serial.h \
 	l0/lrt/bare/arch/amd64/start.S \
-	l0/lrt/bare/arch/amd64/stdio.c \
-	l0/lrt/bare/arch/amd64/stdio.h \
-	l0/lrt/bare/arch/amd64/string.c \
-	l0/lrt/bare/arch/amd64/string.h \
 	l0/lrt/bare/arch/amd64/trans.c \
 	l0/lrt/bare/arch/amd64/trans.h
 

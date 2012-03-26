@@ -37,5 +37,5 @@ extern uintptr_t lrt_pic_numvec(void);
 extern intptr_t lrt_pic_allocvec(uintptr_t *vec);
 extern void lrt_pic_ackipi(void);
 extern void lrt_pic_enableipi(void);
-
+extern void lrt_pic_enable(uintptr_t vec);
 #endif

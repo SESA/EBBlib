@@ -26,10 +26,10 @@
 #include <stdbool.h>
 
 #include <l0/l0_start.h>
+#include <l0/lrt/bare/stdio.h>
 #include <l0/lrt/bare/arch/amd64/lrt_start.h>
 #include <l0/lrt/bare/arch/amd64/mem.h>
 #include <l0/lrt/bare/arch/amd64/pic.h>
-#include <l0/lrt/bare/arch/amd64/stdio.h>
 #include <l0/lrt/bare/arch/amd64/trans.h>
 #include <l0/sys/trans.h>
 #include <lrt/assert.h>

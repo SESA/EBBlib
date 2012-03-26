@@ -20,10 +20,12 @@
  * THE SOFTWARE.
  */
 
+#include <config.h>
+
 #include <stdint.h>
 
 #include <l0/lrt/bare/arch/amd64/mem.h>
-#include <l0/lrt/bare/arch/amd64/stdio.h>
+#include <lrt/io.h>
 
 static uintptr_t MEM_SIZE = (1 << 20); //1MB
 
@@ -40,6 +42,6 @@ lrt_mem_end() {
 }
  
 void lrt_mem_init() {
-  printf("lrt_mem_init called!\n");
+  EBB_LRT_printf("lrt_mem_init called!\n");
   //nop
 }

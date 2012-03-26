@@ -33,7 +33,6 @@
 #include <l0/lrt/bare/arch/amd64/acpi.h>
 #include <l0/lrt/bare/arch/amd64/isr.h>
 #include <l0/lrt/bare/arch/amd64/pic.h>
-#include <l0/lrt/bare/arch/amd64/stdio.h>
 #include <lrt/assert.h>
 #include <lrt/io.h>
 
@@ -180,9 +179,10 @@ lrt_pic_ackipi()
   send_eoi();
 }
 
-static void
-lrt_pic_enable(uint8_t vec)
+void
+lrt_pic_enable(uintptr_t vec)
 {
+  EBBAssert(vec < lrt_pic_numvec());
   idt[vec].p = 1;
 }
 

@@ -24,7 +24,7 @@
  */
 
 #include <stdbool.h>
-#include <l0/lrt/bare/arch/amd64/stdio.h>
+#include <l0/lrt/bare/stdio.h>
 
 #define LRT_EBBAssert(cond)						\
   ({									\

@@ -27,10 +27,10 @@
 #include <arch/amd64/apic.h>
 #include <arch/amd64/cpu.h>
 #include <arch/amd64/multiboot.h>
+#include <l0/lrt/bare/stdio.h>
 #include <l0/lrt/bare/arch/amd64/lrt_start.h>
 #include <l0/lrt/bare/arch/amd64/pic.h>
 #include <l0/lrt/bare/arch/amd64/serial.h>
-#include <l0/lrt/bare/arch/amd64/stdio.h>
 
 FILE com1;
 
