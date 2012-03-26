@@ -1,3 +1,5 @@
+#ifndef L0_LRT_BARE_STRING_H
+#define L0_LRT_BARE_STRING_H
 /*
  * Copyright (C) 2011 by Project SESA, Boston University
  *
@@ -22,31 +24,8 @@
 
 #include <stddef.h>
 
-#include <l0/lrt/bare/arch/amd64/string.h>
+void bzero(void *ptr, size_t size);
+size_t strlen(const char *s);
+char *strcpy(char * restrict s1, const char * restrict s2);
 
-void bzero(void *ptr, size_t size) {
-  size_t i;
-  char *array = ptr;
-  for(i = 0; i < size; i++)
-    array[i] = 0;
-}
-
-
-size_t 
-strlen(const char *s) 
-{
-  size_t rc = 0;
-  while (s[rc]) {
-    ++rc;
-  }
-  return rc;
-}
-
-char *
-strcpy(char * restrict s1, const char * restrict s2 )
-{
-    char * rc = s1;
-    while ((*s1++ = *s2++))
-      ;
-    return rc;
-}
+#endif

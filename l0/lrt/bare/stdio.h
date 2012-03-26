@@ -1,5 +1,5 @@
-#ifndef L0_LRT_BARE_ARCH_AMD64_STDIO_H
-#define L0_LRT_BARE_ARCH_AMD64_STDIO_H
+#ifndef L0_LRT_BARE_STDIO_H
+#define L0_LRT_BARE_STDIO_H
 /*
  * Copyright (C) 2011 by Project SESA, Boston University
  *

@@ -178,11 +178,7 @@ EBBMemMgrPrimSimple_free(EBBMemMgrRef _self, uintptr_t size, void *mem) {
 
 
   // FIXME: return memory to right allocator
-  // EBBAssert((mem > self->mem) && (mem < (void *)self->end));
-  if ( (mem < self->mem) || (mem > (void *)self->end) ) {
-    EBB_LRT_printf("FIXME: %s, not yet returning memory to right location\n", 
-		   __func__);
-  }
+  EBBWAssert((mem > self->mem) && (mem < (void *)self->end));
 
   // sanity check that size is the same as the recorded
   if(size % sizeof(uintptr_t) != 0) {

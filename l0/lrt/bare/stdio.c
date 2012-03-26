@@ -24,8 +24,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include <l0/lrt/bare/arch/amd64/stdio.h>
-#include <l0/lrt/bare/arch/amd64/string.h>
+#include <l0/lrt/bare/stdio.h>
+#include <l0/lrt/bare/string.h>
 
 FILE *stdout;
 FILE *stdin;

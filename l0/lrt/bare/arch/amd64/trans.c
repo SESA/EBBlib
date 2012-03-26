@@ -24,8 +24,8 @@
 
 #include <arch/amd64/paging.h>
 #include <l0/lrt/bare/arch/amd64/trans.h>
-#include <l0/lrt/bare/arch/amd64/stdio.h>
 #include <lrt/assert.h>
+#include <lrt/io.h>
 
 //The idea is to statically allocate global memory and the first
 // processor's local memory and map them into the page table

@@ -37,10 +37,14 @@ _start:
 	ori	r1, r1, _vec_start@l
 	mtspr	SPRN_IVPR, r1
 
+	//IVORS in the manner that
+	//fixed vectors are set
 	li	r1, 0x0
+	mtspr	SPRN_IVOR1, r1
+	addi	r1, r1, 0x20
 	mtspr	SPRN_IVOR0, r1
 	addi	r1, r1, 0x20
-	mtspr	SPRN_IVOR1, r1
+	mtspr	SPRN_IVOR15, r1
 	addi	r1, r1, 0x20
 	mtspr	SPRN_IVOR2, r1
 	addi	r1, r1, 0x20
@@ -67,8 +71,6 @@ _start:
 	mtspr	SPRN_IVOR13, r1
 	addi	r1, r1, 0x20
 	mtspr	SPRN_IVOR14, r1
-	addi	r1, r1, 0x20
-	mtspr	SPRN_IVOR15, r1
 	
 	//load stack into r1
 	lis	r1, _mini_stack@h

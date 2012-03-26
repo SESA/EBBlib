@@ -1,5 +1,6 @@
-#ifndef __EBB_ASSERT_H__
-#define __EBB_ASSERT_H__
+#ifndef L0_LRT_BARE_ARCH_PPC32_MAILBOX
+#define L0_LRT_BARE_ARCH_PPC32_MAILBOX
+
 /*
  * Copyright (C) 2011 by Project SESA, Boston University
  *
@@ -22,30 +23,8 @@
  * THE SOFTWARE.
  */
 
-#include <config.h>
+#include <l0/lrt/bare/stdio.h>
 
-#ifdef LRT_ULNX
-#include <lrt/ulnx/assert.h>
-#elif LRT_BARE
-#include <lrt/bare/assert.h>
-#endif
-
-#define EBBAssert LRT_EBBAssert
-#define EBBWAssert LRT_EBBWAssert
-#define EBBRCAssert(rc) EBBAssert(EBBRC_SUCCESS(rc))
-
-#ifdef __cplusplus
-  #if HAS_CXX_STATIC_ASSERT
-    #define STATIC_ASSERT static_assert
-  #else
-    #define STATIC_ASSERT(b,s)
-  #endif
-#else //C
-  #if HAS_C_STATIC_ASSERT
-    #define STATIC_ASSERT _Static_assert
-  #else
-    #define STATIC_ASSERT(b,s)
-  #endif
-#endif
+FILE *mailbox_init();
 
 #endif

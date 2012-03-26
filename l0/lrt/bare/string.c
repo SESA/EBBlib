@@ -1,5 +1,3 @@
-#ifndef __EBB_ASSERT_H__
-#define __EBB_ASSERT_H__
 /*
  * Copyright (C) 2011 by Project SESA, Boston University
  *
@@ -22,30 +20,33 @@
  * THE SOFTWARE.
  */
 
-#include <config.h>
+#include <stddef.h>
 
-#ifdef LRT_ULNX
-#include <lrt/ulnx/assert.h>
-#elif LRT_BARE
-#include <lrt/bare/assert.h>
-#endif
+#include <l0/lrt/bare/string.h>
 
-#define EBBAssert LRT_EBBAssert
-#define EBBWAssert LRT_EBBWAssert
-#define EBBRCAssert(rc) EBBAssert(EBBRC_SUCCESS(rc))
+void bzero(void *ptr, size_t size) {
+  size_t i;
+  char *array = ptr;
+  for(i = 0; i < size; i++)
+    array[i] = 0;
+}
 
-#ifdef __cplusplus
-  #if HAS_CXX_STATIC_ASSERT
-    #define STATIC_ASSERT static_assert
-  #else
-    #define STATIC_ASSERT(b,s)
-  #endif
-#else //C
-  #if HAS_C_STATIC_ASSERT
-    #define STATIC_ASSERT _Static_assert
-  #else
-    #define STATIC_ASSERT(b,s)
-  #endif
-#endif
 
-#endif
+size_t 
+strlen(const char *s) 
+{
+  size_t rc = 0;
+  while (s[rc]) {
+    ++rc;
+  }
+  return rc;
+}
+
+char *
+strcpy(char * restrict s1, const char * restrict s2 )
+{
+    char * rc = s1;
+    while ((*s1++ = *s2++))
+      ;
+    return rc;
+}
