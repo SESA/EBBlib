@@ -20,29 +20,33 @@
  * THE SOFTWARE.
  */
 
-#include <stdint.h>
+#include <stddef.h>
 
-#include <l0/lrt/bare/arch/ppc32/mailbox.h>
-#include <lrt/io.h>
+#include <l0/lrt/bare/string.h>
 
-FILE *stdout;
-
-static inline void
-clear_bss(void)
-{
-  extern uint8_t sbss[];
-  extern uint8_t ebss[];
-  for (uint8_t *i = sbss; i < ebss; i++) {
-    *i = 0;
-  }
+void bzero(void *ptr, size_t size) {
+  size_t i;
+  char *array = ptr;
+  for(i = 0; i < size; i++)
+    array[i] = 0;
 }
 
-void __attribute__((noreturn))
-init(void) 
-{
-  clear_bss();
-  stdout = mailbox_init();
-  printf("Mailbox initialized\n");
 
-  while(1);
+size_t 
+strlen(const char *s) 
+{
+  size_t rc = 0;
+  while (s[rc]) {
+    ++rc;
+  }
+  return rc;
+}
+
+char *
+strcpy(char * restrict s1, const char * restrict s2 )
+{
+    char * rc = s1;
+    while ((*s1++ = *s2++))
+      ;
+    return rc;
 }

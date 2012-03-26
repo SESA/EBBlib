@@ -1,3 +1,6 @@
+#ifndef L0_LRT_BARE_ARCH_PPC32_MAILBOX
+#define L0_LRT_BARE_ARCH_PPC32_MAILBOX
+
 /*
  * Copyright (C) 2011 by Project SESA, Boston University
  *
@@ -20,29 +23,8 @@
  * THE SOFTWARE.
  */
 
-#include <stdint.h>
+#include <l0/lrt/bare/stdio.h>
 
-#include <l0/lrt/bare/arch/ppc32/mailbox.h>
-#include <lrt/io.h>
+FILE *mailbox_init();
 
-FILE *stdout;
-
-static inline void
-clear_bss(void)
-{
-  extern uint8_t sbss[];
-  extern uint8_t ebss[];
-  for (uint8_t *i = sbss; i < ebss; i++) {
-    *i = 0;
-  }
-}
-
-void __attribute__((noreturn))
-init(void) 
-{
-  clear_bss();
-  stdout = mailbox_init();
-  printf("Mailbox initialized\n");
-
-  while(1);
-}
+#endif
