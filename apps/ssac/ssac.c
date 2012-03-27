@@ -47,7 +47,23 @@
 //
 #include <l1/App.h>
 
-/* define a C-language EBB, named SSAC */
+/*  MACRO DEMISTIFICATION *************
+ *
+#define CObject(name)		    \
+  typedef struct name ## _obj name; \
+  typedef name * name ## Ref;	    \
+  struct name ## _obj
+#define CObjIfName(name) name ## _if
+#define CObjInterface(name) struct CObjIfName(name)
+#define CObjImplements(name) CObjInterface(name) CObjIfName(name)
+ *
+ *  typedef struct SSAC_obj SSAC;
+ *  typedef SSAC* SSACRef
+ *  struct SSAC_obj {
+ *    struct App_if *ft;
+ *  }
+ *
+ * */
 CObject(SSAC) {
   CObjInterface(App) *ft; //
 };
@@ -74,10 +90,22 @@ SSAC_start(AppRef _self, int argc, char **argv,
 }
 
 /* Specify EBB interface */
+
+/* MACRO DEFISTIFICATION **
+ *  struct App_if SSAC_ftable = ...
+ */
 CObjInterface(App) SSAC_ftable = {
   .start = SSAC_start
 };
 
 /* Define Application */
 APP(SSAC);
-
+/* MACRO DEMISTIFICATION ********
+  EBBRep * App_createRep(CObjeBBRootMultiRef _self)
+  {
+      SSAC * repRef;
+      EBBPrimMalloc(sizeof(SSAC), &redRef, EBB_MEM_DEFAULT);
+      repRef->ft = &SSAC_ftable;
+      return (SSAC *) repRef;
+  }
+*/
