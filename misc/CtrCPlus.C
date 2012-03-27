@@ -112,6 +112,7 @@ CtrCPlus::Create(CtrCPlusId &ctr)
 
   rc = CPlusEBBRoot::EBBBind((EBBId)ctr, root); 
   EBBRCAssert(rc);
+  return EBBRC_OK;
 }
 
 void test_cplus_counter(void)

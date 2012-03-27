@@ -41,7 +41,8 @@
 #include <misc/CtrPrimDistributed.h>
 
 CObject(EBBCtrPrimDistributed) {
-  CObjInterface(EBBCtr) *ft;
+  COBJ_EBBFuncTbl(EBBCtr);
+
   uintptr_t localValue;
   CObjEBBRootMultiRef theRoot;
 };
@@ -112,8 +113,9 @@ EBBCtrPrimDistributedCreate(EBBCtrId *id)
   EBBRC rc;
   CObjEBBRootMultiImpRef rootRef;
 
-  CObjEBBRootMultiImpCreate(&rootRef, 
-			 EBBCtrPrimDistributed_createRep);
+  rc = CObjEBBRootMultiImpCreate(&rootRef, 
+				 EBBCtrPrimDistributed_createRep);
+  EBBRCAssert(rc);
 
   rc = EBBAllocPrimId((EBBId *)id);
   EBBRCAssert(rc);

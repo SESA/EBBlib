@@ -36,8 +36,8 @@ EBBPrimMalloc(uintptr_t size, void *mem, EBB_MEM_POOL pool) {
 }
 
 static inline EBBRC
-EBBPrimFree(void *mem) {
-  return COBJ_EBBCALL(theEBBMemMgrPrimId, free, mem);
+EBBPrimFree(uintptr_t size, void *mem) {
+  return COBJ_EBBCALL(theEBBMemMgrPrimId, free, size, mem);
 }
 
 #endif

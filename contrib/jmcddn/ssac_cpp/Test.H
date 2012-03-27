@@ -36,9 +36,13 @@ public:
   }
 };
 
-
 class Test {
+  static int num_psy_cores(void);
   friend void *testPThreadFunc(void *);
+#ifndef __APPLE__
+  friend void *linux_thread_init(void *args, int processor);
+#endif 
+  friend int create_bound_thread (pthread_t *tid, int id, void *(*func)(void *), void *arg);
 private:
   EBBRC worker(int id);
   EBBRC doWork();
@@ -46,21 +50,21 @@ protected:
   Barrier bar;
   int numWorkers;
   int iterations;
+  bool bindThread;
   struct WArgs {
     int id;
     unsigned long long start;
     unsigned long long end;
     Test *theTest;
   } *wargs;
-
-  virtual EBBRC init(void)=0;
-  virtual EBBRC work(int id)=0;
-  virtual EBBRC end(void);
+ virtual EBBRC init(void)=0;
+ virtual EBBRC work(int id)=0;
+ virtual EBBRC end(void);
 public:
   Test(int n);
   Test(int n, int m);
+  Test(int n, int m, bool p);
   EBBRC doTest(void) {
-    //FIXME: do we want to init/end within each iteration of test?
     if (init()<0) return -1;
     doWork();
     end();

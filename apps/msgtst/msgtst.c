@@ -44,6 +44,7 @@
 #include <l0/MemMgrPrim.h>
 #include <l1/MsgMgr.h>
 #include <l1/MsgMgrPrim.h>
+#include <l1/App.h>
 
 // write a simple message handler
 // make call to the message handler
@@ -53,21 +54,21 @@ static EBBRC
 MsgHandlerTst_msg0(MsgHandlerRef _self)
 {
   // ack that we are handing interrupt
-  EBB_LRT_printf("%s: got message\n", __func__);
+  EBB_LRT_printf("[%s]", __func__);
   return EBBRC_OK;
 };
 static EBBRC 
 MsgHandlerTst_msg1(MsgHandlerRef _self, uintptr_t a1)
 {
   // ack that we are handing interrupt
-  EBB_LRT_printf("%s: got message\n", __func__);
+  EBB_LRT_printf("[%s]", __func__);
   return EBBRC_OK;
 };
 static EBBRC 
 MsgHandlerTst_msg2(MsgHandlerRef _self, uintptr_t a1, uintptr_t a2)
 {
   // ack that we are handing interrupt
-  EBB_LRT_printf("%s: got message\n", __func__);
+  EBB_LRT_printf("[%s]", __func__);
   return EBBRC_OK;
 };
 static EBBRC 
@@ -75,7 +76,7 @@ MsgHandlerTst_msg3(MsgHandlerRef _self, uintptr_t a1, uintptr_t a2,
 		   uintptr_t a3)
 {
   // ack that we are handing interrupt
-  EBB_LRT_printf("%s: got message\n", __func__);
+  EBB_LRT_printf("[%s]", __func__);
   return EBBRC_OK;
 };
 
@@ -105,18 +106,20 @@ MsgHandlerTst_createRep(CObjEBBRootMultiRef _self) {
 static MsgHandlerId
 InitMsgHandlerTst()
 {
-  CObjEBBRootMultiImpRef rootRef;
-  MsgHandlerId id;
   static MsgHandlerId theMsgHandlerTstId=0;
 
   if (__sync_bool_compare_and_swap(&theMsgHandlerTstId, (MsgHandlerId)0,
 				   (MsgHandlerId)-1)) {
-    CObjEBBRootMultiImpCreate(&rootRef, MsgHandlerTst_createRep);
-    id = (MsgHandlerId)EBBIdAlloc();
-    EBBAssert(id != NULL);
-
-    EBBIdBind((EBBId)id, CObjEBBMissFunc, (EBBMissArg) rootRef);
-    theMsgHandlerTstId = id;
+    EBBRC rc;
+    CObjEBBRootMultiImpRef rootRef;
+    EBBId id;
+    rc = CObjEBBRootMultiImpCreate(&rootRef, MsgHandlerTst_createRep);
+    EBBRCAssert(rc);
+    rc = EBBAllocPrimId(&id);
+    EBBRCAssert(rc);
+    rc = CObjEBBBind(id, rootRef); 
+    EBBRCAssert(rc);
+    theMsgHandlerTstId = (MsgHandlerId)id;
   } else {
     while (((volatile uintptr_t)theMsgHandlerTstId)==-1);
   }
@@ -124,16 +127,33 @@ InitMsgHandlerTst()
 };
 
 
-EBBRC ebbmain(void)
+CObject(MsgTst) {
+  CObjInterface(App) *ft;
+};
+
+// FIXME: this msg test is really bogus, you are on an event, running for a really long time, 
+// we should be sending to other nodes, and somehow waiting for events ourselves
+EBBRC 
+MsgTst_start(AppRef _self, int argc, char **argv, 
+	     char **environ)
 {
   MsgHandlerId id = InitMsgHandlerTst();
+  int i;
 
-  // bogus call to test IPI to msgmgr
-  COBJ_EBBCALL(theMsgMgrId, msg0, 0, id);
-  COBJ_EBBCALL(theMsgMgrId, msg1, 0, id, 1);
-  COBJ_EBBCALL(theMsgMgrId, msg2, 0, id, 1, 2);
-  COBJ_EBBCALL(theMsgMgrId, msg3, 0, id, 1, 2, 3);
-  COBJ_EBBCALL(theMsgMgrId, msg0, 0, id);
+  for (i=0; i<1000; i++) {
+    // bogus call to test IPI to msgmgr
+    COBJ_EBBCALL(theMsgMgrId, msg0, 0, id);
+    COBJ_EBBCALL(theMsgMgrId, msg1, 0, id, 1);
+    COBJ_EBBCALL(theMsgMgrId, msg2, 0, id, 1, 2);
+    COBJ_EBBCALL(theMsgMgrId, msg3, 0, id, 1, 2, 3);
+    COBJ_EBBCALL(theMsgMgrId, msg0, 0, id);
+  }
 
   return EBBRC_OK;
 }
+
+CObjInterface(App) MsgTst_ftable = {
+  .start = MsgTst_start
+};
+
+APP(MsgTst);

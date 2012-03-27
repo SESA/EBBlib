@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <pthread.h>
 
 #include "EBBKludge.H"
 
@@ -107,6 +108,7 @@ protected:
   EBBRC end();
 public:
   SSACTest(int n, int m): Test(n,m) {}
+  SSACTest(int n, int m, bool p): Test(n,m,p) {}
 };
 
 EBBRC
@@ -165,11 +167,11 @@ SSACTest::end()
 
 class SSATest : public SSACTest {
 public:
-  SSATest(int n, int m);
+  SSATest(int n, int m, bool p);
   virtual ~SSATest();
 };
 
-SSATest::SSATest(int n, int m) : SSACTest(n,m) 
+SSATest::SSATest(int n, int m, bool p) : SSACTest(n,m,p) 
 {
   // init hash table 
   ssac = SSACSimpleSharedArray::create(HASHTABLESIZE);
@@ -181,10 +183,10 @@ SSATest::~SSATest()
 }
 
 void
-SSACSimpleSharedArrayTest(int numWorkers, int numIterations)
+SSACSimpleSharedArrayTest(int numWorkers, int numIterations, bool bindThread)
 {
 //  TRACE("BEGIN");
-  SSATest test(numWorkers, numIterations);
+  SSATest test(numWorkers, numIterations, bindThread);
   test.doTest();
 //  TRACE("END");
 }
@@ -194,15 +196,17 @@ main(int argc, char **argv)
 {
   int n=4; // thread count
   int m=1; // no. of iterations
+  bool p=1; // bind threads? 
 
   if (argc>1) n=atoi(argv[1]);
   if (argc>2) m=atoi(argv[2]);
+  if (argc>3) p=atoi(argv[3]);
   
 #if 0
   BarrierTest(n);
 #endif
-  
-  SSACSimpleSharedArrayTest(n,m);
+  // TODO: transition to event based 
+  SSACSimpleSharedArrayTest(n,m,p); //TODO: print: test ran successfully
 
   return 0;
 }

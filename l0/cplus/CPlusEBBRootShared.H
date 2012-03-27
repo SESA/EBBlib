@@ -31,7 +31,7 @@ public:
   void operator delete(void * p, size_t size);
 
   // pass in the pre-creted rep for a shared root, get back the root
-  virtual EBBRC init(CPlusEBB *rep) { theRep = rep; }
+  virtual EBBRC init(CPlusEBB *rep) { theRep = rep; return EBBRC_OK;}
 };
 #endif
 

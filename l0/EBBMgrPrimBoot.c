@@ -27,14 +27,17 @@
 #include <l0/types.h>
 #include <l0/sys/trans.h>
 
+extern EBBId TransEBBIdAlloc(void);
+extern void TransEBBIdBind(EBBId id, EBBMissFunc mf, EBBMissArg arg);
+
 EBBRC
 EBBAllocPrimIdBoot(EBBId *id) {
-  *id = EBBIdAlloc();
+  *id = TransEBBIdAlloc();
   return EBBRC_OK;
 }
 
 EBBRC
 EBBBindPrimIdBoot(EBBId id, EBBMissFunc mf, EBBMissArg arg) {
-  EBBIdBind(id, mf, arg);
+  TransEBBIdBind(id, mf, arg);
   return EBBRC_OK;
 }

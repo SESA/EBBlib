@@ -20,7 +20,6 @@
  * THE SOFTWARE.
  */
 #include <config.h>
-#include <string.h>
 #include <stdint.h>
 #include <inttypes.h>
 
@@ -65,7 +64,7 @@ CObject(EventMgrPrimImp){
   uintptr_t ipi_vec_no;
 };
 
-EventMgrPrimId theEventMgrPrimId;
+EventMgrPrimId theEventMgrPrimId=0;
 /*
  * For now, all allocation through a master, need 
  * better way to find and allocate a master.
@@ -81,12 +80,42 @@ EventMgrPrimImpRef theEventMgrPrimMaster = NULL;
 // etc.  This function will eventually be per-rep, and will
 // as part of the invocation grab the event stack out fo the rep.
 // FIXME: make this a per-rep strucutre
+#ifdef LRT_ULNX
 #define VFUNC(i)					\
-static void vf##i(void)		    		        \
-{							\
- EBBCALL(theEventMgrPrimId, dispatchEventLocal, i);     \
-}		
+  static void vf##i(void)				\
+  {							\
+    EBBCALL(theEventMgrPrimId, dispatchEventLocal, i);	\
+  }		
+#elif ARCH_AMD64
+//FIXME: This burns all sorts of register state without
+// saving it. Need to discuss this.
+void vf_common(uintptr_t i)
+{
+ EBBCALL(theEventMgrPrimId, dispatchEventLocal, i);
+}
+#define str(s) xstr(s)
+#define xstr(s) #s
 
+STATIC_ASSERT(offsetof(CObjInterface(EventMgrPrim), dispatchEventLocal) == 0x20,
+	      "VFUNC relies on this offset being 0x20!");
+#define VFUNC(i)							\
+  extern void vf##i(void);						\
+  asm(									\
+      ".globl vf" str(i) ";"						\
+      "vf" str(i) ":;"							\
+      "pushq %rsp;"							\
+      "pushq (%rsp);"							\
+      "andq $-0x10, %rsp;"						\
+      "movq theEventMgrPrimId, %rax;"					\
+      "movq $" str(i) ", %rsi;"						\
+      "movq (%rax), %rdi;"						\
+      "movq (%rdi), %rax;"						\
+      "movq 0x20(%rax),%rax;"						\
+      "call *%rax;"							\
+      "movq 8(%rsp), %rsp;"						\
+      "iretq");
+
+#endif
 VFUNC(0);
 VFUNC(1);
 VFUNC(2);
@@ -418,6 +447,9 @@ EventMgrPrim_dispatchEventLocal(void *_self, uintptr_t eventNo)
   EBB_LRT_printf("%s: handling interrupt %" PRIdPTR "\n", __func__, eventNo);
   EBBAssert(handler != NULL); 
   EBBCALL(handler, handleEvent); 
+
+  // FIXME: do we want to do this automatically here?
+  lrt_pic_enable(eventNo);
   return EBBRC_OK;   
 }
 
@@ -486,6 +518,9 @@ EventMgrPrim_registerHandler(void *_self, uintptr_t eventNo,
 
  done:
   spin_unlock(&master->lock);
+
+  // FIXME: need to discuss if this is the right place to enable event
+  lrt_pic_enable(eventNo);
   return rc;
 }
 
@@ -546,7 +581,7 @@ EventMgrPrimImp_createRep(CObjEBBRootMultiImpRef root)
   int i; 
   EventMgrPrimImpRef repRef;
 
-  EBBPrimMalloc(sizeof(*repRef), &repRef, EBB_MEM_DEFAULT);
+  EBBRCAssert(EBBPrimMalloc(sizeof(*repRef), &repRef, EBB_MEM_DEFAULT));
   EventMgrPrimSetFT(repRef);
   repRef->theRoot = (CObjEBBRootMultiRef)root;
   repRef->ipi_vec_no = lrt_pic_getIPIvec();
@@ -580,21 +615,22 @@ EventMgrPrimImp_createRep(CObjEBBRootMultiImpRef root)
 EBBRC
 EventMgrPrimImpInit(void)
 {
-  static CObjEBBRootMultiImpRef rootRef = 0;
-  EventMgrPrimId id;
+  EBBRC rc;
+  static CObjEBBRootMultiImpRef rootRef;
   EventMgrPrimImpRef repRef;
   EvntLoc myel;
 
   if (__sync_bool_compare_and_swap(&theEventMgrPrimId, (EventMgrPrimId)0,
 				   (EventMgrPrimId)-1)) {
-    EBBAssert(MAXEVENTS > lrt_pic_numvec());
-
-    CObjEBBRootMultiImpCreate(&rootRef, EventMgrPrimImp_createRepAssert);
-    id = (EventMgrPrimId)EBBIdAlloc();
-    EBBAssert(id != NULL);
-
-    EBBIdBind((EBBId)id, CObjEBBMissFunc, (EBBMissArg)rootRef);
-    theEventMgrPrimId = id;
+    EBBId id;
+    EBBAssert(MAXEVENTS >= lrt_pic_numvec());
+    rc = CObjEBBRootMultiImpCreate(&rootRef, EventMgrPrimImp_createRepAssert);
+    EBBRCAssert(rc);
+    rc = EBBAllocPrimId(&id);
+    EBBRCAssert(rc);
+    rc = EBBBindPrimId(id, CObjEBBMissFunc, (EBBMissArg)rootRef);
+    EBBRCAssert(rc);
+    theEventMgrPrimId = (EventMgrPrimId)id;
   } else {
     while (((volatile uintptr_t)theEventMgrPrimId)==-1);
   }

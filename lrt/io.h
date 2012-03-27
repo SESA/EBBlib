@@ -22,9 +22,12 @@
  * THE SOFTWARE.
  */
 
+//FIXME: probably want to standardize I/O
+
 #ifdef LRT_ULNX
 #include <lrt/ulnx/io.h>
-#elif defined LRT_L4
+#elif defined LRT_BARE
+#include <lrt/bare/io.h>
 #endif
 
 #endif // __LRTIO_H__

@@ -22,11 +22,30 @@
  * THE SOFTWARE.
  */
 
+#include <config.h>
+
 #ifdef LRT_ULNX
 #include <lrt/ulnx/assert.h>
+#elif LRT_BARE
+#include <lrt/bare/assert.h>
 #endif
 
 #define EBBAssert LRT_EBBAssert
+#define EBBWAssert LRT_EBBWAssert
 #define EBBRCAssert(rc) EBBAssert(EBBRC_SUCCESS(rc))
+
+#ifdef __cplusplus
+  #if HAS_CXX_STATIC_ASSERT
+    #define STATIC_ASSERT static_assert
+  #else
+    #define STATIC_ASSERT(b,s)
+  #endif
+#else //C
+  #if HAS_C_STATIC_ASSERT
+    #define STATIC_ASSERT _Static_assert
+  #else
+    #define STATIC_ASSERT(b,s)
+  #endif
+#endif
 
 #endif

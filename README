@@ -3,9 +3,9 @@ System independent library to support Elastic Building Blocks
 Wiki at: https://github.com/SESA/EBBlib/wiki
 Issue Tracker at: https://github.com/SESA/EBBlib/issues
 
-To build - 
+To build -
 autoreconf --install
 mkdir <build directory>
 cd <build directory>
-run the configure script from the EBBlib directory (e.g. ../../../EBBlib/configure -build=x86_64-darwin)
-make	   
+run the configure script from the EBBlib directory (e.g. ../../../EBBlib/configure -build=x86_64-darwini -enable-simple-prim-alloc)
+make

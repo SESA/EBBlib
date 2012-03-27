@@ -24,7 +24,6 @@
 
 #ifdef LRT_ULNX
 #include <l0/lrt/ulnx/const.h>
-#elif defined LRT_L4
 #endif
 
 #endif

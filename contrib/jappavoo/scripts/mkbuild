@@ -53,7 +53,13 @@ do
     flags="-O2 -g"
     ;;
   esac
-  echo "../../../$dir/configure 'CFLAGS=$flags' 'CXXFLAGS=$flags' $XFLG" > $sysdir/$dl/doconfig
+  if [ ! -z "$EBBCC" ]; then 
+      echo -n "CC=$EBBCC CXX=$EBBCXX " > $sysdir/$dl/doconfig
+  else 
+      echo "NO definition for EBBCC, defaulting to system compiler"
+      echo -n "" > $sysdir/$dl/doconfig
+  fi
+  echo "../../../$dir/configure 'CFLAGS=$flags' --enable-simple-prim-alloc 'CXXFLAGS=$flags' $XFLG" >> $sysdir/$dl/doconfig
   (cd $sysdir/$dl; . doconfig)
 done
 

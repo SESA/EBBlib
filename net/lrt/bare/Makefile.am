@@ -1,0 +1,1 @@
+net_lrt_bare_sources = net/lrt/bare/ethlib.c

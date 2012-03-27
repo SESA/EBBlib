@@ -21,12 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-
-CObject(EBBMgrPrim) {
-  CObjInterface(EBBMgrPrim) *ft;
-};
-
-CObjInterface(EBBMgrPrim) {
+COBJ_EBBType(EBBMgrPrim) {
   EBBRC (*AllocId) (EBBMgrPrimRef _self, EBBId *id);
   EBBRC (*FreeId) (EBBMgrPrimRef _self, EBBId id);
   EBBRC (*BindId) (EBBMgrPrimRef _self, EBBId id, EBBMissFunc mf, 
@@ -34,11 +29,9 @@ CObjInterface(EBBMgrPrim) {
   EBBRC (*UnBindId) (EBBMgrPrimRef _self, EBBId id, EBBMissFunc *mf, 
 		     EBBMissArg *arg);
 };
-
-typedef EBBMgrPrimRef *EBBMgrPrimId;
 extern EBBMgrPrimId theEBBMgrPrimId;
 
-extern void EBBMgrPrimInit(void);
+extern EBBRC EBBMgrPrimInit(void);
 
 static inline EBBRC
 EBBAllocPrimId(EBBId *id)
@@ -52,5 +45,6 @@ EBBBindPrimId(EBBId id, EBBMissFunc mf, EBBMissArg arg)
   return COBJ_EBBCALL(theEBBMgrPrimId, BindId, id, mf, arg);
 }
 
+extern EBBRC EBBDestroyPrimId(EBBId id);
 
 #endif

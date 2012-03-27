@@ -20,8 +20,10 @@
  * THE SOFTWARE.
  */
 
-#include <config.h>
 #include <inttypes.h>
+#include <stddef.h>
+
+#include <config.h>
 #include <lrt/io.h>
 #include <lrt/misc.h>
 #include <lrt/assert.h>
@@ -85,7 +87,7 @@ gt2id(EBBGTrans *gt) {
 static inline
 EBBGTrans *
 id2gt(EBBId id) {
-  return (EBBGTrans *)lrt_trans_id2gt((lrt_transid) id);
+  return (EBBGTrans *)lrt_trans_id2gt((uintptr_t)id);
 }
 
 void
@@ -151,7 +153,7 @@ initLTable() {
 }
 
 EBBId
-EBBIdAlloc() {
+TransEBBIdAlloc() {
   EBBGTrans *gt;
   uintptr_t i, len;
 
@@ -168,22 +170,21 @@ EBBIdAlloc() {
 }
 
 void
-EBBIdFree(EBBId id) {
+TransEBBIdFree(EBBId id) {
   EBBGTrans *gt = id2gt(id);
   gt->free = ALLOCATED;
 }
 
 void
-EBBIdBind(EBBId id, EBBMissFunc mf, EBBMissArg arg) {
+TransEBBIdBind(EBBId id, EBBMissFunc mf, EBBMissArg arg) {
   EBBGTrans *gt = id2gt(id);
   gt->mf = mf;
   gt->arg = arg;
 }
 
 void
-EBBIdUnBind(EBBId id, EBBMissFunc *mf, EBBMissArg *arg) {
+TransEBBIdUnBind(EBBId id, EBBMissFunc *mf, EBBMissArg *arg) {
   EBB_LRT_printf("%s: NYI\n", __func__);
-  EBBAssert(0);
 }
 
 // at this point translation hardware has been initialized
@@ -193,6 +194,6 @@ void
 trans_init(void)
 {
   EBBAssert(sysTransValidate());
-  LRT_bzero((void *)mygmem(), mygmem_size());
+  __builtin_bzero((void *)mygmem(), mygmem_size());
   initLTable();
 }

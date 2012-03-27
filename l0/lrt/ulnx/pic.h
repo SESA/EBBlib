@@ -123,4 +123,11 @@ extern void lrt_pic_enable(uintptr_t vec);
 extern void lrt_pic_enableipi(void);
 extern void lrt_pic_disable(uintptr_t vec);
 extern void lrt_pic_disableipi(void);
+
+#if 0
+#define LRT_STANDALONE_TEST		     \
+  extern void lrt_pic_standalone_test(void); \
+  lrt_pic_standalone_test();
+#endif
+
 #endif

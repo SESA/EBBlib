@@ -45,19 +45,37 @@
 #include <net/EthTypeMgr.h>
 #include <net/EthMgr.h>
 #include <net/EthMgrPrim.h>
+#include <l1/App.h>
 
 EthMgrId theEthMgr;
 
-EBBRC ebbmain(void)
+CObject(EthTst) {
+  CObjInterface(App) *ft;
+};
+
+EBBRC 
+EthTst_start(AppRef _self, int argc, char **argv, 
+	     char **environ)
 {
   EBBRC rc;
 
-  EBB_LRT_printf("%s: START\n", __func__);
+  if (argc <= 1) {
+    EBB_LRT_printf("usage: ethtst nic\n");
+    EBB_LRT_printf("  e.g. ethtst lo0, or ethtst eth1\n");
+    EBBRCAssert(-1);
+  }
 
-  rc = EthMgrPrimCreate(&theEthMgr, "eth1");
+  EBB_LRT_printf("%s: START with device %s\n", __func__, argv[1]);
+  //FIXME: check argument, pass in as first argument to run
+  rc = EthMgrPrimCreate(&theEthMgr, argv[1]);
   EBBRCAssert(rc);
 
   EBB_LRT_printf("%s: END\n", __func__);
-  
   return EBBRC_OK;
 }
+
+CObjInterface(App) EthTst_ftable = {
+  .start = EthTst_start
+};
+
+APP(EthTst);

@@ -26,6 +26,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <assert.h>
+#include <signal.h>
 
 #include <inttypes.h>
 #include <l0/lrt/ulnx/pic-unix.h>
@@ -325,15 +326,18 @@ lrt_pic_mapvec(lrt_pic_src s, uintptr_t vec, lrt_pic_handler h)
 
   pic.gvecs[vec] = h;
   for (i=lrt_pic_firstid; i<=lrt_pic_lastid; i++) {
-    lpics[i].lvecs[vec] = h;
-    
     // FIXME: will have to handle cores that are not up
     assert(lpics[i].lcore != 0);
-    lrt_pic_unix_wakeup(lpics[i].lcore);
+    lpics[i].lvecs[vec] = h;
   }
 
-  if ((rc = lrt_pic_unix_enable(s, vec)) != 0) {
+  if (lrt_pic_unix_locked_enable(s, vec) != 0) {
+    rc=-1;
     goto done;
+  }
+
+  for (i=lrt_pic_firstid; i<=lrt_pic_lastid; i++) {
+    lrt_pic_unix_wakeup(lpics[i].lcore);
   }
 
  done:
@@ -366,6 +370,7 @@ lrt_pic_loop()
 {
   int v, numintr;
   struct LPic *lpic;
+  lrt_pic_unix_ints intrSet;
 
   // this will initialize lrt_pic_myid
   lrt_pic_allocate_core_id();
@@ -381,10 +386,8 @@ lrt_pic_loop()
 
   // send a reset to myself
   lrt_pic_reset(lrt_pic_myid);
-  
+
   while (1) {
-    lrt_pic_unix_ints intrSet;
-    
     if ((numintr = lrt_pic_unix_blockforinterrupt(&intrSet)) <0 ) {
       return -1;
     }
@@ -407,17 +410,254 @@ lrt_pic_loop()
     
     // handle all interrupts in bit vector returned by HW
     for (v=0;v<NUM_VEC;v++) {
-      if (lrt_pic_unix_ints_test(intrSet, v) && lpic->enabled[v]) {
-	numintr--;
-	if (lpic->lvecs[v]) {
-	  lpic->lvecs[v]();
-	} else {
-	  fprintf(stderr, "ERROR: %s: spurious interrupt on %d\n", __func__, v);
+      if (numintr <= 0) break;
+      if (lrt_pic_unix_ints_test(&intrSet, v)) {
+	if (lpic->enabled[v]) {
+	  lrt_pic_disable(v);
+	  numintr--;
+	  if (lpic->lvecs[v]) {
+	    lpic->lvecs[v]();
+	  } else {
+	    fprintf(stderr, "ERROR: %s: spurious interrupt on %d\n", __func__, v);
+	  }
 	}
-	if(numintr<=0) break;
       }
     }
   }
   return -1;
 }
 
+// STANDALONE TEST CODE
+#include <stdio.h>
+#include <assert.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <termios.h>
+#include <unistd.h>
+
+/* FROM : Advanced Programming in the UNIX Environment, Addison-Wesley,
+   1992, ISBN 0-201-56317-7
+   http://www.kohala.com/start/apue.linux.tar.Z
+*/
+
+static struct termios	save_termios;
+static int				ttysavefd = -1;
+static enum { RESET, RAW, CBREAK }	ttystate = RESET;
+
+static int
+tty_cbreak(int fd)	/* put terminal into a cbreak mode */
+{
+	struct termios	buf;
+
+	if (tcgetattr(fd, &save_termios) < 0)
+		return(-1);
+
+	buf = save_termios;	/* structure copy */
+
+	buf.c_lflag &= ~(ECHO | ICANON);
+					/* echo off, canonical mode off */
+
+	buf.c_cc[VMIN] = 1;	/* Case B: 1 byte at a time, no timer */
+	buf.c_cc[VTIME] = 0;
+
+	if (tcsetattr(fd, TCSAFLUSH, &buf) < 0)
+		return(-1);
+	ttystate = CBREAK;
+	ttysavefd = fd;
+	return(0);
+}
+
+static int tty_raw(int fd) __attribute__ ((unused));
+static int
+tty_raw(int fd)		/* put terminal into a raw mode */
+{
+	struct termios	buf;
+
+	if (tcgetattr(fd, &save_termios) < 0)
+		return(-1);
+
+	buf = save_termios;	/* structure copy */
+
+	buf.c_lflag &= ~(ECHO | ICANON | IEXTEN | ISIG);
+					/* echo off, canonical mode off, extended input
+					   processing off, signal chars off */
+
+	buf.c_iflag &= ~(BRKINT | ICRNL | INPCK | ISTRIP | IXON);
+					/* no SIGINT on BREAK, CR-to-NL off, input parity
+					   check off, don't strip 8th bit on input,
+					   output flow control off */
+
+	buf.c_cflag &= ~(CSIZE | PARENB);
+					/* clear size bits, parity checking off */
+	buf.c_cflag |= CS8;
+					/* set 8 bits/char */
+
+	buf.c_oflag &= ~(OPOST);
+					/* output processing off */
+
+	buf.c_cc[VMIN] = 1;	/* Case B: 1 byte at a time, no timer */
+	buf.c_cc[VTIME] = 0;
+
+	if (tcsetattr(fd, TCSAFLUSH, &buf) < 0)
+		return(-1);
+	ttystate = RAW;
+	ttysavefd = fd;
+	return(0);
+}
+
+static int
+tty_reset(int fd)		/* restore terminal's mode */
+{
+	if (ttystate != CBREAK && ttystate != RAW)
+		return(0);
+
+	if (tcsetattr(fd, TCSAFLUSH, &save_termios) < 0)
+		return(-1);
+	ttystate = RESET;
+	return(0);
+}
+
+static void
+tty_atexit(void)		/* can be set up by atexit(tty_atexit) */
+{
+	if (ttysavefd >= 0)
+		tty_reset(ttysavefd);
+}
+
+static struct termios * tty_termios(void) __attribute__ ((unused));
+
+static struct termios *
+tty_termios(void)		/* let caller see original tty state */
+{
+	return(&save_termios);
+}
+
+/* modified by Jonathan Appavoo */
+static void
+sig_catch( int signo )
+{
+  tty_reset( STDIN_FILENO );
+  exit(0);
+}
+
+static void
+tty_init(int fd) {  
+  if ( signal( SIGTERM, sig_catch ) == SIG_ERR ) {
+    printf("signal(SIGTERM) error\n");
+    exit(1);
+  }
+  if ( signal( SIGQUIT, sig_catch ) == SIG_ERR ) {
+    printf("signal(SIGQUIT) error\n");
+    exit(1);
+  }
+
+  atexit(tty_atexit);
+
+  tty_cbreak(fd);
+}
+// back to my test code
+
+static void 
+lrt_pic_standalone_test_ipi(void)
+{
+  lrt_pic_ackipi();
+  printf("%s: ipi received... sleeping for 1 sec\n", __func__);
+  lrt_pic_ipi(lrt_pic_myid);
+  sleep(1);
+  lrt_pic_enableipi();
+}
+
+static uintptr_t stdin_vec = 0;
+
+static void 
+lrt_pic_standalone_test_stdin(void)
+{
+  printf("%s: START\n", __func__);
+  char c=getc(stdin);
+  printf("%c\n", c);
+  printf("%s: END\n", __func__);
+  lrt_pic_enable(stdin_vec);
+}
+
+static void
+lrt_pic_standalone_test_start(void)
+{
+  intptr_t rc;
+
+  printf("%s: started\n", __func__);
+
+  tty_init(STDIN_FILENO);
+
+  lrt_pic_mapipi(lrt_pic_standalone_test_ipi);
+
+  rc = lrt_pic_allocvec(&stdin_vec);
+  assert(rc==1);
+  printf("allocated vec=%" PRIdPTR "\n", stdin_vec);
+  
+  rc = lrt_pic_mapvec(STDIN_FILENO, stdin_vec, lrt_pic_standalone_test_stdin);
+  assert(rc==1);
+  printf("allocated vec=%" PRIdPTR " to STDIN_FILENO\n", stdin_vec);
+  lrt_pic_enable(stdin_vec);
+  //  lrt_pic_ipi(lrt_pic_myid);
+}
+
+static int
+waitkey(void)
+{
+  fd_set fds;
+
+  fprintf(stderr, "%s: START: should block on io. "
+	  "END should only appear after keypress\n", __func__);
+  FD_ZERO(&fds);
+  FD_SET(STDIN_FILENO, &fds); //STDIN_FILENO is 0
+
+  // NULL timeout block until io
+  if (pselect(STDIN_FILENO+1, &fds, NULL, NULL, NULL, NULL)<0) { 
+    perror("select failed\n");
+    return -1;
+  }; 
+
+  fprintf(stderr, "%s:   END: !!!!!\n", __func__);
+  return FD_ISSET(STDIN_FILENO, &fds);
+}
+
+static void
+pselecttst(void)
+{
+  char c;
+  int rc;
+
+  fprintf(stderr, "%s: START: testing std unix pselect functionality "
+	  "should echo keystrokes until 'q' key is pressed\n", 
+	  __func__);
+
+  tty_cbreak(STDIN_FILENO);
+
+  while(1) {
+    rc=waitkey();
+    if (rc==1) {
+      c=fgetc(stdin);
+      rc = write(STDOUT_FILENO, &c, 1);
+      assert(rc==1);
+      rc = write(STDOUT_FILENO, "\n", 1);
+      assert(rc==1);
+      if (c=='q') break;
+    } else {
+      fprintf(stderr,"THAT's ODD waitkey returned %d", rc);
+      break;
+    }
+  }
+
+  tty_reset(STDIN_FILENO);
+
+  fprintf(stderr, "%s: END\n", __func__);
+}
+
+void
+lrt_pic_standalone_test(void)
+{
+  pselecttst(); // first test basic unix functionality 
+  lrt_pic_init(lrt_pic_standalone_test_start); // now try it via the pic
+}
