@@ -12,8 +12,14 @@ do
     let binding=$i%2;
     let ++COUNT
     res1=$(date +%s.%N)
-    ./eosSSACTest $threads $NO_ITERATIONS $binding >> test_output.csv
+    ./eosSSACTest $threads $NO_ITERATIONS 0 >> test_output.csv
     res2=$(date +%s.%N)
-    echo "$COUNT TREADS:$threads ITER:$NO_ITERATIONS BIND:$binding TIME: $(echo "$res2 - $res1"|bc )"
+    res12=$(echo "$res2-$res1"|bc)
+    res3=$(date +%s.%N)
+    ./eosSSACTest $threads $NO_ITERATIONS 1 >> test_output.csv
+    res4=$(date +%s.%N)
+    res34=$(echo "$res4-$res3"|bc)
+    resdif=$(echo "$res12-$res34"|bc)
+    echo "$COUNT TREADS:$threads ITER:$NO_ITERATIONS BOUND: $(echo "$res34"|bc) UNBOUND: $(echo "$res12"|bc) DIFF: $(echo "$resdif"|bc )" 
   done
 done

@@ -272,7 +272,7 @@ SSACSimpleSharedArray :: flush()
 #endif
 		ce->flags |= CacheEntrySimple::BUSY;
 		hashq->lock.releaseLock();
-		ce->id.save(ce->data);
+		ce->id.save(ce->data); // save the db to a backup?
 		hashq->lock.acquireLock();
 		ce->flags &= ~CacheEntrySimple::DIRTY &
 		             ~CacheEntrySimple::BUSY;

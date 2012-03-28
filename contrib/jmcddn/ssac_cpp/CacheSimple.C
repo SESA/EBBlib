@@ -15,6 +15,7 @@ CacheObjectIdSimple :: load()
 EBBRC
 CacheObjectIdSimple :: save(CacheObjectDataSimple data)
 {
+    // what is the point of this?
     register unsigned int i=0;
     while(i<SAVESPIN) i++;
     return 0;

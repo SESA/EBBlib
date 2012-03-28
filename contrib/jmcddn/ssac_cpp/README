@@ -1,0 +1,9 @@
+./eosSSACTEST runs a benchmark test on the SSACSimpleSharedArray. 
+
+eosSSACTEST takes three arguments:
+  1. number of thread
+  2. number of test iterations
+  3. bind threads {0/1}
+
+Example:
+  ./eosSSACTEST 4 1 1 

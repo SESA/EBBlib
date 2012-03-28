@@ -9,7 +9,6 @@
 
 #include "SSACSimpleSharedArray.H"
 
-
 class MySSAC : public SSAC {
 public:
   virtual EBBRC get( CacheObjectId &id, CacheEntry* &ce,
@@ -102,7 +101,7 @@ BarrierTest(int numWorkers)
 class SSACTest : public Test {
 protected:
   SSACRef ssac;
-  enum {HASHTABLESIZE=128};
+  enum {HASHTABLESIZE=8192};//this is the size of hashqs, each with an 'associative' ammount of entries. 
   EBBRC work(int id);
   EBBRC init();
   EBBRC end();
@@ -118,7 +117,7 @@ SSACTest::init()
   CacheObjectIdSimple id(0);
   CacheEntrySimple *entry=0;
   EBBRC rc;
-  // just as an initial test call a function of the ssac
+  // run through each entry of the hashqs, clear value & h
   DREF(ssac)->flush();
   
   for (unsigned long i=0; i<HASHTABLESIZE; i++) {
@@ -132,6 +131,9 @@ SSACTest::init()
   return rc;
 } 
 
+/**
+ * SSACTest:work() -- pull and update an entry from each hashq of the cache 
+ * */
 EBBRC
 SSACTest::work(int myid) 
 {
@@ -145,7 +147,7 @@ SSACTest::work(int myid)
       id = i;
       rc = DREF(ssac)->get((CacheObjectId &)id,(CacheEntry * &)entry,
 			   SSAC::GETFORWRITE);
-      v=(intptr_t)entry->data; v++; entry->data=(void *)v;
+      v=(intptr_t)entry->data; v++; entry->data=(void *)v;// change pointer
       entry->dirty();
       rc =DREF(ssac)->putback((CacheEntry * &)entry, SSAC::KEEP);
     }
