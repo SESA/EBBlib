@@ -1,10 +1,10 @@
 #ifndef __TEST_H__
 #define __TEST_H__
 
-#define OUTPUT_CSV  
+#define OUTPUT_CSV
 
-inline unsigned long long 
-now(void) 
+inline unsigned long long
+now(void)
 {
   unsigned int a,d;
 
@@ -41,13 +41,14 @@ class Test {
   friend void *testPThreadFunc(void *);
 #ifndef __APPLE__
   friend void *linux_thread_init(void *args, int processor);
-#endif 
+#endif
   friend int create_bound_thread (pthread_t *tid, int id, void *(*func)(void *), void *arg);
 private:
   EBBRC worker(int id);
   EBBRC doWork();
 protected:
   Barrier bar;
+  pthread_barrier_t bar2;
   int numWorkers;
   int iterations;
   bool bindThread;
