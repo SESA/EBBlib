@@ -182,7 +182,6 @@ MsgTst_start(AppRef _self, int argc, char **argv, char **environ)
   
 }
 
-
 CObjInterface(App) MsgTst_ftable = {
   .start = MsgTst_start
 };
