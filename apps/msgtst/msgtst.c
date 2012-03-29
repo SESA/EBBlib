@@ -54,7 +54,6 @@ static EBBRC
 MsgHandlerTst_msg0(MsgHandlerRef _self)
 {
   // ack that we are handing interrupt
-  EBB_LRT_printf("[%s]", __func__);
   return EBBRC_OK;
 };
 static EBBRC 
@@ -65,10 +64,16 @@ MsgHandlerTst_msg1(MsgHandlerRef _self, uintptr_t a1)
   return EBBRC_OK;
 };
 static EBBRC 
-MsgHandlerTst_msg2(MsgHandlerRef _self, uintptr_t a1, uintptr_t a2)
+MsgHandlerTst_msg2(MsgHandlerRef _self, uintptr_t numtosend, uintptr_t id)
 {
-  // ack that we are handing interrupt
-  EBB_LRT_printf("[%s]", __func__);
+  uintptr_t nxt = 0;
+  MsgHandlerId sid = (MsgHandlerId)id;
+  EBB_LRT_printf("[%ld-%ld]", MyEL(), numtosend);
+  numtosend--;
+  LRT_EBBAssert(numtosend > 0);
+  nxt = EventMgr_NextEL(MyEL());
+  
+  COBJ_EBBCALL(theMsgMgrId, msg2, nxt, sid, numtosend, id);
   return EBBRC_OK;
 };
 static EBBRC 
@@ -131,11 +136,11 @@ CObject(MsgTst) {
   CObjInterface(App) *ft;
 };
 
+#if 0
 // FIXME: this msg test is really bogus, you are on an event, running for a really long time, 
 // we should be sending to other nodes, and somehow waiting for events ourselves
 EBBRC 
-MsgTst_start(AppRef _self, int argc, char **argv, 
-	     char **environ)
+MsgTst_start(AppRef _self, int argc, char **argv, char **environ)
 {
   MsgHandlerId id = InitMsgHandlerTst();
   int i;
@@ -151,6 +156,32 @@ MsgTst_start(AppRef _self, int argc, char **argv,
 
   return EBBRC_OK;
 }
+#endif
+
+
+EBBRC 
+MsgTst_start(AppRef _self, int argc, char **argv, char **environ)
+{
+  MsgHandlerId id = InitMsgHandlerTst();
+  int numtosend = 100;
+
+  EBB_LRT_printf("MsgTst, core %ld number of cores %ld", MyEL(), EventMgr_NumEL());
+
+  if (MyEL() != 0) {
+    EBB_LRT_printf("MsgTst, core %ld returning to event loop", MyEL());
+    return EBBRC_OK;
+  }
+  // FIXME: put a delay with timeout, here to wait for others to come up
+  sleep(2);
+  EBB_LRT_printf("MsgTst, core %ld number of cores %ld", MyEL(), EventMgr_NumEL());
+  
+  // kick off message send
+  COBJ_EBBCALL(theMsgMgrId, msg2, 0, id, numtosend, (uintptr_t)id);
+
+  return EBBRC_OK;
+  
+}
+
 
 CObjInterface(App) MsgTst_ftable = {
   .start = MsgTst_start
