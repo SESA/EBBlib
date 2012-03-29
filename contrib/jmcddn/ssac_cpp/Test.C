@@ -116,24 +116,11 @@ create_bound_thread(pthread_t *tid, int id,  void *(*func)(void *), void *arg)
   return 0;
 }
 
-
-Test::Test(int n) :  bar(n), numWorkers(n), iterations(1)
+Test::Test(int n, int m, int c, bool p, double wpct) : bar(n), numWorkers(n), iterations(m), numEvents(c), bindThread(p), writePct(wpct)
 {
-  wargs = (struct Test::WArgs *)
-  malloc(sizeof(struct Test::WArgs) * numWorkers);
-  tassert((wargs != NULL), ass_printf("malloc failed\n"));
-}
-
-Test::Test(int n, int m) :  bar(n), numWorkers(n), iterations(m)
-{
-  wargs = (struct Test::WArgs *)
-  malloc(sizeof(struct Test::WArgs) * (numWorkers * iterations));
-  tassert((wargs != NULL), ass_printf("malloc failed\n"));
-}
-
-Test::Test(int n, int m, bool p) :  bar(n), numWorkers(n), iterations(m), bindThread(p)
-{
+#ifndef __APPLE__
   pthread_barrier_init(&bar2, NULL, n);
+#endif
   wargs = (struct Test::WArgs *)
   malloc(sizeof(struct Test::WArgs) * (numWorkers * iterations));
   tassert((wargs != NULL), ass_printf("malloc failed\n"));
@@ -153,7 +140,7 @@ Test::doWork() {
 //    TRACE("creating thread #%d\n", i);
       args[i].id = i;
       args[i].index = (j*numWorkers)+i;
-      args[i].test = this; // TODO: look up behavior of 'this'
+      args[i].test = this;
     // create bound threads if specified
     if (bindThread > 0){
       if ( create_bound_thread( &(args[i].tid), i, testPThreadFunc, (void *)&(args[i])) < 0) {
@@ -179,26 +166,30 @@ Test::worker(int id)
 {
   struct WArgs *args = &(wargs[id]);
 
+#ifndef __APPLE__
   int rc = pthread_barrier_wait(&bar2);
   if(rc != 0 && rc != PTHREAD_BARRIER_SERIAL_THREAD)
   {
-    printf("Could not wait on barrier\n");
+    printf("Could not wait on barrier 1\n");
     exit(-1);
   }
-
-  // bar.enter();
-
+#else
+   bar.enter();
+#endif
   args->start = now();
   work(id);
   args->end = now();
 
- // bar.enter();
+#ifndef __APPLE__
   rc = pthread_barrier_wait(&bar2);
   if(rc != 0 && rc != PTHREAD_BARRIER_SERIAL_THREAD)
   {
-    printf("Could not wait on barrier\n");
+    printf("Could not wait on barrier 2\n");
     exit(-1);
   }
+#else
+   bar.enter();
+#endif
   return 0;
 }
 
