@@ -21,7 +21,7 @@ public:
 class  CacheEntry {};
 
 // Base Class for SSAC classes
-class SSAC : public EBB {  
+class SSAC : public CPlusEBB {  
     SSACRef ref() { return (SSACRef)_ref; }
 public:
     enum putflag { KEEP, DISCARD };
