@@ -19,7 +19,7 @@ public:
   static  EBBRC create(MySSAC **o);
 };
 
-/* static */ EBBRC
+/* statick */ EBBRC
 MySSAC::create(MySSAC **o)
 {
   *o = new(MySSAC);

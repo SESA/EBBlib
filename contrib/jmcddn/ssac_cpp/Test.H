@@ -36,7 +36,10 @@ public:
   }
 };
 
-class Test {
+class Test;
+typedef Test **TestId;
+
+class Test:CPlusEBB {
   static int num_psy_cores(void);
   friend void *testPThreadFunc(void *);
 #ifndef __APPLE__
