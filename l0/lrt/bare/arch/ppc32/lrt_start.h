@@ -1,6 +1,5 @@
-#ifndef LRT_BARE_ARCH_ASSERT_H
-#define LRT_BARE_ARCH_ASSERT_H
-
+#ifndef L0_LRT_BARE_ARCH_PPC32_LRT_START_H
+#define L0_LRT_BARE_ARCH_PPC32_LRT_START_H
 /*
  * Copyright (C) 2011 by Project SESA, Boston University
  *
@@ -23,13 +22,6 @@
  * THE SOFTWARE.
  */
 
-#define LRT_EBBAssert(cond)						\
-  ({									\
-  if (!(cond)) {							\
-    if (stdout)								\
-      printf("Assertion failed: at %s, line %d\n", __FILE__, __LINE__);	\
-    while(1) ;								\
-  }									\
-  })
+extern void lrt_start_isr(void);
 
 #endif

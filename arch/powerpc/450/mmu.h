@@ -79,5 +79,26 @@ typedef union {
 } tlb_word_2;
 
 STATIC_ASSERT(sizeof(tlb_word_2) == 4, "tlb_word_2 packing issue");
+
+typedef union {
+  uint32_t val;
+  struct {
+    uint32_t reserved0 :6;
+    uint32_t l2swoa :1;
+    uint32_t swoa :1;
+    uint32_t reserved1 :1;
+    uint32_t u1te :1;
+    uint32_t u2swoae :1;
+    uint32_t u3l2swoae :1;
+    uint32_t dulxe :1;
+    uint32_t iulxe :1;
+    uint32_t reserved2 :1;
+    uint32_t sts :1;
+    uint32_t reserved3 :8;
+    uint32_t stid :8;
+  };
+} mmucr;
+
+STATIC_ASSERT(sizeof(mmucr) == 4, "mmucr packing issue");
     
 #endif

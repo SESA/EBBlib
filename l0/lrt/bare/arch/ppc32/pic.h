@@ -1,5 +1,5 @@
-#ifndef LRT_BARE_ARCH_ASSERT_H
-#define LRT_BARE_ARCH_ASSERT_H
+#ifndef L0_LRT_BARE_ARCH_PPC32_PIC_H
+#define L0_LRT_BARE_ARCH_PPC32_PIC_H
 
 /*
  * Copyright (C) 2011 by Project SESA, Boston University
@@ -23,13 +23,14 @@
  * THE SOFTWARE.
  */
 
-#define LRT_EBBAssert(cond)						\
-  ({									\
-  if (!(cond)) {							\
-    if (stdout)								\
-      printf("Assertion failed: at %s, line %d\n", __FILE__, __LINE__);	\
-    while(1) ;								\
-  }									\
-  })
+#include <stdint.h>
+
+extern uintptr_t lrt_pic_myid;
+
+typedef void *lrt_pic_handler; //a PC
+
+extern void lrt_pic_mapvec(uintptr_t vec, lrt_pic_handler h);
+extern void lrt_pic_ipi(uintptr_t id);
+extern void __attribute__ ((noreturn)) lrt_pic_init(lrt_pic_handler h);
 
 #endif

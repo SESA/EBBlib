@@ -20,8 +20,12 @@
  * THE SOFTWARE.
  */
 
+#include <config.h>
+
 #include <stdint.h>
+
 #include <l0/lrt/bare/stdio.h>
+#include <lrt/string.h>
 
 struct bgp_mailbox_desc {
   uint16_t offset;	// offset from SRAM base
@@ -47,29 +51,43 @@ typedef struct bgp_mailbox {
 
 //FIXME: read from FDT, these are hardcoded
 static bgp_mailbox * const bgp_mbox = (bgp_mailbox *)(0xfffff400);
-static uintptr_t bgp_mbox_size = 0xf8;
+#define BGP_MBOX_SIZE (0xf8)
+static char bgp_mbox_buffer[BGP_MBOX_SIZE];
+static uintptr_t bgp_mbox_buffer_len = 0;
 
 static int
 mailbox_putc(int c)
 {
-  bgp_mbox->data[bgp_mbox->len++] = c;
+  bgp_mbox_buffer[bgp_mbox_buffer_len++] = c;
   
-  if (bgp_mbox->len >= bgp_mbox_size || c == '\n') {
+  if (bgp_mbox_buffer_len >= BGP_MBOX_SIZE || c == '\n') {
+    memcpy(&bgp_mbox->data, bgp_mbox_buffer, bgp_mbox_buffer_len);
+    bgp_mbox->len = bgp_mbox_buffer_len;
     bgp_mbox->command = 2;
     asm volatile (
 		  "mbar;"
 		  "mtdcrx %[dcrn], %[val];"
 		  :
 		  : [dcrn] "r" (BGP_DCR_GLOB_ATT_WRITE_SET),
-		    [val] "r" (BGP_ALERT_OUT(0))
+		    [val] "r" (BGP_ALERT_OUT(0)),
+		    "m" (*bgp_mbox)
 		  );
     do {
-      asm volatile ("dcbi 0, %[addr]"
+      asm volatile (
+		    "dcbi 0, %[addr]"
 		    :
-		    : [addr] "b" (&bgp_mbox->command)
+		    : [addr] "b" (&(bgp_mbox->command))
 		    );
-      //MSBit is ack bit
-    } while (!bgp_mbox->command & 0x8000);
+    } while (!(bgp_mbox->command & 0x8000));
+
+    asm volatile (
+    		  "mtdcrx %[dcrn], %[val];"
+    		  :
+    		  : [dcrn] "r" (BGP_DCR_GLOB_ATT_WRITE_CLEAR),
+    		    [val] "r" (BGP_ALERT_OUT(0)),
+    		    "m" (*bgp_mbox)
+    		  );
+    bgp_mbox_buffer_len = 0;
   }
   return c;
 }

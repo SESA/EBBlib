@@ -33,45 +33,6 @@ _start:
 	cmpwi	r21, 0
 	bgt	spin_secondary
 
-	lis	r1, _vec_start@h
-	ori	r1, r1, _vec_start@l
-	mtspr	SPRN_IVPR, r1
-
-	//IVORS in the manner that
-	//fixed vectors are set
-	li	r1, 0x0
-	mtspr	SPRN_IVOR1, r1
-	addi	r1, r1, 0x20
-	mtspr	SPRN_IVOR0, r1
-	addi	r1, r1, 0x20
-	mtspr	SPRN_IVOR15, r1
-	addi	r1, r1, 0x20
-	mtspr	SPRN_IVOR2, r1
-	addi	r1, r1, 0x20
-	mtspr	SPRN_IVOR3, r1
-	addi	r1, r1, 0x20
-	mtspr	SPRN_IVOR4, r1
-	addi	r1, r1, 0x20
-	mtspr	SPRN_IVOR5, r1
-	addi	r1, r1, 0x20
-	mtspr	SPRN_IVOR6, r1
-	addi	r1, r1, 0x20
-	mtspr	SPRN_IVOR7, r1
-	addi	r1, r1, 0x20
-	mtspr	SPRN_IVOR8, r1
-	addi	r1, r1, 0x20
-	mtspr	SPRN_IVOR9, r1
-	addi	r1, r1, 0x20
-	mtspr	SPRN_IVOR10, r1
-	addi	r1, r1, 0x20
-	mtspr	SPRN_IVOR11, r1
-	addi	r1, r1, 0x20
-	mtspr	SPRN_IVOR12, r1
-	addi	r1, r1, 0x20
-	mtspr	SPRN_IVOR13, r1
-	addi	r1, r1, 0x20
-	mtspr	SPRN_IVOR14, r1
-	
 	//load stack into r1
 	lis	r1, _mini_stack@h
 	ori	r1, r1, _mini_stack@l
@@ -80,7 +41,7 @@ _start:
 	//set small data areas to 0
 	li	r13, 0
 	li	r2, 0
-	
+
 	//load init addr into r20
 	lis	r20, init@h
 	ori	r20, r20, init@l

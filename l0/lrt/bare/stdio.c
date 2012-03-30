@@ -171,8 +171,10 @@ static int printi(long long val, unsigned int base, int sign,
     rem = uval % base;
     if (rem >= 10) {
       rem += cbase - 10;
+    } else {
+      rem += '0';
     }
-    *--s = (char)rem + '0';
+    *--s = (char)rem;
     pos++;
     uval = uval / base;
   }
@@ -295,6 +297,34 @@ vfprintf(FILE *stream, const char *format, va_list ap)
 	} else {
 	  count += printi((long long)va_arg(ap, int),
 			  10, 1, width, precision, flags, 'a', stream);
+	}
+      } else if (*format == 'x') {
+	if(flags & SHORT) {
+	  count += printi((long long)(unsigned short)va_arg(ap, int),
+			  16, 1, width, precision, flags, 'a', stream);
+	} else if(flags & LONG) {
+	  count += printi((long long)(unsigned long)va_arg(ap, long),
+			  16, 1, width, precision, flags, 'a', stream);
+	} else if(flags & LONGLONG) {
+	  count += printi((long long)(unsigned long long)va_arg(ap, long long),
+			  16, 1, width, precision, flags, 'a', stream);
+	} else {
+	  count += printi((long long)(unsigned int)va_arg(ap, int),
+			  16, 1, width, precision, flags, 'a', stream);
+	}
+      } else if (*format == 'X') {
+	if(flags & SHORT) {
+	  count += printi((long long)(unsigned short)va_arg(ap, int),
+			  16, 1, width, precision, flags, 'A', stream);
+	} else if(flags & LONG) {
+	  count += printi((long long)(unsigned long)va_arg(ap, long),
+			  16, 1, width, precision, flags, 'A', stream);
+	} else if(flags & LONGLONG) {
+	  count += printi((long long)(unsigned long long)va_arg(ap, long long),
+			  16, 1, width, precision, flags, 'A', stream);
+	} else {
+	  count += printi((long long)(unsigned int)va_arg(ap, int),
+			  16, 1, width, precision, flags, 'A', stream);
 	}
       }
     } else {
