@@ -1,9 +1,14 @@
 OBJS := \
 	../../stdio.o \
 	../../string.o \
+	../../../../../lrt/string.o \
 	init.o \
 	isr.o \
+	ivpr_common.o \
+	lrt_start.o \
+	lrt_start_isr.o \
 	mailbox.o \
+	pic.o \
 	start.o
 
 LDFLAGS := \

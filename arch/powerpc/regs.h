@@ -89,6 +89,7 @@
 #define SPRN_PPR32	0x382
 #define SPRN_CELL_TSC	0x399
 #define SPRN_MAS7       0x3b0
+#define SPRN_MMUCR      0x3b2
 #define SPRN_EPLC	0x3b3
 #define SPRN_EPSC	0x3b4
 #define SPRN_CCR2       0x3f2
