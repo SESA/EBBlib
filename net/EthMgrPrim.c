@@ -111,19 +111,18 @@ EthMgrPrimCreate(EthMgrId *id, char *nic)
   EBBRC rc;
   EthMgrPrimRef repRef;
   CObjEBBRootSharedRef rootRef;
-  lrt_pic_src nicisrc;
+  lrt_pic_src nicisrc, nicosrc;
 
-  EBBPrimMalloc(sizeof(*repRef), &repRef, EBB_MEM_DEFAULT);
-  EBBPrimMalloc(sizeof(*rootRef), &rootRef, EBB_MEM_DEFAULT);
-  
-  CObjEBBRootSharedSetFT(rootRef);
+  rc = EBBPrimMalloc(sizeof(EthMgrPrim), &repRef, EBB_MEM_DEFAULT);
+  EBBRCAssert(rc);
+
   EthMgrPrimSetFT(repRef);
-
   bzero(repRef->typeMgrs, sizeof(repRef->typeMgrs));
   repRef->rcnt=0;
 
-  rootRef->ft->init(rootRef, (EBBRep *)repRef);
-  
+  rc = CObjEBBRootSharedCreate(&rootRef, (EBBRepRef)repRef);
+  EBBRCAssert(rc);
+
   rc = EBBAllocPrimId((EBBId *)id);
   EBBRCAssert(rc);
 
@@ -131,9 +130,9 @@ EthMgrPrimCreate(EthMgrId *id, char *nic)
   EBBRCAssert(rc);
 
   // setup the EthMgr on a second id that services the EventHander Interface
-  EBBPrimMalloc(sizeof(*rootRef), &rootRef, EBB_MEM_DEFAULT);
-  CObjEBBRootSharedSetFT(rootRef);
-  rootRef->ft->init(rootRef, (EBBRep *)&(repRef->evHdlr));
+  rc = CObjEBBRootSharedCreate(&rootRef, (EBBRepRef)&(repRef->evHdlr));
+  EBBRCAssert(rc);
+
   rc = EBBAllocPrimId((EBBId *)&(repRef->hdlrId));
   EBBRCAssert(rc);
   rc = CObjEBBBind((EBBId)repRef->hdlrId, rootRef);
@@ -143,10 +142,13 @@ EthMgrPrimCreate(EthMgrId *id, char *nic)
   EBBRCAssert(rc);
 
   if (nic) {
-    rc = ethlib_nic_init(nic, &nicisrc);
+    rc = ethlib_nic_init(nic, &nicisrc, &nicosrc);
     if (EBBRC_SUCCESS(rc)) {
       rc = EBBCALL(theEventMgrPrimId, registerHandler, repRef->ev, 
-		   repRef->hdlrId, nicisrc);
+		   repRef->hdlrId, NOFUNCNUM, &nicisrc);
+      EBBRCAssert(rc);
+
+      rc = EBBCALL(theEventMgrPrimId, eventEnable, repRef->ev);
       EBBRCAssert(rc);
     }
   }

@@ -1,7 +1,3 @@
-EBBType(ConsoleStream) {
-  CObjImplements(EventHandler);
-  CObjImplements(Stream);
-};
 
 EBBImp(ConsoleStream, Imp) {
   char *buf;

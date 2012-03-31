@@ -89,7 +89,7 @@ static CObjInterface(EventHandler) ResetEventHandler_ftable = {
 static EBBRep *
 ResetEventHandler_createRep(CObjEBBRootMultiRef _self) {
   ResetEventHandlerRef repRef;
-  EBBPrimMalloc(sizeof(*repRef), &repRef, EBB_MEM_DEFAULT);
+  EBBPrimMalloc(sizeof(ResetEventHandler), &repRef, EBB_MEM_DEFAULT);
   repRef->ft = &ResetEventHandler_ftable;
   repRef->theRoot = _self;
   //  initGTable(EventMgrPrimErrMF, 0);

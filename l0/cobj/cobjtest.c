@@ -121,7 +121,7 @@ ASetFT(ARef a)
 int 
 ACreate(ARef *a_ptr, BRef *b_ptr, intptr_t b, uintptr_t m) {
   ARef aref;
-  aref = (ARef)malloc(sizeof(ARef));
+  aref = (ARef)malloc(sizeof(A));
   aref->base = b; aref->mask = m;
   ASetFT(aref);
   *a_ptr = aref; 
@@ -129,12 +129,52 @@ ACreate(ARef *a_ptr, BRef *b_ptr, intptr_t b, uintptr_t m) {
   return 1;
 }
 
+typedef uintptr_t FuncNum;
+typedef uintptr_t (* getFunc )(void *);
+
+void
+FuncNumTest()
+{
+  ARef aref=NULL;
+  FuncNum gb, sb, gm, sm, tr;
+  COBJFunc f0, f1;
+  uintptr_t b, m;
+
+  gb = COBJ_FUNCNUM(aref,getBase);
+  sb = COBJ_FUNCNUM(aref,setBase);
+  gm = COBJ_FUNCNUM(aref,getMask);
+  sm = COBJ_FUNCNUM(aref,setMask);
+  tr = COBJ_FUNCNUM(aref,B_if.trans);
+  
+  printf("setBase=%ld getBase=%ld setMask=%ld getMask=%ld "
+	 "B_if.trans=%ld\n", gb, sb, gm, sm, tr);
+
+  aref = (ARef)malloc(sizeof(A));
+  ASetFT(aref);
+
+  aref->ft->setBase(aref, 0xdeadbeef);
+  aref->ft->setMask(aref, 0xfeedface);
+
+  printf("getBase(aref)=%p getMask(aref)=%p\n", 
+	 (void *)(aref->ft->getBase(aref)),
+	 (void *)(aref->ft->getMask(aref)));
+
+  f0 = COBJ_FUNC(aref, gb);
+  f1 = COBJ_FUNC(aref, gm);
+
+  printf("f0=%p f1=%p call gb=%p call gm=%p\n", f0, f1, 
+	 (void *)(((getFunc)COBJ_FUNC(aref,gb))(aref)),
+	 (void *)(((getFunc)COBJ_FUNC(aref,gm))(aref)));
+}
+
 int
 main(int argc, char **argv)
 {
   ARef a;
   BRef b;
-  
+
+  FuncNumTest();
+
   ACreate(&a, &b, 0xdeadbeef, 0x3);
 
   // You may now refrence the instance either by :

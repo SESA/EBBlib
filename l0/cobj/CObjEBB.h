@@ -27,6 +27,9 @@ extern EBBRC CObjEBBMissFunc(EBBRep **, EBBLTrans *, FuncNum, EBBMissArg);
 #define COBJ_EBBCALL(id, method, ...) \
   (EBBId_DREF(id)->ft->method(EBBId_DREF(id), ##__VA_ARGS__))
 
+#define COBJ_EBBCALL_FUNCNUM(Type, id, funcNum, ...)	\
+  ( ((Type)COBJ_FUNC(EBBId_DREF(id), funcNum))(EBBId_DREF(id), ##__VA_ARGS__) )
+ 
 // Introduces a new CObject Ebb type -> generates all associated cobject types
 #define COBJ_EBBType(TYPE)			\
   CObject(TYPE) {				\

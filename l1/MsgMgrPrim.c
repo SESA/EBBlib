@@ -345,7 +345,7 @@ MsgMgrPrim_createRep(CObjEBBRootMultiImpRef rootRefMM,
 {
   MsgMgrPrimRef repRef;
 
-  EBBPrimMalloc(sizeof(*repRef), &repRef, EBB_MEM_DEFAULT);
+  EBBPrimMalloc(sizeof(MsgMgrPrim), &repRef, EBB_MEM_DEFAULT);
   MsgMgrPrim_SetFT(repRef);
   int i;
 

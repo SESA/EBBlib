@@ -95,7 +95,7 @@ EBBMgrPrimErrMF (EBBRep **_self, EBBLTrans *lt,
 static EBBRep *
 EBBMgrPrimImp_createRep(CObjEBBRootMultiRef _self) {
   EBBMgrPrimImpRef repRef;
-  EBBPrimMalloc(sizeof(*repRef), &repRef, EBB_MEM_DEFAULT);
+  EBBPrimMalloc(sizeof(EBBMgrPrimImp), &repRef, EBB_MEM_DEFAULT);
   repRef->ft = &EBBMgrPrimImp_ftable;
   repRef->theRoot = _self;
   //  initGTable(EBBMgrPrimErrMF, 0);

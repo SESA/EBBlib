@@ -63,22 +63,29 @@ COBJ_EBBType(EventHandler) {
 typedef uintptr_t EvntLoc;
 inline static EvntLoc MyEL() { return lrt_pic_myid; }
 
+typedef EBBRC (*EventFunc)(void *);
+
 /* 
  * key local to eventmgr for allocating specific reserved events/interrupt
  * sources
  */
 COBJ_EBBType(EventMgrPrim) {
-  EBBRC (*registerHandler) (void *_self, uintptr_t eventNo,
-			    EventHandlerId handler, 
-			    uintptr_t isrc);
-  EBBRC (*registerIPIHandler) (void *_self, EventHandlerId handler);
+  EBBRC (*registerHandler) (EventMgrPrimRef _self, uintptr_t eventNo,
+			    EventHandlerId handler, FuncNum fn, 
+			    lrt_pic_src *isrc); 
 
-  EBBRC (*allocEventNo) (void *_self, uintptr_t *eventNoPtr);
+  EBBRC (*eventEnable) (EventMgrPrimRef _self, uintptr_t eventNo);
 
-  EBBRC (*dispatchIPI) (void *_self, EvntLoc el);
+  EBBRC (*eventDisable) (EventMgrPrimRef _self, uintptr_t eventNo);
+			     
+  EBBRC (*registerIPIHandler) (EventMgrPrimRef _self, EventHandlerId handler);
+
+  EBBRC (*allocEventNo) (EventMgrPrimRef _self, uintptr_t *eventNoPtr);
+
+  EBBRC (*dispatchIPI) (EventMgrPrimRef _self, EvntLoc el);
 
   // called by eary implementation of the vector function
-  EBBRC (*dispatchEventLocal) (void *_self, uintptr_t eventNo);
+  EBBRC (*dispatchEventLocal) (EventMgrPrimRef _self, uintptr_t eventNo);
 };
 
 // the ID of the one and only event manager

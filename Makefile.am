@@ -28,7 +28,7 @@ noinst_LIBRARIES =
 lib_LIBRARIES = libebb.a
 
 libebb_a_SOURCES = $(arch_sources) $(l0_sources) $(lrt_sources) \
-  $(misc_sources) $(net_sources) $(l1_sources)
+  $(misc_sources) $(net_sources) $(l1_sources) $(io_sources)
 
 libebb_a_LIBADD = 
 libebb_a_DEPENDENCIES = 
@@ -63,3 +63,4 @@ include l1/Makefile.am
 include lrt/Makefile.am
 include misc/Makefile.am
 include net/Makefile.am
+include io/Makefile.am

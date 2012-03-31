@@ -97,7 +97,7 @@ static CObjInterface(MsgHandler) MsgHandlerTst_ftable = {
 static EBBRep *
 MsgHandlerTst_createRep(CObjEBBRootMultiRef _self) {
   MsgHandlerTstRef repRef;
-  EBBPrimMalloc(sizeof(*repRef), &repRef, EBB_MEM_DEFAULT);
+  EBBPrimMalloc(sizeof(MsgHandlerTst), &repRef, EBB_MEM_DEFAULT);
   repRef->ft = &MsgHandlerTst_ftable;
   repRef->theRoot = _self;
   return (EBBRep *)repRef;

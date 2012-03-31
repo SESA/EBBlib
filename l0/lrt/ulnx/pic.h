@@ -79,7 +79,18 @@ lrt_pic_set_addall(lrt_pic_set s)
 }
 
 typedef void (*lrt_pic_handler)(void);
-typedef uintptr_t lrt_pic_src;
+
+#define LRT_ULNX_PICFLAG_READ  (1<<0)  // READ:  BIT 0
+#define LRT_ULNX_PICFLAG_WRITE (1<<1)  // WRITE: BIT 1
+#define LRT_ULNX_PICFLAG_ERROR (1<<2)  // ERRORL BIT 2
+
+typedef union {
+  uint64_t raw;
+  struct {
+    uint32_t fd;
+    uint32_t flags;
+  } unix_pic_src;
+} lrt_pic_src;
 
 #ifdef __APPLE__
 #include <pthread.h>
@@ -103,10 +114,13 @@ extern intptr_t lrt_pic_init(lrt_pic_handler h);
 #endif
 extern intptr_t lrt_pic_loop(void);
 extern intptr_t lrt_pic_allocvec(uintptr_t *vec);
-extern intptr_t lrt_pic_mapvec_local(lrt_pic_src src, uintptr_t vec, 
+extern intptr_t lrt_pic_mapvec_local(lrt_pic_src *src, uintptr_t vec, 
 				     lrt_pic_handler h);
-extern intptr_t lrt_pic_mapvec(lrt_pic_src src, uintptr_t vec, 
+extern intptr_t lrt_pic_mapvec(lrt_pic_src *src, uintptr_t vec, 
 			       lrt_pic_handler h);
+extern intptr_t lrt_pic_vecon(uintptr_t vec);
+extern intptr_t lrt_pic_vecoff(uintptr_t vec);
+
 #ifdef __cplusplus
 extern "C" {
 #endif

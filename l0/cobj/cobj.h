@@ -59,4 +59,16 @@
 #define ContainingCOPtr(addr, ctype, field) \
   ((ctype *)(((uintptr_t)addr) - (__builtin_offsetof(ctype, field))))
 
+
+// 'generic' cobj function pointer
+typedef void (*COBJFunc) (void *);
+
+#define COBJ_FUNCNUM(ref, funcName) \
+  ( __builtin_offsetof( typeof(*(ref->ft)), funcName)/sizeof(COBJFunc) )
+
+// you will likely need to cast to make use of this
+#define COBJ_FUNC(ref, funcNum) \
+  ( ((COBJFunc *)ref->ft)[funcNum] )
+
+
 #endif
