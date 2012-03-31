@@ -252,8 +252,6 @@ ConsoleCreate(ConsoleId *id, lrt_pic_src in, lrt_pic_src out, InAction action)
   rc = COBJ_EBBCALL(theEventMgrPrimId, registerHandler, repRef->inEV, 
 		    (EventHandlerId) *id, COBJ_FUNCNUM(repRef, inEvent), &in);
   EBBRCAssert(rc);
-  rc = COBJ_EBBCALL(theEventMgrPrimId, eventEnable, repRef->inEV);
-  EBBRCAssert(rc);
 
   // setup up output handling
   rc = COBJ_EBBCALL(theEventMgrPrimId, allocEventNo, &(repRef->outEV));
@@ -261,6 +259,10 @@ ConsoleCreate(ConsoleId *id, lrt_pic_src in, lrt_pic_src out, InAction action)
   rc = COBJ_EBBCALL(theEventMgrPrimId, registerHandler, repRef->outEV, 
 		    (EventHandlerId) *id, COBJ_FUNCNUM(repRef, outEvent), 
 		    &out);
+  EBBRCAssert(rc);
+
+  // now enable input handing as we are ready to roll
+  rc = COBJ_EBBCALL(theEventMgrPrimId, eventEnable, repRef->inEV);
   EBBRCAssert(rc);
 
   return EBBRC_OK;
