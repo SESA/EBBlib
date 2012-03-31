@@ -24,39 +24,46 @@
 #include <arch/powerpc/regs.h>
 
 #define EX_LOOP(interrupt) \
-	.balign 32 		; \
+	.balign 256 		; \
 	_IVPR_ ## interrupt: 	; \
+	nop 			; \
 	b _IVPR_ ## interrupt
+
+#define EX_JUMP(interrupt) \
+	.balign 256 		; \
+	_IVPR_ ## interrupt:	; \
+	nop 			; \
+	mtspr	SPRN_SPRG0, r20	     ; \
+	mfctr	r20		     ; \
+	mtspr	SPRN_SPRG1, r20	     ; \
+	lis	r20, int_table@h   ; \
+	ori	r20, r20, int_table@l		 ; \
+	lwz	r20, (IV_ ## interrupt) * 4(r20) ; \
+	mtctr	r20		     ; \
+	mfmsr	r20		     ; \
+	ori	r20, r20, (1 << 13) ; \
+	mtmsr	r20		    ; \
+	bctr			    
 
 .section .isr, "ax"
 .balign (1 << 16)
 .globl _vec_start
 _vec_start:	
-	EX_LOOP(machine_check)
-	EX_LOOP(critical_input)
-	EX_LOOP(debug) 
-	EX_LOOP(data_storage) 
-	EX_LOOP(instruction_storage) 
-	EX_LOOP(external) 
-	EX_LOOP(alignment) 
-	EX_LOOP(program) 
-	EX_LOOP(floating_point_unavailable) 
-	EX_LOOP(system_call) 
-	EX_LOOP(auxiliary_processor_unavailable) 
-	EX_LOOP(decrementer) 
-	EX_LOOP(fixed_interval_timer) 
-	EX_LOOP(watchdog_timer) 
-	EX_LOOP(data_tlb_error) 
-	EX_LOOP(instruction_tlb_error) 
-	EX_LOOP(vector_unavailable) 
-	EX_LOOP(embedded_floating_point_data)
-	EX_LOOP(embedded_floating_point_round)
-	EX_LOOP(embedded_performance_monitor)
-	EX_LOOP(processor_dbell	) 
-	EX_LOOP(processor_dbell_critical)
-	EX_LOOP(guest_processor_dbell) 
-	EX_LOOP(guest_processor_dbell_critical)
-	EX_LOOP(ehv_system_call) 
-	EX_LOOP(ehv_privilege) 
-	EX_LOOP(lrat_error) 
-_vec_end:	
+	EX_JUMP(machine_check)
+	EX_JUMP(critical_input)
+	EX_JUMP(debug) 
+	EX_JUMP(data_storage) 
+	EX_JUMP(instruction_storage) 
+	EX_JUMP(external) 
+	EX_JUMP(alignment) 
+	EX_JUMP(program) 
+	EX_JUMP(floating_point_unavailable) 
+	EX_JUMP(system_call) 
+	EX_JUMP(auxiliary_processor_unavailable) 
+	EX_JUMP(decrementer) 
+	EX_JUMP(fixed_interval_timer) 
+	EX_JUMP(watchdog_timer) 
+	EX_JUMP(data_tlb_error) 
+	EX_JUMP(instruction_tlb_error) 
+_vec_end:
+

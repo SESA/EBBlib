@@ -1,6 +1,3 @@
-#ifndef LRT_BARE_ARCH_ASSERT_H
-#define LRT_BARE_ARCH_ASSERT_H
-
 /*
  * Copyright (C) 2011 by Project SESA, Boston University
  *
@@ -23,13 +20,12 @@
  * THE SOFTWARE.
  */
 
-#define LRT_EBBAssert(cond)						\
-  ({									\
-  if (!(cond)) {							\
-    if (stdout)								\
-      printf("Assertion failed: at %s, line %d\n", __FILE__, __LINE__);	\
-    while(1) ;								\
-  }									\
-  })
+#include <arch/ppc32/asdef.h>
 
-#endif
+	.globl lrt_start_isr
+lrt_start_isr:
+	lis	r20, lrt_start@h
+	ori	r20, r20, lrt_start@l
+	mtctr	r20
+	bctrl
+	rfi

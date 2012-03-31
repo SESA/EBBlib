@@ -59,6 +59,18 @@ struct Pic {
   volatile uintptr_t numlpics;	/* number local pics i.e., cores */
 } pic;
 
+/* get number of logical pics, i.e., cores */
+uintptr_t lrt_pic_getnumlpics()
+{
+  return pic.numlpics;
+}
+
+/* get next pic in some sequence from current one; loops */
+uintptr_t lrt_pic_getnextlpic(uintptr_t c)
+{
+  return (c+1)%pic.numlpics;
+}
+
 /*
  * Array of pic structures with one per core. 
  */

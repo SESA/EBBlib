@@ -62,6 +62,8 @@ COBJ_EBBType(EventHandler) {
 #include <l0/lrt/pic.h>
 typedef uintptr_t EvntLoc;
 inline static EvntLoc MyEL() { return lrt_pic_myid; }
+inline static EvntLoc EventMgr_NextEL(EvntLoc l) { return lrt_pic_getnextlpic(l); }
+inline static EvntLoc EventMgr_NumEL() { return lrt_pic_getnumlpics(); }
 
 typedef EBBRC (*EventFunc)(void *);
 

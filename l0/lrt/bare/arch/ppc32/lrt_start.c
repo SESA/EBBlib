@@ -1,6 +1,3 @@
-#ifndef LRT_BARE_ARCH_ASSERT_H
-#define LRT_BARE_ARCH_ASSERT_H
-
 /*
  * Copyright (C) 2011 by Project SESA, Boston University
  *
@@ -23,13 +20,13 @@
  * THE SOFTWARE.
  */
 
-#define LRT_EBBAssert(cond)						\
-  ({									\
-  if (!(cond)) {							\
-    if (stdout)								\
-      printf("Assertion failed: at %s, line %d\n", __FILE__, __LINE__);	\
-    while(1) ;								\
-  }									\
-  })
+#include <config.h>
 
-#endif
+#include <lrt/io.h>
+
+void
+lrt_start(void)
+{
+  EBB_LRT_printf("Got interrupt!\n");
+  while(1) ;
+}

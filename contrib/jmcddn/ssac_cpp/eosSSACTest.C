@@ -12,47 +12,48 @@
 class MySSAC : public SSAC {
 public:
   virtual EBBRC get( CacheObjectId &id, CacheEntry* &ce,
-		     const gettype &type ); 
+		     const gettype &type );
   virtual EBBRC putback( CacheEntry* &ce, const putflag &flag );
   virtual EBBRC flush();
   virtual EBBRC snapshot();
   static  EBBRC create(MySSAC **o);
 };
 
-/* static */ EBBRC 
+/* statick */ EBBRC
 MySSAC::create(MySSAC **o)
 {
   *o = new(MySSAC);
   return 0;
 }
 
-/* virtual */ EBBRC 
+/* virtual */ EBBRC
 MySSAC::get( CacheObjectId &id, CacheEntry* &ce,
-	     const gettype &type ) 
+	     const gettype &type )
 {
   return (EBBRC)0;
 }
 
-/* virtual */ EBBRC 
+/* virtual */ EBBRC
 MySSAC::putback( CacheEntry* &ce, const putflag &flag )
 {
   return (EBBRC)0;
 }
 
-/* virtual */ EBBRC 
+/* virtual */ EBBRC
 MySSAC::flush()
 {
   TRACE("BEGIN");
   return (EBBRC)0;
 }
 
-/* virtual */ EBBRC 
+/* virtual */ EBBRC
 MySSAC::snapshot()
 {
   return (EBBRC)0;
 }
 
 
+#if 0
 class BTest : public Test {
   Barrier b;
 protected:
@@ -78,38 +79,38 @@ BTest::work(int id)
       b.enter();
       TRACE("%d: Last worker LEFT Barrier %p\n", id, &b);
     }
-    TRACE("%d: Worker doing test AGAIN %p\n", id, &b);   
+    TRACE("%d: Worker doing test AGAIN %p\n", id, &b);
   }
   TRACE("%d: END: %p", id, this);
   return 0;
 }
 
-
-void 
+void
 BarrierTest(int numWorkers)
 {
   TRACE("BEGIN: %d\n", numWorkers);
- 
+
   BTest b(numWorkers);
-  
+
   b.doTest();
 
   TRACE("END\n");
 }
-
+#endif
 
 class SSACTest : public Test {
 protected:
   SSACRef ssac;
-  enum {HASHTABLESIZE=8192};//this is the size of hashqs, each with an 'associative' ammount of entries. 
+  enum {HASHTABLESIZE=8192};//this is the size of hashqs, each with an 'associative' ammount of entries.
   EBBRC work(int id);
   EBBRC init();
   EBBRC end();
 public:
-  SSACTest(int n, int m): Test(n,m) {}
-  SSACTest(int n, int m, bool p): Test(n,m,p) {}
+  SSACTest(int n, int m, int c, bool p, double wpct): Test(n,m,c,p,wpct) {}
+
 };
 
+/* Initialise array */
 EBBRC
 SSACTest::init()
 {
@@ -119,7 +120,7 @@ SSACTest::init()
   EBBRC rc;
   // run through each entry of the hashqs, clear value & h
   DREF(ssac)->flush();
-  
+
   for (unsigned long i=0; i<HASHTABLESIZE; i++) {
     id = i;
     rc=DREF(ssac)->get((CacheObjectId &)id,(CacheEntry * &)entry,
@@ -129,27 +130,39 @@ SSACTest::init()
   }
 //  TRACE("END");
   return rc;
-} 
+}
 
 /**
- * SSACTest:work() -- pull and update an entry from each hashq of the cache 
+ * SSACTest:work() -- pull and update an entry from each hashq of the cache
  * */
 EBBRC
-SSACTest::work(int myid) 
+SSACTest::work(int myid)
 {
   //  TRACE("BEGIN");
   CacheObjectIdSimple id(0);
   CacheEntrySimple *entry=0;
+  int readCount, writeCount;
   EBBRC rc;
   intptr_t v;
+
+  readCount = (1-writePct) * numEvents;
+  writeCount = writePct * numEvents;
+
   for (int j=0; j<1;j++) {
-    for (int i=0; i<HASHTABLESIZE; i++) {
+    // write to SSAC data object (increase pointer by 1)
+    for (int i=0; i<writeCount; i++) {
       id = i;
       rc = DREF(ssac)->get((CacheObjectId &)id,(CacheEntry * &)entry,
 			   SSAC::GETFORWRITE);
-      v=(intptr_t)entry->data; v++; entry->data=(void *)v;// change pointer
+      v=(intptr_t)entry->data; v++; entry->data=(void *)v;
       entry->dirty();
       rc =DREF(ssac)->putback((CacheEntry * &)entry, SSAC::KEEP);
+    }
+    for (int k=0; k<readCount; k++){
+      id = k;
+      rc = DREF(ssac)->get((CacheObjectId &)id,(CacheEntry * &)entry,
+			   SSAC::GETFORREAD);
+      v=(intptr_t)entry->data;
     }
   }
   //  TRACE("END");
@@ -169,13 +182,13 @@ SSACTest::end()
 
 class SSATest : public SSACTest {
 public:
-  SSATest(int n, int m, bool p);
+  SSATest(int n, int m, int c, bool p, double wpct);
   virtual ~SSATest();
 };
 
-SSATest::SSATest(int n, int m, bool p) : SSACTest(n,m,p) 
+SSATest::SSATest(int n, int m, int c, bool p, double wpct) : SSACTest(n,m,c,p,wpct)
 {
-  // init hash table 
+  // init hash table
   ssac = SSACSimpleSharedArray::create(HASHTABLESIZE);
 }
 
@@ -185,30 +198,34 @@ SSATest::~SSATest()
 }
 
 void
-SSACSimpleSharedArrayTest(int numWorkers, int numIterations, bool bindThread)
+SSACSimpleSharedArrayTest(int numWorkers, int numIterations, int numEvents, bool bindThread, double wpct)
 {
 //  TRACE("BEGIN");
-  SSATest test(numWorkers, numIterations, bindThread);
+  SSATest test(numWorkers, numIterations, numEvents, bindThread, wpct);
   test.doTest();
 //  TRACE("END");
 }
 
-int 
+int
 main(int argc, char **argv)
 {
   int n=4; // thread count
   int m=1; // no. of iterations
-  bool p=1; // bind threads? 
+  bool p=1; // bind threads?
+  double w=0.5; // test read/write percentage
+  int c=1000; // test event no
 
   if (argc>1) n=atoi(argv[1]);
   if (argc>2) m=atoi(argv[2]);
-  if (argc>3) p=atoi(argv[3]);
-  
+  if (argc>3) c=atoi(argv[3]);
+  if (argc>4) w=atof(argv[4]);
+  if (argc>5) p=atoi(argv[5]);
+
 #if 0
   BarrierTest(n);
 #endif
-  // TODO: transition to event based 
-  SSACSimpleSharedArrayTest(n,m,p); //TODO: print: test ran successfully
+
+  SSACSimpleSharedArrayTest(n,m,c,p,w);
 
   return 0;
 }

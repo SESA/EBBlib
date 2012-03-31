@@ -128,6 +128,8 @@ extern intptr_t lrt_pic_add_core();
 #ifdef __cplusplus
 }
 #endif
+extern uintptr_t lrt_pic_getnumlpics(); /* get number of logical pics, i.e., cores */
+extern uintptr_t lrt_pic_getnextlpic(uintptr_t c); /* get next pic in some sequence; loops */
 extern intptr_t lrt_pic_mapipi(lrt_pic_handler h);
 extern intptr_t lrt_pic_mapreset(lrt_pic_handler h);
 extern intptr_t lrt_pic_reset(lrt_pic_id targets);

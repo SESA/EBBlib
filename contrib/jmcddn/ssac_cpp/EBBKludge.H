@@ -1,6 +1,7 @@
 #ifndef __EBB_KLUDGE_H__
 #define __EBB_KLUDGE_H__
 
+#ifndef EBBLIB
 #define TRACE(fmt, ...)	fprintf(stderr, "%s: " fmt "\n", __func__, ##__VA_ARGS__)
 
 #define MISC 			1
@@ -25,12 +26,25 @@ typedef int EBBRC;
 #define ass_printf TRACE 
 #define tr_printf TRACE
 
-class EBB {
+class CPlusEBB {
 protected:
   void *_ref;
 };
 
 #define DREF(ref) ref
+#else
+#include <config.h>
+#include <stdint.h>
+
+#include <l0/lrt/types.h>
+#include <l0/cobj/cobj.h>
+#include <lrt/io.h>
+#include <l0/lrt/pic.h>
+#include <l0/lrt/trans.h>
+#include <l0/types.h>
+#include <l0/cplus/CPlusEBB.H>
+#include <l0/cplus/CPlusEBBRoot.H>
+#endif
 
 #endif
 

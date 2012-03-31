@@ -6,6 +6,8 @@ endif
 AM_CCASFLAGS = -D ASM_FILE -g3
 
 AM_CXXFLAGS = -Wall -Werror -g3
+#for now no CPPFLAGS
+AM_CPPFLAGS = 
 if STD_GNUXX_0x
 AM_CXXFLAGS += -std=gnu++0x 
 endif

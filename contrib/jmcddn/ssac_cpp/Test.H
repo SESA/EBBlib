@@ -1,13 +1,13 @@
 #ifndef __TEST_H__
 #define __TEST_H__
 
-#define OUTPUT_CSV  
+#define OUTPUT_CSV
 
-inline unsigned long long 
-now(void) 
+inline unsigned long long
+now(void)
 {
-  unsigned int a,d;
-
+  unsigned int a,d; // 32 bits
+  // The instruction "RDTSC" returns the TSC in EDX:EAX.
   __asm__ __volatile__("rdtsc" : "=a" (a), "=d" (d));
   return ((unsigned long long)a) | (((unsigned long long)d) << 32);
 }
@@ -36,21 +36,29 @@ public:
   }
 };
 
-class Test {
+class Test;
+typedef Test **TestId;
+
+class Test:CPlusEBB {
   static int num_psy_cores(void);
   friend void *testPThreadFunc(void *);
 #ifndef __APPLE__
   friend void *linux_thread_init(void *args, int processor);
-#endif 
+#endif
   friend int create_bound_thread (pthread_t *tid, int id, void *(*func)(void *), void *arg);
 private:
   EBBRC worker(int id);
   EBBRC doWork();
 protected:
   Barrier bar;
+#ifndef __APPLE__
+  pthread_barrier_t bar2;
+#endif
   int numWorkers;
   int iterations;
+  int numEvents;
   bool bindThread;
+  double writePct;
   struct WArgs {
     int id;
     unsigned long long start;
@@ -61,9 +69,7 @@ protected:
  virtual EBBRC work(int id)=0;
  virtual EBBRC end(void);
 public:
-  Test(int n);
-  Test(int n, int m);
-  Test(int n, int m, bool p);
+  Test(int n, int m, int c, bool p, double wpct);
   EBBRC doTest(void) {
     if (init()<0) return -1;
     doWork();

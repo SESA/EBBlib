@@ -26,6 +26,10 @@
 #include <stdint.h>
 #include <lrt/assert.h>
 
+#ifdef ARCH_PPC32
+#include <arch/powerpc/450/mmu.h>
+#endif
+
 typedef union {
   uint32_t val;
   struct {
@@ -127,27 +131,6 @@ typedef union {
 } mas7;
 
 STATIC_ASSERT(sizeof(mas7) == 4, "mas7 packing issue");
-
-typedef union {
-  uint32_t val;
-  struct {
-    uint32_t reserved0 :6;
-    uint32_t l2swoa :1;
-    uint32_t swoa :1;
-    uint32_t reserved1 :1;
-    uint32_t u1te :1;
-    uint32_t u2swoae :1;
-    uint32_t u3l2swoae :1;
-    uint32_t dulxe :1;
-    uint32_t iulxe :1;
-    uint32_t reserved2 :1;
-    uint32_t sts :1;
-    uint32_t reserved3 :8;
-    uint32_t stid :8;
-  };
-} mmucr;
-
-STATIC_ASSERT(sizeof(mmucr) == 4, "mmucr packing issue");
 
 typedef union {
   uint32_t val;
