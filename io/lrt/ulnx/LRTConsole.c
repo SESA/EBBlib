@@ -19,6 +19,7 @@
 #include <termios.h>
 #include <unistd.h>
 #include <sys/ioctl.h>
+#include <signal.h>
 
 /* FROM : Advanced Programming in the UNIX Environment, Addison-Wesley,
    1992, ISBN 0-201-56317-7

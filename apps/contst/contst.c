@@ -74,11 +74,10 @@ typedef EBBRC (* InAction) (CharStreamId id);
 
 CObjInterface(CharStream)
 {
-  EBBRC (*putc)        (CharStreamRef _self, char c);
-  EBBRC (*getc)        (CharStreamRef _self, char *c);
+  EBBRC (*putChar)        (CharStreamRef _self, char c);
+  EBBRC (*getChar)        (CharStreamRef _self, char *c);
   EBBRC (*inEvent)     (CharStreamRef _self);
   EBBRC (*outEvent)    (CharStreamRef _self);
-  EBBRC (*setInAction) (CharStreamRef _self, InAction action);
 };
 
 // bad ugly test functions
@@ -89,7 +88,7 @@ UglyPrintStr(CharStreamId id, char *buf)
   EBBRC rc;
 
   while (buf[i]) {
-    rc = COBJ_EBBCALL(id, putc, buf[i]);
+    rc = COBJ_EBBCALL(id, putChar, buf[i]);
     EBBRCAssert(rc);
     i++;
   }
@@ -102,8 +101,8 @@ UglyEcho(CharStreamId id)
 {
   char c;
 
-  while (COBJ_EBBCALL(id, getc, &c) == EBBRC_OK) {
-    COBJ_EBBCALL(id, putc, c);
+  while (COBJ_EBBCALL(id, getChar, &c) == EBBRC_OK) {
+    COBJ_EBBCALL(id, putChar, c);
   }
   return EBBRC_OK;
 }
@@ -131,7 +130,7 @@ CObject(Console)
 typedef CharStreamId ConsoleId;
 
 static EBBRC
-Console_putc(CharStreamRef _self, char c)
+Console_putChar(CharStreamRef _self, char c)
 { 
   ConsoleRef self = (ConsoleRef)_self;
   EBBRC rc = EBBRC_RETRY;
@@ -149,7 +148,7 @@ Console_putc(CharStreamRef _self, char c)
 }
 
 static EBBRC
-Console_getc(CharStreamRef _self, char *c)
+Console_getChar(CharStreamRef _self, char *c)
 {
   ConsoleRef self = (ConsoleRef)_self;
   EBBRC rc = EBBRC_RETRY;
@@ -201,8 +200,8 @@ Console_outEvent(CharStreamRef _self)
 }
 
 CObjInterface(CharStream) Console_ftable = {
-  .putc     = Console_putc,
-  .getc     = Console_getc,
+  .putChar  = Console_putChar,
+  .getChar  = Console_getChar,
   .inEvent  = Console_inEvent,
   .outEvent = Console_outEvent
 };
