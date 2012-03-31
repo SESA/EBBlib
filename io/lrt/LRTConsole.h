@@ -23,5 +23,7 @@
  */
 
 EBBRC LRTConsoleInit(lrt_pic_src *in, lrt_pic_src *out, lrt_pic_src *err);
+EBBRC LRTConsoleRead(lrt_pic_src *in, char *buf, int len, int *n);
+EBBRC LRTConsoleWrite(lrt_pic_src *out, char *buf, int len, int *n);
 
 #endif

@@ -146,6 +146,20 @@ tty_init(int fd) {
 // back to my test code
 
 EBBRC 
+LRTConsoleRead(lrt_pic_src *in, char *buf, int len, int *n)
+{
+  *n = read(in->unix_pic_src.fd, buf, len);
+  return (*n>=0) ? EBBRC_OK : EBBRC_GENERIC_FAILURE;
+}
+
+EBBRC 
+LRTConsoleWrite(lrt_pic_src *out, char *buf, int len, int *n)
+{
+  *n = write(out->unix_pic_src.fd, buf, len);
+  return (*n>=0) ? EBBRC_OK : EBBRC_GENERIC_FAILURE;
+}
+
+EBBRC 
 LRTConsoleInit(lrt_pic_src *in, lrt_pic_src *out, lrt_pic_src *err)
 {
   int opt = 1;

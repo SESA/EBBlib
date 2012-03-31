@@ -74,10 +74,10 @@ typedef EBBRC (* InAction) (CharStreamId id);
 
 CObjInterface(CharStream)
 {
-  EBBRC (*putChar)        (CharStreamRef _self, char c);
-  EBBRC (*getChar)        (CharStreamRef _self, char *c);
-  EBBRC (*inEvent)     (CharStreamRef _self);
-  EBBRC (*outEvent)    (CharStreamRef _self);
+  EBBRC (*putChar)  (CharStreamRef _self, char c);
+  EBBRC (*getChar)  (CharStreamRef _self, char *c);
+  EBBRC (*inEvent)  (CharStreamRef _self);
+  EBBRC (*outEvent) (CharStreamRef _self);
 };
 
 // bad ugly test functions
@@ -120,6 +120,7 @@ CObject(Console)
 
   intptr_t inlen;
   intptr_t outlen;
+  intptr_t outstart;
   char in_c[BUFSIZE];
   char out_c[BUFSIZE];
 
@@ -129,14 +130,18 @@ CObject(Console)
 
 typedef CharStreamId ConsoleId;
 
+// FIXME: JA
+// WARNING: THIS IS JUST EXAMPLE CODE BUFFING LOGIC IS PROBABLY ALL BULLSH!#$T 
+// CERTAINLY NOT READY FOR TRUE COCURRENCY EITHER
 static EBBRC
 Console_putChar(CharStreamRef _self, char c)
 { 
   ConsoleRef self = (ConsoleRef)_self;
   EBBRC rc = EBBRC_RETRY;
+  int end = self->outstart + self->outlen;
 
-  if (self->outlen < BUFSIZE) {
-    self->out_c[self->outlen] = c;
+  if (end < BUFSIZE) {
+    self->out_c[end] = c;
     self->outlen++;
     if (self->outlen==1) {
       COBJ_EBBCALL(theEventMgrPrimId, eventEnable, self->outEV);
@@ -166,12 +171,13 @@ static EBBRC
 Console_inEvent(CharStreamRef _self)
 {
   ConsoleRef self = (ConsoleRef)_self;
-  int fd = self->indev.unix_pic_src.fd;
   int n;
   EBBRC rc=EBBRC_OK;
 
   if (self->inlen < BUFSIZE) {
-    n=read(fd, &(self->in_c[self->inlen]), BUFSIZE - self->inlen);
+    rc=LRTConsoleRead(&(self->indev), 
+		      &(self->in_c[self->inlen]), BUFSIZE - self->inlen, &n);
+    EBBRCAssert(rc);
     if (n>0) self->inlen += n;
   }
  
@@ -183,14 +189,19 @@ Console_inEvent(CharStreamRef _self)
 static EBBRC
 Console_outEvent(CharStreamRef _self)
 {
+  EBBRC rc;
   ConsoleRef self = (ConsoleRef)_self;
-  int fd = self->outdev.unix_pic_src.fd;
   int n;
 
   if (self->outlen>0) {
-    if ((n=write(fd, &(self->out_c), self->outlen))>0) {
+    rc = LRTConsoleWrite(&(self->outdev), &(self->out_c[self->outstart]),
+			 self->outlen, &n);
+    EBBRCAssert(rc);
+    if (n>0) {
       self->outlen -= n;
+      self->outstart += n;
       if (self->outlen==0) {
+	self->outstart=0;
 	COBJ_EBBCALL(theEventMgrPrimId, eventDisable, self->outEV);
       }
     }
@@ -223,12 +234,11 @@ ConsoleCreate(ConsoleId *id, lrt_pic_src in, lrt_pic_src out, InAction action)
 
   ConsoleSetFT(repRef);
 
-  repRef->inlen  = 0;
-  repRef->outlen = 0;
-
-  repRef->indev  = in;
-  repRef->outdev = out;
-
+  repRef->inlen    = 0;
+  repRef->outlen   = 0;
+  repRef->outstart = 0;
+  repRef->indev    = in;
+  repRef->outdev   = out;
 
   rc = AllocAndBind((EventHandlerId *)id, (EBBRepRef)repRef);
   EBBRCAssert(rc);
