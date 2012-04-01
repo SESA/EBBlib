@@ -50,6 +50,9 @@ COBJ_EBBType(EventHandler) {
   EBBRC (*init) (EventHandlerRef _self, uintptr_t extra);
 };
 
+#define EVENTFUNC(funcName) EBBRC (* funcName)(void * _self);
+typedef EVENTFUNC(GenericEventFunc);
+
 /*
  * You need to be able to get the event location of the node you are
  * running on.  I am not making this a function on EventMgr, but
@@ -65,8 +68,6 @@ inline static EvntLoc MyEL() { return lrt_pic_myid; }
 inline static EvntLoc EventMgr_NextEL(EvntLoc l) { return lrt_pic_getnextlpic(l); }
 inline static EvntLoc EventMgr_NumEL() { return lrt_pic_getnumlpics(); }
 
-typedef EBBRC (*EventFunc)(void *);
-
 /* 
  * key local to eventmgr for allocating specific reserved events/interrupt
  * sources
@@ -80,7 +81,8 @@ COBJ_EBBType(EventMgrPrim) {
 
   EBBRC (*eventDisable) (EventMgrPrimRef _self, uintptr_t eventNo);
 			     
-  EBBRC (*registerIPIHandler) (EventMgrPrimRef _self, EventHandlerId handler);
+  EBBRC (*registerIPIHandler) (EventMgrPrimRef _self,
+			       EventHandlerId handler, FuncNum fn);
 
   EBBRC (*allocEventNo) (EventMgrPrimRef _self, uintptr_t *eventNoPtr);
 

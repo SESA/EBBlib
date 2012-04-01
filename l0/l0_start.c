@@ -156,7 +156,7 @@ EBB_init(uintptr_t startInfo)
   // this sets up, just on the local processor, IPI to temporarily
   // the first reset event.  The handleEvent will do all 
   // the subsequent initialization, now on an event
-  COBJ_EBBCALL(theEventMgrPrimId, registerIPIHandler, ehid);
+  COBJ_EBBCALL(theEventMgrPrimId, registerIPIHandler, ehid, NOFUNCNUM);
   COBJ_EBBCALL(theEventMgrPrimId, dispatchIPI, MyEL());
   // will fall through
 }

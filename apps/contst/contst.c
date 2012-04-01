@@ -76,8 +76,8 @@ CObjInterface(CharStream)
 {
   EBBRC (*putChar)  (CharStreamRef _self, char c);
   EBBRC (*getChar)  (CharStreamRef _self, char *c);
-  EBBRC (*inEvent)  (CharStreamRef _self);
-  EBBRC (*outEvent) (CharStreamRef _self);
+  EVENTFUNC(inEvent);
+  EVENTFUNC(outEvent);
 };
 
 // bad ugly test functions
@@ -213,8 +213,8 @@ Console_outEvent(CharStreamRef _self)
 CObjInterface(CharStream) Console_ftable = {
   .putChar  = Console_putChar,
   .getChar  = Console_getChar,
-  .inEvent  = Console_inEvent,
-  .outEvent = Console_outEvent
+  .inEvent  = (GenericEventFunc)Console_inEvent,
+  .outEvent = (GenericEventFunc)Console_outEvent
 };
 
 void

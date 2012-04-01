@@ -38,6 +38,8 @@ extern EBBRC CObjEBBMissFunc(EBBRep **, EBBLTrans *, FuncNum, EBBMissArg);
   typedef TYPE ## Ref *TYPE ## Id;		\
   CObjInterface(TYPE)
 
+COBJ_EBBType(EBBBase) {};
+ 
 // given a EBB Type will generate the appropriate cobject function table pointer
 #define COBJ_EBBFuncTbl(TYPE) CObjInterface(TYPE) *ft;
 

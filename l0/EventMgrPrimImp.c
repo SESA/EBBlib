@@ -449,7 +449,7 @@ EventMgrPrim_dispatchEventLocal(EventMgrPrimRef _self, uintptr_t eventNo)
   EBBAssert(handler != NULL); 
 
   if (fn==NOFUNCNUM) EBBCALL(handler, handleEvent); 
-  else COBJ_EBBCALL_FUNCNUM(EventFunc, handler, fn);
+  else COBJ_EBBCALL_FUNCNUM(GenericEventFunc, (EBBBaseId)handler, fn);
 
   // FIXME: do we want to do this automatically here?
   lrt_pic_enable(eventNo);
@@ -555,11 +555,13 @@ EventMgrPrim_eventDisable(EventMgrPrimRef _self, uintptr_t eventNo)
  * (Event Locations).
  */
 static EBBRC
-EventMgrPrim_registerIPIHandler(EventMgrPrimRef _self, EventHandlerId handler)
+EventMgrPrim_registerIPIHandler(EventMgrPrimRef _self, 
+				EventHandlerId handler, FuncNum fn)
 {
   EventMgrPrimImpRef self = (EventMgrPrimImpRef)_self;
 
   self->handlerInfo[self->ipi_vec_no].id = handler;
+  self->handlerInfo[self->ipi_vec_no].fn = fn;
 
   // map vector in pic
   lrt_pic_mapipi(vfTbl[self->ipi_vec_no]);
