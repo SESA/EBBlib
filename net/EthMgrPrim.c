@@ -52,16 +52,10 @@
 
 #define NUMETHTYPES (1<<(sizeof(uint16_t) * 8))
 
-CObject(EvHdlr) {
-  COBJ_EBBFuncTbl(EventHandler);
-}; 
-
 CObject(EthMgrPrim) {
   COBJ_EBBFuncTbl(EthMgr);
 
   EthTypeMgrId typeMgrs[NUMETHTYPES];
-  CObjectDefine(EvHdlr) evHdlr;
-  EventHandlerId hdlrId;
   uintptr_t ev;
   uintptr_t rcnt;
 };
@@ -80,9 +74,8 @@ EthMgrPrim_bind(void *_self, uint16_t type, EthTypeMgrId id)
 }
   
 static EBBRC 
-EthMgrPrim_handleEvent(EventHandlerRef _self)
+EthMgrPrim_inEvent(EthMgrPrimRef self)
 {
-  EthMgrPrim *self = ContainingCOPtr(_self,EthMgrPrim,evHdlr);
   ethlib_nic_readpkt();
   self->rcnt++;
   return EBBRC_OK;
@@ -92,16 +85,14 @@ CObjInterface(EthMgr) EthMgrPrim_ftable = {
   // base functions of ethernet manager
   .init = EthMgrPrim_init,
   .bind = EthMgrPrim_bind,
-  {// the implementation of the event handler functions
-    .handleEvent = EthMgrPrim_handleEvent
-  }
+  
+  .inEvent = (GenericEventFunc)EthMgrPrim_inEvent
 };
 
 static inline void 
 EthMgrPrimSetFT(EthMgrPrimRef o) 
 { 
   o->ft = &EthMgrPrim_ftable; 
-  o->evHdlr.ft = &(EthMgrPrim_ftable.EventHandler_if);
 }
 
 
@@ -129,15 +120,7 @@ EthMgrPrimCreate(EthMgrId *id, char *nic)
   rc = CObjEBBBind((EBBId)*id, rootRef); 
   EBBRCAssert(rc);
 
-  // setup the EthMgr on a second id that services the EventHander Interface
-  rc = CObjEBBRootSharedCreate(&rootRef, (EBBRepRef)&(repRef->evHdlr));
-  EBBRCAssert(rc);
-
-  rc = EBBAllocPrimId((EBBId *)&(repRef->hdlrId));
-  EBBRCAssert(rc);
-  rc = CObjEBBBind((EBBId)repRef->hdlrId, rootRef);
-  EBBRCAssert(rc);
- 
+  // setup our events and there handling
   rc = EBBCALL(theEventMgrPrimId, allocEventNo, &(repRef->ev));
   EBBRCAssert(rc);
 
@@ -145,7 +128,8 @@ EthMgrPrimCreate(EthMgrId *id, char *nic)
     rc = ethlib_nic_init(nic, &nicisrc, &nicosrc);
     if (EBBRC_SUCCESS(rc)) {
       rc = EBBCALL(theEventMgrPrimId, registerHandler, repRef->ev, 
-		   repRef->hdlrId, NOFUNCNUM, &nicisrc);
+		   (EventHandlerId)*id, COBJ_FUNCNUM(repRef, inEvent),
+		   &nicisrc);
       EBBRCAssert(rc);
 
       rc = EBBCALL(theEventMgrPrimId, eventEnable, repRef->ev);

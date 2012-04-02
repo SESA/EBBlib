@@ -33,7 +33,10 @@ struct EthernetHeader {
 COBJ_EBBType(EthMgr) {
   EBBRC (*init)  (void *_self);
   EBBRC (*bind)  (void *_self, uint16_t type, EthTypeMgrId id);
-  CObjImplements(EventHandler);
+  // FIXME: JA: not really sure we should have the event funcs in the
+  // EthMgr type versus a derived type such as EthMgrPrim that actually
+  // needs and uses them.  
+  EVENTFUNC(inEvent);
 };
 
 #endif  // __ETH_MGR_H__
