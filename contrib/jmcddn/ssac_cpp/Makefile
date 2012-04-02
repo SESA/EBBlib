@@ -7,11 +7,21 @@ CXXFLAGS=-g -O0 -Wall
 
 all: eosSSACTest
 
-eosSSACTest.o: Test.H
+-include $(objs:.o=.d)
+
+# compile and generate dependency info
+%.o: %.C
+	g++ -c $(CXXFLAGS) $*.c -o $*.o
+	g++ -MM $(CXXFLAGS) $*.c > $*.d
+
+eosSSACTest.o: Test.H 
 
 eosSSACTest: $(objs) $(hdrs)
 	g++ ${CXXFLAGS} $(objs) $(libs) -o eosSSACTest 
 
 clean:
-	rm -f *.o eosSSACTest
+	rm -f *.o *.d eosSSACTest
+
+
+
 

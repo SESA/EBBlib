@@ -100,7 +100,7 @@ BarrierTest(int numWorkers)
 
 class SSACTest : public Test {
 protected:
-  SSACRef ssac;
+  SSACId ssac;
   enum {HASHTABLESIZE=8192};//this is the size of hashqs, each with an 'associative' ammount of entries.
   EBBRC work(int id);
   EBBRC init();
@@ -189,7 +189,7 @@ public:
 SSATest::SSATest(int n, int m, int c, bool p, double wpct) : SSACTest(n,m,c,p,wpct)
 {
   // init hash table
-  ssac = SSACSimpleSharedArray::create(HASHTABLESIZE);
+  SSACSimpleSharedArray::Create(ssac, HASHTABLESIZE);
 }
 
 SSATest::~SSATest()

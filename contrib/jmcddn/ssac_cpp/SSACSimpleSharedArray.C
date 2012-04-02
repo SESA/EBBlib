@@ -5,7 +5,7 @@
 #include "SSACSimpleSharedArray.H"
 
 
-  void
+void
 SSACSimpleSharedArray :: HashQueues :: init(const int &numentries)
 {
   tassert((!entries),
@@ -89,7 +89,6 @@ SSACSimpleSharedArray :: SSACSimpleSharedArray( const int &numhashqs,
   _associativity=associativity;
   _numhashqs = numhashqs;
   _hashqs = new HashQueues[_numhashqs];
-  _ref = this;
 }
 
 
@@ -286,16 +285,62 @@ again:
   return 0;
 }
 
+#ifdef EBBLIB
+void * 
+SSACSimpleSharedArray::operator new(size_t size)
+{
+  void *val;
+  EBBRC rc;
+  rc = EBBPrimMalloc(size, &val, EBB_MEM_DEFAULT);
+  EBBRCAssert(rc);
+  return val;
+}
+
+void 
+SSACSimpleSharedArray::operator delete(void * p, size_t size)
+{
+  // NYI
+  EBBRCAssert(0);
+}
+#endif
+
+/* static */ EBBRC
+SSACSimpleSharedArray::Create(SSACId &id,  const int &numhashqs, const int &associativity)
+{
+  EBBRC rc;
+  SSACSimpleSharedArray *rep; 
+  rep = new SSACSimpleSharedArray(numhashqs, associativity);
+#ifndef EBBLIB
+  id = rep; 
+  rc = EBBRC_OK;
+#else
+  CPlusEBBRootShared *root;
+  root = new CPlusEBBRootShared();
+
+  // shared root knows about only one rep so we 
+  // pass it along for it's init
+  root->init(rep);
+
+  rc = EBBAllocPrimId((EBBId *)&id);
+  EBBRCAssert(rc);
+
+  rc = CPlusEBBRoot::EBBBind((EBBId)id, root); 
+  EBBRCAssert(rc);
+  rc = EBBRC_OK;
+#endif
+  return rc;
+}
+
 SSACSimpleSharedArray :: ~SSACSimpleSharedArray()
 {
 #if DOTRACE
   trace( MISC, TR_INFO,
-      tr_printf("**** ~SSACSimpleSharedArray ref=%p\n",_ref));
+	 tr_printf("**** ~SSACSimpleSharedArray id=%p\n",_id));
 #endif
   delete[] _hashqs;
 }
 
-  EBBRC
+EBBRC
 SSACSimpleSharedArray :: snapshot()
 {
   register struct HashQueues *hashq;

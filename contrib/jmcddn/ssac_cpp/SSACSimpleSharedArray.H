@@ -27,15 +27,16 @@ class SSACSimpleSharedArray : public SSAC {
   int      _numhashqs;
   int      _associativity;
 
-  SSACRef ref() { return (SSACRef)_ref;}
   SSACSimpleSharedArray( const int &numhashqs,
       const int &associativity );
-  public:
-  static SSACRef create( const int &numhashqs,
-      const int &associativity=DEFAULT_ASSOCIATIVITY) {
-    return (SSACRef) ((new SSACSimpleSharedArray(numhashqs,
-            associativity))->ref());
-  }
+  public: 
+#ifdef EBBLIB
+  void * operator new(size_t size);
+  void operator delete(void * p, size_t size);
+#endif
+
+  static EBBRC Create( SSACId &id, const int &numhashqs,
+		       const int &associativity=DEFAULT_ASSOCIATIVITY);
   virtual EBBRC get( CacheObjectId &id, CacheEntry* &ce,
       const gettype &type );
   virtual EBBRC putback( CacheEntry* &ce, const putflag &flag );
