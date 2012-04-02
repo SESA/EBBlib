@@ -51,6 +51,7 @@
 
 typedef struct  {
   EventHandlerId id;
+  FuncNum        fn;
 } HandlerInfoStruc;
 
 enum {MAXEVENTS = 256};
@@ -403,7 +404,6 @@ vfunc vfTbl[MAXEVENTS] = {
   vf250, vf251, vf252, vf253, vf254, vf255
 };
 
-
 static uintptr_t
 spin_lock(uintptr_t *lock)
 {
@@ -422,7 +422,7 @@ spin_unlock(uintptr_t *lock)
 }
 
 static EBBRC
-EventMgrPrim_dispatchIPI(void *_self, EvntLoc el)
+EventMgrPrim_dispatchIPI(EventMgrPrimRef _self, EvntLoc el)
 {
   if (el != MyEL()) {
     EBB_LRT_printf("%s: sending remote IPI to node %" PRIdPTR "\n", 
@@ -438,26 +438,28 @@ EventMgrPrim_dispatchIPI(void *_self, EvntLoc el)
  * function that should inline this.  Should also buy stack here...
  */
 static EBBRC
-EventMgrPrim_dispatchEventLocal(void *_self, uintptr_t eventNo) 
+EventMgrPrim_dispatchEventLocal(EventMgrPrimRef _self, uintptr_t eventNo) 
 {
   EventMgrPrimImpRef self = (EventMgrPrimImpRef)_self;
   // assume this is atomic
   EventHandlerId handler = self->handlerInfo[eventNo].id;
+  FuncNum        fn      = self->handlerInfo[eventNo].fn;
 
-  EBB_LRT_printf("%s: handling interrupt %" PRIdPTR "\n", __func__, eventNo);
+  //  EBB_LRT_printf("%s: handling interrupt %" PRIdPTR "\n", __func__, eventNo);
   EBBAssert(handler != NULL); 
-  EBBCALL(handler, handleEvent); 
+
+  if (fn==NOFUNCNUM) EBBCALL(handler, handleEvent); 
+  else COBJ_EBBCALL_FUNCNUM(GenericEventFunc, (EBBBaseId)handler, fn);
 
   // FIXME: do we want to do this automatically here?
   lrt_pic_enable(eventNo);
   return EBBRC_OK;   
 }
 
-
 // this is done under protection of the master's lock
 static EBBRC
 lockedReplicateHandler(CObjEBBRootMultiRef root, uintptr_t eventNo, 
-		       EventHandlerId handler)
+		       EventHandlerId handler, FuncNum fn)
 {
   RepListNode *node;
   EventMgrPrimImpRef rep;
@@ -467,15 +469,14 @@ lockedReplicateHandler(CObjEBBRootMultiRef root, uintptr_t eventNo,
        node != NULL; 
        node = root->ft->nextRep(root, node, (EBBRep **)&rep)) {
      rep->handlerInfo[eventNo].id = handler;
+     rep->handlerInfo[eventNo].fn = fn;
   }
   return EBBRC_OK;   
 }
 
-
-
 static EBBRC
 lockedRegisterHandler(EventMgrPrimImpRef master, uintptr_t eventNo, 
-		 EventHandlerId handler)
+		      EventHandlerId handler, FuncNum fn)
 {
   if ( (eventNo >= MAXEVENTS) || (eventNo<0) ){
     return EBBRC_BADPARAMETER;
@@ -489,29 +490,30 @@ lockedRegisterHandler(EventMgrPrimImpRef master, uintptr_t eventNo,
 
   // install handler in event table
   master->handlerInfo[eventNo].id = handler;
+  master->handlerInfo[eventNo].fn = fn;
 
-  lockedReplicateHandler(master->theRoot, eventNo, handler);
+  lockedReplicateHandler(master->theRoot, eventNo, handler, fn);
 
   return 0;
 }
 
 static EBBRC
-EventMgrPrim_registerHandler(void *_self, uintptr_t eventNo, 
-			     EventHandlerId handler, 
-			     uintptr_t isrc)
+EventMgrPrim_registerHandler(EventMgrPrimRef _self, uintptr_t eventNo, 
+			     EventHandlerId handler,  FuncNum fn,
+			     lrt_pic_src *isrc)
 {
   EventMgrPrimImpRef self = (EventMgrPrimImpRef)_self;
   EventMgrPrimImpRef master = self->master;
   EBBRC rc = EBBRC_OK;
 
   spin_lock(&master->lock);
-  rc = lockedRegisterHandler(self->master, eventNo, handler);
+  rc = lockedRegisterHandler(self->master, eventNo, handler, fn);
   if (!EBBRC_SUCCESS(rc)) goto done;
 
   // map vector in pic
-  if (lrt_pic_mapvec((lrt_pic_src)isrc, eventNo, vfTbl[eventNo])<0) {
+  if (lrt_pic_mapvec(isrc, eventNo, vfTbl[eventNo])<0) {
     // FAILED unmap from all the tables
-    lockedReplicateHandler(self->theRoot, eventNo, NULL);
+    lockedReplicateHandler(self->theRoot, eventNo, NULL, NOFUNCNUM);
     rc = EBBRC_BADPARAMETER;
     goto done;
   }
@@ -521,6 +523,25 @@ EventMgrPrim_registerHandler(void *_self, uintptr_t eventNo,
 
   // FIXME: need to discuss if this is the right place to enable event
   lrt_pic_enable(eventNo);
+  return rc;
+}
+
+static EBBRC
+EventMgrPrim_eventEnable(EventMgrPrimRef _self, uintptr_t eventNo)
+{
+  EBBRC rc = EBBRC_OK;
+
+  if (lrt_pic_vecon(eventNo)<0)  rc = EBBRC_BADPARAMETER;
+  return rc;
+}
+
+static EBBRC
+EventMgrPrim_eventDisable(EventMgrPrimRef _self, uintptr_t eventNo)
+{
+  // FIXME: JA DON'T think I need to lock here but I may be full of it ;-)
+  EBBRC rc = EBBRC_OK;
+
+  if (lrt_pic_vecoff(eventNo)<0)  rc = EBBRC_BADPARAMETER;
   return rc;
 }
 
@@ -534,11 +555,13 @@ EventMgrPrim_registerHandler(void *_self, uintptr_t eventNo,
  * (Event Locations).
  */
 static EBBRC
-EventMgrPrim_registerIPIHandler(void *_self, EventHandlerId handler)
+EventMgrPrim_registerIPIHandler(EventMgrPrimRef _self, 
+				EventHandlerId handler, FuncNum fn)
 {
   EventMgrPrimImpRef self = (EventMgrPrimImpRef)_self;
 
   self->handlerInfo[self->ipi_vec_no].id = handler;
+  self->handlerInfo[self->ipi_vec_no].fn = fn;
 
   // map vector in pic
   lrt_pic_mapipi(vfTbl[self->ipi_vec_no]);
@@ -547,7 +570,7 @@ EventMgrPrim_registerIPIHandler(void *_self, EventHandlerId handler)
 }
 
 static EBBRC 
-EventMgrPrim_allocEventNo(void *_self, uintptr_t *eventNoPtr)
+EventMgrPrim_allocEventNo(EventMgrPrimRef _self, uintptr_t *eventNoPtr)
 {
   if (lrt_pic_allocvec(eventNoPtr)<0) return EBBRC_OUTOFRESOURCES;
   return EBBRC_OK;
@@ -555,10 +578,12 @@ EventMgrPrim_allocEventNo(void *_self, uintptr_t *eventNoPtr)
 
 CObjInterface(EventMgrPrim) EventMgrPrimImp_ftable = {
   .registerHandler = EventMgrPrim_registerHandler, 
+  .eventEnable = EventMgrPrim_eventEnable,
+  .eventDisable = EventMgrPrim_eventDisable,
   .registerIPIHandler = EventMgrPrim_registerIPIHandler, 
   .allocEventNo = EventMgrPrim_allocEventNo, 
   .dispatchIPI = EventMgrPrim_dispatchIPI,
-  .dispatchEventLocal = EventMgrPrim_dispatchEventLocal,
+  .dispatchEventLocal = EventMgrPrim_dispatchEventLocal
 };
 
 static void
@@ -574,14 +599,13 @@ EventMgrPrimImp_createRepAssert(CObjEBBRootMultiRef root)
   return NULL;
 }
 
-
 static EventMgrPrimImpRef
 EventMgrPrimImp_createRep(CObjEBBRootMultiImpRef root) 
 {
   int i; 
   EventMgrPrimImpRef repRef;
 
-  EBBRCAssert(EBBPrimMalloc(sizeof(*repRef), &repRef, EBB_MEM_DEFAULT));
+  EBBRCAssert(EBBPrimMalloc(sizeof(EventMgrPrimImp), &repRef, EBB_MEM_DEFAULT));
   EventMgrPrimSetFT(repRef);
   repRef->theRoot = (CObjEBBRootMultiRef)root;
   repRef->ipi_vec_no = lrt_pic_getIPIvec();
@@ -593,6 +617,7 @@ EventMgrPrimImp_createRep(CObjEBBRootMultiImpRef root)
     repRef->master = repRef;
     for (i=0; i<MAXEVENTS; i++) {
       repRef->handlerInfo[i].id = NULL;
+      repRef->handlerInfo[i].fn = NOFUNCNUM;
     }
     spin_unlock(&repRef->lock);
   } else {

@@ -38,6 +38,7 @@ typedef enum {
   EBBRC_GENERIC_FAILURE = -1, 
   EBBRC_BADPARAMETER = -2,
   EBBRC_OUTOFRESOURCES = -3,
+  EBBRC_RETRY = -4,
   EBBRC_OK = 0 
 } EBBRC_STDVALS;
 #define EBBRC_SUCCESS(rc) ( rc >= 0 )
@@ -51,6 +52,9 @@ typedef EBBRep *EBBRepRef;
 
 typedef uintptr_t FuncNum;
 typedef uintptr_t EBBMissArg;
+
+//FIXME: JA do the right thing with this constant
+#define NOFUNCNUM  ((uintptr_t)-1)
 
 //first arg is the address of the EBBRep that will be executed
 //second arg is the local table pointer so that a rep can be installed

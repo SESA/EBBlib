@@ -19,6 +19,7 @@
 #include <pthread.h>
 
 #include <stdint.h>
+#include <l0/lrt/ulnx/pic.h>
 #include <l0/lrt/ulnx/pic-unix.h>
 
 #ifndef FD_COPY
@@ -26,10 +27,12 @@
 #endif
 
 struct unix_pic {
-  fd_set fdset;
+  fd_set rfds;
+  fd_set wfds;
+  fd_set efds;
+  fd_set enabled;
   int maxfd;
 } upic;
-
 
 void 
 lrt_pic_unix_wakeup(uintptr_t lcore)
@@ -84,8 +87,11 @@ lrt_pic_unix_init()
 
   // explicity setup fdset so that we are not paying attention
   // to any vectors at start... vectors are added when they are mapped
-  FD_ZERO(&upic.fdset);
-  
+  FD_ZERO(&upic.rfds);
+  FD_ZERO(&upic.wfds);
+  FD_ZERO(&upic.efds);
+  FD_ZERO(&upic.enabled);
+
   // setup default signal mask so that SIGINT is being ignored by
   // all pic threads when they start however ensure that a common 
   // handler is in place
@@ -121,19 +127,51 @@ lrt_pic_unix_addcore(void *(*routine)(void *), void *arg)
 /*
  * Make the new FD the FD for this vector
  */
-int
-lrt_pic_unix_locked_enable(uintptr_t src, uintptr_t vec)
+int 
+lrt_pic_unix_locked_map(lrt_pic_src *src, uintptr_t vec)
 {
   int i;
-  i = dup2(src, vec+FIRST_VECFD);
+  i = dup2(src->unix_pic_src.fd, vec+FIRST_VECFD);
   if (i != vec+FIRST_VECFD) {
     fprintf(stderr, "ERROR: file %s line %d: runtime tromping over fd space\n"
 	    "\tsuggest you increase the FIRST_VECFD\n", __FILE__, __LINE__);
     return -1;
   }
-  FD_SET(i, &upic.fdset);
+
+  if (src->unix_pic_src.flags & LRT_ULNX_PICFLAG_READ) FD_SET(i, &upic.rfds);
+  if (src->unix_pic_src.flags & LRT_ULNX_PICFLAG_WRITE) FD_SET(i, &upic.wfds);
+  if (src->unix_pic_src.flags & LRT_ULNX_PICFLAG_ERROR) FD_SET(i, &upic.efds);
+  
+  return 0;
+}
+
+int
+lrt_pic_unix_locked_enable(uintptr_t vec)
+{
+  int i = vec + FIRST_VECFD;
+
+  FD_SET(i, &upic.enabled);
   if (i>upic.maxfd) {
     upic.maxfd=i;
+  }
+  return 0;
+}
+
+int
+lrt_pic_unix_locked_disable(uintptr_t vec)
+{
+  int i = vec + FIRST_VECFD;
+
+  FD_CLR(i, &upic.enabled);
+  if (i==upic.maxfd) {
+    // find new max
+    upic.maxfd=0;
+    for (i=FIRST_VECFD + NUM_VEC; i>=FIRST_VECFD; i--) {
+      if (FD_ISSET(i,&(upic.enabled))) {
+	upic.maxfd = i;
+	break;
+      }	  
+    }
   }
   return 0;
 }
@@ -141,7 +179,7 @@ lrt_pic_unix_locked_enable(uintptr_t src, uintptr_t vec)
 int 
 lrt_pic_unix_blockforinterrupt(lrt_pic_unix_ints *s)
 {
-  fd_set rfds, efds;
+  fd_set rfds, wfds, efds;
   sigset_t emptyset;
   int i, v=0, rc, numintr=0;
 
@@ -153,18 +191,31 @@ lrt_pic_unix_blockforinterrupt(lrt_pic_unix_ints *s)
   tout.tv_nsec = 100000000; // .1 seconds
 #endif
 
-  FD_COPY(&upic.fdset, &rfds);
-  FD_COPY(&upic.fdset, &efds);
+  // set local copy of fd sets up: clear all then set enabled ones as necessary
+  FD_ZERO(&rfds);
+  FD_ZERO(&wfds);
+  FD_ZERO(&efds);
   
+  for (i = FIRST_VECFD; i <= upic.maxfd; i++) {
+    if (FD_ISSET(i, &(upic.enabled))) {
+      if (FD_ISSET(i, &(upic.rfds))) FD_SET(i, &rfds);
+      if (FD_ISSET(i, &(upic.wfds))) FD_SET(i, &wfds);
+      if (FD_ISSET(i, &(upic.efds))) FD_SET(i, &efds);
+    }
+  }
+
   sigemptyset(&emptyset);
 #ifdef __APPLE__
-  rc = pselect(upic.maxfd+1, &rfds, NULL, &efds, &tout, &emptyset);
+  rc = pselect(upic.maxfd+1, &rfds, &wfds, &efds, &tout, &emptyset);
 #else
-  rc = pselect(upic.maxfd+1, &rfds, NULL, &efds, NULL, &emptyset);
+  rc = pselect(upic.maxfd+1, &rfds, &wfds, &efds, NULL, &emptyset);
 #endif
   if (rc < 0) {
     if (errno==EINTR) {
-      // do nothing
+      // NOTE: man page says that fs sets may not be reliable at this point
+      // so return to caller and assume next call will pickup any fds that need
+      // processing.
+      return 0;
     } else {
       fprintf(stderr, "Error: pselect failed (%d)\n", errno);
       perror("pselect");
@@ -189,8 +240,11 @@ lrt_pic_unix_blockforinterrupt(lrt_pic_unix_ints *s)
     if (FD_ISSET(i, &rfds)) {
       fprintf(stderr, "---rfds i is %d\n", i);
     }
+    if (FD_ISSET(i, &wfds)) {
+      fprintf(stderr, "---wfds i is %d\n", i);
+    }
 #endif
-    if ((FD_ISSET(i, &efds) || (FD_ISSET(i, &rfds)))) {
+    if (FD_ISSET(i, &efds) || FD_ISSET(i, &wfds) || FD_ISSET(i, &rfds)) {
       lrt_pic_unix_ints_set(s, v);
       numintr++;
     }

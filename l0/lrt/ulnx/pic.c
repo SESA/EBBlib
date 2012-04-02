@@ -29,8 +29,9 @@
 #include <signal.h>
 
 #include <inttypes.h>
-#include <l0/lrt/ulnx/pic-unix.h>
 #include <l0/lrt/ulnx/pic.h>
+#include <l0/lrt/ulnx/pic-unix.h>
+
 
 #ifdef __APPLE__
 pthread_key_t lrt_pic_myid_pthreadkey;
@@ -318,9 +319,42 @@ lrt_pic_ackipi(void)
   lpics[lrt_pic_myid].ipiStatus = 0;
 }
 
+static intptr_t
+lrt_pic_locked_vecon(uintptr_t vec)
+{
+  intptr_t rc = 1;
+  lrt_pic_id i;
+
+  if (lrt_pic_unix_locked_enable(vec) != 0)  rc=-1;
+  else {
+    for (i=lrt_pic_firstid; i<=lrt_pic_lastid; i++) {
+      lrt_pic_unix_wakeup(lpics[i].lcore);
+    }
+  }
+  return rc;
+
+}
 
 intptr_t
-lrt_pic_mapvec(lrt_pic_src s, uintptr_t vec, lrt_pic_handler h)
+lrt_pic_vecon(uintptr_t vec) 
+{
+  intptr_t rc = 1;
+
+  lock();
+  /*
+   * must not be marked as free, if -1 it is allocated but not yet
+   * assigned a handler
+   */
+  if (pic.gvecs[vec] == 0) rc = -1;
+  else rc = lrt_pic_locked_vecon(vec);
+
+  unlock();
+  return rc;
+}
+
+
+intptr_t
+lrt_pic_mapvec(lrt_pic_src *s, uintptr_t vec, lrt_pic_handler h)
 {
   int rc=1;
   lrt_pic_id i;
@@ -343,16 +377,41 @@ lrt_pic_mapvec(lrt_pic_src s, uintptr_t vec, lrt_pic_handler h)
     lpics[i].lvecs[vec] = h;
   }
 
-  if (lrt_pic_unix_locked_enable(s, vec) != 0) {
-    rc=-1;
-    goto done;
-  }
-
-  for (i=lrt_pic_firstid; i<=lrt_pic_lastid; i++) {
-    lrt_pic_unix_wakeup(lpics[i].lcore);
-  }
+  rc = (lrt_pic_unix_locked_map(s, vec)>=0) ? 1 : -1;
 
  done:
+  unlock();
+  return rc;
+}
+
+intptr_t
+lrt_pic_locked_vecoff(uintptr_t vec)
+{
+  intptr_t rc=1;
+  lrt_pic_id i;
+
+  if (lrt_pic_unix_locked_disable(vec) != 0) rc=-1;
+  else {
+    for (i=lrt_pic_firstid; i<=lrt_pic_lastid; i++) {
+      lrt_pic_unix_wakeup(lpics[i].lcore);
+    }
+  }
+  return rc;
+}
+
+intptr_t
+lrt_pic_vecoff(uintptr_t vec)
+{
+  int rc=1;
+  lock();
+
+  /*
+   * must not be marked as free, if -1 it is allocated but not yet
+   * assigned a handler
+   */
+  if (pic.gvecs[vec] == 0) rc = -1;
+  else  rc = lrt_pic_locked_vecoff(vec);
+
   unlock();
   return rc;
 }
@@ -448,6 +507,7 @@ lrt_pic_loop()
 #include <unistd.h>
 #include <termios.h>
 #include <unistd.h>
+#include <sys/ioctl.h>
 
 /* FROM : Advanced Programming in the UNIX Environment, Addison-Wesley,
    1992, ISBN 0-201-56317-7
@@ -597,10 +657,13 @@ static void
 lrt_pic_standalone_test_start(void)
 {
   intptr_t rc;
+  int opt=1;
+  lrt_pic_src stdsrc;
 
   printf("%s: started\n", __func__);
 
   tty_init(STDIN_FILENO);
+  ioctl(STDIN_FILENO, FIONBIO, &opt);
 
   lrt_pic_mapipi(lrt_pic_standalone_test_ipi);
 
@@ -608,11 +671,23 @@ lrt_pic_standalone_test_start(void)
   assert(rc==1);
   printf("allocated vec=%" PRIdPTR "\n", stdin_vec);
   
-  rc = lrt_pic_mapvec(STDIN_FILENO, stdin_vec, lrt_pic_standalone_test_stdin);
+  stdsrc.unix_pic_src.fd = STDIN_FILENO;
+  stdsrc.unix_pic_src.flags = (LRT_ULNX_PICFLAG_READ | LRT_ULNX_PICFLAG_ERROR) ;
+
+  rc = lrt_pic_mapvec(&stdsrc, stdin_vec, lrt_pic_standalone_test_stdin);
   assert(rc==1);
+
   printf("allocated vec=%" PRIdPTR " to STDIN_FILENO\n", stdin_vec);
+
+  // enable this vector locally
   lrt_pic_enable(stdin_vec);
-  //  lrt_pic_ipi(lrt_pic_myid);
+
+  // globally turn this vector on (global on off superceeds local enable)
+  lrt_pic_vecon(stdin_vec);
+
+  // just to make things more intresting keep a background ipi happening
+  // just for some fun ;-)
+  lrt_pic_ipi(lrt_pic_myid);
 }
 
 static int
@@ -639,13 +714,15 @@ static void
 pselecttst(void)
 {
   char c;
-  int rc;
+  int rc, opt=1;
 
   fprintf(stderr, "%s: START: testing std unix pselect functionality "
 	  "should echo keystrokes until 'q' key is pressed\n", 
 	  __func__);
 
   tty_cbreak(STDIN_FILENO);
+
+  ioctl(STDIN_FILENO, FIONBIO, &opt);
 
   while(1) {
     rc=waitkey();

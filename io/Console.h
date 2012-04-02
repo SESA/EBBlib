@@ -1,5 +1,5 @@
-#ifndef __COBJ_EBB_H__
-#define __COBJ_EBB_H__
+#ifndef __CONSOLE_H__
+#define __CONSOLE_H__
 /*
  * Copyright (C) 2011 by Project SESA, Boston University
  *
@@ -22,33 +22,5 @@
  * THE SOFTWARE.
  */
 
-extern EBBRC CObjEBBMissFunc(EBBRep **, EBBLTrans *, FuncNum, EBBMissArg);
 
-#define COBJ_EBBCALL(id, method, ...) \
-  (EBBId_DREF(id)->ft->method(EBBId_DREF(id), ##__VA_ARGS__))
-
-#define COBJ_EBBCALL_FUNCNUM(Type, id, funcNum, ...)	\
-  ( ((Type)COBJ_FUNC(EBBId_DREF(id), funcNum))(EBBId_DREF(id), ##__VA_ARGS__) )
- 
-// Introduces a new CObject Ebb type -> generates all associated cobject types
-#define COBJ_EBBType(TYPE)			\
-  CObject(TYPE) {				\
-    CObjInterface(TYPE) *ft;			\
-  };						\
-  typedef TYPE ## Ref *TYPE ## Id;		\
-  CObjInterface(TYPE)
-
-COBJ_EBBType(EBBBase) {};
- 
-// given a EBB Type will generate the appropriate cobject function table pointer
-#define COBJ_EBBFuncTbl(TYPE) CObjInterface(TYPE) *ft;
-
-/*
-#define COBJ_EBBImp_START(TYPE,IMP)		\
-  CObject(TYPE ## IMP) {			\
-  CObjInterface(TYPE) *ft;			\
-  struct 
-
-#define COBJ_EBBImp_END ; }
-*/
 #endif

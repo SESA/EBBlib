@@ -94,16 +94,26 @@ CObjInterface(EBBCtr) EBBCtrPrim_ftable = {
   .val = EBBCtrPrim_val
 };
 
-static EBBRC 
-setup(EBBCtrPrimRef repRef, CObjEBBRootSharedRef rootRef, EBBCtrId *id)
+
+// Statically declared root and rep... this does
+// not therefore account for memory locality 
+EBBRC
+EBBCtrPrimStaticSharedCreate(EBBCtrId *id)
 {
+  static EBBCtrPrim theRep;
+  static CObjEBBRootShared theRoot;
   EBBRC rc;
-  // setup function tables
+
+  // use the statically declared root and rep instances
+  EBBCtrPrimRef repRef = &theRep;
+  CObjEBBRootSharedRef rootRef = &theRoot;
+
   CObjEBBRootSharedSetFT(rootRef);
   EBBCtrPrimSetFT(repRef);
 
   // setup my representative and root
   EBBCtrPrim_init(repRef);
+
   // shared root knows about only one rep so we 
   // pass it along for it's init
   rootRef->ft->init(rootRef, (EBBRep *)repRef);
@@ -117,32 +127,28 @@ setup(EBBCtrPrimRef repRef, CObjEBBRootSharedRef rootRef, EBBCtrId *id)
   return rc;
 }
 
-// Statically declared root and rep... this does
-// not therefore account for memory locality 
-EBBRC
-EBBCtrPrimStaticSharedCreate(EBBCtrId *id)
-{
-  static EBBCtrPrim theRep;
-  static CObjEBBRootShared theRoot;
-
-  // use the statically declared root and rep instances
-  EBBCtrPrimRef repRef = &theRep;
-  CObjEBBRootSharedRef rootRef = &theRoot;
-
-  return setup(repRef, rootRef, id);
-}
-
 
 EBBRC
 EBBCtrPrimSharedCreate(EBBCtrId *id)
 {
   EBBCtrPrimRef repRef;
   CObjEBBRootSharedRef rootRef;
+  EBBRC rc;
 
   //Allocate a root and rep via Primitive Allocator
-  EBBPrimMalloc(sizeof(*repRef), &repRef, EBB_MEM_DEFAULT);
-  EBBPrimMalloc(sizeof(*rootRef), &rootRef, EBB_MEM_DEFAULT);
+  EBBPrimMalloc(sizeof(EBBCtrPrim), &repRef, EBB_MEM_DEFAULT);
+  EBBCtrPrimSetFT(repRef);
+  EBBCtrPrim_init(repRef);
 
-  return setup(repRef, rootRef, id);
+  rc = CObjEBBRootSharedCreate(&rootRef, (EBBRepRef)repRef);
+  EBBRCAssert(rc);
+
+  rc = EBBAllocPrimId((EBBId *)id);
+  EBBRCAssert(rc);
+
+  rc = CObjEBBBind((EBBId)*id, rootRef); 
+  EBBRCAssert(rc);
+
+  return rc;
 }
 

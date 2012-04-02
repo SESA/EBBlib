@@ -40,88 +40,10 @@
 #include <l0/cobj/CObjEBBRoot.h>
 #include <l0/cobj/CObjEBBRootMulti.h>
 #include <l0/cobj/CObjEBBRootMultiImp.h>
-#include <l1/MsgMgr.h>
-#include <l1/L1.h>
-#include <l1/L1Prim.h>
+#include <l0/L0.h>
+#include <l0/L0Prim.h>
 
 extern void trans_init(void);
-
-CObject(ResetEventHandler) {
-  COBJ_EBBFuncTbl(EventHandler);
-
-  CObjEBBRootMultiRef theRoot;	
-  uintptr_t startInfo;
-};
-
-static EBBRC 
-ResetEventHandler_handleEvent(EventHandlerRef _self)
-{
-  EBBRC rc;
-  ResetEventHandlerRef self = (ResetEventHandlerRef) _self;
-  
-  lrt_pic_ackipi();
-
-  // call the next layer startup
-  rc = L1PrimInit();
-  EBBRCAssert(rc);
-
-  COBJ_EBBCALL(theL1Id, start, self->startInfo);
-
-  lrt_pic_enableipi();
-
-  return 0;
-};
-
-static EBBRC
-ResetEventHandler_init(EventHandlerRef _self, uintptr_t startInfo)
-{
-  ResetEventHandlerRef self = (ResetEventHandlerRef)_self;
-  self->startInfo = startInfo;
-  return 0;
-};
-
-
-static CObjInterface(EventHandler) ResetEventHandler_ftable = {
-  .handleEvent = ResetEventHandler_handleEvent,
-  .init = ResetEventHandler_init
-};
-
-static EBBRep *
-ResetEventHandler_createRep(CObjEBBRootMultiRef _self) {
-  ResetEventHandlerRef repRef;
-  EBBPrimMalloc(sizeof(*repRef), &repRef, EBB_MEM_DEFAULT);
-  repRef->ft = &ResetEventHandler_ftable;
-  repRef->theRoot = _self;
-  //  initGTable(EventMgrPrimErrMF, 0);
-  return (EBBRep *)repRef;
-}
-
-static EventHandlerId
-InitResetEventHandler(uintptr_t startInfo)
-{
-  EBBRC rc;
-  static EventHandlerId theResetEventHandlerId=0;
-
-  if (__sync_bool_compare_and_swap(&theResetEventHandlerId, (EventHandlerId)0,
-				   (EventHandlerId)-1)) {
-    EBBId id;
-    CObjEBBRootMultiImpRef rootRef;
-    rc = CObjEBBRootMultiImpCreate(&rootRef,
-				  ResetEventHandler_createRep);
-    EBBRCAssert(rc);
-    rc = EBBAllocPrimId(&id);
-    EBBRCAssert(rc);
-    rc = CObjEBBBind(id, rootRef); 
-    EBBRCAssert(rc);
-    theResetEventHandlerId = (EventHandlerId)id;
-  } else {
-    while (((volatile uintptr_t)theResetEventHandlerId)==-1);
-  }
-  rc = COBJ_EBBCALL(theResetEventHandlerId, init, startInfo);
-  EBBRCAssert(rc);
-  return theResetEventHandlerId;
-};
-
 
 /* 
  * Three main EBB's are EBBMgrPrim, EventMgrPrim EBBMemMgrPrim    
@@ -132,7 +54,6 @@ void
 EBB_init(uintptr_t startInfo)
 {
   EBBRC rc;
-  EventHandlerId ehid; 
 
   rc = EBBMemMgrPrimInit();
   EBBRCAssert(rc);
@@ -147,17 +68,14 @@ EBB_init(uintptr_t startInfo)
   rc = EventMgrPrimImpInit();
   EBBRCAssert(rc);
 
-  ehid = InitResetEventHandler(startInfo);
-  EBBAssert(ehid != NULL);
-
   // JA: FIXME:  IS THIS FIRST REAL EBB CALL BELOW ... SHOULD BE EXPLICITLY MARKED
   //             AND THE FACTS THAT THAT DEPENDS ON CLEARLY STATED
 
-  // this sets up, just on the local processor, IPI to temporarily
-  // the first reset event.  The handleEvent will do all 
-  // the subsequent initialization, now on an event
-  COBJ_EBBCALL(theEventMgrPrimId, registerIPIHandler, ehid);
-  COBJ_EBBCALL(theEventMgrPrimId, dispatchIPI, MyEL());
+  rc = L0PrimInit();
+  EBBRCAssert(rc);
+
+  rc = COBJ_EBBCALL(theL0Id, start, startInfo);
+  EBBRCAssert(rc);
   // will fall through
 }
 

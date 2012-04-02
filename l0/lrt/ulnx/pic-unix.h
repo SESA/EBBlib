@@ -73,7 +73,9 @@ void lrt_pic_unix_wakeup(uintptr_t lcore);
 int lrt_pic_unix_init();
 
 uintptr_t lrt_pic_unix_addcore(void *(*routine)(void *), void *arg);	
-int lrt_pic_unix_locked_enable(uintptr_t src, uintptr_t vec);
+int lrt_pic_unix_locked_map(lrt_pic_src *src, uintptr_t vec);
+int lrt_pic_unix_locked_enable(uintptr_t vec);
+int lrt_pic_unix_locked_disable(uintptr_t vec);
 
 // blocks for interrupt, on success returns number interrupts 
 // and bitvector of pending interrupts

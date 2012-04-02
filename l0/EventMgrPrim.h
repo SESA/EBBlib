@@ -50,6 +50,9 @@ COBJ_EBBType(EventHandler) {
   EBBRC (*init) (EventHandlerRef _self, uintptr_t extra);
 };
 
+#define EVENTFUNC(funcName) EBBRC (* funcName)(void * _self);
+typedef EVENTFUNC(GenericEventFunc);
+
 /*
  * You need to be able to get the event location of the node you are
  * running on.  I am not making this a function on EventMgr, but
@@ -70,17 +73,23 @@ inline static EvntLoc EventMgr_NumEL() { return lrt_pic_getnumlpics(); }
  * sources
  */
 COBJ_EBBType(EventMgrPrim) {
-  EBBRC (*registerHandler) (void *_self, uintptr_t eventNo,
-			    EventHandlerId handler, 
-			    uintptr_t isrc);
-  EBBRC (*registerIPIHandler) (void *_self, EventHandlerId handler);
+  EBBRC (*registerHandler) (EventMgrPrimRef _self, uintptr_t eventNo,
+			    EventHandlerId handler, FuncNum fn, 
+			    lrt_pic_src *isrc); 
 
-  EBBRC (*allocEventNo) (void *_self, uintptr_t *eventNoPtr);
+  EBBRC (*eventEnable) (EventMgrPrimRef _self, uintptr_t eventNo);
 
-  EBBRC (*dispatchIPI) (void *_self, EvntLoc el);
+  EBBRC (*eventDisable) (EventMgrPrimRef _self, uintptr_t eventNo);
+			     
+  EBBRC (*registerIPIHandler) (EventMgrPrimRef _self,
+			       EventHandlerId handler, FuncNum fn);
+
+  EBBRC (*allocEventNo) (EventMgrPrimRef _self, uintptr_t *eventNoPtr);
+
+  EBBRC (*dispatchIPI) (EventMgrPrimRef _self, EvntLoc el);
 
   // called by eary implementation of the vector function
-  EBBRC (*dispatchEventLocal) (void *_self, uintptr_t eventNo);
+  EBBRC (*dispatchEventLocal) (EventMgrPrimRef _self, uintptr_t eventNo);
 };
 
 // the ID of the one and only event manager

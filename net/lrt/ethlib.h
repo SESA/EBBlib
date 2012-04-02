@@ -22,7 +22,7 @@
  * THE SOFTWARE.
  */
 
-intptr_t ethlib_nic_init(char *dev, lrt_pic_src *s);
+intptr_t ethlib_nic_init(char *dev, lrt_pic_src *sin, lrt_pic_src *out);
 intptr_t ethlib_nic_readpkt(void);
 
 #endif

@@ -50,7 +50,7 @@ ethlib_nic_readpkt(void) {
 }
 
 intptr_t
-ethlib_nic_init(char *dev, lrt_pic_src *s)
+ethlib_nic_init(char *dev, lrt_pic_src *sin, lrt_pic_src *sout)
 {
   int i;
   char errbuf[PCAP_ERRBUF_SIZE];
@@ -89,9 +89,13 @@ ethlib_nic_init(char *dev, lrt_pic_src *s)
     return -1;
   }
 
-  *s = pcap_get_selectable_fd(hdl);
+  sin->unix_pic_src.fd = pcap_get_selectable_fd(hdl);
+  assert(sin->unix_pic_src.fd != -1);
 
-  assert(*s != -1);
+  sin->unix_pic_src.flags = (LRT_ULNX_PICFLAG_READ | LRT_ULNX_PICFLAG_ERROR);
 
+  sout->unix_pic_src.fd = sin->unix_pic_src.fd;
+  sout->unix_pic_src.flags = (LRT_ULNX_PICFLAG_WRITE | LRT_ULNX_PICFLAG_ERROR);
+  
   return 0;
 }

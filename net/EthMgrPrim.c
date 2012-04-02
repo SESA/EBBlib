@@ -52,16 +52,10 @@
 
 #define NUMETHTYPES (1<<(sizeof(uint16_t) * 8))
 
-CObject(EvHdlr) {
-  COBJ_EBBFuncTbl(EventHandler);
-}; 
-
 CObject(EthMgrPrim) {
   COBJ_EBBFuncTbl(EthMgr);
 
   EthTypeMgrId typeMgrs[NUMETHTYPES];
-  CObjectDefine(EvHdlr) evHdlr;
-  EventHandlerId hdlrId;
   uintptr_t ev;
   uintptr_t rcnt;
 };
@@ -80,9 +74,8 @@ EthMgrPrim_bind(void *_self, uint16_t type, EthTypeMgrId id)
 }
   
 static EBBRC 
-EthMgrPrim_handleEvent(EventHandlerRef _self)
+EthMgrPrim_inEvent(EthMgrPrimRef self)
 {
-  EthMgrPrim *self = ContainingCOPtr(_self,EthMgrPrim,evHdlr);
   ethlib_nic_readpkt();
   self->rcnt++;
   return EBBRC_OK;
@@ -92,16 +85,14 @@ CObjInterface(EthMgr) EthMgrPrim_ftable = {
   // base functions of ethernet manager
   .init = EthMgrPrim_init,
   .bind = EthMgrPrim_bind,
-  {// the implementation of the event handler functions
-    .handleEvent = EthMgrPrim_handleEvent
-  }
+  
+  .inEvent = (GenericEventFunc)EthMgrPrim_inEvent
 };
 
 static inline void 
 EthMgrPrimSetFT(EthMgrPrimRef o) 
 { 
   o->ft = &EthMgrPrim_ftable; 
-  o->evHdlr.ft = &(EthMgrPrim_ftable.EventHandler_if);
 }
 
 
@@ -111,42 +102,37 @@ EthMgrPrimCreate(EthMgrId *id, char *nic)
   EBBRC rc;
   EthMgrPrimRef repRef;
   CObjEBBRootSharedRef rootRef;
-  lrt_pic_src nicisrc;
+  lrt_pic_src nicisrc, nicosrc;
 
-  EBBPrimMalloc(sizeof(*repRef), &repRef, EBB_MEM_DEFAULT);
-  EBBPrimMalloc(sizeof(*rootRef), &rootRef, EBB_MEM_DEFAULT);
-  
-  CObjEBBRootSharedSetFT(rootRef);
+  rc = EBBPrimMalloc(sizeof(EthMgrPrim), &repRef, EBB_MEM_DEFAULT);
+  EBBRCAssert(rc);
+
   EthMgrPrimSetFT(repRef);
-
   bzero(repRef->typeMgrs, sizeof(repRef->typeMgrs));
   repRef->rcnt=0;
 
-  rootRef->ft->init(rootRef, (EBBRep *)repRef);
-  
+  rc = CObjEBBRootSharedCreate(&rootRef, (EBBRepRef)repRef);
+  EBBRCAssert(rc);
+
   rc = EBBAllocPrimId((EBBId *)id);
   EBBRCAssert(rc);
 
   rc = CObjEBBBind((EBBId)*id, rootRef); 
   EBBRCAssert(rc);
 
-  // setup the EthMgr on a second id that services the EventHander Interface
-  EBBPrimMalloc(sizeof(*rootRef), &rootRef, EBB_MEM_DEFAULT);
-  CObjEBBRootSharedSetFT(rootRef);
-  rootRef->ft->init(rootRef, (EBBRep *)&(repRef->evHdlr));
-  rc = EBBAllocPrimId((EBBId *)&(repRef->hdlrId));
-  EBBRCAssert(rc);
-  rc = CObjEBBBind((EBBId)repRef->hdlrId, rootRef);
-  EBBRCAssert(rc);
- 
+  // setup our events and there handling
   rc = EBBCALL(theEventMgrPrimId, allocEventNo, &(repRef->ev));
   EBBRCAssert(rc);
 
   if (nic) {
-    rc = ethlib_nic_init(nic, &nicisrc);
+    rc = ethlib_nic_init(nic, &nicisrc, &nicosrc);
     if (EBBRC_SUCCESS(rc)) {
       rc = EBBCALL(theEventMgrPrimId, registerHandler, repRef->ev, 
-		   repRef->hdlrId, nicisrc);
+		   (EventHandlerId)*id, COBJ_FUNCNUM(repRef, inEvent),
+		   &nicisrc);
+      EBBRCAssert(rc);
+
+      rc = EBBCALL(theEventMgrPrimId, eventEnable, repRef->ev);
       EBBRCAssert(rc);
     }
   }
