@@ -23,7 +23,6 @@
  */
 
 COBJ_EBBType(L1) {
-  /* send message to id at event location */
   EBBRC (*start) (L1Ref _self, uintptr_t startinfo);
   EBBRC (*argc) (L1Ref _self, int *argc);
   EBBRC (*argv) (L1Ref _self, char ***argv);
