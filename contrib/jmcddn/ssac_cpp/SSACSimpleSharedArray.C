@@ -335,7 +335,7 @@ SSACSimpleSharedArray :: ~SSACSimpleSharedArray()
 {
 #if DOTRACE
   trace( MISC, TR_INFO,
-	 tr_printf("**** ~SSACSimpleSharedArray id=%p\n",_id));
+	 tr_printf("**** ~SSACSimpleSharedArray\n"));
 #endif
   delete[] _hashqs;
 }

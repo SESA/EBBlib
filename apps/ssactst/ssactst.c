@@ -43,27 +43,23 @@
 #include <l0/MemMgr.h>
 #include <l0/MemMgrPrim.h>
 #include <l1/App.h>
+#include <apps/ssactst/simpleTst.H>
 
+extern void simpleTst();
 CObject(SSACTST) {
   CObjInterface(App) *ft;
 };
 
-static void
-dumpArgsAndEnviron(int argc, char **argv, char **environ)
-{
-  int i;
-  for (i=0; i<argc; i++) EBB_LRT_printf("argv[%d]=%s\n", i, argv[i]);
-  for (i=0; environ[i]!=NULL; i++) EBB_LRT_printf("environ[%d]=%s\n",
-						  i, environ[i]);
-}
 
 EBBRC
 SSACTST_start(AppRef _self, int argc, char **argv,
-		 char **environ)
+	      char **environ)
 {
   EBB_LRT_printf("SSACTST LOADED\n");
-  dumpArgsAndEnviron(argc, argv, environ);
-  EBB_LRT_printf("%s: PASSED\n", argv[0]);
+  
+  simpleTst();
+
+  EBB_LRT_printf("finished simpleTst\n");
   return EBBRC_OK;
 }
 
