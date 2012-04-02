@@ -64,21 +64,13 @@ AllocAndBind(EventHandlerId * id, EBBRepRef repRef)
   return EBBRC_OK;
 }
 
-// Can't use EBBType as InAction causes recursive dependencies
-// so we must manually forward declare all types 
-CObject(CharStream) {
-  CObjInterface(CharStream) *ft;
-};
-typedef CharStreamRef * CharStreamId;
-typedef EBBRC (* InAction) (CharStreamId id);
-
-CObjInterface(CharStream)
-{
+COBJ_EBBType(CharStream) {
   EBBRC (*putChar)  (CharStreamRef _self, char c);
   EBBRC (*getChar)  (CharStreamRef _self, char *c);
   EVENTFUNC(inEvent);
   EVENTFUNC(outEvent);
-};
+};  
+typedef EBBRC (* InAction) (CharStreamId id);
 
 // bad ugly test functions
 static EBBRC
