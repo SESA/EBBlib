@@ -1,0 +1,28 @@
+struct {
+  EBBMgrId theEBBMgrId;      // the Base EBBMgr
+  EventMgrId theEventMgrId;  // the Base EventMgr
+  MemMgrId theMemMgrId;      // the Base MemMgrId
+} L0Ids = { NULLID, NULLID, NULLID };
+
+// Would like them initially to be NULL and then to be unique but bound
+// NULL imp as necessary 
+
+struct {
+   ConsoleId      theConsoleId;
+   ConsoleHandler theConHandlerId;  // init allocates but user binds and rebinds as
+                                    // needed to hook app behavior
+} SimpleConsoleIds = { NULLID, NULLID };
+
+SimpleConsoleInit(...)
+{
+   rc = ConsoleCreate(&SimpleConsoleIds.theConsoleId);
+   EBBRCAssert(rc);
+
+   rc = AllocAndBindNULL(SimpelConsoleIds.theConHandlerId);
+   EBBRCAssert(rc);
+}
+
+// Make sure we are all on the same page about NULLId versus a NON NULL Id bound to 
+// NULL EBB.
+
+
