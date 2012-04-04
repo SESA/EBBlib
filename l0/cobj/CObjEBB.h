@@ -32,10 +32,11 @@ extern EBBRC CObjEBBMissFunc(EBBRep **, EBBLTrans *, FuncNum, EBBMissArg);
  
 // Introduces a new CObject Ebb type -> generates all associated cobject types
 #define COBJ_EBBType(TYPE)			\
-  CObject(TYPE) {				\
+  CObject(TYPE);				\
+  typedef TYPE ## Ref *TYPE ## Id;		\
+  CObjectDefine(TYPE) {				\
     CObjInterface(TYPE) *ft;			\
   };						\
-  typedef TYPE ## Ref *TYPE ## Id;		\
   CObjInterface(TYPE)
 
 COBJ_EBBType(EBBBase) {};
