@@ -28,6 +28,7 @@
 #include <lrt/io.h>
 #include <l0/lrt/pic.h>
 #include <l0/lrt/trans.h>
+#include <lrt/exit.h>
 #include <l0/types.h>
 #include <l0/sys/trans.h>
 #include <lrt/assert.h>
@@ -63,6 +64,7 @@ MsgHandlerTst_msg1(MsgHandlerRef _self, uintptr_t a1)
   EBB_LRT_printf("[%s]", __func__);
   return EBBRC_OK;
 };
+
 static EBBRC 
 MsgHandlerTst_msg2(MsgHandlerRef _self, uintptr_t numtosend, uintptr_t id)
 {
@@ -70,6 +72,10 @@ MsgHandlerTst_msg2(MsgHandlerRef _self, uintptr_t numtosend, uintptr_t id)
   MsgHandlerId sid = (MsgHandlerId)id;
   EBB_LRT_printf("[%ld-%ld]", MyEL(), numtosend);
   numtosend--;
+  if (numtosend <= 0) {
+    lrt_exit(0);
+  }
+
   LRT_EBBAssert(numtosend > 0);
   nxt = EventMgr_NextEL(MyEL());
   
