@@ -23,6 +23,15 @@
  * THE SOFTWARE.
  */
 
-#include <lrt/bare/arch/assert.h>
+#include <lrt/io.h>
+
+#define LRT_EBBAssert(cond)						\
+  ({									\
+  if (!(cond)) {							\
+    if (stdout)								\
+      printf("Assertion failed: at %s, line %d\n", __FILE__, __LINE__);	\
+    while(1) ;								\
+  }									\
+  })
 
 #endif

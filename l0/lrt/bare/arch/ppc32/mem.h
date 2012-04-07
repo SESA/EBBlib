@@ -1,5 +1,5 @@
-#ifndef LRT_STRING_H
-#define LRT_STRING_H
+#ifndef L0_LRT_BARE_ARCH_PPC32_MEM_H
+#define L0_LRT_BARE_ARCH_PPC32_MEM_H
 
 /*
  * Copyright (C) 2011 by Project SESA, Boston University
@@ -23,9 +23,8 @@
  * THE SOFTWARE.
  */
 
-#include <stddef.h>
-
-void bzero(void *s, size_t n);
-void *memcpy(void *dest, const void *src, size_t n);
+extern uintptr_t lrt_mem_start(void);
+extern uintptr_t lrt_mem_end(void);
+extern void lrt_mem_init(void);
 
 #endif

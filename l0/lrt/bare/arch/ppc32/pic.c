@@ -24,33 +24,9 @@
 
 #include <arch/powerpc/cpu.h>
 #include <arch/powerpc/regs.h>
+#include <l0/lrt/bare/arch/ppc32/bic.h>
 #include <l0/lrt/bare/arch/ppc32/pic.h>
 #include <lrt/io.h>
-
-struct bg_irqctrl_group {
-  volatile unsigned int status; // status (read and write) 0
-  volatile unsigned int rd_clr_status; // status (read and clear) 4
-  volatile unsigned int status_clr; // status (write and clear)8
-  volatile unsigned int status_set; // status (write and set) c
-  
-  // 4 bits per IRQ
-  volatile unsigned int target_irq[4]; // target selector 10-20
-  volatile unsigned int noncrit_mask[4];// mask 20-30
-  volatile unsigned int crit_mask[4]; // mask 30-40
-  volatile unsigned int mchk_mask[4]; // mask 40-50
-  
-  unsigned char __align[0x80 - 0x50];
-} __attribute__((packed));
-
-struct bg_irqctrl {
-  struct bg_irqctrl_group groups[15];
-  volatile unsigned int core_non_crit[4];
-  volatile unsigned int core_crit[4];
-  volatile unsigned int core_mchk[4];
-} __attribute__((packed));
-
-static struct bg_irqctrl * const bg_irqctrl = 
-  (struct bg_irqctrl *)0xfffde000;
 
 #define NUM_INTS (16)
 
@@ -61,11 +37,10 @@ static struct bg_irqctrl * const bg_irqctrl =
        ".balign 4;"				    \
        "isr_" #interrupt ":;"			    \
        "nop;"					    \
-       "mtspr " xstr(SPRN_SPRG2) ", 3;"		    \
+       "lis 3, ivpr_common@h;"			    \
+       "ori 3, 3, ivpr_common@l;"		    \
+       "mtctr 3;"				    \
        "li 3, " #interrupt ";"			    \
-       "lis 20, ivpr_common@h;"			    \
-       "ori 20, 20, ivpr_common@l;"		    \
-       "mtctr 20;"				    \
        "bctr"					    \
       );
 
@@ -92,9 +67,8 @@ lrt_pic_loop(void)
 
   //We set the first ipi irq to invoke a non-critical
   // interrupt on core 0
-  bg_irqctrl->groups[0].target_irq[0] = 0x40000000;
+  bic_enable_irq(BIC_IPI_GROUP, 0, NONCRIT, 0);
   
-
   //Invoke the 0th ipi IRQ
   lrt_pic_ipi(0);
 
@@ -117,15 +91,7 @@ lrt_pic_init(lrt_pic_handler h)
   tcr &= ~0x30;
   set_spr(SPRN_TCR, tcr);
 
-  //mask and clear all interrupts on the BIC
-  for (int i = 0; i < 15; i++) {
-    bg_irqctrl->groups[i].target_irq[0] = 0;
-    bg_irqctrl->groups[i].target_irq[1] = 0;
-    bg_irqctrl->groups[i].target_irq[2] = 0;
-    bg_irqctrl->groups[i].target_irq[3] = 0;
-    bg_irqctrl->groups[i].status = 0;    
-    asm volatile ("mbar");
-  }  
+  bic_disable_and_clear_all();
 
   lrt_pic_mapvec(IV_external, h);
   lrt_pic_loop();
@@ -141,5 +107,5 @@ lrt_pic_mapvec(uintptr_t vec, lrt_pic_handler h)
 void
 lrt_pic_ipi(uintptr_t irq)
 {
-  bg_irqctrl->groups[0].status_set = 1 << (31 - irq);
+  bic_raise_irq(BIC_IPI_GROUP, irq);
 }

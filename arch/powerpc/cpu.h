@@ -46,7 +46,7 @@ set_ivpr(void *addr)
 
 #define get_spr(spr)						\
   ({								\
-  uint64_t val;							\
+  uint32_t val;							\
   asm volatile (						\
 		"mfspr %[val]," xstr(spr)			\
 		: [val] "=r" (val));				\

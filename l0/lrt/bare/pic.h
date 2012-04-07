@@ -25,6 +25,6 @@
 //FIXME
 #include <l0/lrt/bare/arch/amd64/pic.h>
 
-#define LRT_PIC_MAX_PICS 128
+#define LRT_PIC_MAX_PICS 4
 
 #endif

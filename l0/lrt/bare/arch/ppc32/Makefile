@@ -1,15 +1,21 @@
 OBJS := \
 	../../stdio.o \
 	../../string.o \
+	../../../../sys/trans.o \
+	../../../../sys/defFT.o \
+	../../../../sys/arch/ppc32/defFT.o \
 	../../../../../lrt/string.o \
+	bic.o \
 	init.o \
 	isr.o \
 	ivpr_common.o \
 	lrt_start.o \
 	lrt_start_isr.o \
 	mailbox.o \
+	mem.o \
 	pic.o \
-	start.o
+	start.o \
+	trans.o
 
 LDFLAGS := \
 	-m32 \

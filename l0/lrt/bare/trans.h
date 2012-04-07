@@ -25,6 +25,8 @@
 
 #ifdef ARCH_AMD64
 #include <l0/lrt/bare/arch/amd64/trans.h>
+#elif ARCH_PPC32
+#include <l0/lrt/bare/arch/ppc32/trans.h>
 #elif ARCH_PPC64
 #include <l0/lrt/bare/arch/ppc64/trans.h>
 #endif

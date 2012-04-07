@@ -27,6 +27,7 @@
 #include <lrt/io.h>
 #include <lrt/misc.h>
 #include <lrt/assert.h>
+#include <lrt/string.h>
 #include <l0/lrt/pic.h>
 #include <l0/lrt/trans.h>
 #include <l0/types.h>
@@ -194,6 +195,6 @@ void
 trans_init(void)
 {
   EBBAssert(sysTransValidate());
-  __builtin_bzero((void *)mygmem(), mygmem_size());
+  bzero((void *)mygmem(), mygmem_size());
   initLTable();
 }

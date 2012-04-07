@@ -33,16 +33,16 @@
 	.balign 256 		; \
 	_IVPR_ ## interrupt:	; \
 	nop 			; \
-	mtspr	SPRN_SPRG0, r20	     ; \
-	mfctr	r20		     ; \
-	mtspr	SPRN_SPRG1, r20	     ; \
-	lis	r20, int_table@h   ; \
-	ori	r20, r20, int_table@l		 ; \
-	lwz	r20, (IV_ ## interrupt) * 4(r20) ; \
-	mtctr	r20		     ; \
-	mfmsr	r20		     ; \
-	ori	r20, r20, (1 << 13) ; \
-	mtmsr	r20		    ; \
+	mtspr	SPRN_SPRG0, r3	     ; \
+	mfctr	r3		     ; \
+	mtspr	SPRN_SPRG1, r3	     ; \
+	lis	r3, int_table@h   ; \
+	ori	r3, r3, int_table@l		 ; \
+	lwz	r3, (IV_ ## interrupt) * 4(r3) ; \
+	mtctr	r3		     ; \
+	mfmsr	r3		     ; \
+	ori	r3, r3, (1 << 13) ; \
+	mtmsr	r3		    ; \
 	bctr			    
 
 .section .isr, "ax"

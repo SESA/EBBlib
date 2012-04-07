@@ -1,6 +1,3 @@
-#ifndef LRT_STRING_H
-#define LRT_STRING_H
-
 /*
  * Copyright (C) 2011 by Project SESA, Boston University
  *
@@ -23,9 +20,25 @@
  * THE SOFTWARE.
  */
 
-#include <stddef.h>
+#include <stdint.h>
 
-void bzero(void *s, size_t n);
-void *memcpy(void *dest, const void *src, size_t n);
+#include <l0/lrt/bare/arch/ppc32/mem.h>
 
-#endif
+static const uintptr_t MEM_SIZE = (1 << 20); //1MB
+
+extern char kend[];
+
+uintptr_t
+lrt_mem_start() {
+  return (uintptr_t)kend;
+}
+
+uintptr_t
+lrt_mem_end() {
+  return (uintptr_t)kend + MEM_SIZE;
+}
+ 
+void lrt_mem_init() {
+  //nop
+}
+

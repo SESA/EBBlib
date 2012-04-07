@@ -23,6 +23,28 @@
  * THE SOFTWARE.
  */
 
+static const uint8_t TLB_1K = 0;
+static const uint8_t TLB_4K = 1;
+static const uint8_t TLB_16K = 2;
+static const uint8_t TLB_64K = 3;
+static const uint8_t TLB_256K = 4;
+static const uint8_t TLB_1M = 5;
+static const uint8_t TLB_16M = 6;
+static const uint8_t TLB_256M = 9;
+static const uint8_t TLB_1G = 10;
+static const uint32_t SUPPORTED_TLB_PAGE_SIZE =
+  1 << 0  | // 1K
+  1 << 1  | // 4K
+  1 << 2  | // 16K
+  1 << 3  | // 64K
+  1 << 4  | // 256K
+  1 << 5  | // 1M
+  1 << 6  | // 16M
+  1 << 9  | // 256M
+  1 << 10;  // 1G
+
+
+
 typedef union {
   uint32_t val;
   struct {
