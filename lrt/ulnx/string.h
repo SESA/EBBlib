@@ -1,5 +1,5 @@
-#ifndef LRT_STRING_H
-#define LRT_STRING_H
+#ifndef LRT_ULNX_STRING_H
+#define LRT_ULNX_STRING_H
 
 /*
  * Copyright (C) 2011 by Project SESA, Boston University
@@ -23,10 +23,6 @@
  * THE SOFTWARE.
  */
 
-#ifdef LRT_ULNX
-#include <lrt/ulnx/string.h>
-#elif LRT_BARE
-#include <lrt/bare/string.h>
-#endif
+#include <string.h>
 
 #endif
