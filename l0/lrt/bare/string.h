@@ -24,7 +24,6 @@
 
 #include <stddef.h>
 
-void bzero(void *ptr, size_t size);
 size_t strlen(const char *s);
 char *strcpy(char * restrict s1, const char * restrict s2);
 

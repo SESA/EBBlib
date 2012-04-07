@@ -1,6 +1,3 @@
-#ifndef LRT_STRING_H
-#define LRT_STRING_H
-
 /*
  * Copyright (C) 2011 by Project SESA, Boston University
  *
@@ -23,9 +20,19 @@
  * THE SOFTWARE.
  */
 
-#include <stddef.h>
+#include <stdint.h>
 
-void bzero(void *s, size_t n);
-void *memcpy(void *dest, const void *src, size_t n);
-
-#endif
+#define BIC_NUM_GROUPS (15)
+#define BIC_NUM_IRQS (32)
+static const uint8_t BIC_IPI_GROUP = 0;
+enum bic_int_type {
+  NONCRIT = 0,
+  CRIT = 1,
+  MACHINECHECK = 2
+};
+void bic_disable_and_clear_all(void);
+void bic_disable_irq(uint8_t group, uint8_t irq);
+//loc is 0-3 core or -1 for broadcast
+void bic_enable_irq(uint8_t group, uint8_t irq,
+		    enum bic_int_type type, int8_t loc);
+void bic_raise_irq(uint8_t group, uint8_t irq);

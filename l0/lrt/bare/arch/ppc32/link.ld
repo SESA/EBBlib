@@ -59,7 +59,7 @@ SECTIONS
 		*(.bss)
 		ebss = .;
 	}
-
+	
 	/DISCARD/ :
 	{
 		*(.eh_frame);

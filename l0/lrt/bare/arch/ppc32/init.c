@@ -139,5 +139,5 @@ init(void)
   /*   } */
   /* } */
   
-  lrt_pic_init(lrt_start_isr);
+  lrt_pic_init(lrt_start);
 }
