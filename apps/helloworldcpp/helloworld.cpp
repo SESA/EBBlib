@@ -21,6 +21,7 @@
  */
 #include <config.h>
 #include <stdint.h>
+extern "C" {
 #include <lrt/assert.h>
 #include <lrt/io.h>
 #include <l0/lrt/pic.h>
@@ -38,10 +39,11 @@
 #include <l0/EventMgrPrimImp.h>
 #include <l0/MemMgr.h>
 #include <l0/MemMgrPrim.h>
+#include <l1/App.h>
+}
 #include <l0/cplus/CPlusEBB.H>
 #include <l0/cplus/CPlusEBBRoot.H>
 #include <l0/cplus/CPlusEBBRootShared.H>
-#include <l1/App.h>
 
 class HW;
 typedef HW **HWId;
