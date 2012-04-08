@@ -100,6 +100,7 @@ SSACTest::work(int myid)
 
   readCount = (1-writePct) * numEvents;
   writeCount = writePct * numEvents;
+  rc = 0;
 
   for (int j=0; j<1;j++) {
     // write to SSAC data object (increase pointer by 1)
