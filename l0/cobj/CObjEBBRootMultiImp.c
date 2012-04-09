@@ -47,13 +47,16 @@ struct RepListNode_s {
 static inline void
 lockReps(CObjEBBRootMultiImpRef self)
 {
-  while (__sync_bool_compare_and_swap(&self->lock, 0, 1));
+  while (!__sync_bool_compare_and_swap(&self->lock, 0, 1));
 }
 
 static inline void
 unlockReps(CObjEBBRootMultiImpRef self)
 {
-  EBBAssert(__sync_bool_compare_and_swap(&self->lock, 1, 0)==1);
+  uintptr_t res;
+  if ((res = __sync_bool_compare_and_swap(&self->lock, 1, 0))!=1) {
+    EBBAssert(res == 1);
+  }
 }
 
 static EBBRep *
@@ -88,6 +91,7 @@ locked_AddRepOn(CObjEBBRootMultiImpRef self, uintptr_t el, EBBRep *rep)
   rd->el = el;
   rd->next = self->head;
   self->head = rd;
+  EBBAssert(self->lock!=0);
 }
 
 static
