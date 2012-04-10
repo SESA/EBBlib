@@ -64,13 +64,9 @@ lrt_pic_loop(void)
   // Each IRQ can be invoked to trigger either a
   // non-critical, critical, or machine check interrupt
   // on either a particular core, or all cores
-
-  //We set the first ipi irq to invoke a non-critical
-  // interrupt on core 0
-  bic_enable_irq(BIC_IPI_GROUP, 0, NONCRIT, 0);
   
-  //Invoke the 0th ipi IRQ
-  lrt_pic_ipi(0);
+  //Invoke my ipi IRQ
+  lrt_pic_ipi(lrt_pic_myid);
 
   msr msr = get_msr();
   msr.ee = 1; //enable external interrupts
@@ -93,6 +89,13 @@ lrt_pic_init(lrt_pic_handler h)
 
   bic_disable_and_clear_all();
 
+  //Set the IPIs to fire noncritical external interrupt
+  //to the corresponding core
+  bic_enable_irq(BIC_IPI_GROUP, 0, NONCRIT, 0);
+  bic_enable_irq(BIC_IPI_GROUP, 1, NONCRIT, 1);
+  bic_enable_irq(BIC_IPI_GROUP, 2, NONCRIT, 2);
+  bic_enable_irq(BIC_IPI_GROUP, 3, NONCRIT, 3);
+
   lrt_pic_mapvec(IV_external, h);
   lrt_pic_loop();
 }
@@ -108,4 +111,28 @@ void
 lrt_pic_ipi(uintptr_t irq)
 {
   bic_raise_irq(BIC_IPI_GROUP, irq);
+}
+
+uintptr_t
+lrt_pic_getnumlpics()
+{
+  EBBAssert(0);
+}
+
+uintptr_t
+lrt_pic_getnextlpic(uintptr_t c)
+{
+  EBBAssert(0);
+}
+
+void
+lrt_pic_ackipi()
+{
+  bic_clear_irq(BIC_IPI_GROUP, lrt_pic_myid);
+}
+
+void
+lrt_pic_enableipi()
+{
+  bic_enable_irq(BIC_IPI_GROUP, lrt_pic_myid, NONCRIT, lrt_pic_myid);  
 }

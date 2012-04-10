@@ -25,6 +25,8 @@
 
 #include <stdint.h>
 
+#include <arch/powerpc/regs.h>
+
 extern uintptr_t lrt_pic_myid;
 
 typedef void *lrt_pic_handler; //a PC
@@ -33,7 +35,7 @@ typedef uintptr_t lrt_pic_src;
 extern void lrt_pic_mapvec(uintptr_t vec, lrt_pic_handler h);
 extern void lrt_pic_ipi(uintptr_t id);
 extern void __attribute__ ((noreturn)) lrt_pic_init(lrt_pic_handler h);
-extern uintptr_t lrt_pic_getnumlpics(); /* get number of logical pics, i.e., cores */
+extern uintptr_t lrt_pic_getnumlpics(void); /* get number of logical pics, i.e., cores */
 extern uintptr_t lrt_pic_getnextlpic(uintptr_t c); /* get next pic in some sequence; loops */
 extern void lrt_pic_ackipi(void);
 extern void lrt_pic_enableipi(void);

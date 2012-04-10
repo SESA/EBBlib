@@ -21,6 +21,11 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+
+#include <l0/types.h>
+#include <l0/cobj/cobj.h>
+#include <l0/cobj/CObjEBB.h>
+
 COBJ_EBBType(EBBMgrPrim) {
   EBBRC (*AllocId) (EBBMgrPrimRef _self, EBBId *id);
   EBBRC (*FreeId) (EBBMgrPrimRef _self, EBBId id);

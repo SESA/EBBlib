@@ -22,6 +22,8 @@
  * THE SOFTWARE.
  */
 
+#include <l0/cobj/CObjEBBRootMulti.h>
+
 // JA: DO NOT GET RID OF IMPLEMENTATION WE NEED
 //     STATICS OF THESE
 

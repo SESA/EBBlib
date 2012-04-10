@@ -1,5 +1,3 @@
-#ifndef __COBJ_EBB_ROOT_MULTI_H__
-#define __COBJ_EBB_ROOT_MULTI_H__
 /*
  * Copyright (C) 2011 by Project SESA, Boston University
  *
@@ -22,21 +20,28 @@
  * THE SOFTWARE.
  */
 
-#include <l0/cobj/CObjEBBRoot.h>
+#include <config.h>
 
-CObject(CObjEBBRootMulti) {
-  CObjInterface(CObjEBBRootMulti) *ft;
-};
+#include <l0/lrt/pic.h>
+#include <l0/types.h>
 
-typedef EBBRep *(*CreateRepFunc) (CObjEBBRootMultiRef _self);
-typedef struct RepListNode_s RepListNode;
-
-CObjInterface(CObjEBBRootMulti)
+EBBRC
+LRTConsoleInit(lrt_pic_src *in, lrt_pic_src *out, lrt_pic_src *err)
 {
-  CObjImplements(CObjEBBRoot);
-  void (*addRepOn)(CObjEBBRootMultiRef _self, uintptr_t el, EBBRep *rep);
-  RepListNode *(*nextRep) (CObjEBBRootMultiRef _self, 
-			   RepListNode *curr, EBBRep **rep);
-};
+  EBBAssert(0);
+  return EBBRC_OK;
+}
 
-#endif
+EBBRC
+LRTConsoleRead(lrt_pic_src *in, char *buf, int len, int *n)
+{
+  EBBAssert(0);
+  return EBBRC_OK;
+}
+
+EBBRC
+LRTConsoleWrite(lrt_pic_src *out, char *buf, int len, int *n)
+{
+  EBBAssert(0);
+  return EBBRC_OK;
+}

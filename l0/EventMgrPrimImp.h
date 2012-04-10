@@ -21,6 +21,9 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+
+#include <l0/EventMgrPrim.h>
+
 extern EBBRC EventMgrPrimImpInit(void);
 extern void EventMgrPrimImpTest(void); /* move to a seperate file eventually, should not be imp specific */
 extern void EventMgrEventLoop(void);

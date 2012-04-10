@@ -22,6 +22,8 @@
  * THE SOFTWARE.
  */
 
+#include <l0/types.h>
+
 extern EBBRC CObjEBBMissFunc(EBBRep **, EBBLTrans *, FuncNum, EBBMissArg);
 
 #define COBJ_EBBCALL(id, method, ...) \

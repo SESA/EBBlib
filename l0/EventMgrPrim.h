@@ -40,6 +40,9 @@
  * document the plan.  
  */
 
+#include <l0/cobj/cobj.h>
+#include <l0/cobj/CObjEBB.h>
+
 /* 
  * All event handling ebbs must conform to these types
  * Any existing ebbs that want to handle events must be

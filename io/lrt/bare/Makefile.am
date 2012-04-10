@@ -1,0 +1,1 @@
+io_lrt_bare_sources = io/lrt/bare/LRTConsole.c

@@ -22,6 +22,8 @@
  * THE SOFTWARE.
  */
 
+#include <l0/types.h>
+
 COBJ_EBBType(CObjEBBRoot) 
 {
   EBBRC (*handleMiss)(CObjEBBRootRef self, EBBRep **obj,

@@ -107,5 +107,13 @@ bic_raise_irq(uint8_t group, uint8_t irq)
 {
   EBBAssert(group < BIC_NUM_GROUPS);
   EBBAssert(irq < BIC_NUM_IRQS);
-  bg_irqctrl->groups[0].status_set = 1 << (31 - irq);
+  bg_irqctrl->groups[group].status_set = 1 << (31 - irq);
+}
+
+void
+bic_clear_irq(uint8_t group, uint8_t irq)
+{
+  EBBAssert(group < BIC_NUM_GROUPS);
+  EBBAssert(irq < BIC_NUM_IRQS);
+  bg_irqctrl->groups[group].status_clr = 1 << (31 - irq);
 }
