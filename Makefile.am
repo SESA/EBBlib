@@ -7,9 +7,9 @@ AM_CCASFLAGS = -D ASM_FILE -g3 -I$(top_srcdir) -I.
 
 AM_CXXFLAGS = -Wall -Werror -g3
 #for now no CPPFLAGS
-AM_CPPFLAGS = 
+AM_CPPFLAGS =
 if STD_GNUXX_0x
-AM_CXXFLAGS += -std=gnu++0x 
+AM_CXXFLAGS += -std=gnu++0x
 endif
 
 if x86_64
@@ -37,8 +37,8 @@ lib_LIBRARIES = libebb.a
 libebb_a_SOURCES = $(arch_sources) $(l0_sources) $(lrt_sources) \
   $(misc_sources) $(net_sources) $(l1_sources) $(io_sources)
 
-libebb_a_LIBADD = 
-libebb_a_DEPENDENCIES = 
+libebb_a_LIBADD =
+libebb_a_DEPENDENCIES =
 
 ebbos_libs = libebb.a
 
@@ -51,7 +51,7 @@ BAREFLAGS += -ffreestanding
 endif
 
 if x86_64
-BAREFLAGS += mno-red-zone -mno-mmx -mno-sse -mno-sse2 -mno-sse3
+BAREFLAGS += -mno-red-zone -mno-mmx -mno-sse -mno-sse2 -mno-sse3
 AM_LDFLAGS = -melf_x86_64 -static -n -z max-page-size=0x1000 \
 	-Wl,--build-id=none \
 	-T $(top_srcdir)/l0/lrt/bare/arch/amd64/link.ld
