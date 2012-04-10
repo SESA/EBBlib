@@ -88,6 +88,10 @@ COBJ_EBBType(EventMgrPrim) {
 
   EBBRC (*dispatchIPI) (EventMgrPrimRef _self, EvntLoc el);
 
+  EBBRC (*ackIPI) (EventMgrPrimRef _self);
+
+  EBBRC (*enableIPI) (EventMgrPrimRef _self);
+
   // called by eary implementation of the vector function
   EBBRC (*dispatchEventLocal) (EventMgrPrimRef _self, uintptr_t eventNo);
 };

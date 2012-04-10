@@ -1,6 +1,5 @@
-#ifndef L0_LRT_BARE_ARCH_PPC32_PIC_H
-#define L0_LRT_BARE_ARCH_PPC32_PIC_H
-
+#ifndef L0_LRT_BARE_ARCH_PIC_H
+#define L0_LRT_BARE_ARCH_PIC_H
 /*
  * Copyright (C) 2011 by Project SESA, Boston University
  *
@@ -23,19 +22,10 @@
  * THE SOFTWARE.
  */
 
-#include <stdint.h>
-
-extern uintptr_t lrt_pic_myid;
-
-typedef void *lrt_pic_handler; //a PC
-typedef uintptr_t lrt_pic_src;
-
-extern void lrt_pic_mapvec(uintptr_t vec, lrt_pic_handler h);
-extern void lrt_pic_ipi(uintptr_t id);
-extern void __attribute__ ((noreturn)) lrt_pic_init(lrt_pic_handler h);
-extern uintptr_t lrt_pic_getnumlpics(); /* get number of logical pics, i.e., cores */
-extern uintptr_t lrt_pic_getnextlpic(uintptr_t c); /* get next pic in some sequence; loops */
-extern void lrt_pic_ackipi(void);
-extern void lrt_pic_enableipi(void);
-
+#if ARCH_AMD64
+#include <l0/lrt/bare/arch/amd64/pic.h>
+#elif ARCH_PPC
+#include <l0/lrt/bare/arch/ppc32/pic.h>
+#endif
+ 
 #endif

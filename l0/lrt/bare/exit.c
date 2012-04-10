@@ -1,6 +1,3 @@
-#ifndef L0_LRT_BARE_ARCH_PPC32_PIC_H
-#define L0_LRT_BARE_ARCH_PPC32_PIC_H
-
 /*
  * Copyright (C) 2011 by Project SESA, Boston University
  *
@@ -22,20 +19,15 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+#include <config.h>
 
-#include <stdint.h>
+#include <inttypes.h>
 
-extern uintptr_t lrt_pic_myid;
+#include <l0/lrt/exit.h>
+#include <lrt/io.h>
 
-typedef void *lrt_pic_handler; //a PC
-typedef uintptr_t lrt_pic_src;
-
-extern void lrt_pic_mapvec(uintptr_t vec, lrt_pic_handler h);
-extern void lrt_pic_ipi(uintptr_t id);
-extern void __attribute__ ((noreturn)) lrt_pic_init(lrt_pic_handler h);
-extern uintptr_t lrt_pic_getnumlpics(); /* get number of logical pics, i.e., cores */
-extern uintptr_t lrt_pic_getnextlpic(uintptr_t c); /* get next pic in some sequence; loops */
-extern void lrt_pic_ackipi(void);
-extern void lrt_pic_enableipi(void);
-
-#endif
+void lrt_exit(EBBRC i)
+{
+  EBB_LRT_printf("Exit called: %" PRIiPTR"\n", i);
+  while (1) ;
+}

@@ -25,6 +25,8 @@
 class CPlusEBB {
   // null function so that virtual function table is first
   virtual EBBRC func0() { return 0; } 
+protected:
+  virtual ~CPlusEBB(){}
 };
 
 #define CPLUS_EBBCALL(id, method, ...) (EBBId_DREF(id)->method(__VA_ARGS__))

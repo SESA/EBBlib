@@ -5,7 +5,16 @@ include l0/sys/Makefile.am
 
 l0_ebbmgrprim_sources = l0/EBBMgrPrim.c l0/EBBMgrPrim.h l0/EBBMgrPrimBoot.c \
 	l0/EBBMgrPrimBoot.h
-l0_eventmgrprim_sources = l0/EventMgrPrim.h l0/EventMgrPrimImp.c l0/EventMgrPrimImp.h
+l0_eventmgrprim_sources = l0/EventMgrPrim.h l0/EventMgrPrimImp.h
+if LRT_ULNX
+l0_eventmgrprim_sources += l0/EventMgrPrimImp.c
+endif
+if LRT_BARE
+if x86_64
+l0_eventmgrprim_sources += l0/EventMgrPrimImp.c
+endif
+endif
+
 l0_memmgrprimstupid_sources = l0/MemMgrPrimStupid.c
 l0_memmgrprimsimple_sources = l0/MemMgrPrimSimple.c
 

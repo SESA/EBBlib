@@ -23,7 +23,7 @@
  */
 
 //FIXME
-#include <l0/lrt/bare/arch/amd64/pic.h>
+#include <l0/lrt/bare/arch/pic.h>
 
 #define LRT_PIC_MAX_PICS 4
 

@@ -65,7 +65,6 @@ spinUnlock(LockType *lk)
   __sync_bool_compare_and_swap(lk, 1, 0);
 }
 
-int SendIPIEvent(EvntLoc el){return lrt_pic_ipi(el);};
 enum{MAXARGS = 3};
 /* -- end routines to be implemented */
 
@@ -110,7 +109,7 @@ MsgMgrPrim_enqueueMsg(MsgMgrPrimRef target, MsgStore *msg)
   target->msgqueue = msg;
   spinUnlock(&target->msgqueuelock);
   if (queueempty) {
-    SendIPIEvent(target->eventLoc);
+    COBJ_EBBCALL(theEventMgrPrimId, dispatchIPI, target->eventLoc);
   }
   return EBBRC_OK;
 }
@@ -132,21 +131,21 @@ static EBBRC
 MsgMgrPrim_findTarget(MsgMgrPrimRef self, EvntLoc loc, MsgMgrPrimRef *target)
 {
   RepListNode *node;
-  MsgMgrPrimRef rep = NULL;
-  rep = self->reps[loc];
+  EBBRep * rep = NULL;
+  rep = (EBBRep *)self->reps[loc];
   if (rep == NULL) {
     for (node = self->theRootMM->ft->nextRep(self->theRootMM, 0, 
-					     (EBBRep **)&rep);
+					     &rep);
 	 node != NULL; 
 	 node = self->theRootMM->ft->nextRep(self->theRootMM, node, 
-					   (EBBRep **)&rep)) {
+					   &rep)) {
       EBBAssert(rep != NULL);
-      if (rep->eventLoc == loc) break;
+      if (((MsgMgrPrimRef)rep)->eventLoc == loc) break;
     }
-    // EBBAssert(rep != NULL);
-    self->reps[loc] = rep;
+    self->reps[loc] = (MsgMgrPrimRef)rep;
   }
-  *target = rep;
+  // FIXME: handle case that rep doesn't yet exist
+  *target = (MsgMgrPrimRef)rep;
   if (rep == NULL) {
     return EBBRC_NOTFOUND;
   }
@@ -290,7 +289,9 @@ MsgMgrPrim_handleEvent(EventHandlerRef _self)
 {
   MsgMgrPrimRef self = (MsgMgrPrimRef)ContainingCOPtr(_self,MsgMgrPrim,evHdlr);
   MsgStore *msg;
-  lrt_pic_ackipi();
+  EBBRC rc;
+  rc = COBJ_EBBCALL(theEventMgrPrimId, ackIPI);
+  EBBRCAssert(rc);
 
   msg = MsgMgrPrim_dequeueMsgHead(self);
   while (msg != NULL) {
@@ -318,7 +319,8 @@ MsgMgrPrim_handleEvent(EventHandlerRef _self)
   // disabled. Note, a whole chain of messages may be invoked here, so, 
   // the implicit assumption is that  you re-disable interrupts if you enable
   // them at the end of a message. 
-  lrt_pic_enableipi();
+  rc = COBJ_EBBCALL(theEventMgrPrimId, enableIPI);
+  EBBRCAssert(rc);
   return EBBRC_OK;
 }
 
@@ -379,8 +381,8 @@ MsgMgrPrim_createRep(CObjEBBRootMultiImpRef rootRefMM,
 
   // now tell the root for event handler its pseudo representative on this core
   // note, EH must by set up before MM
-  rootRefEH->ft->addRepOn((CObjEBBRootMultiRef)rootRefEH, MyEL(),
-			  (EBBRep *)&(repRef->evHdlr));
+  rootRefMM->ft->addRepOn((CObjEBBRootMultiRef)rootRefEH, MyEL(),
+			  (EBBRep *)(void *)&(repRef->evHdlr));
 
   // tell the root for MsgMgr its rep on this core
   rootRefMM->ft->addRepOn((CObjEBBRootMultiRef)rootRefMM, MyEL(),

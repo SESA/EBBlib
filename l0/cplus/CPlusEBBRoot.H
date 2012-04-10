@@ -24,6 +24,7 @@
 
 class CPlusEBBRoot {
 protected:
+  virtual ~CPlusEBBRoot(){};
   virtual EBBRC handleMiss(CPlusEBB **obj, EBBLTrans *lt, FuncNum fnum)=0;
   static EBBRC CPlusEBBMissFunc(EBBRep **_self, EBBLTrans *lt, FuncNum fnum, 
 				EBBMissArg arg);

@@ -43,12 +43,6 @@
 #include <l0/MemMgr.h>
 #include <l0/MemMgrPrim.h>
 
-/*
- * We define these in .c file, since EBBCALL may be different for
- * c++..
- */
-#define EBBCALL(id, method, ...) COBJ_EBBCALL(id, method, ##__VA_ARGS__)
-
 typedef struct  {
   EventHandlerId id;
   FuncNum        fn;
@@ -85,14 +79,14 @@ EventMgrPrimImpRef theEventMgrPrimMaster = NULL;
 #define VFUNC(i)					\
   static void vf##i(void)				\
   {							\
-    EBBCALL(theEventMgrPrimId, dispatchEventLocal, i);	\
+    COBJ_EBBCALL(theEventMgrPrimId, dispatchEventLocal, i);	\
   }		
 #elif ARCH_AMD64
 //FIXME: This burns all sorts of register state without
 // saving it. Need to discuss this.
 void vf_common(uintptr_t i)
 {
- EBBCALL(theEventMgrPrimId, dispatchEventLocal, i);
+ COBJ_EBBCALL(theEventMgrPrimId, dispatchEventLocal, i);
 }
 #define str(s) xstr(s)
 #define xstr(s) #s
@@ -448,12 +442,26 @@ EventMgrPrim_dispatchEventLocal(EventMgrPrimRef _self, uintptr_t eventNo)
   //  EBB_LRT_printf("%s: handling interrupt %" PRIdPTR "\n", __func__, eventNo);
   EBBAssert(handler != NULL); 
 
-  if (fn==NOFUNCNUM) EBBCALL(handler, handleEvent); 
+  if (fn==NOFUNCNUM) COBJ_EBBCALL(handler, handleEvent); 
   else COBJ_EBBCALL_FUNCNUM(GenericEventFunc, (EBBBaseId)handler, fn);
 
   // FIXME: do we want to do this automatically here?
   lrt_pic_enable(eventNo);
   return EBBRC_OK;   
+}
+
+static EBBRC
+EventMgrPrim_ackIPI(EventMgrPrimRef _self)
+{
+  lrt_pic_ackipi();
+  return EBBRC_OK;
+}
+
+static EBBRC
+EventMgrPrim_enableIPI(EventMgrPrimRef _self)
+{
+  lrt_pic_enableipi();
+  return EBBRC_OK;
 }
 
 // this is done under protection of the master's lock
@@ -462,14 +470,14 @@ lockedReplicateHandler(CObjEBBRootMultiRef root, uintptr_t eventNo,
 		       EventHandlerId handler, FuncNum fn)
 {
   RepListNode *node;
-  EventMgrPrimImpRef rep;
+  EBBRep *rep = NULL;
   // now iterate through all reps and put in hander
   
-  for (node = root->ft->nextRep(root, 0, (EBBRep **)&rep);
+  for (node = root->ft->nextRep(root, 0, &rep);
        node != NULL; 
-       node = root->ft->nextRep(root, node, (EBBRep **)&rep)) {
-     rep->handlerInfo[eventNo].id = handler;
-     rep->handlerInfo[eventNo].fn = fn;
+       node = root->ft->nextRep(root, node, &rep)) {
+    ((EventMgrPrimImpRef)rep)->handlerInfo[eventNo].id = handler;
+    ((EventMgrPrimImpRef)rep)->handlerInfo[eventNo].fn = fn;
   }
   return EBBRC_OK;   
 }
@@ -583,6 +591,8 @@ CObjInterface(EventMgrPrim) EventMgrPrimImp_ftable = {
   .registerIPIHandler = EventMgrPrim_registerIPIHandler, 
   .allocEventNo = EventMgrPrim_allocEventNo, 
   .dispatchIPI = EventMgrPrim_dispatchIPI,
+  .ackIPI = EventMgrPrim_ackIPI,
+  .enableIPI = EventMgrPrim_enableIPI,
   .dispatchEventLocal = EventMgrPrim_dispatchEventLocal
 };
 

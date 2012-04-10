@@ -3,13 +3,18 @@ if STD_GNU_99
 AM_CFLAGS += -std=gnu99
 endif
 
-AM_CCASFLAGS = -D ASM_FILE -g3
+AM_CCASFLAGS = -D ASM_FILE -g3 -I$(top_srcdir) -I.
 
 AM_CXXFLAGS = -Wall -Werror -g3
 #for now no CPPFLAGS
 AM_CPPFLAGS = 
 if STD_GNUXX_0x
 AM_CXXFLAGS += -std=gnu++0x 
+endif
+
+if x86_64
+AM_CFLAGS += -m64
+AM_CCASFLAGS += -m64
 endif
 
 if powerpc64
@@ -39,14 +44,14 @@ ebbos_libs = libebb.a
 
 if LRT_BARE
 
-BAREFLAGS = -m64 -nostdlib -nodefaultlibs -g3 \
-	-mno-red-zone -mno-mmx -mno-sse -mno-sse2 -mno-sse3
+BAREFLAGS = -nostdlib -nodefaultlibs
+
 if CXX_FFREESTANDING
 BAREFLAGS += -ffreestanding
 endif
 
-AM_CFLAGS += $(BAREFLAGS)
-AM_CXXFLAGS += $(BAREFLAGS) -fno-exceptions -fno-rtti -fno-stack-protector
+if x86_64
+BAREFLAGS += mno-red-zone -mno-mmx -mno-sse -mno-sse2 -mno-sse3
 AM_LDFLAGS = -melf_x86_64 -static -n -z max-page-size=0x1000 \
 	-Wl,--build-id=none \
 	-T $(top_srcdir)/l0/lrt/bare/arch/amd64/link.ld
@@ -55,6 +60,22 @@ AM_LDFLAGS = -melf_x86_64 -static -n -z max-page-size=0x1000 \
 %.iso: % $(top_srcdir)/l0/lrt/bare/arch/amd64/grub.cfg
 	grub-mkrescue -o $@ -graft-points boot/ebbos=$< \
 	boot/grub/grub.cfg=$(top_srcdir)/l0/lrt/bare/arch/amd64/grub.cfg
+
+endif
+
+if powerpc
+BAREFLAGS += -mno-sdata
+AM_LDFLAGS = -m32 -mno-sdata -static -nodefaultlibs -nostdlib \
+	-Wl,-G,0 -T $(top_srcdir)/l0/lrt/bare/arch/ppc32/link.ld
+LDADD = -lgcc
+%.uimage: %.bin
+	mkimage -A ppc -O linux -T kernel -C none -a 0 -e 0 -n "EbbOS" -d $< $@
+%.bin: %
+	objcopy -O binary $< $@
+endif
+
+AM_CFLAGS += $(BAREFLAGS)
+AM_CXXFLAGS += $(BAREFLAGS) -fno-exceptions -fno-rtti -fno-stack-protector
 
 endif
 

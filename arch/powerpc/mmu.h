@@ -26,7 +26,7 @@
 #include <stdint.h>
 #include <lrt/assert.h>
 
-#ifdef ARCH_PPC32
+#ifdef ARCH_PPC
 #include <arch/powerpc/450/mmu.h>
 #endif
 

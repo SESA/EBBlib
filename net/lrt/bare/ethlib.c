@@ -38,7 +38,7 @@ ethlib_nic_readpkt(void)
 }
 
 intptr_t
-ethlib_nic_init(char *dev, lrt_pic_src *s)
+ethlib_nic_init(char *dev, lrt_pic_src *sin, lrt_pic_src *out)
 {
   EBB_LRT_printf("%s: NYI", __func__);
   EBBAssert(0);

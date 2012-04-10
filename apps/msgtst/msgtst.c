@@ -21,7 +21,7 @@
  */
 
 #include <config.h>
-#include <stdint.h>
+#include <inttypes.h>
 
 #include <l0/lrt/types.h>
 #include <l0/cobj/cobj.h>
@@ -72,7 +72,6 @@ MsgHandlerTst_msg2(MsgHandlerRef _self, uintptr_t numtosend, uintptr_t id)
   MsgHandlerId sid = (MsgHandlerId)id;
   EBBRC rc;
 
-  EBB_LRT_printf("[%ld-%ld]", MyEL(), numtosend);
   numtosend--;
   if (numtosend <= 0) {
     lrt_exit(0);
@@ -177,13 +176,13 @@ MsgTst_start(AppRef _self, int argc, char **argv, char **environ)
   MsgHandlerId id = InitMsgHandlerTst();
   int numtosend = 100;
 
-  EBB_LRT_printf("MsgTst, core %ld number of cores %ld", MyEL(), EventMgr_NumEL());
+  EBB_LRT_printf("MsgTst, core %" PRIxPTR " number of cores %" PRIxPTR, MyEL(), EventMgr_NumEL());
 
   if (MyEL() != 0) {
-    EBB_LRT_printf("MsgTst, core %ld returning to event loop", MyEL());
+    EBB_LRT_printf("MsgTst, core %" PRIxPTR " returning to event loop", MyEL());
     return EBBRC_OK;
   }
-  EBB_LRT_printf("MsgTst, core %ld number of cores %ld", MyEL(), EventMgr_NumEL());
+  EBB_LRT_printf("MsgTst, core %" PRIxPTR " number of cores %" PRIxPTR, MyEL(), EventMgr_NumEL());
   
   // kick off message send
   COBJ_EBBCALL(theMsgMgrId, msg2, 0, id, numtosend, (uintptr_t)id);

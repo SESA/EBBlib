@@ -81,11 +81,11 @@ EBBCtrPrimDistributed_val(EBBCtrRef _self, uintptr_t *v)
   EBBCtrPrimDistributedRef self = (EBBCtrPrimDistributedRef)_self;
   uintptr_t val = 0;
   RepListNode *node;
-  EBBCtrPrimDistributedRef rep = NULL;
-  for (node = self->theRoot->ft->nextRep(self->theRoot, 0, (EBBRep **)&rep);
+  EBBRep *rep = NULL;
+  for (node = self->theRoot->ft->nextRep(self->theRoot, 0, &rep);
        node; 
-       node = self->theRoot->ft->nextRep(self->theRoot, node, (EBBRep **)&rep)) {
-    val += rep->localValue;
+       node = self->theRoot->ft->nextRep(self->theRoot, node, &rep)) {
+    val += ((EBBCtrPrimDistributedRef)rep)->localValue;
   }
   *v = val;
   return EBBRC_OK;

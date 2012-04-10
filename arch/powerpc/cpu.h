@@ -1,12 +1,12 @@
-#ifndef PPC64_ARCH_CPU_H
-#define PPC64_ARCH_CPU_H
+#ifndef ARCH_POWERPC_CPU_H
+#define ARCH_POWERPC_CPU_H
 
 #include <stdint.h>
 
-#include <arch/ppc64/regs.h>
+#include <arch/powerpc/regs.h>
 #include <lrt/assert.h>
 
-#ifdef ARCH_PPC32
+#ifdef ARCH_PPC
 #include <arch/powerpc/450/cpu.h>
 #endif
 

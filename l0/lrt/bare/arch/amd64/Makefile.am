@@ -22,6 +22,7 @@ l0_lrt_bare_arch_amd64_sources = \
 	l0/lrt/bare/arch/amd64/trans.h
 
 if LRT_BARE
+if x86_64
 
 #TODO DS: Should have some proper dependency tracking here
 l0/lrt/bare/arch/amd64/init32.o: $(top_srcdir)/l0/lrt/bare/arch/amd64/init32.c
@@ -35,6 +36,7 @@ libebb_a_DEPENDENCIES += $(top_srcdir)/l0/lrt/bare/arch/amd64/link.ld \
 libebb_a_LIBADD += l0/lrt/bare/arch/amd64/init32.o
 CLEANFILES += l0/lrt/bare/arch/amd64/init32.o
 
+endif
 endif
 
 EXTRA_DIST += l0/lrt/bare/arch/amd64/link.ld l0/lrt/bare/arch/amd64/grub.cfg \

@@ -1,4 +1,5 @@
 if LRT_BARE
+if x86_64
 noinst_LIBRARIES += libacpica.a
 ebbos_libs += libacpica.a
 libacpica_a_CFLAGS = $(BAREFLAGS)
@@ -206,4 +207,5 @@ libacpica_a_SOURCES = \
 	arch/amd64/acpica/include/actbl3.h \
 	arch/amd64/acpica/include/acpixf.h \
 	arch/amd64/acpica/include/acopcode.h
+endif
 endif

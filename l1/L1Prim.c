@@ -182,9 +182,9 @@ L1Prim_start(L1Ref _self, uintptr_t startinfo)
   // We now allocate a temporary EBB that can be deleted once
   // we are on the message has been delivered
   rc = CObjEBBRootSharedCreate(&rootRef, 
-			       (EBBRepRef) &(self->startMH));
+			       (EBBRepRef)(void *)&(self->startMH));
   EBBRCAssert(rc);
-  rc = EBBAllocPrimId((EBBId *)&(self->startMHId));
+  rc = EBBAllocPrimId((EBBId *)(void *)&(self->startMHId));
   EBBRCAssert(rc);
   rc = CObjEBBBind((EBBId)self->startMHId, rootRef);
   EBBRCAssert(rc);

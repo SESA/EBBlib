@@ -20,8 +20,8 @@
  * THE SOFTWARE.
  */
 
-#include <arch/ppc32/asdef.h>
-#include <arch/ppc32/bpcore/ppc450_core.h>
+#include <arch/powerpc/asdef.h>
+#include <arch/powerpc/regs.h>
 	
 	.globl _start
 	.section .init.text, "ax"
