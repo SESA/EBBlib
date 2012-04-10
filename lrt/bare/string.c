@@ -20,6 +20,8 @@
  * THE SOFTWARE.
  */
 
+#include <stddef.h>
+
 #include <lrt/string.h>
 
 void
