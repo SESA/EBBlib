@@ -26,6 +26,7 @@ extern "C" {
 #include <lrt/io.h>
 #include <l0/lrt/pic.h>
 #include <l0/lrt/trans.h>
+#include <lrt/exit.h>
 #include <l0/lrt/types.h>
 #include <l0/types.h>
 #include <l0/sys/trans.h>
@@ -68,6 +69,7 @@ HelloWorld_start(AppRef _self, int argc, char **argv,
 {
   HW MyHelloWorld;
   MyHelloWorld.printMsg();
+  lrt_exit(0);
   return EBBRC_OK;
 }
 

@@ -28,6 +28,7 @@
 #include <lrt/io.h>
 #include <l0/lrt/pic.h>
 #include <l0/lrt/trans.h>
+#include <lrt/exit.h>
 #include <l0/types.h>
 #include <l0/sys/trans.h>
 #include <lrt/assert.h>
@@ -64,6 +65,7 @@ HelloWorld_start(AppRef _self, int argc, char **argv,
   EBB_LRT_printf("Hello world!\n");
   dumpArgsAndEnviron(argc, argv, environ);
   EBB_LRT_printf("%s: PASSED\n", argv[0]);
+  lrt_exit(0);
   return EBBRC_OK;
 }
 
