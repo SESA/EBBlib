@@ -70,6 +70,8 @@ MsgHandlerTst_msg2(MsgHandlerRef _self, uintptr_t numtosend, uintptr_t id)
 {
   uintptr_t nxt = 0;
   MsgHandlerId sid = (MsgHandlerId)id;
+  EBBRC rc;
+
   EBB_LRT_printf("[%ld-%ld]", MyEL(), numtosend);
   numtosend--;
   if (numtosend <= 0) {
@@ -79,7 +81,11 @@ MsgHandlerTst_msg2(MsgHandlerRef _self, uintptr_t numtosend, uintptr_t id)
   LRT_EBBAssert(numtosend > 0);
   nxt = EventMgr_NextEL(MyEL());
   
-  COBJ_EBBCALL(theMsgMgrId, msg2, nxt, sid, numtosend, id);
+  do {
+    rc = COBJ_EBBCALL(theMsgMgrId, msg2, nxt, sid, numtosend, id);
+    if (rc == EBBRC_NOTFOUND) EBB_LRT_printf("*");
+
+  } while (rc == EBBRC_NOTFOUND);
   return EBBRC_OK;
 };
 static EBBRC 
@@ -177,8 +183,6 @@ MsgTst_start(AppRef _self, int argc, char **argv, char **environ)
     EBB_LRT_printf("MsgTst, core %ld returning to event loop", MyEL());
     return EBBRC_OK;
   }
-  // FIXME: put a delay with timeout, here to wait for others to come up
-  sleep(2);
   EBB_LRT_printf("MsgTst, core %ld number of cores %ld", MyEL(), EventMgr_NumEL());
   
   // kick off message send

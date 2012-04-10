@@ -143,11 +143,13 @@ MsgMgrPrim_findTarget(MsgMgrPrimRef self, EvntLoc loc, MsgMgrPrimRef *target)
       EBBAssert(rep != NULL);
       if (rep->eventLoc == loc) break;
     }
-    EBBAssert(rep != NULL);
+    // EBBAssert(rep != NULL);
     self->reps[loc] = rep;
   }
-  // FIXME: handle case that rep doesn't yet exist
   *target = rep;
+  if (rep == NULL) {
+    return EBBRC_NOTFOUND;
+  }
   return EBBRC_OK;
 }
 
@@ -202,6 +204,8 @@ MsgMgrPrim_msg0(MsgMgrRef _self, EvntLoc loc, MsgHandlerId id)
   EBBRC rc;
 
   rc = MsgMgrPrim_findTarget(self, loc, &target);
+  if (rc == EBBRC_NOTFOUND) return rc;
+
   EBBRCAssert(rc);
 
   msg = allocMsg(self);
@@ -221,6 +225,8 @@ MsgMgrPrim_msg1(MsgMgrRef _self, EvntLoc loc, MsgHandlerId id, uintptr_t a1)
   EBBRC rc;
 
   rc = MsgMgrPrim_findTarget(self, loc, &target);
+  if (rc == EBBRC_NOTFOUND) return rc;
+
   EBBRCAssert(rc);
 
   msg = allocMsg(self);
@@ -242,6 +248,8 @@ MsgMgrPrim_msg2(MsgMgrRef _self, EvntLoc loc, MsgHandlerId id, uintptr_t a1,
   EBBRC rc;
 
   rc = MsgMgrPrim_findTarget(self, loc, &target);
+  if (rc == EBBRC_NOTFOUND) return rc;
+
   EBBRCAssert(rc);
 
   msg = allocMsg(self);
@@ -263,6 +271,8 @@ MsgMgrPrim_msg3(MsgMgrRef _self, EvntLoc loc, MsgHandlerId id,
   EBBRC rc;
 
   rc = MsgMgrPrim_findTarget(self, loc, &target);
+  if (rc == EBBRC_NOTFOUND) return rc;
+
   EBBRCAssert(rc);
 
   msg = allocMsg(self);
@@ -361,24 +371,29 @@ MsgMgrPrim_createRep(CObjEBBRootMultiImpRef rootRefMM,
 
   EBBAssert(ehid != NULL);
   
+  // register this rep to take over the IPI on this core, note, this
+  // needs to be before we tell the root about ourselves, since otherwise 
+  // have a race condition where the rep can say there is a message handler on
+  // this core, but we are not yet up. 
+  COBJ_EBBCALL(theEventMgrPrimId, registerIPIHandler, ehid, NOFUNCNUM);
+
+  // now tell the root for event handler its pseudo representative on this core
+  // note, EH must by set up before MM
+  rootRefEH->ft->addRepOn((CObjEBBRootMultiRef)rootRefEH, MyEL(),
+			  (EBBRep *)&(repRef->evHdlr));
+
   // tell the root for MsgMgr its rep on this core
   rootRefMM->ft->addRepOn((CObjEBBRootMultiRef)rootRefMM, MyEL(),
 			  (EBBRep *)repRef);
-  // now tell the root for event handler its pseudo representative on this core
-  rootRefMM->ft->addRepOn((CObjEBBRootMultiRef)rootRefEH, MyEL(),
-			  (EBBRep *)&(repRef->evHdlr));
-
-  EBB_LRT_printf("%s: msg event hander taking over ipi interrupt\n", 
-		 __func__);
-  COBJ_EBBCALL(theEventMgrPrimId, registerIPIHandler, ehid, NOFUNCNUM);
 
   return EBBRC_OK;
 };
 
+static CObjEBBRootMultiImpRef rootRefMM = 0, rootRefEH = 0;
+
 EBBRC
 MsgMgrPrim_Init(void)
 {
-  static CObjEBBRootMultiImpRef rootRefMM = 0, rootRefEH = 0;
   static EventHandlerId theMsgMgrEHId = 0;
 
   if (__sync_bool_compare_and_swap(&theMsgMgrId, (MsgMgrId)0,
