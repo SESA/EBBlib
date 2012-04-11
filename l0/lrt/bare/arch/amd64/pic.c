@@ -90,7 +90,7 @@ lrt_pic_loop(void)
 void 
 lrt_pic_init(lrt_pic_handler h)
 {
-  EBBAssert(has_lapic());
+  LRT_Assert(has_lapic());
   
   init_idt();
 
@@ -148,11 +148,11 @@ lrt_pic_ipi(uintptr_t id)
 intptr_t
 lrt_pic_mapvec(lrt_pic_src *s, uintptr_t vec, lrt_pic_handler h)
 {
-  EBB_LRT_printf("%s: untested code!!!\n", __func__);
-  EBB_LRT_printf("%s: Also, no SMP support\n", __func__);
-  EBBAssert(0);
+  lrt_printf("%s: untested code!!!\n", __func__);
+  lrt_printf("%s: Also, no SMP support\n", __func__);
+  LRT_Assert(0);
 
-  EBBAssert((vec >= 0) && (vec < lrt_pic_numvec()));
+  LRT_Assert((vec >= 0) && (vec < lrt_pic_numvec()));
   idt_map_vec(vec, h);
   ioapic_map_vec(*s, vec);
   ioapic_enable_interrupt(*s);
@@ -169,34 +169,34 @@ lrt_pic_numvec()
 uintptr_t 
 lrt_pic_getnumlpics()
 {
-  EBB_LRT_printf("%s: NYI\n", __func__);
-  EBBAssert(0);
+  lrt_printf("%s: NYI\n", __func__);
+  LRT_Assert(0);
 }
 
 intptr_t lrt_pic_vecon(uintptr_t vec)
 {
-  EBB_LRT_printf("%s: NYI\n", __func__);
-  EBBAssert(0);
+  lrt_printf("%s: NYI\n", __func__);
+  LRT_Assert(0);
 }
 
 intptr_t lrt_pic_vecoff(uintptr_t vec)
 {
-  EBB_LRT_printf("%s: NYI\n", __func__);
-  EBBAssert(0);
+  lrt_printf("%s: NYI\n", __func__);
+  LRT_Assert(0);
 } 
 
 uintptr_t 
 lrt_pic_getnextlpic(uintptr_t c)
 {
-  EBB_LRT_printf("%s: NYI\n", __func__);
-  EBBAssert(0);
+  lrt_printf("%s: NYI\n", __func__);
+  LRT_Assert(0);
 }
 
 intptr_t
 lrt_pic_allocvec(uintptr_t *vec)
 {
-  EBB_LRT_printf("%s: NYI\n", __func__);
-  EBBAssert(0);
+  lrt_printf("%s: NYI\n", __func__);
+  LRT_Assert(0);
 }
 
 void
@@ -208,7 +208,7 @@ lrt_pic_ackipi()
 void
 lrt_pic_enable(uintptr_t vec)
 {
-  EBBAssert(vec < lrt_pic_numvec());
+  LRT_Assert(vec < lrt_pic_numvec());
   idt[vec].p = 1;
 }
 

@@ -100,7 +100,7 @@ STATIC_ASSERT(sizeof(ioredirect) == 8, "ioredirect packing issue");
 static inline ioredirect
 ioapic_read_ioredirect(uint8_t interrupt)
 {
-  EBBAssert(interrupt <= 23);
+  LRT_Assert(interrupt <= 23);
   
   //2 registers per interrupt
   uint32_t reg = IOAPIC_REDTBL_START + (interrupt * 2);
@@ -116,7 +116,7 @@ ioapic_read_ioredirect(uint8_t interrupt)
 static inline void
 ioapic_write_ioredirect(uint8_t interrupt, ioredirect ior)
 {
-  EBBAssert(interrupt <= 23);
+  LRT_Assert(interrupt <= 23);
 
   //2 registers per interrupt
   uint32_t reg = IOAPIC_REDTBL_START + (interrupt * 2);
@@ -145,7 +145,7 @@ ioapic_enable_interrupt(uint8_t interrupt)
 static inline void
 ioapic_map_vec(uint8_t interrupt, uint8_t vector)
 {
-  EBBAssert((vector >= 0x10) && (vector <= 0xFE));
+  LRT_Assert((vector >= 0x10) && (vector <= 0xFE));
   ioredirect ior = ioapic_read_ioredirect(interrupt);
   ior.destination = vector;
   ioapic_write_ioredirect(interrupt, ior);
@@ -159,7 +159,7 @@ init_ioapic(ioapic *ioapic_addr)
   ioapicver ioapicver;
   IOAPIC_BASE->IOREGSEL = IOAPIC_VERSION;
   ioapicver.val = IOAPIC_BASE->IOWIN;
-  EBBAssert(ioapicver.version == 0x11);
+  LRT_Assert(ioapicver.version == 0x11);
 
   for (int i = 0; i < 24; i++) {
     ioapic_disable_interrupt(i);

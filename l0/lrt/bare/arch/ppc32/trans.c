@@ -47,7 +47,7 @@ static void
 map_addr (uint8_t *vaddr, uint64_t paddr, uintptr_t size) {
   //numbers taken from my dump of the TLB
   static uint8_t entry = 23;
-  EBBAssert(entry < 63);
+  LRT_Assert(entry < 63);
   tlb_word_0 t0;
   tlb_word_1 t1;
   tlb_word_2 t2;
@@ -87,17 +87,17 @@ lrt_trans_init()
 {
   //check that the table size is an exact power of 4k
   //is power of 2?
-  EBBAssert(__builtin_popcount(LRT_TRANS_TBLSIZE) == 1);
+  LRT_Assert(__builtin_popcount(LRT_TRANS_TBLSIZE) == 1);
   //is > 1K?
-  EBBAssert(__builtin_ctz(LRT_TRANS_TBLSIZE) >= 10);
+  LRT_Assert(__builtin_ctz(LRT_TRANS_TBLSIZE) >= 10);
   //is power of 4?
-  EBBAssert(__builtin_ctz(LRT_TRANS_TBLSIZE) % 2 == 0);
+  LRT_Assert(__builtin_ctz(LRT_TRANS_TBLSIZE) % 2 == 0);
 
   //put size into the expected form: truesize = 4^size kb
   uint8_t size = ilog2(LRT_TRANS_TBLSIZE >> 10) / 2;
 
   //Make sure table fits perfectly into a single TLB entryb
-  EBBAssert(SUPPORTED_TLB_PAGE_SIZE & size);
+  LRT_Assert(SUPPORTED_TLB_PAGE_SIZE & size);
 
   mmucr mmucr;
   mmucr.val = get_spr(SPRN_MMUCR);

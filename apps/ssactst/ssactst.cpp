@@ -163,7 +163,7 @@ EBBRC
 SSACTST_start(AppRef _self, int argc, char **argv,
 	      char **environ)
 {
-  EBB_LRT_printf("SSACTST LOADED\n");
+  lrt_printf("SSACTST LOADED\n");
   int n=4; // thread count
   int m=1; // no. of iterations
   bool p=1; // bind threads?
@@ -175,7 +175,7 @@ SSACTST_start(AppRef _self, int argc, char **argv,
   if (argc>4) w=atof(argv[4]);
   if (argc>5) p=atoi(argv[5]);
   SSACSimpleSharedArrayTest(n,m,c,p,w);
-  EBB_LRT_printf("finished simpleTst\n");
+  lrt_printf("finished simpleTst\n");
   return EBBRC_OK;
 }
 

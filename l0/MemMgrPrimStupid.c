@@ -109,9 +109,9 @@ EBBMemMgrPrimStupidInit()
   if (__sync_bool_compare_and_swap(&(theEBBMemMgrPrimId), 0, -1)) {
     CObjEBBRootMultiImpStaticInit(rootRef, MemMgrPrimStupid_createRep);
     rc = EBBAllocPrimIdBoot(&id);
-    EBBRCAssert(rc);
+    LRT_RCAssert(rc);
     rc = CObjEBBBindBoot(id, rootRef); 
-    EBBRCAssert(rc);
+    LRT_RCAssert(rc);
     
     __sync_bool_compare_and_swap(&(theEBBMemMgrPrimId), -1, id);
   } else {   

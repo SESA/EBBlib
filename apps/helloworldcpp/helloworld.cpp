@@ -57,7 +57,7 @@ class HW : CPlusEBB {
 EBBRC
 HW::printMsg()
 {
-  EBB_LRT_printf("Hello world!\n");
+  lrt_printf("Hello world!\n");
   return EBBRC_OK;
 }
 

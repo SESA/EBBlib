@@ -25,10 +25,10 @@ initStream(StreamId id, lrt_pic_source src)
   uintptr_t evnum;
 
   rc = EBBCALL(theEventMgrPrimId, allocEventNo, &evnum);
-  EBBRCAssert(rc);
+  LRT_RCAssert(rc);
 
   rc = EBBCALL(theEventMgrPrimId, registerHandler, evnum, id, insrc);  
-  EBBRCAssert(rc);
+  LRT_RCAssert(rc);
 }
 
 static void
@@ -39,7 +39,7 @@ initStreams(StreamId inId, StreamId outId, StreamId err)
   lrt_pic_source errsrc;
 
   rc = lrt_console_init(&insrc, &outsrc, &errsrc);
-  EBBRCAssert(rc);
+  LRT_RCAssert(rc);
   
   initStream(inId,  insrc);
   initStream(outId, outsrc);

@@ -64,13 +64,13 @@ lrt_start(void)
 uintptr_t
 lrt_startinfo_addr()
 {
-  EBB_LRT_printf("%s: NYI", __func__);
-  EBBAssert(0);
+  lrt_printf("%s: NYI", __func__);
+  LRT_Assert(0);
 }
 
 intptr_t
 lrt_startinfo_size()
 {
-  EBB_LRT_printf("%s: NYI", __func__);
-  EBBAssert(0);
+  lrt_printf("%s: NYI", __func__);
+  LRT_Assert(0);
 }

@@ -139,7 +139,7 @@ MsgMgrPrim_findTarget(MsgMgrPrimRef self, EvntLoc loc, MsgMgrPrimRef *target)
 	 node != NULL; 
 	 node = self->theRootMM->ft->nextRep(self->theRootMM, node, 
 					   &rep)) {
-      EBBAssert(rep != NULL);
+      LRT_Assert(rep != NULL);
       if (((MsgMgrPrimRef)rep)->eventLoc == loc) break;
     }
     self->reps[loc] = (MsgMgrPrimRef)rep;
@@ -163,16 +163,16 @@ allocMsg(MsgMgrPrimRef self)
     self->freelist = msg->next; 
     spinUnlock(&self->freelistlock);
     msg->home = MyEL();
-    // EBB_LRT_printf("%s:%s found free message\n", __FILE__, __func__);
+    // lrt_printf("%s:%s found free message\n", __FILE__, __func__);
     return msg ;
   }
   spinUnlock(&self->freelistlock);
 
-  // EBB_LRT_printf("%s:%s freelist empty, allocating new msg\n", __FILE__, __func__);
+  // lrt_printf("%s:%s freelist empty, allocating new msg\n", __FILE__, __func__);
 
   // need to allocate another message 
   rc = EBBPrimMalloc(sizeof(*msg), &msg, EBB_MEM_DEFAULT);
-  EBBRCAssert(rc);
+  LRT_RCAssert(rc);
 
   msg->home = MyEL();
 
@@ -186,7 +186,7 @@ freeMsg(MsgMgrPrimRef self, MsgStore *msg)
   MsgMgrPrimRef target; 
 
   rc = MsgMgrPrim_findTarget(self, msg->home, &target);
-  EBBRCAssert(rc);
+  LRT_RCAssert(rc);
 
   spinLock(&target->freelistlock);
   msg->next = target->freelist;
@@ -205,7 +205,7 @@ MsgMgrPrim_msg0(MsgMgrRef _self, EvntLoc loc, MsgHandlerId id)
   rc = MsgMgrPrim_findTarget(self, loc, &target);
   if (rc == EBBRC_NOTFOUND) return rc;
 
-  EBBRCAssert(rc);
+  LRT_RCAssert(rc);
 
   msg = allocMsg(self);
   msg->id = id;
@@ -226,7 +226,7 @@ MsgMgrPrim_msg1(MsgMgrRef _self, EvntLoc loc, MsgHandlerId id, uintptr_t a1)
   rc = MsgMgrPrim_findTarget(self, loc, &target);
   if (rc == EBBRC_NOTFOUND) return rc;
 
-  EBBRCAssert(rc);
+  LRT_RCAssert(rc);
 
   msg = allocMsg(self);
   msg->id = id;
@@ -249,7 +249,7 @@ MsgMgrPrim_msg2(MsgMgrRef _self, EvntLoc loc, MsgHandlerId id, uintptr_t a1,
   rc = MsgMgrPrim_findTarget(self, loc, &target);
   if (rc == EBBRC_NOTFOUND) return rc;
 
-  EBBRCAssert(rc);
+  LRT_RCAssert(rc);
 
   msg = allocMsg(self);
   msg->id = id;
@@ -272,7 +272,7 @@ MsgMgrPrim_msg3(MsgMgrRef _self, EvntLoc loc, MsgHandlerId id,
   rc = MsgMgrPrim_findTarget(self, loc, &target);
   if (rc == EBBRC_NOTFOUND) return rc;
 
-  EBBRCAssert(rc);
+  LRT_RCAssert(rc);
 
   msg = allocMsg(self);
   msg->id = id;
@@ -291,7 +291,7 @@ MsgMgrPrim_handleEvent(EventHandlerRef _self)
   MsgStore *msg;
   EBBRC rc;
   rc = COBJ_EBBCALL(theEventMgrPrimId, ackIPI);
-  EBBRCAssert(rc);
+  LRT_RCAssert(rc);
 
   msg = MsgMgrPrim_dequeueMsgHead(self);
   while (msg != NULL) {
@@ -320,7 +320,7 @@ MsgMgrPrim_handleEvent(EventHandlerRef _self)
   // the implicit assumption is that  you re-disable interrupts if you enable
   // them at the end of a message. 
   rc = COBJ_EBBCALL(theEventMgrPrimId, enableIPI);
-  EBBRCAssert(rc);
+  LRT_RCAssert(rc);
   return EBBRC_OK;
 }
 
@@ -346,7 +346,7 @@ MsgMgrPrim_SetFT(MsgMgrPrimRef o)
 static EBBRep *
 MsgMgrPrim_createRepAssert(CObjEBBRootMultiRef root)
 {
-  EBBAssert(0);
+  LRT_Assert(0);
   return NULL;
 }
 
@@ -371,7 +371,7 @@ MsgMgrPrim_createRep(CObjEBBRootMultiImpRef rootRefMM,
   }
   repRef->theRootMM = (CObjEBBRootMultiRef)rootRefMM;
 
-  EBBAssert(ehid != NULL);
+  LRT_Assert(ehid != NULL);
   
   // register this rep to take over the IPI on this core, note, this
   // needs to be before we tell the root about ourselves, since otherwise 
@@ -405,20 +405,20 @@ MsgMgrPrim_Init(void)
 
     // create root for MsgMgr
     rc = CObjEBBRootMultiImpCreate(&rootRefMM, MsgMgrPrim_createRepAssert);
-    EBBRCAssert(rc);
+    LRT_RCAssert(rc);
     rc = EBBAllocPrimId(&id);
-    EBBRCAssert(rc); 
+    LRT_RCAssert(rc); 
     rc = EBBBindPrimId(id, CObjEBBMissFunc, (EBBMissArg)rootRefMM);
-    EBBRCAssert(rc); 
+    LRT_RCAssert(rc); 
     theMsgMgrId = (MsgMgrId)id;
 
     // create root for EventHandler part of MsgMgr
     rc = CObjEBBRootMultiImpCreate(&rootRefEH, MsgMgrPrim_createRepAssert);
-    EBBRCAssert(rc);
+    LRT_RCAssert(rc);
     rc = EBBAllocPrimId(&id);
-    EBBRCAssert(rc); 
+    LRT_RCAssert(rc); 
     rc = EBBBindPrimId(id, CObjEBBMissFunc, (EBBMissArg)rootRefEH);
-    EBBRCAssert(rc); 
+    LRT_RCAssert(rc); 
     theMsgMgrEHId = (EventHandlerId)id;
   } else {
     while (((volatile uintptr_t)theMsgMgrId)==-1);

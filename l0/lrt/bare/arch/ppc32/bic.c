@@ -81,8 +81,8 @@ bic_disable_and_clear_all()
 void
 bic_disable_irq(uint8_t group, uint8_t irq)
 {
-  EBBAssert(group < BIC_NUM_GROUPS);
-  EBBAssert(irq < BIC_NUM_IRQS);
+  LRT_Assert(group < BIC_NUM_GROUPS);
+  LRT_Assert(irq < BIC_NUM_IRQS);
   set_target(group, irq, 0);
 }
 
@@ -90,9 +90,9 @@ void
 bic_enable_irq(uint8_t group, uint8_t irq, 
 	       enum bic_int_type type, int8_t loc)
 {
-  EBBAssert(group < BIC_NUM_GROUPS);
-  EBBAssert(irq < BIC_NUM_IRQS);
-  EBBAssert(loc >= -1 && loc <= 3);
+  LRT_Assert(group < BIC_NUM_GROUPS);
+  LRT_Assert(irq < BIC_NUM_IRQS);
+  LRT_Assert(loc >= -1 && loc <= 3);
   //set the target selector
   uint8_t target = type + 1;
   if (loc != -1) { //not broadcast
@@ -105,15 +105,15 @@ bic_enable_irq(uint8_t group, uint8_t irq,
 void
 bic_raise_irq(uint8_t group, uint8_t irq)
 {
-  EBBAssert(group < BIC_NUM_GROUPS);
-  EBBAssert(irq < BIC_NUM_IRQS);
+  LRT_Assert(group < BIC_NUM_GROUPS);
+  LRT_Assert(irq < BIC_NUM_IRQS);
   bg_irqctrl->groups[group].status_set = 1 << (31 - irq);
 }
 
 void
 bic_clear_irq(uint8_t group, uint8_t irq)
 {
-  EBBAssert(group < BIC_NUM_GROUPS);
-  EBBAssert(irq < BIC_NUM_IRQS);
+  LRT_Assert(group < BIC_NUM_GROUPS);
+  LRT_Assert(irq < BIC_NUM_IRQS);
   bg_irqctrl->groups[group].status_clr = 1 << (31 - irq);
 }

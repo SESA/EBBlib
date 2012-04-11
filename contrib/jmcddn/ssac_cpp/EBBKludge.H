@@ -13,7 +13,7 @@
 
 typedef int EBBRC;
 #else 
-#define TRACE(fmt, ...)	EBB_LRT_printf("%s: " fmt "\n", __func__, ##__VA_ARGS__)
+#define TRACE(fmt, ...)	lrt_printf("%s: " fmt "\n", __func__, ##__VA_ARGS__)
 #endif
 
 #define tassert(EX,STMT)			\

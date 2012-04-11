@@ -53,13 +53,13 @@ AllocAndBind(EventHandlerId * id, EBBRepRef repRef)
   CObjEBBRootSharedRef rootRef;
 
   rc = CObjEBBRootSharedCreate(&rootRef, repRef);
-  EBBRCAssert(rc);
+  LRT_RCAssert(rc);
 
   rc = EBBAllocPrimId((EBBId *)id);
-  EBBRCAssert(rc);
+  LRT_RCAssert(rc);
 
   rc = CObjEBBBind((EBBId)*id, rootRef); 
-  EBBRCAssert(rc);
+  LRT_RCAssert(rc);
 
   return EBBRC_OK;
 }
@@ -81,7 +81,7 @@ UglyPrintStr(CharStreamId id, char *buf)
 
   while (buf[i]) {
     rc = COBJ_EBBCALL(id, putChar, buf[i]);
-    EBBRCAssert(rc);
+    LRT_RCAssert(rc);
     i++;
   }
 
@@ -169,7 +169,7 @@ Console_inEvent(CharStreamRef _self)
   if (self->inlen < BUFSIZE) {
     rc=LRTConsoleRead(&(self->indev), 
 		      &(self->in_c[self->inlen]), BUFSIZE - self->inlen, &n);
-    EBBRCAssert(rc);
+    LRT_RCAssert(rc);
     if (n>0) self->inlen += n;
   }
  
@@ -188,7 +188,7 @@ Console_outEvent(CharStreamRef _self)
   if (self->outlen>0) {
     rc = LRTConsoleWrite(&(self->outdev), &(self->out_c[self->outstart]),
 			 self->outlen, &n);
-    EBBRCAssert(rc);
+    LRT_RCAssert(rc);
     if (n>0) {
       self->outlen -= n;
       self->outstart += n;
@@ -222,7 +222,7 @@ ConsoleCreate(ConsoleId *id, lrt_pic_src in, lrt_pic_src out, InAction action)
   EBBRC rc;
 
   rc = EBBPrimMalloc(sizeof(Console), &repRef, EBB_MEM_DEFAULT);
-  EBBRCAssert(rc);
+  LRT_RCAssert(rc);
 
   ConsoleSetFT(repRef);
 
@@ -233,29 +233,29 @@ ConsoleCreate(ConsoleId *id, lrt_pic_src in, lrt_pic_src out, InAction action)
   repRef->outdev   = out;
 
   rc = AllocAndBind((EventHandlerId *)id, (EBBRepRef)repRef);
-  EBBRCAssert(rc);
+  LRT_RCAssert(rc);
 
   repRef->action = action;
   repRef->actionId = *id;
 
   // setup up input event handling
   rc = COBJ_EBBCALL(theEventMgrPrimId, allocEventNo, &(repRef->inEV));
-  EBBRCAssert(rc);
+  LRT_RCAssert(rc);
   rc = COBJ_EBBCALL(theEventMgrPrimId, registerHandler, repRef->inEV, 
 		    (EventHandlerId) *id, COBJ_FUNCNUM(repRef, inEvent), &in);
-  EBBRCAssert(rc);
+  LRT_RCAssert(rc);
 
   // setup up output handling
   rc = COBJ_EBBCALL(theEventMgrPrimId, allocEventNo, &(repRef->outEV));
-  EBBRCAssert(rc);
+  LRT_RCAssert(rc);
   rc = COBJ_EBBCALL(theEventMgrPrimId, registerHandler, repRef->outEV, 
 		    (EventHandlerId) *id, COBJ_FUNCNUM(repRef, outEvent), 
 		    &out);
-  EBBRCAssert(rc);
+  LRT_RCAssert(rc);
 
   // now enable input handing as we are ready to roll
   rc = COBJ_EBBCALL(theEventMgrPrimId, eventEnable, repRef->inEV);
-  EBBRCAssert(rc);
+  LRT_RCAssert(rc);
 
   return EBBRC_OK;
 }
@@ -274,10 +274,10 @@ ConsTst_start(AppRef _self, int argc, char **argv,
   ConsoleId id;
 
   rc = LRTConsoleInit(&in,&out,&err);
-  EBBRCAssert(rc);
+  LRT_RCAssert(rc);
 
   rc = ConsoleCreate(&id, in, out, UglyEcho);
-  EBBRCAssert(rc);
+  LRT_RCAssert(rc);
 
   UglyPrintStr(id, "ConsTst: Hello World!!!!\n"
 	       "Will now continue to echo keystrokes from console input"

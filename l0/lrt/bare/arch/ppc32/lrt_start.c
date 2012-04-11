@@ -41,7 +41,7 @@ struct testObj {
 EBBRC
 testMissFunc (EBBRep **rep, EBBLTrans *lt, FuncNum fnum, EBBMissArg arg)
 {
-  EBB_LRT_printf("Got miss!\n");
+  lrt_printf("Got miss!\n");
   while(1) ;
 }
 
@@ -51,14 +51,14 @@ extern void TransEBBIdBind(EBBId id, EBBMissFunc mf, EBBMissArg arg);
 void
 lrt_start(void)
 {
-  EBB_LRT_printf("lrt_start called!\n");
+  lrt_printf("lrt_start called!\n");
 
   lrt_mem_init();
   lrt_trans_init();
 
   trans_init();
 
-  EBB_LRT_printf("translation system initialized!\n");
+  lrt_printf("translation system initialized!\n");
 
   struct testObj **id = (struct testObj **)TransEBBIdAlloc();
   TransEBBIdBind((EBBId)id, testMissFunc, 0);

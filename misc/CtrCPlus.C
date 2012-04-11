@@ -70,7 +70,7 @@ CtrCPlus::operator new(size_t size)
   void *val;
   EBBRC rc;
   rc = EBBPrimMalloc(size, &val, EBB_MEM_DEFAULT);
-  EBBRCAssert(rc);
+  LRT_RCAssert(rc);
   return val;
 }
 
@@ -78,7 +78,7 @@ void
 CtrCPlus::operator delete(void * p, size_t size)
 {
   // NYI
-  EBBRCAssert(0);
+  LRT_RCAssert(0);
 }
 
 
@@ -93,7 +93,7 @@ CtrCPlus::Create(CtrCPlusId &ctr)
 #ifdef DYNAMIC
   rep = new CtrCPlus();
   root = new CPlusEBBRootShared();
-  EBB_LRT_printf("c++ counter test using dynamic memory\n");
+  lrt_printf("c++ counter test using dynamic memory\n");
 #else
   static CtrCPlus repObj;
   static CPlusEBBRootShared rootObj;
@@ -108,10 +108,10 @@ CtrCPlus::Create(CtrCPlusId &ctr)
   root->init(rep);
 
   rc = EBBAllocPrimId((EBBId *)&ctr);
-  EBBRCAssert(rc);
+  LRT_RCAssert(rc);
 
   rc = CPlusEBBRoot::EBBBind((EBBId)ctr, root); 
-  EBBRCAssert(rc);
+  LRT_RCAssert(rc);
   return EBBRC_OK;
 }
 
@@ -120,7 +120,7 @@ void test_cplus_counter(void)
   uintptr_t res;
   CtrCPlusId ctr;
 
-  EBB_LRT_printf("running c++ counter test\n");
+  lrt_printf("running c++ counter test\n");
   CtrCPlus::Create(ctr);
 
   CPLUS_EBBCALL(ctr, inc);
@@ -128,10 +128,10 @@ void test_cplus_counter(void)
   CPLUS_EBBCALL(ctr, inc);
   CPLUS_EBBCALL(ctr, val, res);
   
-  EBBAssert(res == 3);
+  LRT_Assert(res == 3);
   EBBId_DREF(ctr)->inc();
   EBBId_DREF(ctr)->val(res);
-  EBBAssert(res == 4);
-  EBB_LRT_printf("c++ counter test passed\n");
+  LRT_Assert(res == 4);
+  lrt_printf("c++ counter test passed\n");
 
 }

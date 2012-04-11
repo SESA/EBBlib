@@ -139,7 +139,7 @@
 ACPI_STATUS
 AcpiOsInitialize (void)
 {
-  EBBAssert(0);
+  LRT_Assert(0);
   return (AE_OK);
 }
 
@@ -147,7 +147,7 @@ AcpiOsInitialize (void)
 ACPI_STATUS
 AcpiOsTerminate (void)
 {
-  EBBAssert(0);
+  LRT_Assert(0);
   return (AE_OK);
 }
 
@@ -172,7 +172,7 @@ AcpiOsGetRootPointer (void)
   
   status = AcpiFindRootPointer(&addr);
 
-  EBBAssert(status == AE_OK);
+  LRT_Assert(status == AE_OK);
   
   return addr;
 }
@@ -196,7 +196,7 @@ ACPI_STATUS
 AcpiOsPredefinedOverride (const ACPI_PREDEFINED_NAMES *InitVal, 
 			  ACPI_STRING *NewVal)
 {
-  EBBAssert(0);
+  LRT_Assert(0);
   return (AE_OK);
 }
 
@@ -266,7 +266,7 @@ AcpiOsPhysicalTableOverride (ACPI_TABLE_HEADER *ExistingTable,
 void
 AcpiOsRedirectOutput (void *Destination)
 {
-  EBBAssert(0);
+  LRT_Assert(0);
 }
 
 
@@ -309,7 +309,7 @@ AcpiOsPrintf (const char *Fmt, ...)
 void
 AcpiOsVprintf (const char *Fmt, va_list Args)
 {
-  EBB_LRT_vprintf(Fmt, Args);
+  lrt_vprintf(Fmt, Args);
 }
 
 
@@ -330,7 +330,7 @@ AcpiOsVprintf (const char *Fmt, va_list Args)
 ACPI_STATUS
 AcpiOsGetLine (char *Buffer, UINT32 BufferLength, UINT32 *BytesRead)
 {
-  EBBAssert(0);
+  LRT_Assert(0);
   return (AE_OK);
 }
 
@@ -395,7 +395,7 @@ AcpiOsUnmapMemory (void *where, ACPI_SIZE length)
 void *
 AcpiOsAllocate (ACPI_SIZE size)
 {
-  EBBAssert(0);
+  LRT_Assert(0);
   return NULL;
 }
 
@@ -415,7 +415,7 @@ AcpiOsAllocate (ACPI_SIZE size)
 void
 AcpiOsFree (void *mem)
 {
-  EBBAssert(0);
+  LRT_Assert(0);
 }
 
 
@@ -433,28 +433,28 @@ ACPI_STATUS
 AcpiOsCreateSemaphore (UINT32 MaxUnits, UINT32 InitialUnits,
 		       ACPI_HANDLE *OutHandle)
 {
-  EBBAssert(0);
+  LRT_Assert(0);
   return (AE_OK);
 }
 
 ACPI_STATUS
 AcpiOsDeleteSemaphore (ACPI_HANDLE Handle)
 {
-  EBBAssert(0);
+  LRT_Assert(0);
   return (AE_OK);
 }
 
 ACPI_STATUS
 AcpiOsWaitSemaphore (ACPI_HANDLE Handle, UINT32 Units, UINT16 Timeout)
 {
-  EBBAssert(0);
+  LRT_Assert(0);
   return (AE_OK);
 }
 
 ACPI_STATUS
 AcpiOsSignalSemaphore (ACPI_HANDLE Handle, UINT32 Units)
 {
-  EBBAssert(0);
+  LRT_Assert(0);
   return (AE_OK);
 }
 
@@ -469,27 +469,27 @@ AcpiOsSignalSemaphore (ACPI_HANDLE Handle, UINT32 Units)
 ACPI_STATUS
 AcpiOsCreateLock (ACPI_SPINLOCK *OutHandle)
 {
-  EBBAssert(0);
+  LRT_Assert(0);
   return (AE_OK);
 }
 
 void
 AcpiOsDeleteLock (ACPI_SPINLOCK Handle)
 {
-  EBBAssert(0);
+  LRT_Assert(0);
 }
 
 ACPI_CPU_FLAGS
 AcpiOsAcquireLock (ACPI_HANDLE Handle)
 {
-  EBBAssert(0);
+  LRT_Assert(0);
   return (0);
 }
 
 void
 AcpiOsReleaseLock (ACPI_SPINLOCK Handle, ACPI_CPU_FLAGS Flags)
 {
-  EBBAssert(0);
+  LRT_Assert(0);
 }
 
 
@@ -512,7 +512,7 @@ UINT32
 AcpiOsInstallInterruptHandler (UINT32 InterruptNumber, 
 			       ACPI_OSD_HANDLER ServiceRoutine, void *Context)
 {
-  EBBAssert(0);
+  LRT_Assert(0);
   return (0);
 }
 
@@ -533,7 +533,7 @@ ACPI_STATUS
 AcpiOsRemoveInterruptHandler (UINT32 InterruptNumber, 
 			      ACPI_OSD_HANDLER ServiceRoutine)
 {
-  EBBAssert(0);
+  LRT_Assert(0);
   return (AE_OK);
 }
 
@@ -553,7 +553,7 @@ AcpiOsRemoveInterruptHandler (UINT32 InterruptNumber,
 void
 AcpiOsStall (UINT32 microseconds)
 {
-  EBBAssert(0);
+  LRT_Assert(0);
 }
 
 /******************************************************************************
@@ -571,7 +571,7 @@ AcpiOsStall (UINT32 microseconds)
 void
 AcpiOsSleep (UINT64 milliseconds)
 {
-  EBBAssert(0);
+  LRT_Assert(0);
 }
 
 
@@ -590,7 +590,7 @@ AcpiOsSleep (UINT64 milliseconds)
 UINT64
 AcpiOsGetTimer (void)
 {
-  EBBAssert(0);
+  LRT_Assert(0);
   return 0;
 }
 
@@ -614,7 +614,7 @@ ACPI_STATUS
 AcpiOsReadPciConfiguration (ACPI_PCI_ID *PciId, UINT32 Register,
 			    UINT64 *Value, UINT32 Width)
 {
-  EBBAssert(0);
+  LRT_Assert(0);
   return (AE_OK);
 }
 
@@ -638,7 +638,7 @@ ACPI_STATUS
 AcpiOsWritePciConfiguration (ACPI_PCI_ID *PciId, UINT32 Register,
 			     UINT64 Value, UINT32 Width)
 {
-  EBBAssert(0);
+  LRT_Assert(0);
   return (AE_OK);
 }
 
@@ -660,7 +660,7 @@ AcpiOsWritePciConfiguration (ACPI_PCI_ID *PciId, UINT32 Register,
 ACPI_STATUS
 AcpiOsReadPort (ACPI_IO_ADDRESS Address, UINT32 *Value, UINT32 Width)
 {
-  EBBAssert(0);
+  LRT_Assert(0);
   return (AE_OK);
 }
 
@@ -682,7 +682,7 @@ AcpiOsReadPort (ACPI_IO_ADDRESS Address, UINT32 *Value, UINT32 Width)
 ACPI_STATUS
 AcpiOsWritePort (ACPI_IO_ADDRESS Address, UINT32 Value, UINT32 Width)
 {
-  EBBAssert(0);
+  LRT_Assert(0);
   return (AE_OK);
 }
 
@@ -705,7 +705,7 @@ AcpiOsWritePort (ACPI_IO_ADDRESS Address, UINT32 Value, UINT32 Width)
 ACPI_STATUS
 AcpiOsReadMemory (ACPI_PHYSICAL_ADDRESS Address, UINT64 *Value, UINT32 Width)
 {
-  EBBAssert(0);
+  LRT_Assert(0);
   return (AE_OK);
 }
 
@@ -727,7 +727,7 @@ AcpiOsReadMemory (ACPI_PHYSICAL_ADDRESS Address, UINT64 *Value, UINT32 Width)
 ACPI_STATUS
 AcpiOsWriteMemory (ACPI_PHYSICAL_ADDRESS Address, UINT64 Value, UINT32 Width)
 {
-  EBBAssert(0);
+  LRT_Assert(0);
   return (AE_OK);
 }
 
@@ -748,7 +748,7 @@ AcpiOsWriteMemory (ACPI_PHYSICAL_ADDRESS Address, UINT64 Value, UINT32 Width)
 BOOLEAN
 AcpiOsReadable (void *Pointer, ACPI_SIZE Length)
 {
-  EBBAssert(0);
+  LRT_Assert(0);
   return (TRUE);
 }
 
@@ -769,7 +769,7 @@ AcpiOsReadable (void *Pointer, ACPI_SIZE Length)
 BOOLEAN
 AcpiOsWritable (void *Pointer, ACPI_SIZE Length)
 {
-  EBBAssert(0);
+  LRT_Assert(0);
   return (TRUE);
 }
 
@@ -790,7 +790,7 @@ AcpiOsWritable (void *Pointer, ACPI_SIZE Length)
 ACPI_STATUS
 AcpiOsSignal (UINT32 Function, void *Info)
 {
-  EBBAssert(0);
+  LRT_Assert(0);
   return (AE_OK);
 }
 
@@ -809,7 +809,7 @@ AcpiOsSignal (UINT32 Function, void *Info)
 ACPI_THREAD_ID
 AcpiOsGetThreadId (void)
 {
-  EBBAssert(0);
+  LRT_Assert(0);
   return 0;
 }
 
@@ -832,6 +832,6 @@ ACPI_STATUS
 AcpiOsExecute (ACPI_EXECUTE_TYPE Type, ACPI_OSD_EXEC_CALLBACK Function, 
 	       void *Context)
 {
-  EBBAssert(0);
+  LRT_Assert(0);
   return (AE_OK);
 }

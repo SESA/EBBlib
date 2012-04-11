@@ -185,7 +185,7 @@ TransEBBIdBind(EBBId id, EBBMissFunc mf, EBBMissArg arg) {
 
 void
 TransEBBIdUnBind(EBBId id, EBBMissFunc *mf, EBBMissArg *arg) {
-  EBB_LRT_printf("%s: NYI\n", __func__);
+  lrt_printf("%s: NYI\n", __func__);
 }
 
 // at this point translation hardware has been initialized
@@ -194,7 +194,7 @@ TransEBBIdUnBind(EBBId id, EBBMissFunc *mf, EBBMissArg *arg) {
 void
 trans_init(void)
 {
-  EBBAssert(sysTransValidate());
+  LRT_Assert(sysTransValidate());
   bzero((void *)mygmem(), mygmem_size());
   initLTable();
 }

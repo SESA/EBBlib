@@ -29,6 +29,6 @@
 #include <lrt/io.h>
 
 void isr_common(uint64_t int_no) {
-  EBB_LRT_printf("interrupt #%lld.\n", int_no);
-  EBBAssert(0);
+  lrt_printf("interrupt #%lld.\n", int_no);
+  LRT_Assert(0);
 }

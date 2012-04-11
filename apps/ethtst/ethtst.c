@@ -60,17 +60,17 @@ EthTst_start(AppRef _self, int argc, char **argv,
   EBBRC rc;
 
   if (argc <= 1) {
-    EBB_LRT_printf("usage: ethtst nic\n");
-    EBB_LRT_printf("  e.g. ethtst lo0, or ethtst eth1\n");
-    EBBRCAssert(-1);
+    lrt_printf("usage: ethtst nic\n");
+    lrt_printf("  e.g. ethtst lo0, or ethtst eth1\n");
+    LRT_RCAssert(-1);
   }
 
-  EBB_LRT_printf("%s: START with device %s\n", __func__, argv[1]);
+  lrt_printf("%s: START with device %s\n", __func__, argv[1]);
   //FIXME: check argument, pass in as first argument to run
   rc = EthMgrPrimCreate(&theEthMgr, argv[1]);
-  EBBRCAssert(rc);
+  LRT_RCAssert(rc);
 
-  EBB_LRT_printf("%s: END\n", __func__);
+  lrt_printf("%s: END\n", __func__);
   return EBBRC_OK;
 }
 

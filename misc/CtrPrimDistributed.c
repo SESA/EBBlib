@@ -115,13 +115,13 @@ EBBCtrPrimDistributedCreate(EBBCtrId *id)
 
   rc = CObjEBBRootMultiImpCreate(&rootRef, 
 				 EBBCtrPrimDistributed_createRep);
-  EBBRCAssert(rc);
+  LRT_RCAssert(rc);
 
   rc = EBBAllocPrimId((EBBId *)id);
-  EBBRCAssert(rc);
+  LRT_RCAssert(rc);
 
   rc = CObjEBBBind((EBBId)*id, rootRef);
-  EBBRCAssert(rc);
+  LRT_RCAssert(rc);
 
   return EBBRC_OK;
 }

@@ -85,7 +85,7 @@ initArgvAndEnv(L1PrimRef self)
       
       rc = EBBPrimMalloc(self->argc*sizeof(char *), 
 			 &(self->argv), EBB_MEM_DEFAULT);
-      EBBRCAssert(rc);
+      LRT_RCAssert(rc);
       for (i=0; i<self->argc; i++) {
 	self->argv[i] = data;
 	while (*data != '\0') { data++; s++; }
@@ -103,7 +103,7 @@ initArgvAndEnv(L1PrimRef self)
       // terminating entry
       rc = EBBPrimMalloc(self->environc*sizeof(char *), 
 			 &(self->environ), EBB_MEM_DEFAULT);
-      EBBRCAssert(rc);
+      LRT_RCAssert(rc);
       self->environc--;  // environc tracks number of non null entries
       edata = data;
       for (i=0; i<=self->environc; i++) {
@@ -112,7 +112,7 @@ initArgvAndEnv(L1PrimRef self)
 	edata++;
       }
       self->environ[i] = NULL; // put null in last extra entry
-      EBBAssert(s == self->sisize && i-1 == self->environc);
+      LRT_Assert(s == self->sisize && i-1 == self->environc);
     }
 }
     
@@ -133,7 +133,7 @@ L1Prim_MsgHandler_startMH(MsgHandlerRef _self, uintptr_t startinfo)
     self->sisize = lrt_startinfo_size();
     rc = EBBPrimMalloc(self->sisize,
 		       &(self->si), EBB_MEM_DEFAULT);
-    EBBRCAssert(rc);
+    LRT_RCAssert(rc);
     __builtin_memcpy(self->si, (char *)startinfo, self->sisize);
   } else {
     self->si = NULL;
@@ -148,11 +148,11 @@ L1Prim_MsgHandler_startMH(MsgHandlerRef _self, uintptr_t startinfo)
     CObjEBBRootMultiImpRef appRoot;
     // create App instance and invoke its start
     rc = CObjEBBRootMultiImpCreate(&appRoot, App_createRep);
-    EBBRCAssert(rc);
+    LRT_RCAssert(rc);
     rc = EBBAllocPrimId(&id);
-    EBBRCAssert(rc);
+    LRT_RCAssert(rc);
     rc = CObjEBBBind(id, appRoot); 
-    EBBRCAssert(rc);
+    LRT_RCAssert(rc);
     theAppId = (AppId)id;
   } else {
     while (((volatile uintptr_t)theAppId)==-1);
@@ -177,22 +177,22 @@ L1Prim_start(L1Ref _self, uintptr_t startinfo)
   // initialize the message handler, this will take over the
   // IPI on this core. 
   rc = MsgMgrPrim_Init();
-  EBBRCAssert(rc);
+  LRT_RCAssert(rc);
 
   // We now allocate a temporary EBB that can be deleted once
   // we are on the message has been delivered
   rc = CObjEBBRootSharedCreate(&rootRef, 
 			       (EBBRepRef)(void *)&(self->startMH));
-  EBBRCAssert(rc);
+  LRT_RCAssert(rc);
   rc = EBBAllocPrimId((EBBId *)(void *)&(self->startMHId));
-  EBBRCAssert(rc);
+  LRT_RCAssert(rc);
   rc = CObjEBBBind((EBBId)self->startMHId, rootRef);
-  EBBRCAssert(rc);
+  LRT_RCAssert(rc);
 
   // continue startup for this EL as a message to myself here (on this EL)
   rc = COBJ_EBBCALL(theMsgMgrId, 
 		    msg1, MyEL(), self->startMHId, startinfo);
-  EBBRCAssert(rc);
+  LRT_RCAssert(rc);
 
   return EBBRC_OK;
 }
@@ -245,7 +245,7 @@ L1Prim_createRep(CObjEBBRootMultiRef _self)
   EBBRC rc;
 
   rc = EBBPrimMalloc(sizeof(L1Prim), &rep, EBB_MEM_DEFAULT);
-  EBBRCAssert(rc);
+  LRT_RCAssert(rc);
   setL1PrimFT(rep);
   // all other initialization logic we leave to the start method
 
@@ -263,11 +263,11 @@ L1PrimInit(void)
     EBBId id;
     rc = CObjEBBRootMultiImpCreate(&rootRef, 
 				   L1Prim_createRep);
-    EBBRCAssert(rc);
+    LRT_RCAssert(rc);
     rc = EBBAllocPrimId(&id);
-    EBBRCAssert(rc);
+    LRT_RCAssert(rc);
     rc = CObjEBBBind(id, rootRef); 
-    EBBRCAssert(rc);
+    LRT_RCAssert(rc);
     theL1Id = (L1Id)id;
   } else {
     while (((volatile uintptr_t)theL1Id)==-1);

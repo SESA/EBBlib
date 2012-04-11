@@ -419,7 +419,7 @@ static EBBRC
 EventMgrPrim_dispatchIPI(EventMgrPrimRef _self, EvntLoc el)
 {
   if (el != MyEL()) {
-    EBB_LRT_printf("%s: sending remote IPI to node %" PRIdPTR "\n", 
+    lrt_printf("%s: sending remote IPI to node %" PRIdPTR "\n", 
 		   __func__,
 		   el);
   }
@@ -439,8 +439,8 @@ EventMgrPrim_dispatchEventLocal(EventMgrPrimRef _self, uintptr_t eventNo)
   EventHandlerId handler = self->handlerInfo[eventNo].id;
   FuncNum        fn      = self->handlerInfo[eventNo].fn;
 
-  //  EBB_LRT_printf("%s: handling interrupt %" PRIdPTR "\n", __func__, eventNo);
-  EBBAssert(handler != NULL); 
+  //  lrt_printf("%s: handling interrupt %" PRIdPTR "\n", __func__, eventNo);
+  LRT_Assert(handler != NULL); 
 
   if (fn==NOFUNCNUM) COBJ_EBBCALL(handler, handleEvent); 
   else COBJ_EBBCALL_FUNCNUM(GenericEventFunc, (EBBBaseId)handler, fn);
@@ -605,7 +605,7 @@ EventMgrPrimSetFT(EventMgrPrimImpRef o)
 static EBBRep *
 EventMgrPrimImp_createRepAssert(CObjEBBRootMultiRef root) 
 {
-  EBBAssert(0);
+  LRT_Assert(0);
   return NULL;
 }
 
@@ -615,7 +615,7 @@ EventMgrPrimImp_createRep(CObjEBBRootMultiImpRef root)
   int i; 
   EventMgrPrimImpRef repRef;
 
-  EBBRCAssert(EBBPrimMalloc(sizeof(EventMgrPrimImp), &repRef, EBB_MEM_DEFAULT));
+  LRT_RCAssert(EBBPrimMalloc(sizeof(EventMgrPrimImp), &repRef, EBB_MEM_DEFAULT));
   EventMgrPrimSetFT(repRef);
   repRef->theRoot = (CObjEBBRootMultiRef)root;
   repRef->ipi_vec_no = lrt_pic_getIPIvec();
@@ -658,13 +658,13 @@ EventMgrPrimImpInit(void)
   if (__sync_bool_compare_and_swap(&theEventMgrPrimId, (EventMgrPrimId)0,
 				   (EventMgrPrimId)-1)) {
     EBBId id;
-    EBBAssert(MAXEVENTS >= lrt_pic_numvec());
+    LRT_Assert(MAXEVENTS >= lrt_pic_numvec());
     rc = CObjEBBRootMultiImpCreate(&rootRef, EventMgrPrimImp_createRepAssert);
-    EBBRCAssert(rc);
+    LRT_RCAssert(rc);
     rc = EBBAllocPrimId(&id);
-    EBBRCAssert(rc);
+    LRT_RCAssert(rc);
     rc = EBBBindPrimId(id, CObjEBBMissFunc, (EBBMissArg)rootRef);
-    EBBRCAssert(rc);
+    LRT_RCAssert(rc);
     theEventMgrPrimId = (EventMgrPrimId)id;
   } else {
     while (((volatile uintptr_t)theEventMgrPrimId)==-1);

@@ -25,7 +25,7 @@
 
 #include <stdbool.h>
 
-#define LRT_EBBAssert(cond)						\
+#define LRT_Assert(cond)						\
   ({									\
     if (!(cond)) {							\
       asm volatile("attn");						\

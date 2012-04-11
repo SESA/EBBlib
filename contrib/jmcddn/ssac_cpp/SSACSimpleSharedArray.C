@@ -292,7 +292,7 @@ SSACSimpleSharedArray::operator new(size_t size)
   void *val;
   EBBRC rc;
   rc = EBBPrimMalloc(size, &val, EBB_MEM_DEFAULT);
-  EBBRCAssert(rc);
+  LRT_RCAssert(rc);
   return val;
 }
 
@@ -300,7 +300,7 @@ void
 SSACSimpleSharedArray::operator delete(void * p, size_t size)
 {
   // NYI
-  EBBRCAssert(0);
+  LRT_RCAssert(0);
 }
 #endif
 
@@ -322,10 +322,10 @@ SSACSimpleSharedArray::Create(SSACId &id,  const int &numhashqs, const int &asso
   root->init(rep);
 
   rc = EBBAllocPrimId((EBBId *)&id);
-  EBBRCAssert(rc);
+  LRT_RCAssert(rc);
 
   rc = CPlusEBBRoot::EBBBind((EBBId)id, root); 
-  EBBRCAssert(rc);
+  LRT_RCAssert(rc);
   rc = EBBRC_OK;
 #endif
   return rc;

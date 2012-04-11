@@ -24,6 +24,12 @@
 
 #include <assert.h>
 
-#define LRT_EBBAssert assert
+#define LRT_Assert assert
+#define LRT_WAssert(exp)  \
+  ({									\
+  if (!(exp)) {							\
+    printf("Warning: at %s, line %d(%s)\n", __FILE__, __LINE__, #exp);	\
+  }									\
+  })
 
 #endif

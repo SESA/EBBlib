@@ -23,7 +23,7 @@
  * THE SOFTWARE.
  */
 
-#define LRT_EBBAssert(cond)						\
+#define LRT_Assert(cond)						\
   ({									\
   if (!(cond)) {							\
     if (stdout)								\

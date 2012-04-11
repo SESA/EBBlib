@@ -62,7 +62,7 @@ map_addr(uint8_t *virt, uint8_t *real, uint64_t size)
     
     mas1 mas1;
     mas1.val = get_spr(SPRN_MAS1);
-    EBBAssert(!mas1.v);
+    LRT_Assert(!mas1.v);
   }
 
   //Ok there is no virtual mapping sitting in our TLB in the space
@@ -83,7 +83,7 @@ map_addr(uint8_t *virt, uint8_t *real, uint64_t size)
     mas1.val = 0;
     
     //FIXME: This is hard-coded!!!!
-    EBBAssert(size == (1 << 20));
+    LRT_Assert(size == (1 << 20));
     mas1.tsize = 5; //1 MB size
     
     set_spr(SPRN_MAS1, mas1);
@@ -100,7 +100,7 @@ map_addr(uint8_t *virt, uint8_t *real, uint64_t size)
       break;
     }
   }
-  EBBAssert(i < 4);
+  LRT_Assert(i < 4);
   //WOO! We have a free entry in the TLB to write to
   
   mas0 mas0;
@@ -115,7 +115,7 @@ map_addr(uint8_t *virt, uint8_t *real, uint64_t size)
   mas1.tid = get_spr(SPRN_PID);
 
   //FIXME: This is hard-coded!!!!
-  EBBAssert(size == (1 << 20));
+  LRT_Assert(size == (1 << 20));
   mas1.tsize = 5; //1 MB size
 
   set_spr(SPRN_MAS1, mas1);
@@ -156,11 +156,11 @@ void
 lrt_trans_init()
 {
   //check that the table size is the exact power of 2
-  EBBAssert(__builtin_popcount(LRT_TRANS_TBLSIZE) == 1);
+  LRT_Assert(__builtin_popcount(LRT_TRANS_TBLSIZE) == 1);
   
   //Make sure the table size fits within a single TLB entry
   uint32_t tlbps = get_spr(SPRN_TLB0PS);
-  EBBAssert(tlbps & LRT_TRANS_TBLSIZE);
+  LRT_Assert(tlbps & LRT_TRANS_TBLSIZE);
 
   map_addr((uint8_t *)GMem, theGMem, LRT_TRANS_TBLSIZE);
 

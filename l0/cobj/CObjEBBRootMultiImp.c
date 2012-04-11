@@ -55,7 +55,7 @@ unlockReps(CObjEBBRootMultiImpRef self)
 {
   uintptr_t res;
   if ((res = __sync_bool_compare_and_swap(&self->lock, 1, 0))!=1) {
-    EBBAssert(res == 1);
+    LRT_Assert(res == 1);
   }
 }
 
@@ -65,7 +65,7 @@ locked_FindRepOn(CObjEBBRootMultiImpRef self, uintptr_t el)
   EBBRep *rep=NULL;
   struct RepListNode_s *rd;
 
-  EBBAssert(self->lock!=0);
+  LRT_Assert(self->lock!=0);
   rd = self->head;
   while (rd) {
     if (rd->el == el) {
@@ -83,15 +83,15 @@ locked_AddRepOn(CObjEBBRootMultiImpRef self, uintptr_t el, EBBRep *rep)
   struct RepListNode_s *rd;
   EBBRC rc;
 
-  EBBAssert(self->lock!=0);
+  LRT_Assert(self->lock!=0);
   rc = EBBPrimMalloc(sizeof(struct RepListNode_s), &rd,
 		     EBB_MEM_GLOBAL);
-  EBBRCAssert(rc);
+  LRT_RCAssert(rc);
   rd->rep = rep;
   rd->el = el;
   rd->next = self->head;
   self->head = rd;
-  EBBAssert(self->lock!=0);
+  LRT_Assert(self->lock!=0);
 }
 
 static

@@ -119,10 +119,10 @@ EBBCtrPrimStaticSharedCreate(EBBCtrId *id)
   rootRef->ft->init(rootRef, (EBBRep *)repRef);
 
   rc = EBBAllocPrimId((EBBId *)id);
-  EBBRCAssert(rc);
+  LRT_RCAssert(rc);
 
   rc = CObjEBBBind((EBBId)*id, rootRef); 
-  EBBRCAssert(rc);
+  LRT_RCAssert(rc);
 
   return rc;
 }
@@ -141,13 +141,13 @@ EBBCtrPrimSharedCreate(EBBCtrId *id)
   EBBCtrPrim_init(repRef);
 
   rc = CObjEBBRootSharedCreate(&rootRef, (EBBRepRef)repRef);
-  EBBRCAssert(rc);
+  LRT_RCAssert(rc);
 
   rc = EBBAllocPrimId((EBBId *)id);
-  EBBRCAssert(rc);
+  LRT_RCAssert(rc);
 
   rc = CObjEBBBind((EBBId)*id, rootRef); 
-  EBBRCAssert(rc);
+  LRT_RCAssert(rc);
 
   return rc;
 }

@@ -30,10 +30,7 @@
 #include <lrt/bare/assert.h>
 #endif
 
-#define EBBAssert LRT_EBBAssert
-#define EBBWAssert(exp)  \
-  ((void) ((exp) ? 0 : printf ("%s:%u: warning assert `%s'\n", __FILE__, __LINE__, #exp)))
-#define EBBRCAssert(rc) EBBAssert(EBBRC_SUCCESS(rc))
+#define LRT_RCAssert(rc) LRT_Assert(EBBRC_SUCCESS(rc))
 
 #ifdef __cplusplus
   #if HAS_CXX_STATIC_ASSERT

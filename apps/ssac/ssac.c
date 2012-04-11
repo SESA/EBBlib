@@ -90,11 +90,11 @@ SSAC_start(AppRef _self, int argc, char **argv,
   root->init(rep);
 
   rc = EBBAllocPrimId((EBBId *)&test);
-  EBBRCAssert(rc);
+  LRT_RCAssert(rc);
 
   rc = CPlusEBBRoot::EBBBind((EBBId)test, root);
-  EBBRCAssert(rc);
-  EBB_LRT_printf("SSAC Test LOADED\n");
+  LRT_RCAssert(rc);
+  lrt_printf("SSAC Test LOADED\n");
 
 /*
   SSATest test(n,m,c,p,w);

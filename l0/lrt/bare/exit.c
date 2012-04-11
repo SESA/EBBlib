@@ -28,6 +28,6 @@
 
 void lrt_exit(EBBRC i)
 {
-  EBB_LRT_printf("Exit called: %" PRIiPTR"\n", i);
+  lrt_printf("Exit called: %" PRIiPTR"\n", i);
   while (1) ;
 }

@@ -25,12 +25,19 @@
 
 #include <lrt/io.h>
 
-#define LRT_EBBAssert(cond)						\
+#define LRT_Assert(cond)						\
   ({									\
   if (!(cond)) {							\
     if (stdout)								\
       printf("Assertion failed: at %s, line %d\n", __FILE__, __LINE__);	\
     while(1) ;								\
+  }									\
+  })
+#define LRT_WAssert(exp)  \
+  ({									\
+  if (!(exp)) {							\
+    if (stdout)								\
+    printf("Warning: at %s, line %d(%s)\n", __FILE__, __LINE__, #exp);	\
   }									\
   })
 

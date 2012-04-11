@@ -29,20 +29,20 @@
 EBBRC
 LRTConsoleInit(lrt_pic_src *in, lrt_pic_src *out, lrt_pic_src *err)
 {
-  EBBAssert(0);
+  LRT_Assert(0);
   return EBBRC_OK;
 }
 
 EBBRC
 LRTConsoleRead(lrt_pic_src *in, char *buf, int len, int *n)
 {
-  EBBAssert(0);
+  LRT_Assert(0);
   return EBBRC_OK;
 }
 
 EBBRC
 LRTConsoleWrite(lrt_pic_src *out, char *buf, int len, int *n)
 {
-  EBBAssert(0);
+  LRT_Assert(0);
   return EBBRC_OK;
 }

@@ -61,7 +61,7 @@ static EBBRC
 MsgHandlerTst_msg1(MsgHandlerRef _self, uintptr_t a1)
 {
   // ack that we are handing interrupt
-  EBB_LRT_printf("[%s]", __func__);
+  lrt_printf("[%s]", __func__);
   return EBBRC_OK;
 };
 
@@ -77,12 +77,12 @@ MsgHandlerTst_msg2(MsgHandlerRef _self, uintptr_t numtosend, uintptr_t id)
     lrt_exit(0);
   }
 
-  LRT_EBBAssert(numtosend > 0);
+  LRT_Assert(numtosend > 0);
   nxt = EventMgr_NextEL(MyEL());
   
   do {
     rc = COBJ_EBBCALL(theMsgMgrId, msg2, nxt, sid, numtosend, id);
-    if (rc == EBBRC_NOTFOUND) EBB_LRT_printf("*");
+    if (rc == EBBRC_NOTFOUND) lrt_printf("*");
 
   } while (rc == EBBRC_NOTFOUND);
   return EBBRC_OK;
@@ -92,7 +92,7 @@ MsgHandlerTst_msg3(MsgHandlerRef _self, uintptr_t a1, uintptr_t a2,
 		   uintptr_t a3)
 {
   // ack that we are handing interrupt
-  EBB_LRT_printf("[%s]", __func__);
+  lrt_printf("[%s]", __func__);
   return EBBRC_OK;
 };
 
@@ -130,11 +130,11 @@ InitMsgHandlerTst()
     CObjEBBRootMultiImpRef rootRef;
     EBBId id;
     rc = CObjEBBRootMultiImpCreate(&rootRef, MsgHandlerTst_createRep);
-    EBBRCAssert(rc);
+    LRT_RCAssert(rc);
     rc = EBBAllocPrimId(&id);
-    EBBRCAssert(rc);
+    LRT_RCAssert(rc);
     rc = CObjEBBBind(id, rootRef); 
-    EBBRCAssert(rc);
+    LRT_RCAssert(rc);
     theMsgHandlerTstId = (MsgHandlerId)id;
   } else {
     while (((volatile uintptr_t)theMsgHandlerTstId)==-1);
@@ -176,13 +176,13 @@ MsgTst_start(AppRef _self, int argc, char **argv, char **environ)
   MsgHandlerId id = InitMsgHandlerTst();
   int numtosend = 100;
 
-  EBB_LRT_printf("MsgTst, core %" PRIxPTR " number of cores %" PRIxPTR, MyEL(), EventMgr_NumEL());
+  lrt_printf("MsgTst, core %" PRIxPTR " number of cores %" PRIxPTR, MyEL(), EventMgr_NumEL());
 
   if (MyEL() != 0) {
-    EBB_LRT_printf("MsgTst, core %" PRIxPTR " returning to event loop", MyEL());
+    lrt_printf("MsgTst, core %" PRIxPTR " returning to event loop", MyEL());
     return EBBRC_OK;
   }
-  EBB_LRT_printf("MsgTst, core %" PRIxPTR " number of cores %" PRIxPTR, MyEL(), EventMgr_NumEL());
+  lrt_printf("MsgTst, core %" PRIxPTR " number of cores %" PRIxPTR, MyEL(), EventMgr_NumEL());
   
   // kick off message send
   COBJ_EBBCALL(theMsgMgrId, msg2, 0, id, numtosend, (uintptr_t)id);

@@ -42,6 +42,6 @@ lrt_mem_end() {
 }
  
 void lrt_mem_init() {
-  EBB_LRT_printf("lrt_mem_init called!\n");
+  lrt_printf("lrt_mem_init called!\n");
   //nop
 }

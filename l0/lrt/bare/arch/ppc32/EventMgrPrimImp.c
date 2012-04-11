@@ -43,7 +43,7 @@ static EBBRC
 EventMgrPrim_dispatchIPI(EventMgrPrimRef _self, EvntLoc el)
 {
   if (el != MyEL()) {
-    EBB_LRT_printf("%s: sending remote IPI to node %" PRIdPTR "\n", 
+    lrt_printf("%s: sending remote IPI to node %" PRIdPTR "\n", 
 		   __func__,
 		   el);
   }
@@ -58,8 +58,8 @@ EventMgrPrim_dispatchIPI(EventMgrPrimRef _self, EvntLoc el)
 static EBBRC
 EventMgrPrim_dispatchEventLocal(EventMgrPrimRef _self, uintptr_t eventNo) 
 {
-  EBB_LRT_printf("%s: NYI\n", __func__);
-  EBBAssert(0);
+  lrt_printf("%s: NYI\n", __func__);
+  LRT_Assert(0);
   return EBBRC_OK;   
 }
 
@@ -82,24 +82,24 @@ EventMgrPrim_registerHandler(EventMgrPrimRef _self, uintptr_t eventNo,
 			     EventHandlerId handler,  FuncNum fn,
 			     lrt_pic_src *isrc)
 {
-  EBB_LRT_printf("%s: NYI\n", __func__);
-  EBBAssert(0);
+  lrt_printf("%s: NYI\n", __func__);
+  LRT_Assert(0);
   return EBBRC_OK;   
 }
 
 static EBBRC
 EventMgrPrim_eventEnable(EventMgrPrimRef _self, uintptr_t eventNo)
 {
-  EBB_LRT_printf("%s: NYI\n", __func__);
-  EBBAssert(0);
+  lrt_printf("%s: NYI\n", __func__);
+  LRT_Assert(0);
   return EBBRC_OK;   
 }
 
 static EBBRC
 EventMgrPrim_eventDisable(EventMgrPrimRef _self, uintptr_t eventNo)
 {
-  EBB_LRT_printf("%s: NYI\n", __func__);
-  EBBAssert(0);
+  lrt_printf("%s: NYI\n", __func__);
+  LRT_Assert(0);
   return EBBRC_OK;   
 }
 
@@ -125,8 +125,8 @@ EventMgrPrim_registerIPIHandler(EventMgrPrimRef _self,
 static EBBRC 
 EventMgrPrim_allocEventNo(EventMgrPrimRef _self, uintptr_t *eventNoPtr)
 {
-  EBB_LRT_printf("%s: NYI\n", __func__);
-  EBBAssert(0);
+  lrt_printf("%s: NYI\n", __func__);
+  LRT_Assert(0);
   return EBBRC_OK;   
 }
 
@@ -151,7 +151,7 @@ EventMgrPrimSetFT(EventMgrPrimImpRef o)
 static EBBRep *
 EventMgrPrimImp_createRepAssert(CObjEBBRootMultiRef root) 
 {
-  EBBAssert(0);
+  LRT_Assert(0);
   return NULL;
 }
 
@@ -159,8 +159,10 @@ static EventMgrPrimImpRef
 EventMgrPrimImp_createRep(CObjEBBRootMultiImpRef root) 
 {
   EventMgrPrimImpRef repRef;
+  EBBRC rc;
 
-  EBBRCAssert(EBBPrimMalloc(sizeof(EventMgrPrimImp), &repRef, EBB_MEM_DEFAULT));
+  rc = EBBPrimMalloc(sizeof(EventMgrPrimImp), &repRef, EBB_MEM_DEFAULT);
+  LRT_RCAssert(rc);
   EventMgrPrimSetFT(repRef);
   return repRef;
 }
@@ -169,7 +171,7 @@ static void
 external_interrupt_handler(void)
 {
   //FIXME: Assume IPI
-  EBBAssert(IPI_handler != NULL);
+  LRT_Assert(IPI_handler != NULL);
   
   if (IPI_fn==NOFUNCNUM) COBJ_EBBCALL(IPI_handler, handleEvent); 
   else COBJ_EBBCALL_FUNCNUM(GenericEventFunc, (EBBBaseId)IPI_handler, IPI_fn);
@@ -185,11 +187,11 @@ EventMgrPrimImpInit(void)
 
   EBBId id;
   rc = CObjEBBRootMultiImpCreate(&rootRef, EventMgrPrimImp_createRepAssert);
-  EBBRCAssert(rc);
+  LRT_RCAssert(rc);
   rc = EBBAllocPrimId(&id);
-  EBBRCAssert(rc);
+  LRT_RCAssert(rc);
   rc = EBBBindPrimId(id, CObjEBBMissFunc, (EBBMissArg)rootRef);
-  EBBRCAssert(rc);
+  LRT_RCAssert(rc);
   theEventMgrPrimId = (EventMgrPrimId)id;
 
   // It makes no sense to handle miss on this object lazily, since it will 

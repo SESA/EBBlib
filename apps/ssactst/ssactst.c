@@ -55,11 +55,11 @@ EBBRC
 SSACTST_start(AppRef _self, int argc, char **argv,
 	      char **environ)
 {
-  EBB_LRT_printf("SSACTST LOADED\n");
+  lrt_printf("SSACTST LOADED\n");
   
   simpleTst();
 
-  EBB_LRT_printf("finished simpleTst\n");
+  lrt_printf("finished simpleTst\n");
   return EBBRC_OK;
 }
 

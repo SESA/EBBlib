@@ -229,7 +229,7 @@ net_readn(FDType fd, void *vptr, size_t n)
 /* for the moment assume we can simply open the BootInfo from the local file system */
 /* otherwise use the above to read in from socket */
 int
-EBB_LRT_getBootInfoPage(char *page, int *size)
+lrt_getBootInfoPage(char *page, int *size)
 {
   int fd;
 

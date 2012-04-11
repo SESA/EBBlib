@@ -60,22 +60,22 @@ PrimAllocTst_start(AppRef _self, int argc, char **argv,
   uintptr_t i, j;
   void *ptrs[128];
   
-  EBB_LRT_printf("Starting primitive memory allocator test...\n");
+  lrt_printf("Starting primitive memory allocator test...\n");
   for(i = 0; i < 5; i++) {
     for(j = 1; j < 128; j++) {
       // XXX: we pass a null EBB_MEM_POOL here; this is exploiting temporary
       // knowledge that the impelmentations don't use this parameter.
       if(EBBPrimMalloc(j, &ptrs[j], (EBB_MEM_POOL)NULL) != EBBRC_OK) {
-        EBB_LRT_printf("allocation failed: i = %" PRIuPTR ", j = %" PRIuPTR".\n", i, j);
+        lrt_printf("allocation failed: i = %" PRIuPTR ", j = %" PRIuPTR".\n", i, j);
       } else {
-        EBB_LRT_printf("allocated pointer %" PRIxPTR " for i = %" PRIuPTR ", j = %" PRIuPTR "\n", (uintptr_t)ptrs[j], i, j);
+        lrt_printf("allocated pointer %" PRIxPTR " for i = %" PRIuPTR ", j = %" PRIuPTR "\n", (uintptr_t)ptrs[j], i, j);
       }
     }
     for(j = 1; j < 128; j++) {
       if(EBBPrimFree(j, ptrs[j]) != EBBRC_OK) {
-        EBB_LRT_printf("free failed: i = %" PRIuPTR ", j = %" PRIuPTR ".\n", i, j);
+        lrt_printf("free failed: i = %" PRIuPTR ", j = %" PRIuPTR ".\n", i, j);
       } else {
-        EBB_LRT_printf("freed pointer %" PRIxPTR " for i = %" PRIuPTR ", j = %" PRIuPTR "\n", (uintptr_t)ptrs[j], i, j);
+        lrt_printf("freed pointer %" PRIxPTR " for i = %" PRIuPTR ", j = %" PRIuPTR "\n", (uintptr_t)ptrs[j], i, j);
       }
     }
   }

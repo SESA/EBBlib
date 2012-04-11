@@ -25,8 +25,8 @@
 #include <stddef.h>
 #include <l0/lrt/bare/stdio.h>
 
-#define EBB_LRT_printf printf
-#define EBB_LRT_vprintf vprintf
+#define lrt_printf printf
+#define lrt_vprintf vprintf
 
 void *memset(void *ptr, int value, size_t num);
 

@@ -79,5 +79,5 @@ init64(multiboot_info_t *mbi) {
   printf("Initializing the pic\n");
   lrt_pic_init(lrt_start_isr);
 
-  EBBAssert(0);
+  LRT_Assert(0);
 }

@@ -86,7 +86,7 @@ static CObjInterface(EBBMgrPrim) EBBMgrPrimImp_ftable = {
 static EBBRC 
 EBBMgrPrimErrMF (EBBRep **_self, EBBLTrans *lt,
 		 FuncNum fnum, EBBMissArg arg) {
-  EBB_LRT_printf("%s: _self=%p: lt=%p fnum=%p arg=%p", __func__, 
+  lrt_printf("%s: _self=%p: lt=%p fnum=%p arg=%p", __func__, 
 		 _self, lt, (void *)fnum, (void *)arg);
   return EBBRC_GENERIC_FAILURE;
 }
@@ -111,11 +111,11 @@ EBBMgrPrimInit()
     EBBId id;
     CObjEBBRootMultiImpRef rootRef;
     rc = CObjEBBRootMultiImpCreate(&rootRef, EBBMgrPrimImp_createRep);
-    EBBRCAssert(rc);
+    LRT_RCAssert(rc);
     rc = EBBAllocPrimIdBoot(&id);
-    EBBRCAssert(rc);
+    LRT_RCAssert(rc);
     rc = EBBBindPrimIdBoot(id, CObjEBBMissFunc, (EBBMissArg)rootRef);
-    EBBRCAssert(rc);
+    LRT_RCAssert(rc);
     theEBBMgrPrimId = (EBBMgrPrimId)id;
   } else {
     while (((volatile uintptr_t)theEBBMemMgrPrimId)==-1);
@@ -142,7 +142,7 @@ EBBRC EBBDestroyPrimId(EBBId id)
   rc = COBJ_EBBCALL(theEBBMgrPrimId, FreeId, id);
 #endif
 
-  EBB_LRT_printf("%s: NYI: PLEASE FIXME!: NONE OF THIS WORKS\n",
-		 __func__);
+  lrt_printf("%s: NYI: PLEASE FIXME!: NONE OF THIS WORKS\n",
+	     __func__);
   return rc;
 }

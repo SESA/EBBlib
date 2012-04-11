@@ -56,26 +56,26 @@ EBB_init(uintptr_t startInfo)
   EBBRC rc;
 
   rc = EBBMemMgrPrimInit();
-  EBBRCAssert(rc);
+  LRT_RCAssert(rc);
 
   rc = EBBMgrPrimInit();
-  EBBRCAssert(rc);
+  LRT_RCAssert(rc);
 
   // At this point EBBMgr and Ebb Calls should be working
   //  NOMORE USE OF TRANS OR BOOT INTERFACES TO THESE THINGS
   //  AND MOST CODE SHOULD BE ON Ebb's
 
   rc = EventMgrPrimImpInit();
-  EBBRCAssert(rc);
+  LRT_RCAssert(rc);
 
   // JA: FIXME:  IS THIS FIRST REAL EBB CALL BELOW ... SHOULD BE EXPLICITLY MARKED
   //             AND THE FACTS THAT THAT DEPENDS ON CLEARLY STATED
 
   rc = L0PrimInit();
-  EBBRCAssert(rc);
+  LRT_RCAssert(rc);
 
   rc = COBJ_EBBCALL(theL0Id, start, startInfo);
-  EBBRCAssert(rc);
+  LRT_RCAssert(rc);
   // will fall through
 }
 

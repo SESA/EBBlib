@@ -37,11 +37,11 @@ acpi_init()
 {
   ACPI_STATUS status;
   status = AcpiInitializeTables(TableArray, ACPI_MAX_INIT_TABLES, FALSE);
-  EBBAssert(status == AE_OK);
+  LRT_Assert(status == AE_OK);
   
   madt *madt_ptr;
   status = AcpiGetTable("APIC", 0, (ACPI_TABLE_HEADER **)&madt_ptr);
-  EBBAssert(status == AE_OK);  
+  LRT_Assert(status == AE_OK);  
 
   uint32_t size = madt_ptr->header.Length - sizeof(madt);
   uint8_t *ptr = (uint8_t *)(madt_ptr + 1);
@@ -57,18 +57,18 @@ acpi_init()
       size -= is->length;
       ptr += is->length;
       init_ioapic((ioapic *)(uintptr_t)is->ioapic_address);
-      EBBAssert(++ioapics < 2);
-      EBB_LRT_printf("found ioapic table\n");
+      LRT_Assert(++ioapics < 2);
+      lrt_printf("found ioapic table\n");
     } else if (*ptr == INTERRUPT_SOURCE_OVERRIDE) {
       iso_structure *is = (iso_structure *)ptr;
       size -= is->length;
       ptr += is->length;
-      EBB_LRT_printf("IRQ %d is mapped to I/O APIC input %d\n", is->source, 
+      lrt_printf("IRQ %d is mapped to I/O APIC input %d\n", is->source, 
 		     is->global_system_interrupt);
     } else {
       //No definitions for other structures yet!
-      EBB_LRT_printf("Found MADT structed unimplimented: %d\n", *ptr);
-      EBBAssert(0);
+      lrt_printf("Found MADT structed unimplimented: %d\n", *ptr);
+      LRT_Assert(0);
     }
   } while (size > 0);
 }

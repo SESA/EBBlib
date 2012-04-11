@@ -51,7 +51,7 @@ CPlusEBBRootShared::operator new(size_t size)
   void *val;
   EBBRC rc;
   rc = EBBPrimMalloc(size, &val, EBB_MEM_DEFAULT);
-  EBBRCAssert(rc);
+  LRT_RCAssert(rc);
   return val;
 }
 
@@ -59,5 +59,5 @@ void
 CPlusEBBRootShared::operator delete(void * p, size_t size)
 {
   // NYI
-  EBBRCAssert(0);
+  LRT_RCAssert(0);
 }

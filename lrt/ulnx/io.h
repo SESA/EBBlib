@@ -25,10 +25,9 @@
 #include <unistd.h>
 #include <stdio.h>
 
-#define EBB_LRT_printf printf
-#define EBB_LRT_write  write
+#define lrt_printf printf
+#define lrt_write  write
 
-int
-EBB_LRT_getBootInfoPage(char *, int *size);
+extern int lrt_getBootInfoPage(char *, int *size);
 
 #endif

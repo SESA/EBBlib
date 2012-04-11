@@ -46,7 +46,7 @@
 #include <net/lrt/ethlib.h>
 #include <strings.h>
 
-#define VERBOSE_PR(...) ( EBB_LRT_printf(__VA_ARGS__) )
+#define VERBOSE_PR(...) ( lrt_printf(__VA_ARGS__) )
 
 #define EBBCALL(id, method, ...) COBJ_EBBCALL(id, method, ##__VA_ARGS__)
 
@@ -105,24 +105,24 @@ EthMgrPrimCreate(EthMgrId *id, char *nic)
   lrt_pic_src nicisrc, nicosrc;
 
   rc = EBBPrimMalloc(sizeof(EthMgrPrim), &repRef, EBB_MEM_DEFAULT);
-  EBBRCAssert(rc);
+  LRT_RCAssert(rc);
 
   EthMgrPrimSetFT(repRef);
   bzero(repRef->typeMgrs, sizeof(repRef->typeMgrs));
   repRef->rcnt=0;
 
   rc = CObjEBBRootSharedCreate(&rootRef, (EBBRepRef)repRef);
-  EBBRCAssert(rc);
+  LRT_RCAssert(rc);
 
   rc = EBBAllocPrimId((EBBId *)id);
-  EBBRCAssert(rc);
+  LRT_RCAssert(rc);
 
   rc = CObjEBBBind((EBBId)*id, rootRef); 
-  EBBRCAssert(rc);
+  LRT_RCAssert(rc);
 
   // setup our events and there handling
   rc = EBBCALL(theEventMgrPrimId, allocEventNo, &(repRef->ev));
-  EBBRCAssert(rc);
+  LRT_RCAssert(rc);
 
   if (nic) {
     rc = ethlib_nic_init(nic, &nicisrc, &nicosrc);
@@ -130,10 +130,10 @@ EthMgrPrimCreate(EthMgrId *id, char *nic)
       rc = EBBCALL(theEventMgrPrimId, registerHandler, repRef->ev, 
 		   (EventHandlerId)*id, COBJ_FUNCNUM(repRef, inEvent),
 		   &nicisrc);
-      EBBRCAssert(rc);
+      LRT_RCAssert(rc);
 
       rc = EBBCALL(theEventMgrPrimId, eventEnable, repRef->ev);
-      EBBRCAssert(rc);
+      LRT_RCAssert(rc);
     }
   }
   return EBBRC_OK;

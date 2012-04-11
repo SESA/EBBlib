@@ -119,7 +119,7 @@ init_rep(EBBMemMgrPrimSimpleRef self, CObjEBBRootMultiRef rootRef, uintptr_t end
   first_block_ftr->raw = first_block_hdr->raw;  
 
   // don't handle blocks larger than a pointer can point to
-  EBBAssert(((uintptr_t)epilog_hdr - (uintptr_t)first_block_hdr) <= MAX_BLOCK_SIZE);
+  LRT_Assert(((uintptr_t)epilog_hdr - (uintptr_t)first_block_hdr) <= MAX_BLOCK_SIZE);
 
   self->end = end;
   self->myRoot = rootRef;
@@ -178,13 +178,13 @@ EBBMemMgrPrimSimple_free(EBBMemMgrRef _self, uintptr_t size, void *mem) {
 
 
   // FIXME: return memory to right allocator
-  EBBWAssert((mem > self->mem) && (mem < (void *)self->end));
+  LRT_WAssert((mem > self->mem) && (mem < (void *)self->end));
 
   // sanity check that size is the same as the recorded
   if(size % sizeof(uintptr_t) != 0) {
     size += sizeof(uintptr_t) - (size % sizeof(uintptr_t));
   }
-  EBBAssert(size == (hdr->size-2*sizeof(Bumper)));
+  LRT_Assert(size == (hdr->size-2*sizeof(Bumper)));
 
   // See if we can coalesce to the left:
   left_ftr = hdr - 1;
@@ -219,7 +219,7 @@ EBBMemMgrPrimSimpleSetFT(EBBMemMgrPrimSimpleRef o) {o->ft = &EBBMemMgrPrimSimple
 static EBBRep *
 MemMgrPrimRB_createRep(CObjEBBRootMultiRef _self)
 {
-  EBBAssert(0);
+  LRT_Assert(0);
   return NULL;
 }
 
@@ -236,9 +236,9 @@ EBBMemMgrPrimSimpleInit()
   if (__sync_bool_compare_and_swap(&(theEBBMemMgrPrimId), 0, -1)) {
     CObjEBBRootMultiImpStaticInit(rootRef, MemMgrPrimRB_createRep);
     rc = EBBAllocPrimIdBoot(&id);
-    EBBRCAssert(rc);
+    LRT_RCAssert(rc);
     rc = CObjEBBBindBoot(id, rootRef); 
-    EBBRCAssert(rc);
+    LRT_RCAssert(rc);
     
     __sync_bool_compare_and_swap(&(theEBBMemMgrPrimId), -1, id);
   } else {   

@@ -26,7 +26,7 @@
 #include <stdbool.h>
 #include <l0/lrt/bare/stdio.h>
 
-#define LRT_EBBAssert(cond)						\
+#define LRT_Assert(cond)						\
   ({									\
   if (!(cond)) {							\
     if (stdout)								\

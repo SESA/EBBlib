@@ -81,7 +81,7 @@ L0Prim_startEvent(L0Ref _self)
 
   // call the next layer startup
   rc = L1PrimInit();
-  EBBRCAssert(rc);
+  LRT_RCAssert(rc);
 
   COBJ_EBBCALL(theL1Id, start, self->startInfo);
 
@@ -103,10 +103,10 @@ L0Prim_start(L0Ref _self, uintptr_t startInfo)
   // the subsequent initialization, now on an event
   rc = COBJ_EBBCALL(theEventMgrPrimId, registerIPIHandler, 
 		    (EventHandlerId)theL0Id, COBJ_FUNCNUM(self, startEvent));
-  EBBRCAssert(rc);
+  LRT_RCAssert(rc);
 
   rc = COBJ_EBBCALL(theEventMgrPrimId, dispatchIPI, MyEL());
-  EBBRCAssert(rc);
+  LRT_RCAssert(rc);
 
   return 0;
 };
@@ -137,11 +137,11 @@ L0PrimInit(void)
     CObjEBBRootMultiImpRef rootRef;
     rc = CObjEBBRootMultiImpCreate(&rootRef,
 				  L0Prim_createRep);
-    EBBRCAssert(rc);
+    LRT_RCAssert(rc);
     rc = EBBAllocPrimId(&id);
-    EBBRCAssert(rc);
+    LRT_RCAssert(rc);
     rc = CObjEBBBind(id, rootRef); 
-    EBBRCAssert(rc);
+    LRT_RCAssert(rc);
     theL0Id = (L0Id)id;
   } else {
     while (((volatile uintptr_t)theL0Id)==-1);
