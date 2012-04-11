@@ -1,5 +1,3 @@
-#ifndef __CPLUS_EBB_H_
-#define __CPLUS_EBB_H_
 /*
  * Copyright (C) 2011 by Project SESA, Boston University
  *
@@ -22,11 +20,11 @@
  * THE SOFTWARE.
  */
 
-class CPlusEBB {
-  // null function so that virtual function table is first
-  virtual EBBRC func0() { return 0; } 
-};
+#include <config.h>
 
-#define CPLUS_EBBCALL(id, method, ...) (EBBId_DREF(id)->method(__VA_ARGS__))
+#include <lrt/assert.h>
 
-#endif
+void __cxa_pure_virtual()
+{
+  EBBAssert(0);
+}

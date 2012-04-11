@@ -5,7 +5,7 @@ endif
 
 AM_CCASFLAGS = -D ASM_FILE -g3 -I$(top_srcdir) -I.
 
-AM_CXXFLAGS = -Wall -Werror -g3
+AM_CXXFLAGS = -Wall -Werror -Wno-non-virtual-dtor -g3
 #for now no CPPFLAGS
 AM_CPPFLAGS =
 if STD_GNUXX_0x
