@@ -73,7 +73,7 @@ lrt_pic_loop(void)
   msr.we = 1; //enable wait state
   set_msr(msr);
 
-  EBBAssert(0);
+  LRT_Assert(0);
 }
 
 void __attribute__ ((noreturn))
@@ -103,7 +103,7 @@ lrt_pic_init(lrt_pic_handler h)
 void
 lrt_pic_mapvec(uintptr_t vec, lrt_pic_handler h)
 {
-  EBBAssert(vec < NUM_INTS);
+  LRT_Assert(vec < NUM_INTS);
   int_table[vec] = h;
 }
 
@@ -116,13 +116,13 @@ lrt_pic_ipi(uintptr_t irq)
 uintptr_t
 lrt_pic_getnumlpics()
 {
-  EBBAssert(0);
+  LRT_Assert(0);
 }
 
 uintptr_t
 lrt_pic_getnextlpic(uintptr_t c)
 {
-  EBBAssert(0);
+  LRT_Assert(0);
 }
 
 void

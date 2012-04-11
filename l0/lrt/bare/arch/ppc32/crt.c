@@ -26,5 +26,5 @@
 
 void __cxa_pure_virtual()
 {
-  EBBAssert(0);
+  LRT_Assert(0);
 }

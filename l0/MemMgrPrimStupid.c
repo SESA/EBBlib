@@ -92,7 +92,7 @@ EBBMemMgrPrimStupidSetFT(EBBMemMgrPrimStupidRef o) {o->ft = &EBBMemMgrPrimStupid
 static EBBRep *
 MemMgrPrimStupid_createRep(CObjEBBRootMultiRef _self)
 {
-  EBBAssert(0);
+  LRT_Assert(0);
   return NULL;
 }
 
