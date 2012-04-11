@@ -34,7 +34,7 @@ extern uintptr_t lrt_pic_getnextlpic(uintptr_t c); /* get next pic seq; loops */
 extern void lrt_pic_mapipi(lrt_pic_handler h);
 extern uint8_t lrt_pic_getIPIvec(void);
 extern intptr_t lrt_pic_ipi(uintptr_t id);
-extern intptr_t lrt_pic_mapvec(lrt_pic_src s, uintptr_t vec, lrt_pic_handler h);
+extern intptr_t lrt_pic_mapvec(lrt_pic_src *s, uintptr_t vec, lrt_pic_handler h);
 extern uintptr_t lrt_pic_numvec(void);
 extern intptr_t lrt_pic_allocvec(uintptr_t *vec);
 extern void lrt_pic_ackipi(void);

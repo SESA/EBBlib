@@ -146,7 +146,7 @@ lrt_pic_ipi(uintptr_t id)
 }
 
 intptr_t
-lrt_pic_mapvec(lrt_pic_src s, uintptr_t vec, lrt_pic_handler h)
+lrt_pic_mapvec(lrt_pic_src *s, uintptr_t vec, lrt_pic_handler h)
 {
   EBB_LRT_printf("%s: untested code!!!\n", __func__);
   EBB_LRT_printf("%s: Also, no SMP support\n", __func__);
@@ -154,8 +154,8 @@ lrt_pic_mapvec(lrt_pic_src s, uintptr_t vec, lrt_pic_handler h)
 
   EBBAssert((vec >= 0) && (vec < lrt_pic_numvec()));
   idt_map_vec(vec, h);
-  ioapic_map_vec(s, vec);
-  ioapic_enable_interrupt(s);
+  ioapic_map_vec(*s, vec);
+  ioapic_enable_interrupt(*s);
   
   return 0;
 }
