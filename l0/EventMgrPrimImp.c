@@ -91,7 +91,7 @@ void vf_common(uintptr_t i)
 #define str(s) xstr(s)
 #define xstr(s) #s
 
-STATIC_ASSERT(offsetof(CObjInterface(EventMgrPrim), dispatchEventLocal) == 0x20,
+STATIC_ASSERT(offsetof(CObjInterface(EventMgrPrim), dispatchEventLocal) == 0x40,
 	      "VFUNC relies on this offset being 0x20!");
 #define VFUNC(i)							\
   extern void vf##i(void);						\
@@ -105,7 +105,7 @@ STATIC_ASSERT(offsetof(CObjInterface(EventMgrPrim), dispatchEventLocal) == 0x20,
       "movq $" str(i) ", %rsi;"						\
       "movq (%rax), %rdi;"						\
       "movq (%rdi), %rax;"						\
-      "movq 0x20(%rax),%rax;"						\
+      "movq 0x40(%rax),%rax;"						\
       "call *%rax;"							\
       "movq 8(%rsp), %rsp;"						\
       "iretq");
@@ -519,7 +519,7 @@ EventMgrPrim_registerHandler(EventMgrPrimRef _self, uintptr_t eventNo,
   if (!EBBRC_SUCCESS(rc)) goto done;
 
   // map vector in pic
-  if (lrt_pic_mapvec(isrc, eventNo, vfTbl[eventNo])<0) {
+  if (lrt_pic_mapvec(*isrc, eventNo, vfTbl[eventNo])<0) {
     // FAILED unmap from all the tables
     lockedReplicateHandler(self->theRoot, eventNo, NULL, NOFUNCNUM);
     rc = EBBRC_BADPARAMETER;

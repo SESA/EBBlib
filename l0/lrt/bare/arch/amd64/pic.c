@@ -166,6 +166,32 @@ lrt_pic_numvec()
   return 256;
 }
 
+uintptr_t 
+lrt_pic_getnumlpics()
+{
+  EBB_LRT_printf("%s: NYI\n", __func__);
+  EBBAssert(0);
+}
+
+intptr_t lrt_pic_vecon(uintptr_t vec)
+{
+  EBB_LRT_printf("%s: NYI\n", __func__);
+  EBBAssert(0);
+}
+
+intptr_t lrt_pic_vecoff(uintptr_t vec)
+{
+  EBB_LRT_printf("%s: NYI\n", __func__);
+  EBBAssert(0);
+} 
+
+uintptr_t 
+lrt_pic_getnextlpic(uintptr_t c)
+{
+  EBB_LRT_printf("%s: NYI\n", __func__);
+  EBBAssert(0);
+}
+
 intptr_t
 lrt_pic_allocvec(uintptr_t *vec)
 {

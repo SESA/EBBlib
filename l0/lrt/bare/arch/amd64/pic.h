@@ -29,6 +29,8 @@ typedef uintptr_t lrt_pic_src;
 typedef void *lrt_pic_handler; //Should be an address placed in the IDT
 
 extern void __attribute__ ((noreturn)) lrt_pic_init(lrt_pic_handler h);
+extern uintptr_t lrt_pic_getnumlpics(); /* get number of logical pics, i.e., cores */
+extern uintptr_t lrt_pic_getnextlpic(uintptr_t c); /* get next pic seq; loops */
 extern void lrt_pic_mapipi(lrt_pic_handler h);
 extern uint8_t lrt_pic_getIPIvec(void);
 extern intptr_t lrt_pic_ipi(uintptr_t id);
@@ -38,4 +40,6 @@ extern intptr_t lrt_pic_allocvec(uintptr_t *vec);
 extern void lrt_pic_ackipi(void);
 extern void lrt_pic_enableipi(void);
 extern void lrt_pic_enable(uintptr_t vec);
+extern intptr_t lrt_pic_vecon(uintptr_t vec);
+extern intptr_t lrt_pic_vecoff(uintptr_t vec);
 #endif

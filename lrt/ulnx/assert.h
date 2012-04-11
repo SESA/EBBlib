@@ -25,7 +25,5 @@
 #include <assert.h>
 
 #define LRT_EBBAssert assert
-#define LRT_EBBWAssert(exp)  \
-  ((void) ((exp) ? 0 : printf ("%s:%u: warning assert `%s'\n", __FILE__, __LINE__, #exp)))
 
 #endif

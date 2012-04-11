@@ -29,7 +29,7 @@
 #include <stdint.h>
 #include <stddef.h>
 
-#include <lrt/ulnx/io.h>
+#include <lrt/io.h>
 #include <lrt/assert.h>
 #include <l0/lrt/types.h>
 #include <l0/cobj/cobj.h>
