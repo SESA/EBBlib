@@ -22,31 +22,11 @@
 
 #include <config.h>
 
-#include <l0/lrt/bare/arch/ppc32/bic.h>
+#include <l0/l0_start.h>
 #include <l0/lrt/bare/arch/ppc32/mem.h>
+#include <l0/lrt/bare/arch/ppc32/pic.h>
 #include <l0/lrt/bare/arch/ppc32/trans.h>
-#include <l0/sys/trans.h>
 #include <lrt/io.h>
-
-struct testObj;
-
-struct testObjft {
-  void (*foo)(struct testObj *self);
-};
-
-struct testObj {
-  struct testObjft *ft;
-};
-
-EBBRC
-testMissFunc (EBBRep **rep, EBBLTrans *lt, FuncNum fnum, EBBMissArg arg)
-{
-  lrt_printf("Got miss!\n");
-  while(1) ;
-}
-
-extern EBBId TransEBBIdAlloc(void);
-extern void TransEBBIdBind(EBBId id, EBBMissFunc mf, EBBMissArg arg);
 
 void
 lrt_start(void)
@@ -56,14 +36,7 @@ lrt_start(void)
   lrt_mem_init();
   lrt_trans_init();
 
-  trans_init();
-
-  lrt_printf("translation system initialized!\n");
-
-  struct testObj **id = (struct testObj **)TransEBBIdAlloc();
-  TransEBBIdBind((EBBId)id, testMissFunc, 0);
-
-  EBBId_DREF(id)->ft->foo(EBBId_DREF(id));
-
-  while(1) ;
+  l0_start(0);
+ 
+  lrt_pic_ackipi();
 }
