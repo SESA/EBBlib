@@ -104,8 +104,8 @@ lrt_trans_init()
   mmucr.stid = 0;
   set_spr(SPRN_MMUCR, mmucr);
 
-  map_addr((uint8_t *)GMem, (uint64_t)theGMem, LRT_TRANS_TBLSIZE);
-  map_addr((uint8_t *)LMem, (uint64_t)BSPLMem, LRT_TRANS_TBLSIZE);
+  map_addr((uint8_t *)GMem, (uint64_t)(uintptr_t)theGMem, LRT_TRANS_TBLSIZE);
+  map_addr((uint8_t *)LMem, (uint64_t)(uintptr_t)BSPLMem, LRT_TRANS_TBLSIZE);
 }
 
 // returns the pointer to a remote local translation entry for a object id

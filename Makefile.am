@@ -40,7 +40,7 @@ libebb_a_SOURCES = $(arch_sources) $(l0_sources) $(lrt_sources) \
 libebb_a_LIBADD =
 libebb_a_DEPENDENCIES =
 
-ebbos_libs = libebb.a
+ebbos_libs = l0/lrt/bare/arch/ppc32/start.o libebb.a
 
 if LRT_BARE
 

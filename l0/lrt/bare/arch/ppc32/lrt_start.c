@@ -36,6 +36,10 @@ lrt_start(void)
   lrt_mem_init();
   lrt_trans_init();
 
+  lrt_printf("finished\n");
+  while (1)
+    ;
+
   l0_start(0);
  
   lrt_pic_ackipi();

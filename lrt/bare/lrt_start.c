@@ -20,52 +20,19 @@
  * THE SOFTWARE.
  */
 
-OUTPUT_ARCH(powerpc:common)
-OUTPUT_FORMAT(elf32-powerpc)
-ENTRY(_start)
+#include <config.h>
 
-SECTIONS
+#include <stdint.h>
+
+#include <lrt/startinfo.h>
+
+uintptr_t
+lrt_startinfo_addr()
 {
-	. = 0x0;
-	kstart = .;
+  return 0;
+}
 
-	.init :
-	{
-		*(.init.text);
-		*(.init.stack);
-	}
-	.isr :
-	{
-		*(.isr);
-	}	
-
-	.text ALIGN (4k) :
-	{
-		*(.text)
-	}
-
-	.rodata ALIGN (4K) : 
-	{
-		*(.rodata)
-	}
-	.data ALIGN (4K) : 
-	{
-		*(.data)
-	}
-
-	.bss : 
-	{
-		sbss = .;
-		*(COMMON)
-		*(.bss)
-		ebss = .;
-	}
-	
-	/DISCARD/ :
-	{
-		*(.eh_frame);
-		*(.note*);
-		*(.comment);
-	}
-	kend = .;	
+intptr_t lrt_startinfo_size()
+{
+  return 0;
 }
