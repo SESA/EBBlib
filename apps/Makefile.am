@@ -6,3 +6,4 @@ include apps/ethtst/Makefile.am
 include apps/contst/Makefile.am
 #include apps/ssactst/Makefile.am
 include apps/helloworldcpp/Makefile.am
+include apps/bindtst/Makefile.am

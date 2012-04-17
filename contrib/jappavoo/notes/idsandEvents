@@ -25,4 +25,9 @@ SimpleConsoleInit(...)
 // Make sure we are all on the same page about NULLId versus a NON NULL Id bound to 
 // NULL EBB.
 
+CreateMyMenu(&myMenu);
 
+Bind(SimpleConsoleIds.theConHanderId, myMenu);
+
+CreateMyBlockingConsole(&myConHdlr);
+Bind(SimpleConsoleIds.theConHanderId, myConHdlr);
