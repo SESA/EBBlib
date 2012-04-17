@@ -210,25 +210,35 @@ BindTst_start(AppRef _self, int argc, char **argv,
   rc = EBBCALL((ServiceId)L0Info.NULLId, op);
   LRT_Assert(rc == EBBRC_NULL);
 
+  // TEST CODE:
+  // create two instances
   rc = SrvImp0Create(&s0Inst);
   LRT_RCAssert(rc);
 
   rc = SrvImp1Create(&s1Inst);
   LRT_RCAssert(rc);
 
+  // test a bunch of scenario's
+  // call an NULLID 
   lrt_printf("%s: ServiceInfo.theId=%p\n", __func__, ServiceInfo.theId);
 #if 0
   // this segfaults as expected.  But maybe we should make NULLId really be a 
-  // valid  id that is bound to the NULLInst
+  // valid  id that is bound to the NULLInst but ensure that bind calls on
+  // it fail
   rc = EBBCALL(ServiceIds.theId, op);
   LRT_RCAssert(rc);
 #endif
 
+  // Allocate and Id that we will use to access the service
   rc = EBBAllocPrimId((EBBId *)&(ServiceInfo.theId));
   LRT_RCAssert(rc);
   lrt_printf("%s: After EBBAllocPrimId: ServiceInfo.theId=%p\n",
 	     __func__, ServiceInfo.theId);
 
+  // Call a freshly allocated id (right now we have the notion of unbound)
+  // eg. the call will segfault.  Maybe we want to make this a real state
+  // that can be tested or mayb as per the following comment remove it and
+  // be bound at least to NULLInst
 #if 0 
   // this segfaults as expected.  But maybe it should not maybe we should bind 
   // an allocated id to a NULLInst
@@ -236,6 +246,7 @@ BindTst_start(AppRef _self, int argc, char **argv,
   lrt_printf("%s: no bind EBBCALL(ServiceIds.theId, op)=%ld\n", __func__, rc);
 #endif
 
+  // bind to NULLInst and call
   rc = Bind((EBBId)ServiceInfo.theId, L0Info.NULLInst);
   LRT_RCAssert(rc);
 
@@ -244,6 +255,7 @@ BindTst_start(AppRef _self, int argc, char **argv,
   lrt_printf("%s: Bind to L0Info.Inst: EBBCALL(ServiceIds.theId, op)=%ld\n",
 	     __func__, rc);
 
+  // bind (rebind) to instane 0 and call 
   rc = Bind((EBBId)ServiceInfo.theId, s0Inst);
   LRT_RCAssert(rc);
 
@@ -252,7 +264,7 @@ BindTst_start(AppRef _self, int argc, char **argv,
   lrt_printf("%s: Bind to s0Inst: EBBCALL(ServiceIds.theId, op)=%ld\n",
 	     __func__, rc);
 
-
+  // bind (rebind) to instance 1 and call
   rc = Bind((EBBId)ServiceInfo.theId, s1Inst);
   rc = EBBCALL(ServiceInfo.theId, op);
   if (passed == 1 && rc == 200) passed = 0;
