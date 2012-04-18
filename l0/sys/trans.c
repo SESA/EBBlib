@@ -40,7 +40,7 @@ EBBGTrans * const ALLOCATED = (EBBGTrans *)-1;
 
 // Policy for managing global translation memory is software's responsibility
 // We are choosing to use a simple partitioning scheme in which each event location
-// manages its own local portion.  Local size and thus position are determined by 
+// manages its own local portion.  Local size and thus position are determined by
 // simply dividing the total global size by the maximum allowable event locations
 
 int sysTransValidate()
@@ -52,7 +52,7 @@ int sysTransValidate()
 
   // there should be at least one page of translations per pic
   if ((LRT_TRANS_TBLSIZE / LRT_PIC_MAX_PICS) < LRT_TRANS_PAGESIZE) return 0;
-  
+
   // we initialized trans memory to 0 so allocated must be a non-zero value
   if (ALLOCATED == 0) return 0;
 
@@ -72,14 +72,14 @@ mygmem_size(void)
 }
 
 // This pic's portion of the gtable
-static inline uintptr_t 
+static inline uintptr_t
 mygmem(void)
 {
   uintptr_t ret = (uintptr_t)lrt_trans_gmem();
   return ret + (lrt_pic_myid * mygmem_size());
 }
 
-static inline 
+static inline
 EBBId
 gt2id(EBBGTrans *gt) {
   return (EBBId)lrt_trans_gt2id((struct lrt_trans *)gt);
@@ -114,7 +114,7 @@ myNumLTrans() {
   return LRT_TRANS_TBLSIZE / sizeof(EBBLTrans);
 }
 
-void 
+void
 EBBInitGTrans(EBBGTrans *gt, EBBMissFunc mf, EBBMissArg arg) {
   gt->mf = mf;
   gt->arg = arg;
@@ -132,7 +132,7 @@ initGTable(EBBMissFunc mf, EBBMissArg arg) {
   uintptr_t i, len;
 
   len = myNumGTrans();
-  
+
   // We expect that all the global trans memory had been zero'd
   // and that any early allocations have set the free field
   // to ALLOCATED (a non-zero value)
@@ -141,7 +141,7 @@ initGTable(EBBMissFunc mf, EBBMissArg arg) {
   }
 }
 
-void 
+void
 initLTable() {
   EBBLTrans *lt = (EBBLTrans *)lrt_trans_lmem();
   uintptr_t i, len;
@@ -159,7 +159,7 @@ TransEBBIdAlloc() {
   uintptr_t i, len;
 
   len = myNumGTrans();
-  
+
   gt = myGTable(); //Get my piece of the global table
   for (i = 0; i < len; i++) {
     if (gt[i].free != ALLOCATED) {
@@ -167,7 +167,7 @@ TransEBBIdAlloc() {
       return gt2id(&gt[i]);
     }
   }
-  return NULL; 
+  return NULL;
 }
 
 void
@@ -179,8 +179,13 @@ TransEBBIdFree(EBBId id) {
 void
 TransEBBIdBind(EBBId id, EBBMissFunc mf, EBBMissArg arg) {
   EBBGTrans *gt = id2gt(id);
+  EBBLTrans *lt = (EBBLTrans *)lrt_trans_id2lt((uintptr_t)id);
   gt->mf = mf;
   gt->arg = arg;
+  // Clear lt entry when new bind is made
+  EBBInitLTrans(lt);
+  // FIXME: this only works for unicore
+
 }
 
 void
@@ -189,7 +194,7 @@ TransEBBIdUnBind(EBBId id, EBBMissFunc *mf, EBBMissArg *arg) {
 }
 
 // at this point translation hardware has been initialized
-// software must setup the memory and any if its basic 
+// software must setup the memory and any if its basic
 // managment up
 void
 trans_init(void)

@@ -55,7 +55,7 @@ typedef struct {
 
 #define NULLID (0)
 
-enum { EBBRC_NULL = -6 };
+#define EBBRC_NULL (-6)
 
 EBBRC nullmissmf(EBBRep **repptr, EBBLTrans *lt, FuncNum fn, EBBMissArg a)
 {
@@ -68,7 +68,7 @@ static inline EBBRC Bind(EBBId id, EBBInstance i)
 }
 
 struct {
-  EBBId NULLId;  
+  EBBId NULLId;
   EBBInstance NULLInst;
 } L0Info = { .NULLId = NULLID, .NULLInst = { nullmissmf, 0} };
 
@@ -76,7 +76,7 @@ EBBRC
 L0InfoInit(void)
 {
   EBBRC rc;
-  /* NULLId should likely be a hardcoded constant id rather than an 
+  /* NULLId should likely be a hardcoded constant id rather than an
      allocated Id */
   rc = EBBAllocPrimId((EBBId *)&(L0Info.NULLId));
   LRT_RCAssert(rc);
@@ -87,11 +87,11 @@ L0InfoInit(void)
   return EBBRC_OK;
 }
 
-static inline void 
-CObjEBBInstance(EBBInstance *i, void *rootRef) 
-{ 
-  i->mf = CObjEBBMissFunc; 
-  i->arg = (uintptr_t)rootRef; 
+static inline void
+CObjEBBInstance(EBBInstance *i, void *rootRef)
+{
+  i->mf = CObjEBBMissFunc;
+  i->arg = (uintptr_t)rootRef;
 }
 
 /************** ACTUAL TEST CODE ****************/
@@ -106,7 +106,7 @@ struct {
   ServiceId theId;
 } ServiceInfo = { NULLID };
 
-CObject(SrvImp0) 
+CObject(SrvImp0)
 {
   COBJ_EBBFuncTbl(Service);
 };
@@ -143,11 +143,11 @@ SrvImp0Create(EBBInstance *i)
   LRT_RCAssert(rc);
 
   CObjEBBInstance(i, rootRef);
-  
+
   return EBBRC_OK;
 }
 
-CObject(SrvImp1) 
+CObject(SrvImp1)
 {
   COBJ_EBBFuncTbl(Service);
 };
@@ -184,7 +184,7 @@ SrvImp1Create(EBBInstance *i)
   LRT_RCAssert(rc);
 
   CObjEBBInstance(i, rootRef);
-  
+
   return EBBRC_OK;
 }
 
@@ -192,8 +192,8 @@ CObject(BindTst) {
   CObjInterface(App) *ft;
 };
 
-EBBRC 
-BindTst_start(AppRef _self, int argc, char **argv, 
+EBBRC
+BindTst_start(AppRef _self, int argc, char **argv,
 		 char **environ)
 {
   EBBInstance s0Inst;
@@ -210,67 +210,55 @@ BindTst_start(AppRef _self, int argc, char **argv,
   rc = EBBCALL((ServiceId)L0Info.NULLId, op);
   LRT_Assert(rc == EBBRC_NULL);
 
-  // TEST CODE:
-  // create two instances
   rc = SrvImp0Create(&s0Inst);
   LRT_RCAssert(rc);
 
   rc = SrvImp1Create(&s1Inst);
   LRT_RCAssert(rc);
 
-  // test a bunch of scenario's
-  // call an NULLID 
   lrt_printf("%s: ServiceInfo.theId=%p\n", __func__, ServiceInfo.theId);
 #if 0
-  // this segfaults as expected.  But maybe we should make NULLId really be a 
-  // valid  id that is bound to the NULLInst but ensure that bind calls on
-  // it fail
+  // this segfaults as expected.  But maybe we should make NULLId really be a
+  // valid  id that is bound to the NULLInst
   rc = EBBCALL(ServiceIds.theId, op);
   LRT_RCAssert(rc);
 #endif
 
-  // Allocate and Id that we will use to access the service
   rc = EBBAllocPrimId((EBBId *)&(ServiceInfo.theId));
   LRT_RCAssert(rc);
   lrt_printf("%s: After EBBAllocPrimId: ServiceInfo.theId=%p\n",
 	     __func__, ServiceInfo.theId);
 
-  // Call a freshly allocated id (right now we have the notion of unbound)
-  // eg. the call will segfault.  Maybe we want to make this a real state
-  // that can be tested or mayb as per the following comment remove it and
-  // be bound at least to NULLInst
-#if 0 
-  // this segfaults as expected.  But maybe it should not maybe we should bind 
+#if 0
+  // this segfaults as expected.  But maybe it should not maybe we should bind
   // an allocated id to a NULLInst
   rc = EBBCALL(ServiceInfo.theId, op);
   lrt_printf("%s: no bind EBBCALL(ServiceIds.theId, op)=%ld\n", __func__, rc);
 #endif
-
-  // bind to NULLInst and call
+  // bind service to L0Info (null)
   rc = Bind((EBBId)ServiceInfo.theId, L0Info.NULLInst);
   LRT_RCAssert(rc);
-
   rc = EBBCALL(ServiceInfo.theId, op);
-  if (passed == 1 && rc == EBBRC_NULL) passed = 0;
+  if (!(passed == 1 && rc == EBBRC_NULL)) passed = 0;
   lrt_printf("%s: Bind to L0Info.Inst: EBBCALL(ServiceIds.theId, op)=%ld\n",
 	     __func__, rc);
 
-  // bind (rebind) to instane 0 and call 
+  // bind service to s0Inst
   rc = Bind((EBBId)ServiceInfo.theId, s0Inst);
   LRT_RCAssert(rc);
-
   rc = EBBCALL(ServiceInfo.theId, op);
-  if (passed == 1 && rc == 100) passed = 0;
+  if (!(passed == 1 && rc == 100)) passed = 0;
   lrt_printf("%s: Bind to s0Inst: EBBCALL(ServiceIds.theId, op)=%ld\n",
 	     __func__, rc);
 
-  // bind (rebind) to instance 1 and call
+  // bind service to s1Inst
   rc = Bind((EBBId)ServiceInfo.theId, s1Inst);
+  LRT_RCAssert(rc);
   rc = EBBCALL(ServiceInfo.theId, op);
-  if (passed == 1 && rc == 200) passed = 0;
+  if (!(passed == 1 && rc == 200)) passed = 0;
   lrt_printf("%s: Bind to s1Inst: EBBCALL(ServiceIds.theId, op)=%ld\n",
 	     __func__, rc);
- 
+
   if (passed) lrt_printf("%s: PASSED\n", argv[0]);
   else lrt_printf("%s: FAILED\n", argv[0]);
 
