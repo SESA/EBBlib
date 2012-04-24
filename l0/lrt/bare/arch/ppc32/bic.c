@@ -50,6 +50,19 @@ struct bg_irqctrl {
 static struct bg_irqctrl * const bg_irqctrl = 
   (struct bg_irqctrl *)0xfffde000;
 
+void
+bic_dump()
+{
+  for (int i = 0; i < 15; i++){
+    printf("group: %d\n", i);
+    printf("status = %x\n", bg_irqctrl->groups[i].status);
+    printf("targets:\n");
+    for (int j = 0; j < 4; j++) {
+      printf("target %d = %x\n", j, bg_irqctrl->groups[i].target_irq[j]);
+    }
+  }
+}
+
 static inline uint8_t
 irq_to_target_index(uint8_t irq) {
   return irq / 8; //division rounds towards zero
@@ -57,7 +70,7 @@ irq_to_target_index(uint8_t irq) {
 
 static inline void
 set_target(uint8_t group, uint8_t irq, uint8_t target) {
-  uint8_t offset = 28 - irq;
+  uint8_t offset = 28 - (irq * 4);
   uint32_t val = 
     bg_irqctrl->groups[group].target_irq[irq_to_target_index(irq)];
   val &= ~(0xf << offset); //mask off the correct bits
@@ -74,8 +87,8 @@ bic_disable_and_clear_all()
     bg_irqctrl->groups[i].target_irq[2] = 0;
     bg_irqctrl->groups[i].target_irq[3] = 0;
     bg_irqctrl->groups[i].status = 0;    
-    asm volatile ("mbar");
   }
+  asm volatile ("mbar");
 }
 
 void

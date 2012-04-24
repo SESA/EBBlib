@@ -22,6 +22,10 @@
  * THE SOFTWARE.
  */
 
+#include <l0/cobj/CObjEBB.h>
+#include <l0/cobj/CObjEBBRootMulti.h>
+#include <l0/MemMgrPrim.h>
+
 COBJ_EBBType(App) {
   // this is the primodial message to an application
   // remember that this is an event driven system so your

@@ -22,6 +22,8 @@
  * THE SOFTWARE.
  */
 
+
 extern void lrt_start(void);
+extern void lrt_start_isr(void);
 
 #endif

@@ -48,7 +48,8 @@ _start:
 	
 	mtctr	r20
 	bctrl
-	attn
+spin:
+	b	spin
 
 entry_secondary: .long -1
 spin_secondary:

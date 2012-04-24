@@ -71,7 +71,9 @@ lrt_pic_loop(void)
   msr msr = get_msr();
   msr.ee = 1; //enable external interrupts
   msr.we = 1; //enable wait state
-  set_msr(msr);
+  while(1) {
+    set_msr(msr);
+  }
 
   LRT_Assert(0);
 }
@@ -84,7 +86,7 @@ lrt_pic_init(lrt_pic_handler h)
   //disable dec and watchdog interrupts
   //FIXME: make bit fields for this
   uint32_t tcr = get_spr(SPRN_TCR);
-  tcr &= ~0x30;
+  tcr &= ~0x0c000000; //stupid endianness
   set_spr(SPRN_TCR, tcr);
 
   bic_disable_and_clear_all();

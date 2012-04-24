@@ -30,6 +30,7 @@ enum bic_int_type {
   CRIT = 1,
   MACHINECHECK = 2
 };
+void bic_dump(void);
 void bic_disable_and_clear_all(void);
 void bic_disable_irq(uint8_t group, uint8_t irq);
 //loc is 0-3 core or -1 for broadcast

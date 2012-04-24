@@ -28,19 +28,18 @@
 #include <l0/lrt/bare/arch/ppc32/trans.h>
 #include <lrt/io.h>
 
+#include <l0/lrt/bare/arch/ppc32/bic.h>
+
 void
 lrt_start(void)
 {
   lrt_printf("lrt_start called!\n");
+  lrt_pic_ackipi();
 
   lrt_mem_init();
   lrt_trans_init();
 
-  lrt_printf("finished\n");
-  while (1)
-    ;
+  lrt_printf("lrt initialized\n");
 
-  l0_start(0);
- 
-  lrt_pic_ackipi();
+  l0_start(0); 
 }

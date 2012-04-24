@@ -31,9 +31,9 @@ defaultFuncCommon:
 	stwu r1, -(8+(8*8)+(8*4))(r1) //push frame
 	bl GenericDefaultFunc //call generic function
 	la r1, (8+(8*8)+(8*4))(r1)    //pop frame
-	l r0, 0x4(r1)               //restore link register
+	lwz r0, 0x4(r1)               //restore link register
 	mtlr r0
-	cmpdi r3, 0                   //check return value
+	cmpi 0, 1, r3, 0                   //check return value
 	bne   OnSuccess
 	blr
 OnSuccess:
@@ -46,14 +46,14 @@ OnSuccess:
 	lfd	f6,((-6)*8)(r1)
 	lfd	f7,((-7)*8)(r1)
 	lfd	f8,((-8)*8)(r1)
-	l r3, ((-64)+(-1)*4)(r1)              // restore parameter gprs
-	l r4, ((-64)+(-2)*4)(r1)
-	l r5, ((-64)+(-3)*4)(r1)
-	l r6, ((-64)+(-4)*4)(r1)
-	l r7, ((-64)+(-5)*4)(r1)
-	l r8, ((-64)+(-6)*4)(r1)
-	l r9, ((-64)+(-7)*4)(r1)
-	l r10, ((-64)+(-8)*4)(r1)
+	lwz r3, ((-64)+(-1)*4)(r1)              // restore parameter gprs
+	lwz r4, ((-64)+(-2)*4)(r1)
+	lwz r5, ((-64)+(-3)*4)(r1)
+	lwz r6, ((-64)+(-4)*4)(r1)
+	lwz r7, ((-64)+(-5)*4)(r1)
+	lwz r8, ((-64)+(-6)*4)(r1)
+	lwz r9, ((-64)+(-7)*4)(r1)
+	lwz r10, ((-64)+(-8)*4)(r1)
 	bctr                          //branch to method
 
 #define	DEFAULT_FUNC(OP)	\

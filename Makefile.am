@@ -40,11 +40,13 @@ libebb_a_SOURCES = $(arch_sources) $(l0_sources) $(lrt_sources) \
 libebb_a_LIBADD =
 libebb_a_DEPENDENCIES =
 
-ebbos_libs = l0/lrt/bare/arch/ppc32/start.o libebb.a
+ebbos_libs = libebb.a
 
 if LRT_BARE
 
 BAREFLAGS = -nostdlib -nodefaultlibs
+AM_LDFLAGS = -u _start
+
 
 if CXX_FFREESTANDING
 BAREFLAGS += -ffreestanding
@@ -52,7 +54,7 @@ endif
 
 if x86_64
 BAREFLAGS += -mno-red-zone -mno-mmx -mno-sse -mno-sse2 -mno-sse3
-AM_LDFLAGS = -melf_x86_64 -static -n -z max-page-size=0x1000 \
+AM_LDFLAGS += -melf_x86_64 -static -n -z max-page-size=0x1000 \
 	-Wl,--build-id=none \
 	-T $(top_srcdir)/l0/lrt/bare/arch/amd64/link.ld
 
@@ -65,7 +67,7 @@ endif
 
 if powerpc
 BAREFLAGS += -mno-sdata
-AM_LDFLAGS = -m32 -mno-sdata -static -nodefaultlibs -nostdlib \
+AM_LDFLAGS += -m32 -mno-sdata -static -nodefaultlibs -nostdlib \
 	-Wl,-G,0 -T $(top_srcdir)/l0/lrt/bare/arch/ppc32/link.ld
 LDADD = -lgcc
 %.uimage: %.bin

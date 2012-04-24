@@ -53,6 +53,7 @@ extern void trans_init(void);
 void
 EBB_init(uintptr_t startInfo)
 {
+  lrt_printf("EBB_init called!\n");
   EBBRC rc;
 
   rc = EBBMemMgrPrimInit();

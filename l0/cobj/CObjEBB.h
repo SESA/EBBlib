@@ -23,6 +23,7 @@
  */
 
 #include <l0/types.h>
+#include <l0/cobj/cobj.h>
 
 extern EBBRC CObjEBBMissFunc(EBBRep **, EBBLTrans *, FuncNum, EBBMissArg);
 
