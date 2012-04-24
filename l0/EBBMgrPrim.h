@@ -31,8 +31,8 @@ COBJ_EBBType(EBBMgrPrim) {
   EBBRC (*FreeId) (EBBMgrPrimRef _self, EBBId id);
   EBBRC (*BindId) (EBBMgrPrimRef _self, EBBId id, EBBMissFunc mf, 
 		   EBBMissArg arg);
-  EBBRC (*UnBindId) (EBBMgrPrimRef _self, EBBId id, EBBMissFunc *mf, 
-		     EBBMissArg *arg);
+  // note, this will just result in a bind of the id to null
+  EBBRC (*UnBindId) (EBBMgrPrimRef _self, EBBId id);
 };
 extern EBBMgrPrimId theEBBMgrPrimId;
 

@@ -94,3 +94,13 @@ lrt_trans_init() {
 		    : [gmem] "m" (*(char *)GMem), [lmem] "m" (*(char *)LMem)
 		    );
 }
+
+
+// returns the pointer to a remote local translation entry for a object id
+struct lrt_trans *lrt_trans_id2rlt(lrt_pic_id picid, uintptr_t oid)
+{
+  // only supports one core for now
+  LRT_Assert(picid == lrt_pic_myid);
+
+  return lrt_trans_id2lt(oid);
+}

@@ -26,6 +26,7 @@
 #include <stdint.h>
 
 extern uintptr_t lrt_pic_myid;
+typedef uintptr_t lrt_pic_id;
 
 typedef void *lrt_pic_handler; //a PC
 

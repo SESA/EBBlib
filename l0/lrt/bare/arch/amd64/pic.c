@@ -170,7 +170,7 @@ uintptr_t
 lrt_pic_getnumlpics()
 {
   lrt_printf("%s: NYI\n", __func__);
-  LRT_Assert(0);
+  return 1;
 }
 
 intptr_t lrt_pic_vecon(uintptr_t vec)
@@ -189,7 +189,7 @@ uintptr_t
 lrt_pic_getnextlpic(uintptr_t c)
 {
   lrt_printf("%s: NYI\n", __func__);
-  LRT_Assert(0);
+  return c;
 }
 
 intptr_t

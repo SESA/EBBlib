@@ -176,22 +176,29 @@ TransEBBIdFree(EBBId id) {
   gt->free = ALLOCATED;
 }
 
+static void
+TransEBBIdInvalidateCaches(EBBId id) 
+{
+  uintptr_t picId = lrt_pic_myid;
+
+  do{
+    EBBLTrans *lt = (EBBLTrans *)lrt_trans_id2rlt(picId, (uintptr_t)id);
+    EBBInitLTrans(lt);
+    picId = lrt_pic_getnextlpic(picId);
+  } while (picId != lrt_pic_myid);
+}
+
 void
 TransEBBIdBind(EBBId id, EBBMissFunc mf, EBBMissArg arg) {
   EBBGTrans *gt = id2gt(id);
-  EBBLTrans *lt = (EBBLTrans *)lrt_trans_id2lt((uintptr_t)id);
   gt->mf = mf;
   gt->arg = arg;
-  // Clear lt entry when new bind is made
-  EBBInitLTrans(lt);
-  // FIXME: this only works for unicore
-
+  
+  
+  // invalidate all the local translation caches
+  TransEBBIdInvalidateCaches(id);
 }
 
-void
-TransEBBIdUnBind(EBBId id, EBBMissFunc *mf, EBBMissArg *arg) {
-  lrt_printf("%s: NYI\n", __func__);
-}
 
 // at this point translation hardware has been initialized
 // software must setup the memory and any if its basic

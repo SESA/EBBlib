@@ -52,7 +52,7 @@ extern void initLTable(void);
 extern EBBId TransEBBIdAlloc(void);
 extern void TransEBBIdFree(EBBId id);
 extern void TransEBBIdBind(EBBId id, EBBMissFunc mf, EBBMissArg arg);
-extern void TransEBBIdUnBind(EBBId id, EBBMissFunc *mf, EBBMissArg *arg); 
+extern void TransEBBIdUnBind(EBBId id, EBBMissFunc mf, EBBMissArg arg); 
 #endif
 
 #endif

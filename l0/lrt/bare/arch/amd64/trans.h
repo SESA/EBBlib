@@ -26,6 +26,7 @@
 #include <stdint.h>
 
 #include <arch/amd64/paging.h>
+#include <l0/lrt/bare/arch/amd64/pic.h>
 
 #define LRT_TRANS_PAGESIZE (PAGE_SIZE) //4 K
 #define LRT_TRANS_PAGES (512)

@@ -24,6 +24,7 @@
  */
 
 extern uintptr_t lrt_pic_myid;
+typedef uintptr_t lrt_pic_id;
 
 typedef uintptr_t lrt_pic_src;
 typedef void *lrt_pic_handler; //Should be an address placed in the IDT

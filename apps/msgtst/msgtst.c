@@ -82,7 +82,7 @@ MsgHandlerTst_msg2(MsgHandlerRef _self, uintptr_t numtosend, uintptr_t id)
   
   do {
     rc = COBJ_EBBCALL(theMsgMgrId, msg2, nxt, sid, numtosend, id);
-    if (rc == EBBRC_NOTFOUND) lrt_printf("*");
+    //if (rc == EBBRC_NOTFOUND) lrt_printf("*");
 
   } while (rc == EBBRC_NOTFOUND);
   return EBBRC_OK;
