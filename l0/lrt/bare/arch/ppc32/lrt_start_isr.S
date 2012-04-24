@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  */
 
-#include <arch/ppc32/asdef.h>
+#include <arch/powerpc/asdef.h>
 
 	.globl lrt_start_isr
 lrt_start_isr:

@@ -1,6 +1,6 @@
 #include <config.h>
-#include <arch/ppc32/asm.h>
-#include <arch/ppc32/asdef.h>
+#include <arch/powerpc/asm.h>
+#include <arch/powerpc/asdef.h>
 #include <l0/const.h>
 	
 .section ".text"
