@@ -356,6 +356,8 @@ MsgMgrPrim_createRep(CObjEBBRootMultiImpRef rootRefMM,
 		     EventHandlerId ehid)
 {
   MsgMgrPrimRef repRef;
+  LRT_Assert(ehid != NULL);
+  
 
   EBBPrimMalloc(sizeof(MsgMgrPrim), &repRef, EBB_MEM_DEFAULT);
   MsgMgrPrim_SetFT(repRef);
@@ -371,8 +373,6 @@ MsgMgrPrim_createRep(CObjEBBRootMultiImpRef rootRefMM,
   }
   repRef->theRootMM = (CObjEBBRootMultiRef)rootRefMM;
 
-  LRT_Assert(ehid != NULL);
-  
   // register this rep to take over the IPI on this core, note, this
   // needs to be before we tell the root about ourselves, since otherwise 
   // have a race condition where the rep can say there is a message handler on
@@ -398,7 +398,7 @@ MsgMgrPrim_Init(void)
 {
   static EventHandlerId theMsgMgrEHId = 0;
 
-  if (__sync_bool_compare_and_swap(&theMsgMgrId, (MsgMgrId)0,
+  if (__sync_bool_compare_and_swap(&theMsgMgrEHId, (MsgMgrId)0,
 				   (MsgMgrId)-1)) {
     EBBRC rc;
     EBBId id;
@@ -420,13 +420,15 @@ MsgMgrPrim_Init(void)
     rc = EBBBindPrimId(id, CObjEBBMissFunc, (EBBMissArg)rootRefEH);
     LRT_RCAssert(rc); 
     theMsgMgrEHId = (EventHandlerId)id;
+    LRT_Assert(id != NULL);
   } else {
-    while (((volatile uintptr_t)theMsgMgrId)==-1);
+    while (((volatile uintptr_t)theMsgMgrEHId)==-1);
   }
 
   // initialize the msgmgr rep on this core, since we need to take
   // over the event locally for IPI even before anyone sends a message from
   // this event location
+  LRT_Assert(theMsgMgrEHId != NULL);
   MsgMgrPrim_createRep(rootRefMM, rootRefEH, theMsgMgrEHId);
   return EBBRC_OK;
 }
