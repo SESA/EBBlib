@@ -24,6 +24,7 @@
 
 #include <arch/powerpc/cpu.h>
 #include <arch/powerpc/mmu.h>
+#include <l0/lrt/bare/arch/ppc32/pic.h>
 #include <l0/lrt/bare/arch/ppc32/trans.h>
 #include <lrt/assert.h>
 
@@ -109,7 +110,8 @@ lrt_trans_init()
 }
 
 // returns the pointer to a remote local translation entry for a object id
-struct lrt_trans *lrt_trans_id2rlt(lrt_pic_id picid, uintptr_t oid)
+struct lrt_trans *
+lrt_trans_id2rlt(lrt_pic_id picid, uintptr_t oid)
 {
   // only supports one core for now
   LRT_Assert(picid == lrt_pic_myid);

@@ -21,7 +21,7 @@
  */
 
 #include <config.h>
-#include <stdint.h>
+#include <inttypes.h>
 
 #include <l0/lrt/types.h>
 #include <l0/cobj/cobj.h>
@@ -224,7 +224,7 @@ BindTst_start(AppRef _self, int argc, char **argv,
   LRT_RCAssert(rc);
 #endif
 
-  rc = EBBAllocPrimId((EBBId *)&(ServiceInfo.theId));
+  rc = EBBAllocPrimId((EBBId *)(void *)&(ServiceInfo.theId));
   LRT_RCAssert(rc);
   lrt_printf("%s: After EBBAllocPrimId: ServiceInfo.theId=%p\n",
 	     __func__, ServiceInfo.theId);
@@ -240,7 +240,7 @@ BindTst_start(AppRef _self, int argc, char **argv,
   LRT_RCAssert(rc);
   rc = EBBCALL(ServiceInfo.theId, op);
   if (!(passed == 1 && rc == EBBRC_NULL)) passed = 0;
-  lrt_printf("%s: Bind to L0Info.Inst: EBBCALL(ServiceIds.theId, op)=%ld\n",
+  lrt_printf("%s: Bind to L0Info.Inst: EBBCALL(ServiceIds.theId, op)=%" PRIdPTR "\n",
 	     __func__, rc);
 
   // bind service to s0Inst
@@ -248,7 +248,7 @@ BindTst_start(AppRef _self, int argc, char **argv,
   LRT_RCAssert(rc);
   rc = EBBCALL(ServiceInfo.theId, op);
   if (!(passed == 1 && rc == 100)) passed = 0;
-  lrt_printf("%s: Bind to s0Inst: EBBCALL(ServiceIds.theId, op)=%ld\n",
+  lrt_printf("%s: Bind to s0Inst: EBBCALL(ServiceIds.theId, op)=%" PRIdPTR "\n",
 	     __func__, rc);
 
   // bind service to s1Inst
@@ -256,7 +256,7 @@ BindTst_start(AppRef _self, int argc, char **argv,
   LRT_RCAssert(rc);
   rc = EBBCALL(ServiceInfo.theId, op);
   if (!(passed == 1 && rc == 200)) passed = 0;
-  lrt_printf("%s: Bind to s1Inst: EBBCALL(ServiceIds.theId, op)=%ld\n",
+  lrt_printf("%s: Bind to s1Inst: EBBCALL(ServiceIds.theId, op)=%" PRIdPTR "\n",
 	     __func__, rc);
 
   if (passed) lrt_printf("%s: PASSED\n", argv[0]);
