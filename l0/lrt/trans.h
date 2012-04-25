@@ -28,14 +28,13 @@
 //forward declaration for the lrt specific headers
 struct lrt_trans;
 
-// prototypes for the common set of inlined functions all platforms must provide
-// call without _func to get the inlined version
-extern struct lrt_trans *lrt_trans_id2lt_func(uintptr_t i);
-extern uintptr_t lrt_trans_lt2id_func(struct lrt_trans *t);
-extern struct lrt_trans *lrt_trans_id2gt_func(uintptr_t i);
-extern uintptr_t lrt_trans_gt2id_func(struct lrt_trans *t);
-extern struct lrt_trans *lrt_trans_gt2lt_func(struct lrt_trans *gt);
-extern struct lrt_trans *lrt_trans_lt2gt_func(struct lrt_trans *lt);
+// prototypes for the common set of functions all platforms must provide
+static inline struct lrt_trans *lrt_trans_id2lt(uintptr_t i);
+static inline uintptr_t lrt_trans_lt2id(struct lrt_trans *t);
+static inline struct lrt_trans *lrt_trans_id2gt(uintptr_t i);
+static inline uintptr_t lrt_trans_gt2id(struct lrt_trans *t);
+static inline struct lrt_trans *lrt_trans_gt2lt(struct lrt_trans *gt);
+static inline struct lrt_trans *lrt_trans_lt2gt(struct lrt_trans *lt);
 
 // returns the pointer to a remote local translation entry for a object id
 extern struct lrt_trans *lrt_trans_id2rlt(lrt_pic_id picid, uintptr_t objid);
@@ -54,7 +53,6 @@ extern struct lrt_trans *lrt_trans_id2rlt(lrt_pic_id picid, uintptr_t objid);
 // eg.  some bits used as a key map to a node
 //      some bits used as a key map to a 
 //      lrt_trans pointer
-
 struct lrt_trans {
   uint64_t vals[4];
 };
