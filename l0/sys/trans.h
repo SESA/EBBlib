@@ -34,6 +34,7 @@ extern EBBFunc EBBDefFT[EBB_TRANS_MAX_FUNCS];
 #ifdef __cplusplus
 extern "C" {
 #endif
+extern int trans_test_core_used(EBBGTrans *gt, int core);
 extern void trans_init(void);
 #ifdef __cplusplus
 }

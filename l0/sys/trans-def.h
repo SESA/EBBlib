@@ -44,6 +44,10 @@ union EBBTransStruct {
       uintptr_t v3;
       EBBGTrans *free;
     };
+    union {
+      uintptr_t v4;
+      uint64_t corebv;	// bitvector of cores where object has been accessed
+    };
   };
   struct lrt_trans padding;
 };

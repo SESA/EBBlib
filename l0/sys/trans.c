@@ -176,14 +176,21 @@ TransEBBIdFree(EBBId id) {
   gt->free = ALLOCATED;
 }
 
+STATIC_ASSERT(LRT_PIC_MAX_PICS<=64, "maximum bits in corebv in EBBTransStruct");
+
 static void
 TransEBBIdInvalidateCaches(EBBId id) 
 {
   uintptr_t picId = lrt_pic_myid;
-
+  EBBGTrans *gt = id2gt(id);
+  
   do{
-    EBBLTrans *lt = (EBBLTrans *)lrt_trans_id2rlt(picId, (uintptr_t)id);
-    EBBInitLTrans(lt);
+    if (trans_test_core_used(gt, picId)) {
+      EBBLTrans *lt = (EBBLTrans *)lrt_trans_id2rlt(picId, (uintptr_t)id);
+      LRT_Assert(lt != NULL);
+
+      EBBInitLTrans(lt);
+    }
     picId = lrt_pic_getnextlpic(picId);
   } while (picId != lrt_pic_myid);
 }
@@ -196,7 +203,7 @@ TransEBBIdBind(EBBId id, EBBMissFunc mf, EBBMissArg arg) {
   
   
   // invalidate all the local translation caches
-  TransEBBIdInvalidateCaches(id);
+ TransEBBIdInvalidateCaches(id);
 }
 
 
