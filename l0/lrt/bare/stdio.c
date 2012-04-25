@@ -115,7 +115,8 @@ prints(const char *str, int width, int precision, unsigned char flags,
     pad = ' ';
   }  
   if (width > 0) {
-    for(ptr = str; *ptr != '\0'; ptr++, len++) ;
+    for(ptr = str; (*ptr != '\0') && ((precision == -1) || (len <= precision));
+	ptr++, len++) ;
     if(len >= width) {
       width = 0;
     } else {
@@ -298,11 +299,11 @@ vfprintf(FILE *stream, const char *format, va_list ap)
 	  count += printi((long long)va_arg(ap, int),
 			  10, 1, width, precision, flags, 'a', stream);
 	}
-      } else if (*format == 'x') {
+      } else if (*format == 'x' || *format == 'p') {
 	if(flags & SHORT) {
 	  count += printi((long long)(unsigned short)va_arg(ap, int),
 			  16, 1, width, precision, flags, 'a', stream);
-	} else if(flags & LONG) {
+	} else if(flags & LONG || *format == 'p') {
 	  count += printi((long long)(unsigned long)va_arg(ap, long),
 			  16, 1, width, precision, flags, 'a', stream);
 	} else if(flags & LONGLONG) {

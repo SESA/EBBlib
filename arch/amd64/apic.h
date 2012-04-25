@@ -202,25 +202,29 @@ enable_lapic(void)
 static inline uint32_t
 get_lapic_id(void)
 {
-  return LAPIC_BASE->lir.lapicid;
+  lapic_id_register lir = LAPIC_BASE->lir;
+  return lir.lapicid;
 }
 
 static inline uint32_t
 get_lapic_version(void)
 {
-  return LAPIC_BASE->lvr.version;
+  lapic_version_register lvr = LAPIC_BASE->lvr;
+  return lvr.version;
 }
 
 static inline uint32_t
 get_lapic_max_lvt_entry(void)
 {
-  return LAPIC_BASE->lvr.max_lvt_entry;
+  lapic_version_register lvr = LAPIC_BASE->lvr;
+  return lvr.max_lvt_entry;
 }
 
 static inline uint32_t
 get_lapic_eoi_broadcast_suppression(void)
 {
-   return LAPIC_BASE->lvr.eoi_broadcast_suppression;
+  lapic_version_register lvr = LAPIC_BASE->lvr;
+  return lvr.eoi_broadcast_suppression;
 }
 
 //TODO: There is a bit that we probably want to check that tells us if the ipi
