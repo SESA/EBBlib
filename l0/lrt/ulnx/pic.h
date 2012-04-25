@@ -22,7 +22,7 @@
  * THE SOFTWARE.
  */
 
-enum {LRT_PIC_LG2MAX_PICS = 7}; // 128 
+enum {LRT_PIC_LG2MAX_PICS = 6}; // 64
 enum {LRT_PIC_MAX_PICS = (1 << LRT_PIC_LG2MAX_PICS) };
 enum {LRT_PIC_MAX_PIC_ID = (LRT_PIC_MAX_PICS-1)};
 
