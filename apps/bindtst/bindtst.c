@@ -194,7 +194,7 @@ CObject(BindTst) {
 
 EBBRC
 BindTst_start(AppRef _self, int argc, char **argv,
-		 char **environ)
+	      char **environ)
 {
   EBBInstance s0Inst;
   EBBInstance s1Inst;

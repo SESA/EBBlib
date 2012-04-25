@@ -107,22 +107,42 @@ dumpstartargs(void)
   }
 }
 
+static int
+parse_ebbos_arg(int i, char **argv, int *s)
+{
+  const char *ebbos_cores = "-ebbos_cores";
+  int ret=1;
+
+  if (strncmp(argv[i], ebbos_cores, strlen(ebbos_cores))==0) {
+    // overridding the number of cores
+    ret = 2;			/* 2 arguments to be handled */
+    start_args.cores=atoi(argv[i+1]);
+    fprintf(stderr, "EBBOS: overriding cores to %ld\n", start_args.cores);
+    start_args.cores_to_start = start_args.cores -1;
+  } else {
+    fprintf(stderr, "EBBOS: unknown argument stripped: %s\n", argv[i]);
+  }
+  return ret;
+}
+
 void
 startinfo(int argc, char **argv, char **environ, 
 	  uintptr_t *addr, intptr_t *size) 
 {
+  const char *ebbos_arg = "-ebbos";
   char *data, *cur;
-  int s, i;
+  int *argcl;
+  int s, i, j;
 
   s = sizeof(int); // add bytes for argc
   for (i=0; i<argc; i++) {
     s += strlen(argv[i]); 
-    s++; // add one for nul
+    s++; // add one for null
   }
 
   for (i=0; environ[i]!=0; i++) {
     s += strlen(environ[i]);
-    s++; // add one for nul
+    s++; // add one for null
   }
 
   data = (char *)malloc(s);
@@ -130,13 +150,26 @@ startinfo(int argc, char **argv, char **environ,
   cur = data;
 
   // first bytes are for argc
+  argcl = ((int *)cur);
+
   *((int *)cur) = argc;
   cur+=sizeof(int);
 
+  *argcl = argc;		/* will change to strip off -lrt_cores */
   // followed by argv data
   for (i=0; i<argc; i++) {
-    cur = stpcpy(cur, argv[i]);
-    cur++;
+    if (strncmp(argv[i], ebbos_arg, strlen(ebbos_arg))==0) {
+      int osargs;		/* arguments processed */
+      osargs = parse_ebbos_arg(i, argv, &s);
+      for (j=0; j<osargs; j++) {
+	s -= strlen(argv[i+j]) + 1;
+      }
+      i += osargs - 1;
+      *argcl -= osargs;
+    } else {
+      cur = stpcpy(cur, argv[i]);
+      cur++;
+    }
   }
 
   // followed by environment data
@@ -161,13 +194,7 @@ main(int argc, char **argv, char **environ)
   start_args.start_info = 0;
   start_args.start_info_size = 0;
   
-  if (argc>1) {
-    start_args.cores=atoi(argv[1]);
-    start_args.cores_to_start = start_args.cores -1;
-  }
-
-  startinfo(argc, argv, environ,
-	    &start_args.start_info, &start_args.start_info_size);
+  startinfo(argc, argv, environ, &start_args.start_info, &start_args.start_info_size);
 
   //  dumpstartargs();
 #ifdef LRT_STANDALONE_TEST
