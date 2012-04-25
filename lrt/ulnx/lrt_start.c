@@ -184,13 +184,45 @@ startinfo(int argc, char **argv, char **environ,
   *size = (uintptr_t)s;
 }
 
+#ifdef __APPLE__
+#include <sys/sysctl.h>
+#endif
+
+
+int
+static num_phys_cores()
+{
+#ifdef __APPLE__
+  /* 
+   * seems to be three options, for now pick ncpu, which is the maximum, presumably hyperthreaded
+   */
+#if 0
+  char *clrname = "hw.physicalcpu_max";
+  char *clrname = "hw.logicalcpu_max";
+#endif
+  char *clrname = "hw.ncpu";
+  int mib[4], numcores;
+  size_t len, size;
+  len = 4;
+  sysctlnametomib(clrname, mib, &len);
+  size = sizeof(numcores);
+  if (sysctl(mib, len, &numcores, &size, NULL, 0)==-1) {
+    perror("sysctl");
+    return -1;
+  }
+  return numcores;
+#else // if LINUX/UNIX
+  return sysconf(_SC_NPROCESSORS_ONLN);
+#endif
+}
+
 int
 main(int argc, char **argv, char **environ) 
 {
   fprintf(stderr, "%s: start!\n", __func__); 
 
-  start_args.cores = 1;
-  start_args.cores_to_start = 0;
+  start_args.cores = num_phys_cores();
+  start_args.cores_to_start = start_args.cores-1;
   start_args.start_info = 0;
   start_args.start_info_size = 0;
   

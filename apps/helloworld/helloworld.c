@@ -49,44 +49,10 @@ CObject(HelloWorld) {
   CObjInterface(App) *ft;
 };
 
-#ifdef LRT_ULNX
-#ifdef __APPLE__
-#include <sys/sysctl.h>
-#endif
-
-
-int
-static num_phys_cores()
-{
-#ifdef __APPLE__
-  /* 
-   * seems to be three options, for now pick ncpu, which is the maximum, presumably hyperthreaded
-   */
-#if 0
-  char *clrname = "hw.physicalcpu_max";
-  char *clrname = "hw.logicalcpu_max";
-#endif
-  char *clrname = "hw.ncpu";
-  int mib[4], numcores;
-  size_t len, size;
-  len = 4;
-  sysctlnametomib(clrname, mib, &len);
-  size = sizeof(numcores);
-  if (sysctl(mib, len, &numcores, &size, NULL, 0)==-1) {
-    perror("sysctl");
-    return -1;
-  }
-  return numcores;
-#else // if LINUX/UNIX
-  return sysconf(_SC_NPROCESSORS_ONLN);
-#endif
-}
-#endif 
-
 static void 
 dumpArgsAndEnviron(int argc, char **argv, char **environ)
 {
-  int i, numcores;
+  int i;
   if (argv) {
     for (i=0; i<argc; i++) lrt_printf("argv[%d]=%s\n", i, argv[i]);
   }
@@ -95,12 +61,6 @@ dumpArgsAndEnviron(int argc, char **argv, char **environ)
     for (i=0; environ[i]!=NULL; i++) lrt_printf("environ[%d]=%s\n", 
 						i, environ[i]);
   }
-
-#ifdef LRT_ULNX
-  numcores = num_phys_cores();
-#endif
-  lrt_printf("number of cores from platform %d\n", numcores);
-
 }
 
 
