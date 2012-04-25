@@ -28,27 +28,17 @@
 //forward declaration for the lrt specific headers
 struct lrt_trans;
 
-// prototypes for the common set of functions available on all platforms
-// these are inlined on current implementations, probably should not all be 
-// static
-extern void * e_lrt_trans_gmem(void);
-extern void * e_lrt_trans_lmem(void);
-extern uintptr_t e_lrt_trans_offset(uintptr_t base, uintptr_t t);
-extern uintptr_t e_lrt_trans_idbase(void);
-extern struct lrt_trans *e_lrt_trans_id2lt(uintptr_t i);
-extern uintptr_t e_lrt_trans_lt2id(struct lrt_trans *t);
-extern struct lrt_trans *e_lrt_trans_id2gt(uintptr_t i);
-extern uintptr_t e_lrt_trans_gt2id(struct lrt_trans *t);
-extern struct lrt_trans *e_lrt_trans_gt2lt(struct lrt_trans *gt);
-extern struct lrt_trans *e_lrt_trans_lt2gt(struct lrt_trans *lt);
-
-// functions we are not inlining:
+// prototypes for the common set of inlined functions all platforms must provide
+// call without _func to get the inlined version
+extern struct lrt_trans *lrt_trans_id2lt_func(uintptr_t i);
+extern uintptr_t lrt_trans_lt2id_func(struct lrt_trans *t);
+extern struct lrt_trans *lrt_trans_id2gt_func(uintptr_t i);
+extern uintptr_t lrt_trans_gt2id_func(struct lrt_trans *t);
+extern struct lrt_trans *lrt_trans_gt2lt_func(struct lrt_trans *gt);
+extern struct lrt_trans *lrt_trans_lt2gt_func(struct lrt_trans *lt);
 
 // returns the pointer to a remote local translation entry for a object id
 extern struct lrt_trans *lrt_trans_id2rlt(lrt_pic_id picid, uintptr_t objid);
-
-// invalidate all lrt caches for this object
-extern void lrt_trans_invalidate(uintptr_t i);
 
 // real implementations come from these files
 #ifdef LRT_ULNX
