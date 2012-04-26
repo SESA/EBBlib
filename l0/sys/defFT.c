@@ -27,21 +27,6 @@
 #include <l0/sys/trans-def.h>
 #include <l0/sys/defFT.h>
 
-void 
-trans_mark_core_used(EBBGTrans *gt, lrt_pic_id core)
-{
-  uint64_t mask = (uint64_t)1 << core; 
-  gt->corebv |= mask;
-}
-
-int
-trans_test_core_used(EBBGTrans *gt, int core)
-{
-  uint64_t mask = (uint64_t)1 << core; 
-  if (gt->corebv | mask) return 1;
-  return 0;
-}
-
 //takes the function table pointer and function number and
 //invokes the miss handler then
 //returns the function pointer to be called
@@ -50,7 +35,6 @@ void *GenericDefaultFunc(EBBRep **_self, FuncNum fnum) {
   //word to get the LTrans
   EBBLTrans *self = (EBBLTrans *)(*_self-1);
   EBBGTrans *gt = (EBBGTrans *)lrt_trans_lt2gt((struct lrt_trans *)self);
-  trans_mark_core_used(gt, lrt_pic_myid);
   EBBRC ret = gt->mf(_self, self, fnum, gt->arg);
   if(EBBRC_SUCCESS(ret)) {
     //return the function we wanted to call originally
@@ -161,7 +145,7 @@ EBBFunc EBBDefFT[EBB_TRANS_MAX_FUNCS] = {
   (EBBFunc)EBBDefFunc_98,
   (EBBFunc)EBBDefFunc_99,
   (EBBFunc)EBBDefFunc_100,
-  (EBBFunc)EBBDefFunc_101,     
+  (EBBFunc)EBBDefFunc_101,
   (EBBFunc)EBBDefFunc_102,
   (EBBFunc)EBBDefFunc_103,
   (EBBFunc)EBBDefFunc_104,
@@ -261,7 +245,7 @@ EBBFunc EBBDefFT[EBB_TRANS_MAX_FUNCS] = {
   (EBBFunc)EBBDefFunc_198,
   (EBBFunc)EBBDefFunc_199,
   (EBBFunc)EBBDefFunc_200,
-  (EBBFunc)EBBDefFunc_201,     
+  (EBBFunc)EBBDefFunc_201,
   (EBBFunc)EBBDefFunc_202,
   (EBBFunc)EBBDefFunc_203,
   (EBBFunc)EBBDefFunc_204,

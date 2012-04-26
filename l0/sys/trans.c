@@ -91,9 +91,27 @@ id2gt(EBBId id) {
   return (EBBGTrans *)lrt_trans_id2gt((uintptr_t)id);
 }
 
+
+void
+trans_mark_core_used(EBBGTrans *gt, lrt_pic_id core)
+{
+  uint64_t mask = (uint64_t)1 << core;
+  gt->corebv |= mask;
+}
+
+int
+trans_test_core_used(EBBGTrans *gt, int core)
+{
+  uint64_t mask = (uint64_t)1 << core;
+  if (gt->corebv | mask) return 1;
+  return 0;
+}
+
 void
 EBBCacheObj(EBBLTrans *lt, EBBRep *obj) {
+  EBBGTrans *gt = (EBBGTrans *)lrt_trans_lt2gt((struct lrt_trans *)lt);
   lt->obj = obj;
+  trans_mark_core_used(gt, lrt_pic_myid);
 }
 
 //get number of GTrans in the table
@@ -179,11 +197,11 @@ TransEBBIdFree(EBBId id) {
 STATIC_ASSERT(LRT_PIC_MAX_PICS<=64, "maximum bits in corebv in EBBTransStruct");
 
 static void
-TransEBBIdInvalidateCaches(EBBId id) 
+TransEBBIdInvalidateCaches(EBBId id)
 {
   uintptr_t picId = lrt_pic_myid;
   EBBGTrans *gt = id2gt(id);
-  
+
   do{
     if (trans_test_core_used(gt, picId)) {
       EBBLTrans *lt = (EBBLTrans *)lrt_trans_id2rlt(picId, (uintptr_t)id);
@@ -200,10 +218,9 @@ TransEBBIdBind(EBBId id, EBBMissFunc mf, EBBMissArg arg) {
   EBBGTrans *gt = id2gt(id);
   gt->mf = mf;
   gt->arg = arg;
-  
-  
+
   // invalidate all the local translation caches
- TransEBBIdInvalidateCaches(id);
+  TransEBBIdInvalidateCaches(id);
 }
 
 
