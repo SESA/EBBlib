@@ -80,5 +80,5 @@ CObject(HelloWorld) {
 CObjInterface(App) HelloWorld_ftable = {HelloWorld_start};
 
 extern "C" {
-  APP(HelloWorld);
+  APP(HelloWorld, APP_START_ONE);
 }

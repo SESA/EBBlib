@@ -270,5 +270,5 @@ CObjInterface(App) BindTst_ftable = {
   .start = BindTst_start
 };
 
-APP(BindTst);
+APP(BindTst, APP_START_ALL);
 

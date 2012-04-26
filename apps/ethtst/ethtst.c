@@ -78,4 +78,4 @@ CObjInterface(App) EthTst_ftable = {
   .start = EthTst_start
 };
 
-APP(EthTst);
+APP(EthTst, APP_START_ALL);

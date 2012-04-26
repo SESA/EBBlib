@@ -83,5 +83,5 @@ CObjInterface(App) HelloWorld_ftable = {
   .start = HelloWorld_start
 };
 
-APP(HelloWorld);
+APP(HelloWorld, APP_START_ONE);
 

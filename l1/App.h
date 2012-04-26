@@ -41,7 +41,7 @@ extern AppId theAppId;
 
 extern EBBRep * App_createRep(CObjEBBRootMultiRef _self);
 
-#define APP(REPTYPE)					       \
+#define APP_BASE(REPTYPE)				       \
 EBBRep * App_createRep(CObjEBBRootMultiRef _self)	       \
 {				                               \
   REPTYPE * repRef;					       \
@@ -49,5 +49,18 @@ EBBRep * App_createRep(CObjEBBRootMultiRef _self)	       \
   repRef->ft = &REPTYPE ## _ftable;			       \
   return (EBBRep *)repRef;				       \
 }                                                     
+
+// defines if the application wants the start event on all 
+// cores or just one core
+enum {
+  APP_START_ONE,
+  APP_START_ALL
+};
+
+extern const int app_start_model;
+
+#define APP(REPTYPE,SM)					       \
+  const int app_start_model = SM;		       \
+  APP_BASE(REPTYPE);					       
 
 #endif
