@@ -49,6 +49,7 @@
 #include <l1/App.h>
 #include <lrt/startinfo.h>
 #include <lrt/misc.h>
+#include <lrt/io.h>
 
 CObject(L1Prim) {
   COBJ_EBBFuncTbl(L1);
@@ -184,6 +185,14 @@ L1Prim_start(L1Ref _self, uintptr_t startinfo)
   rc = CObjEBBRootSharedCreate(&rootRef, 
 			       (EBBRepRef)(void *)&(self->startMH));
   LRT_RCAssert(rc);
+
+  if (MyEL() != 0) {
+    lrt_printf("EBBOS: secondary processor %ld bailing out to event loop\n", MyEL());
+    return EBBRC_OK;
+  }
+
+
+  lrt_printf("EBBOS: primary processor %ld continuing\n", MyEL());
   rc = EBBAllocPrimId((EBBId *)(void *)&(self->startMHId));
   LRT_RCAssert(rc);
   rc = CObjEBBBind((EBBId)self->startMHId, rootRef);
