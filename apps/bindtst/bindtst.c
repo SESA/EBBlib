@@ -192,68 +192,126 @@ CObject(BindTst) {
   CObjInterface(App) *ft;
 };
 
+EBBInstance s0Inst;
+EBBInstance s1Inst;
+volatile int b1, b2;
+
+static void 
+init_barrier(volatile int *b) 
+{
+  *b = 0;
+}
+
+static void
+barrier(volatile int *b, int count)
+{
+  lrt_printf("[%d-", (int)MyEL());
+  __sync_add_and_fetch(b, 1);
+  while (*b < count){lrt_printf("z");}
+  lrt_printf("%d]", (int)MyEL());
+}
+
+volatile int cores=0;
+
 EBBRC
 BindTst_start(AppRef _self, int argc, char **argv,
 	      char **environ)
 {
-  EBBInstance s0Inst;
-  EBBInstance s1Inst;
   EBBRC rc;
   int passed=1;
+  int master=0;
 
-  lrt_printf("%s: START\n", argv[0]);
-  lrt_printf("%s: start\n", __func__);
+  if (MyEL() == 0) {
+    master = 1;
+    cores = EventMgr_NumEL();
+    init_barrier(&b1);
+    init_barrier(&b2);
+  }
 
-  // This code should be move out when we are happy
-  rc = L0InfoInit();
-  LRT_RCAssert(rc);
+
+  lrt_printf("%s: START, core %d of cores %d\n", argv[0], (int)MyEL(), cores);
+
+  while ((volatile int)cores == 0){lrt_printf(".");}
+
+  barrier(&b1, cores); if (master) init_barrier(&b1);
+
+  if (master) {
+    // This code should be move out when we are happy
+    rc = L0InfoInit();
+    LRT_RCAssert(rc);
+  }
+
+  barrier(&b2, cores); if (master) init_barrier(&b2);
+
   rc = EBBCALL((ServiceId)L0Info.NULLId, op);
   LRT_Assert(rc == EBBRC_NULL);
 
-  rc = SrvImp0Create(&s0Inst);
-  LRT_RCAssert(rc);
+  if (master) {
+    rc = SrvImp0Create(&s0Inst);
+    LRT_RCAssert(rc);
 
-  rc = SrvImp1Create(&s1Inst);
-  LRT_RCAssert(rc);
+    rc = SrvImp1Create(&s1Inst);
+    LRT_RCAssert(rc);
 
-  lrt_printf("%s: ServiceInfo.theId=%p\n", __func__, ServiceInfo.theId);
-#if 0
-  // this segfaults as expected.  But maybe we should make NULLId really be a
-  // valid  id that is bound to the NULLInst
-  rc = EBBCALL(ServiceIds.theId, op);
-  LRT_RCAssert(rc);
-#endif
-
-  rc = EBBAllocPrimId((EBBId *)(void *)&(ServiceInfo.theId));
-  LRT_RCAssert(rc);
-  lrt_printf("%s: After EBBAllocPrimId: ServiceInfo.theId=%p\n",
-	     __func__, ServiceInfo.theId);
+    lrt_printf("%s: ServiceInfo.theId=%p\n", __func__, ServiceInfo.theId);
 
 #if 0
-  // this segfaults as expected.  But maybe it should not maybe we should bind
-  // an allocated id to a NULLInst
-  rc = EBBCALL(ServiceInfo.theId, op);
-  lrt_printf("%s: no bind EBBCALL(ServiceIds.theId, op)=%ld\n", __func__, rc);
+    // this segfaults as expected.  But maybe we should make NULLId really be a
+    // valid  id that is bound to the NULLInst
+    rc = EBBCALL(ServiceIds.theId, op);
+    LRT_RCAssert(rc);
 #endif
+
+    rc = EBBAllocPrimId((EBBId *)(void *)&(ServiceInfo.theId));
+    LRT_RCAssert(rc);
+    lrt_printf("%s: After EBBAllocPrimId: ServiceInfo.theId=%p\n",
+	       __func__, ServiceInfo.theId);
+
+#if 0
+    // this segfaults as expected.  But maybe it should not maybe we should bind
+    // an allocated id to a NULLInst
+    rc = EBBCALL(ServiceInfo.theId, op);
+    lrt_printf("%s: no bind EBBCALL(ServiceIds.theId, op)=%ld\n", __func__, rc);
+#endif
+  }
+
   // bind service to L0Info (null)
-  rc = Bind((EBBId)ServiceInfo.theId, L0Info.NULLInst);
-  LRT_RCAssert(rc);
+  if (master) {
+    rc = Bind((EBBId)ServiceInfo.theId, L0Info.NULLInst);
+    LRT_RCAssert(rc);
+  }
+
+  barrier(&b1, cores); if (master) init_barrier(&b1);
+
   rc = EBBCALL(ServiceInfo.theId, op);
   if (!(passed == 1 && rc == EBBRC_NULL)) passed = 0;
   lrt_printf("%s: Bind to L0Info.Inst: EBBCALL(ServiceIds.theId, op)=%" PRIdPTR "\n",
 	     __func__, rc);
 
+  barrier(&b2, cores); if (master) init_barrier(&b2);
   // bind service to s0Inst
-  rc = Bind((EBBId)ServiceInfo.theId, s0Inst);
-  LRT_RCAssert(rc);
+  if (master) {
+    rc = Bind((EBBId)ServiceInfo.theId, s0Inst);
+    LRT_RCAssert(rc);
+  }
+
+  barrier(&b1, cores); if (master) init_barrier(&b1);
+
   rc = EBBCALL(ServiceInfo.theId, op);
   if (!(passed == 1 && rc == 100)) passed = 0;
   lrt_printf("%s: Bind to s0Inst: EBBCALL(ServiceIds.theId, op)=%" PRIdPTR "\n",
 	     __func__, rc);
 
-  // bind service to s1Inst
-  rc = Bind((EBBId)ServiceInfo.theId, s1Inst);
-  LRT_RCAssert(rc);
+  barrier(&b2, cores); if (master) init_barrier(&b2);
+
+  if (master) {
+    // bind service to s1Inst
+    rc = Bind((EBBId)ServiceInfo.theId, s1Inst);
+    LRT_RCAssert(rc);
+  }
+
+  barrier(&b1, cores); if (master) init_barrier(&b1);
+
   rc = EBBCALL(ServiceInfo.theId, op);
   if (!(passed == 1 && rc == 200)) passed = 0;
   lrt_printf("%s: Bind to s1Inst: EBBCALL(ServiceIds.theId, op)=%" PRIdPTR "\n",
@@ -262,7 +320,9 @@ BindTst_start(AppRef _self, int argc, char **argv,
   if (passed) lrt_printf("%s: PASSED\n", argv[0]);
   else lrt_printf("%s: FAILED\n", argv[0]);
 
-  lrt_exit(0);
+  barrier(&b2, cores); if (master) init_barrier(&b2);
+
+  if (master) lrt_exit(0);
   return EBBRC_OK;
 }
 
