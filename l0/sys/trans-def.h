@@ -46,7 +46,9 @@ union EBBTransStruct {
     };
     union {
       uintptr_t v4;
-      uint64_t corebv;	// bitvector of cores where object has been accessed
+      uint64_t corebv;	// bitvector of cores where object is cached in translation table
+			// note, object may have been accessed in larger set of nodes and
+			// tranlated id may be on stack in other nodes
     };
   };
   struct lrt_trans padding;
