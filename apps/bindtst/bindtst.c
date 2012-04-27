@@ -194,24 +194,41 @@ CObject(BindTst) {
 
 EBBInstance s0Inst;
 EBBInstance s1Inst;
-volatile int b1, b2;
 
-static void 
-init_barrier(volatile int *b) 
+typedef struct {
+  int parties;
+  int count;
+  volatile int sense;
+} barrier_type;
+
+void
+init_barrier(barrier_type *b, int c)
 {
-  *b = 0;
+  b->parties = c;
+  b->count = c;
+  b->sense = 0;
 }
 
-static void
-barrier(volatile int *b, int count)
+
+void
+barrier(barrier_type *b, int *thrsense)
 {
-  lrt_printf("[%d-", (int)MyEL());
-  __sync_add_and_fetch(b, 1);
-  while (*b < count){lrt_printf("z");}
-  lrt_printf("%d]", (int)MyEL());
+  int mysense = !*thrsense; 
+  *thrsense = mysense;
+
+  if (__sync_fetch_and_sub(&b->count, 1) == 1) {
+    // last guy resets barrier, and changes sense
+    b->count = b->parties;
+    b->sense = mysense;
+  } else {
+    // spin on sense changing
+    while (b->sense != mysense){}
+  }
 }
 
 volatile int cores=0;
+barrier_type bar;
+
 
 EBBRC
 BindTst_start(AppRef _self, int argc, char **argv,
@@ -220,20 +237,22 @@ BindTst_start(AppRef _self, int argc, char **argv,
   EBBRC rc;
   int passed=1;
   int master=0;
+  int sense=0;			/* sense of thread for barrier */
 
   if (MyEL() == 0) {
     master = 1;
-    cores = EventMgr_NumEL();
-    init_barrier(&b1);
-    init_barrier(&b2);
-  }
+    init_barrier(&bar, EventMgr_NumEL());
 
+    // last thing; initialize cores will unblock everyone else
+    cores = EventMgr_NumEL();
+  } else {
+    // everyone but first core blocks here
+    while ((volatile int)cores == 0){}
+  }
 
   lrt_printf("%s: START, core %d of cores %d\n", argv[0], (int)MyEL(), cores);
 
-  while ((volatile int)cores == 0){lrt_printf(".");}
-
-  barrier(&b1, cores); if (master) init_barrier(&b1);
+  barrier(&bar, &sense); 
 
   if (master) {
     // This code should be move out when we are happy
@@ -241,7 +260,7 @@ BindTst_start(AppRef _self, int argc, char **argv,
     LRT_RCAssert(rc);
   }
 
-  barrier(&b2, cores); if (master) init_barrier(&b2);
+  barrier(&bar, &sense); 
 
   rc = EBBCALL((ServiceId)L0Info.NULLId, op);
   LRT_Assert(rc == EBBRC_NULL);
@@ -281,28 +300,28 @@ BindTst_start(AppRef _self, int argc, char **argv,
     LRT_RCAssert(rc);
   }
 
-  barrier(&b1, cores); if (master) init_barrier(&b1);
+  barrier(&bar, &sense); 
 
   rc = EBBCALL(ServiceInfo.theId, op);
   if (!(passed == 1 && rc == EBBRC_NULL)) passed = 0;
   lrt_printf("%s: Bind to L0Info.Inst: EBBCALL(ServiceIds.theId, op)=%" PRIdPTR "\n",
 	     __func__, rc);
 
-  barrier(&b2, cores); if (master) init_barrier(&b2);
+  barrier(&bar, &sense); 
   // bind service to s0Inst
   if (master) {
     rc = Bind((EBBId)ServiceInfo.theId, s0Inst);
     LRT_RCAssert(rc);
   }
 
-  barrier(&b1, cores); if (master) init_barrier(&b1);
+  barrier(&bar, &sense); 
 
   rc = EBBCALL(ServiceInfo.theId, op);
   if (!(passed == 1 && rc == 100)) passed = 0;
   lrt_printf("%s: Bind to s0Inst: EBBCALL(ServiceIds.theId, op)=%" PRIdPTR "\n",
 	     __func__, rc);
 
-  barrier(&b2, cores); if (master) init_barrier(&b2);
+  barrier(&bar, &sense); 
 
   if (master) {
     // bind service to s1Inst
@@ -310,7 +329,7 @@ BindTst_start(AppRef _self, int argc, char **argv,
     LRT_RCAssert(rc);
   }
 
-  barrier(&b1, cores); if (master) init_barrier(&b1);
+  barrier(&bar, &sense); 
 
   rc = EBBCALL(ServiceInfo.theId, op);
   if (!(passed == 1 && rc == 200)) passed = 0;
@@ -320,7 +339,7 @@ BindTst_start(AppRef _self, int argc, char **argv,
   if (passed) lrt_printf("%s: PASSED\n", argv[0]);
   else lrt_printf("%s: FAILED\n", argv[0]);
 
-  barrier(&b2, cores); if (master) init_barrier(&b2);
+  barrier(&bar, &sense); 
 
   if (master) lrt_exit(0);
   return EBBRC_OK;
