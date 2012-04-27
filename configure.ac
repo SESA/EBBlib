@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.61)
-AC_INIT([EBBLib],[0.1],[sesa-developers@googlegroups.com])
+AC_INIT([EBBLib],[0.2],[sesa-developers@googlegroups.com])
 AC_CONFIG_AUX_DIR([build-aux])
 AM_INIT_AUTOMAKE([foreign subdir-objects -Wall -Werror -Wno-portability])
 AC_CONFIG_SRCDIR([l0/l0_start.c])
