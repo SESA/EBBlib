@@ -1,0 +1,43 @@
+Startup order:
+
+
+On unix systems
+main()
+- startinfo
+- get number of cores
+- allocate base memory for lrt
+  - lrt_pic_alloc(cores)
+  - lrt_trans_alloc(cores)
+  - lrt_mem_alloc(cores)
+- start_thread(pic_id) - start all the threads (pinned on cores), pass them the pic_id
+- main blocks
+
+start_thread(pic_id)
+- pic_init_stage0
+  - setup my pic_id
+  - allocate and publish pipe
+    - synthetic
+  - allocate epoll_fd
+  - add the pipes
+- lrt_trans_init
+- trans_init
+- lrt_mem_init
+- if(primary core or startup all) 
+  - ebb_init
+  - allocate_l1_event
+  - send myself l1 event
+- lrt_pic__init_stage1
+  - poll loop
+
+l1_init
+
+The fundamental idea here is that all objects are initialized on
+demand as needed, once the event table is set up, all other
+initialization is done as part of an EBB call on that core, which is
+caused due to an event.  For example, core 0 sends message to core 2
+which is unitialized.  MsgMgr on 0 sees no rep for MsgMgr on 2, so
+sends a msg event (the one already reserved for MsgMgr).  This will
+invoke the MsgMgr createRep code, which will allocate memory, which
+will invoke the createRep code on the MemoryMgr...  
+
+
