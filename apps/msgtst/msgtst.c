@@ -175,16 +175,20 @@ MsgTst_start(AppRef _self)
 {
   MsgHandlerId id = InitMsgHandlerTst();
   int numtosend = 100;
+  EBBRC rc;
 
   lrt_printf("MsgTst, core %" PRIxPTR " number of cores %" PRIxPTR, MyEL(), 
 	     EventMgr_NumEL());
+
+  // initialize the message handler, this will take over the
+  // IPI on this core. 
+  rc = MsgMgrPrim_Init();
+  LRT_RCAssert(rc);
 
   if (MyEL() != 0) {
     lrt_printf("MsgTst, core %" PRIxPTR " returning to event loop", MyEL());
     return EBBRC_OK;
   }
-  lrt_printf("MsgTst, core %" PRIxPTR " number of cores %" PRIxPTR, MyEL(), 
-	     EventMgr_NumEL());
   
   // kick off message send
   COBJ_EBBCALL(theMsgMgrId, msg2, 0, id, numtosend, (uintptr_t)id);
@@ -197,4 +201,4 @@ CObjInterface(App) MsgTst_ftable = {
   .start = MsgTst_start
 };
 
-APP(MsgTst, APP_START_ONE);
+APP(MsgTst, APP_START_ALL);

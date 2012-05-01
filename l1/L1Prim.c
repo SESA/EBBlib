@@ -168,6 +168,42 @@ L1Prim_MsgHandler_startMH(MsgHandlerRef _self, uintptr_t startinfo)
   return COBJ_EBBCALL(theAppId, start);
 }
 
+#if 1
+EBBRC
+L1Prim_start(L1Ref _self, uintptr_t startinfo)
+{
+  EBBRC rc;
+  if ((app_start_model == APP_START_ONE) && (MyEL() != 0)) {
+    lrt_printf("EBBOS: secondary processor %ld bailing out to event loop\n", 
+	       MyEL());
+    return EBBRC_OK;
+  }
+
+  lrt_printf("EBBOS: primary processor %ld continuing\n", MyEL());
+  if (__sync_bool_compare_and_swap(&theAppId, (AppId)0,
+				   (AppId)-1)) {  
+    EBBId id;
+    CObjEBBRootMultiImpRef appRoot;
+    // create App instance and invoke its start
+    rc = CObjEBBRootMultiImpCreate(&appRoot, App_createRep);
+    LRT_RCAssert(rc);
+    rc = EBBAllocPrimId(&id);
+    LRT_RCAssert(rc);
+    rc = CObjEBBBind(id, appRoot); 
+    LRT_RCAssert(rc);
+    theAppId = (AppId)id;
+  } else {
+    while (((volatile uintptr_t)theAppId)==-1);
+  }
+
+  // WE ARE NOW DONE WITH L1 INITIALIZATION : 
+  //    We now  hand-over the start up msg to the appliation
+  //    From this point on everything should be messages/events that are handled
+  //    by appliation level Ebb's
+
+  return COBJ_EBBCALL(theAppId, start);
+}
+#else
 EBBRC
 L1Prim_start(L1Ref _self, uintptr_t startinfo)
 {
@@ -204,6 +240,7 @@ L1Prim_start(L1Ref _self, uintptr_t startinfo)
 
   return EBBRC_OK;
 }
+#endif
 
 EBBRC 
 L1Prim_argc(L1Ref _self, int *argc)
