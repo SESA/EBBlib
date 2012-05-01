@@ -231,8 +231,7 @@ barrier_type bar;
 
 
 EBBRC
-BindTst_start(AppRef _self, int argc, char **argv,
-	      char **environ)
+BindTst_start(AppRef _self)
 {
   EBBRC rc;
   int passed=1;
@@ -250,7 +249,7 @@ BindTst_start(AppRef _self, int argc, char **argv,
     while ((volatile int)cores == 0){}
   }
 
-  lrt_printf("%s: START, core %d of cores %d\n", argv[0], (int)MyEL(), cores);
+  lrt_printf("bindtst: START, core %d of cores %d\n", (int)MyEL(), cores);
 
   barrier(&bar, &sense); 
 
@@ -336,8 +335,8 @@ BindTst_start(AppRef _self, int argc, char **argv,
   lrt_printf("%s: Bind to s1Inst: EBBCALL(ServiceIds.theId, op)=%" PRIdPTR "\n",
 	     __func__, rc);
 
-  if (passed) lrt_printf("%s: PASSED\n", argv[0]);
-  else lrt_printf("%s: FAILED\n", argv[0]);
+  if (passed) lrt_printf("bindtst: PASSED\n");
+  else lrt_printf("bindtst: FAILED\n");
 
   barrier(&bar, &sense); 
 

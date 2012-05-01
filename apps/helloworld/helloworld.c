@@ -68,17 +68,15 @@ dumpArgsAndEnviron(int argc, char **argv, char **environ)
 
 
 EBBRC 
-HelloWorld_start(AppRef _self, int argc, char **argv, 
-		 char **environ)
+HelloWorld_start(AppRef _self)
 {
   struct startinfo si;
 
   lrt_printf("Hello world!\n");
-  dumpArgsAndEnviron(argc, argv, environ);
   si_get_args(&si);
   dumpArgsAndEnviron(si.argc, si.argv, si.environ);
-  if (argv) {
-    lrt_printf("%s: PASSED\n", argv[0]);
+  if (si.argv) {
+    lrt_printf("%s: PASSED\n", si.argv[0]);
   }
   lrt_exit(0);
   return EBBRC_OK;

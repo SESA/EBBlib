@@ -160,13 +160,12 @@ L1Prim_MsgHandler_startMH(MsgHandlerRef _self, uintptr_t startinfo)
     while (((volatile uintptr_t)theAppId)==-1);
   }
 
-
   // WE ARE NOW DONE WITH L1 INITIALIZATION : 
   //    We now  hand-over the start up msg to the appliation
   //    From this point on everything should be messages/events that are handled
   //    by appliation level Ebb's
 
-  return COBJ_EBBCALL(theAppId, start, self->argc, self->argv, self->environ);
+  return COBJ_EBBCALL(theAppId, start);
 }
 
 EBBRC

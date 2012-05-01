@@ -64,8 +64,7 @@ HW::printMsg()
 /* ******************************** */
 
 EBBRC
-HelloWorld_start(AppRef _self, int argc, char **argv,
-		 char **environ)
+HelloWorld_start(AppRef _self)
 {
   HW MyHelloWorld;
   MyHelloWorld.printMsg();

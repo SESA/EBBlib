@@ -46,6 +46,7 @@
 #include <net/EthMgr.h>
 #include <net/EthMgrPrim.h>
 #include <l1/App.h>
+#include <l1/startinfo.h>
 
 EthMgrId theEthMgr;
 
@@ -54,20 +55,22 @@ CObject(EthTst) {
 };
 
 EBBRC 
-EthTst_start(AppRef _self, int argc, char **argv, 
-	     char **environ)
+EthTst_start(AppRef _self)
 {
   EBBRC rc;
+  struct startinfo si;
 
-  if (argc <= 1) {
+  si_get_args(&si);
+
+  if (si.argc <= 1) {
     lrt_printf("usage: ethtst nic\n");
     lrt_printf("  e.g. ethtst lo0, or ethtst eth1\n");
     LRT_RCAssert(-1);
   }
 
-  lrt_printf("%s: START with device %s\n", __func__, argv[1]);
+  lrt_printf("%s: START with device %s\n", __func__, si.argv[1]);
   //FIXME: check argument, pass in as first argument to run
-  rc = EthMgrPrimCreate(&theEthMgr, argv[1]);
+  rc = EthMgrPrimCreate(&theEthMgr, si.argv[1]);
   LRT_RCAssert(rc);
 
   lrt_printf("%s: END\n", __func__);

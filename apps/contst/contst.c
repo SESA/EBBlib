@@ -266,8 +266,7 @@ CObject(ConsTst) {
 
 
 static EBBRC 
-ConsTst_start(AppRef _self, int argc, char **argv, 
-		 char **environ)
+ConsTst_start(AppRef _self)
 {
   EBBRC rc;
   lrt_pic_src in, out, err;
