@@ -21,9 +21,9 @@
  */
 
 #include <stdint.h>
-#include <l0/lrt/ulnx/pic.h>
 #include <l0/lrt/ulnx/mem.h>
 
+#include <l0/lrt/event_loc.h>
 #include <sys/mman.h>
 #include <stdio.h>
 #include <assert.h>
@@ -35,24 +35,24 @@ enum { LRT_MEM_PERPIC=LRT_MEM_PAGESIZE * LRT_MEM_PAGESPERPIC };
 struct BootMemDesc {
   uintptr_t start;
   uintptr_t end;
-} bootMem[LRT_PIC_MAX_PICS];
+} bootMem[LRT_MAX_EL];
 
 uintptr_t 
 lrt_mem_start(void)
 {
-  return bootMem[lrt_pic_myid].start;
+  return bootMem[lrt_my_event_loc()].start;
 }
 
 uintptr_t 
 lrt_mem_end(void)
 {
-  return bootMem[lrt_pic_myid].end;
+  return bootMem[lrt_my_event_loc()].end;
 }
 
 intptr_t
 lrt_mem_init(void)
 {
-  struct BootMemDesc *bm = &(bootMem[lrt_pic_myid]);
+  struct BootMemDesc *bm = &(bootMem[lrt_my_event_loc()]);
   bm->start = (intptr_t)mmap(NULL, LRT_MEM_PERPIC, 
 			     PROT_READ|PROT_WRITE|PROT_EXEC, 
 			     MAP_ANON|MAP_PRIVATE, -1, 0);     

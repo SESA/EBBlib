@@ -2,8 +2,7 @@
 #define __LRT_ULNX_TRANS_H__
 
 #include <stdint.h>
-
-#include <l0/lrt/pic.h>
+#include <l0/lrt/event_loc.h>
 
 #define LRT_TRANS_LG2_PAGESIZE (12)
 #define LRT_TRANS_LG2_NUMPAGES (8)
@@ -15,7 +14,7 @@
 
 struct TransMemDesc {
   uint8_t GMem [LRT_TRANS_TBLSIZE];
-  uint8_t LMem [LRT_TRANS_TBLSIZE * LRT_PIC_MAX_PICS];
+  uint8_t LMem [LRT_TRANS_TBLSIZE * LRT_MAX_EL];
 };
 
 extern struct TransMemDesc TransMem;
@@ -29,7 +28,7 @@ lrt_trans_gmem(void)
 static inline void *
 lrt_trans_lmem(void)
 {
-  uintptr_t picbase = lrt_pic_myid * LRT_TRANS_TBLSIZE;
+  uintptr_t picbase = lrt_my_event_loc() * LRT_TRANS_TBLSIZE;
   return (&(TransMem.LMem[picbase]));
 }
 

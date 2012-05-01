@@ -24,7 +24,6 @@
 extern "C" {
 #include <lrt/assert.h>
 #include <lrt/io.h>
-#include <l0/lrt/pic.h>
 #include <l0/lrt/trans.h>
 #include <lrt/exit.h>
 #include <l0/lrt/types.h>

@@ -27,7 +27,6 @@
 #include <pthread.h>
 
 #include <stdint.h>
-#include <l0/lrt/pic.h>
 
 enum {PCAP_DEFAULT_SNAPLEN = 1500};
 

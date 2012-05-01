@@ -23,7 +23,6 @@
 #include <stdint.h>
 #include <lrt/io.h>
 #include <l0/lrt/types.h>
-#include <l0/lrt/pic.h>
 #include <l0/lrt/trans.h>
 #include <l0/types.h>
 #include <l0/cobj/cobj.h>
@@ -42,7 +41,6 @@
 #include <net/EthMgr.h>
 #include <net/EthMgrPrim.h>
 
-#include <l0/lrt/pic.h>
 #include <net/lrt/ethlib.h>
 #include <strings.h>
 

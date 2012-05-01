@@ -24,7 +24,6 @@
 
 #include <stdint.h>
 
-#include <l0/lrt/pic.h>
 #include <lrt/assert.h>
 #include <lrt/io.h>
 #include <net/lrt/ethlib.h>

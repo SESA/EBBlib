@@ -32,7 +32,6 @@
 #include <assert.h>
 
 #include <l0/l0_start.h>
-#include <l0/lrt/pic.h>
 #include <l0/lrt/mem.h>
 #include <l0/lrt/trans.h>
 
@@ -68,7 +67,7 @@ void lrt_start(void)
 {
   // check cores
   // start up another core, with the 
-  fprintf(stderr, "%s: start pic id %" PRIuPTR "!\n", __func__, lrt_pic_myid);
+  fprintf(stderr, "%s: start pic id %" PRIuPTR "!\n", __func__, lrt_my_event_loc());
   if (start_args.cores_to_start > 0) {
     while (__sync_fetch_and_add(&start_args.cores_to_start, -1) > 0) {
       intptr_t core;

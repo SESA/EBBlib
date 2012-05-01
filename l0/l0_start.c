@@ -22,11 +22,9 @@
 #include <config.h>
 #include <stdint.h>
 #include <lrt/io.h>
-#include <l0/lrt/pic.h>
 #include <lrt/assert.h>
 #include <l0/lrt/types.h>
 #include <l0/cobj/cobj.h>
-#include <l0/lrt/pic.h>
 #include <l0/lrt/trans.h>
 #include <l0/types.h>
 #include <l0/sys/trans.h>
@@ -71,18 +69,9 @@ EBB_init(uintptr_t startInfo)
   // JA: FIXME:  IS THIS FIRST REAL EBB CALL BELOW ... SHOULD BE EXPLICITLY MARKED
   //             AND THE FACTS THAT THAT DEPENDS ON CLEARLY STATED
 
-#if 1
-  if ((app_start_model == APP_START_ALL) || (MyEL() == 0)) {
+  if ((app_start_model == APP_START_ALL) || (MyEventLoc() == 0)) {
     app_start();
   }
-    
-#else
-  rc = L0PrimInit();
-  LRT_RCAssert(rc);
-
-  rc = COBJ_EBBCALL(theL0Id, start, startInfo);
-  LRT_RCAssert(rc);
-#endif
   // will fall through
 }
 

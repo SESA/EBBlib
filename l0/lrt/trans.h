@@ -1,8 +1,6 @@
 #ifndef __LRT_TRANS_H__
 #define __LRT_TRANS_H__
 
-#include <l0/lrt/pic.h>
-
 /*
  * Copyright (C) 2011 by Project SESA, Boston University
  *
@@ -25,6 +23,8 @@
  * THE SOFTWARE.
  */
 
+#include <l0/lrt/event_loc.h>
+
 //forward declaration for the lrt specific headers
 struct lrt_trans;
 
@@ -37,7 +37,7 @@ static inline struct lrt_trans *lrt_trans_gt2lt(struct lrt_trans *gt);
 static inline struct lrt_trans *lrt_trans_lt2gt(struct lrt_trans *lt);
 
 // returns the pointer to a remote local translation entry for a object id
-extern struct lrt_trans *lrt_trans_id2rlt(lrt_pic_id picid, uintptr_t objid);
+extern struct lrt_trans *lrt_trans_id2rlt(lrt_event_loc el, uintptr_t objid);
 
 // real implementations come from these files
 #ifdef LRT_ULNX

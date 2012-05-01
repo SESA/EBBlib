@@ -56,70 +56,33 @@ COBJ_EBBType(EventHandler) {
 #define EVENTFUNC(funcName) EBBRC (* funcName)(void * _self);
 typedef EVENTFUNC(GenericEventFunc);
 
-/*
- * You need to be able to get the event location of the node you are
- * running on.  I am not making this a function on EventMgr, but
- * rather a global function so its clear that its the EL of the
- * current core and not the EL of the rep of the EventMgr
- * 
- * For now, one-to-one mapping event location and pic location. Since
- * this may change, we include the corresponding header file here.
- */
-#include <l0/lrt/pic.h>
-#if 0
-typedef int EvntLoc;
-#else
-typedef uintptr_t EvntLoc;
-#endif
-
-inline static EvntLoc MyEL() { return lrt_pic_myid; }
-inline static EvntLoc EventMgr_NextEL(EvntLoc l) { return lrt_pic_getnextlpic(l); }
-inline static EvntLoc EventMgr_NumEL() { return lrt_pic_getnumlpics(); }
+#include <l0/lrt/event_loc.h>
+typedef lrt_event_loc EventLoc;
+static const EventLoc EVENT_LOC_ALL=-1;
+static const EventLoc EVENT_LOC_NONE=-2; /* disable this IRQ */
+inline static EventLoc MyEventLoc() {return lrt_my_event_loc();}
+inline static EventLoc NextEventLoc(lrt_event_loc l) {return lrt_next_event_loc(l);}
+inline static EventLoc NumEventLoc() {return lrt_num_event_loc();}
 
 typedef uint8_t EventNo;	/* up to 256 events (matches intel) */
 struct IRQ;
-static const EvntLoc LOC_ALL=-1;
-static const EvntLoc LOC_NONE=-2; /* disable this IRQ */
 
 /* 
  * key local to eventmgr for allocating specific reserved events/interrupt
  * sources
  */
 COBJ_EBBType(EventMgrPrim) {
-#if 0 // new event manager interface
   EBBRC (*allocEventNo) (EventMgrPrimRef _self, EventNo *eventNoPtr);
 
   EBBRC (*freeEventNo) (EventMgrPrimRef _self, EventNo eventNo);
 
   EBBRC (*bindEvent) (EventMgrPrimRef _self, EventNo eventNo,
 		      EBBId handler, FuncNum fn); 
+
   EBBRC (*routeIRQ) (EventMgrPrimRef _self, struct IRQ *isrc, EventNo eventNo,
-		     EvntLoc el); 
+		     EventLoc el); 
 
-  EBBRC (*triggerEvent) (EventMgrPrimRef _self, EventNo eventNo, EvntLoc el);
-#else
-  EBBRC (*registerHandler) (EventMgrPrimRef _self, uintptr_t eventNo,
-			    EventHandlerId handler, FuncNum fn, 
-			    lrt_pic_src *isrc); 
-
-  EBBRC (*eventEnable) (EventMgrPrimRef _self, uintptr_t eventNo);
-
-  EBBRC (*eventDisable) (EventMgrPrimRef _self, uintptr_t eventNo);
-			     
-  EBBRC (*registerIPIHandler) (EventMgrPrimRef _self,
-			       EventHandlerId handler, FuncNum fn);
-
-  EBBRC (*allocEventNo) (EventMgrPrimRef _self, uintptr_t *eventNoPtr);
-
-  EBBRC (*dispatchIPI) (EventMgrPrimRef _self, EvntLoc el);
-
-  EBBRC (*ackIPI) (EventMgrPrimRef _self);
-
-  EBBRC (*enableIPI) (EventMgrPrimRef _self);
-
-  // called by eary implementation of the vector function
-  EBBRC (*dispatchEventLocal) (EventMgrPrimRef _self, uintptr_t eventNo);
-#endif
+  EBBRC (*triggerEvent) (EventMgrPrimRef _self, EventNo eventNo, EventLoc el);
 };
 
 // the ID of the one and only event manager

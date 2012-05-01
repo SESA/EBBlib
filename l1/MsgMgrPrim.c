@@ -24,7 +24,6 @@
 #include <l0/lrt/types.h>
 #include <l0/cobj/cobj.h>
 #include <lrt/io.h>
-#include <l0/lrt/pic.h>
 #include <l0/lrt/trans.h>
 #include <l0/types.h>
 #include <l0/sys/trans.h>
@@ -37,7 +36,6 @@
 #include <l0/cobj/CObjEBBRootMultiImp.h>
 #include <l0/EventMgrPrim.h>
 #include <l0/EventMgrPrimImp.h>
-#include <l0/lrt/pic.h>
 #include <l0/MemMgr.h>
 #include <l0/MemMgrPrim.h>
 #include <l1/MsgMgr.h>

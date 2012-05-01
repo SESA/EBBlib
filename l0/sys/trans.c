@@ -28,7 +28,6 @@
 #include <lrt/misc.h>
 #include <lrt/assert.h>
 #include <lrt/string.h>
-#include <l0/lrt/pic.h>
 #include <l0/lrt/trans.h>
 #include <l0/types.h>
 #include <l0/sys/trans.h>
@@ -45,13 +44,13 @@ EBBGTrans * const ALLOCATED = (EBBGTrans *)-1;
 
 int sysTransValidate()
 {
-  uintptr_t psize = LRT_TRANS_TBLSIZE / LRT_PIC_MAX_PICS;
+  uintptr_t psize = LRT_TRANS_TBLSIZE / LRT_MAX_EL;
 
-  // ensure that tables divide evenly among max pics
-  if (psize * LRT_PIC_MAX_PICS != LRT_TRANS_TBLSIZE) return 0;
+  // ensure that tables divide evenly among max ELs
+  if (psize * LRT_MAX_EL != LRT_TRANS_TBLSIZE) return 0;
 
-  // there should be at least one page of translations per pic
-  if ((LRT_TRANS_TBLSIZE / LRT_PIC_MAX_PICS) < LRT_TRANS_PAGESIZE) return 0;
+  // there should be at least one page of translations per el
+  if ((LRT_TRANS_TBLSIZE / LRT_MAX_EL) < LRT_TRANS_PAGESIZE) return 0;
 
   // we initialized trans memory to 0 so allocated must be a non-zero value
   if (ALLOCATED == 0) return 0;
@@ -64,19 +63,19 @@ int sysTransValidate()
 }
 
 
-// Size of a pic's portion of the gtable
+// Size of a el's portion of the gtable
 static inline uintptr_t
 mygmem_size(void)
 {
-  return LRT_TRANS_TBLSIZE / LRT_PIC_MAX_PICS;
+  return LRT_TRANS_TBLSIZE / LRT_MAX_EL;
 }
 
-// This pic's portion of the gtable
+// This el's portion of the gtable
 static inline uintptr_t
 mygmem(void)
 {
   uintptr_t ret = (uintptr_t)lrt_trans_gmem();
-  return ret + (lrt_pic_myid * mygmem_size());
+  return ret + (lrt_my_event_loc() * mygmem_size());
 }
 
 static inline
@@ -93,7 +92,7 @@ id2gt(EBBId id) {
 
 
 void
-trans_mark_core_used(EBBGTrans *gt, lrt_pic_id core)
+trans_mark_core_used(EBBGTrans *gt, lrt_event_loc core)
 {
   uint64_t mask = (uint64_t)1 << core;
   gt->corebv |= mask;
@@ -111,7 +110,7 @@ void
 EBBCacheObj(EBBLTrans *lt, EBBRep *obj) {
   EBBGTrans *gt = (EBBGTrans *)lrt_trans_lt2gt((struct lrt_trans *)lt);
   lt->obj = obj;
-  trans_mark_core_used(gt, lrt_pic_myid);
+  trans_mark_core_used(gt, lrt_my_event_loc());
 }
 
 //get number of GTrans in the table
@@ -194,23 +193,23 @@ TransEBBIdFree(EBBId id) {
   gt->free = ALLOCATED;
 }
 
-STATIC_ASSERT(LRT_PIC_MAX_PICS<=64, "maximum bits in corebv in EBBTransStruct");
+STATIC_ASSERT(LRT_MAX_EL<=64, "maximum bits in corebv in EBBTransStruct");
 
 static void
 TransEBBIdInvalidateCaches(EBBId id)
 {
-  uintptr_t picId = lrt_pic_myid;
+  lrt_event_loc el = lrt_my_event_loc();
   EBBGTrans *gt = id2gt(id);
 
   do{
-    if (trans_test_core_used(gt, picId)) {
-      EBBLTrans *lt = (EBBLTrans *)lrt_trans_id2rlt(picId, (uintptr_t)id);
+    if (trans_test_core_used(gt, el)) {
+      EBBLTrans *lt = (EBBLTrans *)lrt_trans_id2rlt(el, (uintptr_t)id);
       LRT_Assert(lt != NULL);
 
       EBBInitLTrans(lt);
     }
-    picId = lrt_pic_getnextlpic(picId);
-  } while (picId != lrt_pic_myid);
+    el = lrt_next_event_loc(el);
+  } while (el != lrt_my_event_loc());
 }
 
 void

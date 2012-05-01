@@ -23,7 +23,6 @@
 #include <config.h>
 #include <stdint.h>
 
-#include <l0/lrt/pic.h>
 #include <l0/types.h>
 
 EBBRC
