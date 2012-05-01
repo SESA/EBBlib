@@ -67,7 +67,7 @@ void lrt_start(void)
 {
   // check cores
   // start up another core, with the 
-  fprintf(stderr, "%s: start pic id %" PRIuPTR "!\n", __func__, lrt_my_event_loc());
+  fprintf(stderr, "%s: start pic id %d!\n", __func__, lrt_my_event_loc());
   if (start_args.cores_to_start > 0) {
     while (__sync_fetch_and_add(&start_args.cores_to_start, -1) > 0) {
       intptr_t core;
