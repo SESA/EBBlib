@@ -40,8 +40,7 @@
 #include <l0/cobj/CObjEBBRoot.h>
 #include <l0/cobj/CObjEBBRootMulti.h>
 #include <l0/cobj/CObjEBBRootMultiImp.h>
-#include <l0/L0.h>
-#include <l0/L0Prim.h>
+#include <l1/App.h>
 
 extern void trans_init(void);
 
@@ -72,11 +71,18 @@ EBB_init(uintptr_t startInfo)
   // JA: FIXME:  IS THIS FIRST REAL EBB CALL BELOW ... SHOULD BE EXPLICITLY MARKED
   //             AND THE FACTS THAT THAT DEPENDS ON CLEARLY STATED
 
+#if 1
+  if ((app_start_model == APP_START_ALL) || (MyEL() == 0)) {
+    app_start();
+  }
+    
+#else
   rc = L0PrimInit();
   LRT_RCAssert(rc);
 
   rc = COBJ_EBBCALL(theL0Id, start, startInfo);
   LRT_RCAssert(rc);
+#endif
   // will fall through
 }
 

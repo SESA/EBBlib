@@ -42,13 +42,6 @@ AppId theAppId=0;
 EBBRC app_start(void)
 {
   EBBRC rc;
-  if ((app_start_model == APP_START_ONE) && (MyEL() != 0)) {
-    lrt_printf("EBBOS: secondary processor %ld bailing out to event loop\n", 
-	       MyEL());
-    return EBBRC_OK;
-  }
-
-  lrt_printf("EBBOS: primary processor %ld continuing\n", MyEL());
   if (__sync_bool_compare_and_swap(&theAppId, (AppId)0,
 				   (AppId)-1)) {  
     EBBId id;
