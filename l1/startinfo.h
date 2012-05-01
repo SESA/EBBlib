@@ -1,7 +1,7 @@
-#ifndef __LRTSTARTINFO_H__
-#define __LRTSTARTINFO_H__
+#ifndef __STARTINFO_H__
+#define __STARTINFO_H__
 /*
- * Copyright (C) 2011 by Project SESA, Boston University
+ * Copyright (C) 2012 by Project SESA, Boston University
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,7 +22,12 @@
  * THE SOFTWARE.
  */
 
-extern char *lrt_startinfo_addr(void);
-extern intptr_t lrt_startinfo_size(void);
+struct startinfo {
+  int argc;
+  char **argv;
+  int environc;
+  char **environ;
+};
 
+extern EBBRC si_get_args(struct startinfo *si);
 #endif

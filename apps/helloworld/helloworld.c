@@ -44,6 +44,7 @@
 #include <l0/MemMgr.h>
 #include <l0/MemMgrPrim.h>
 #include <l1/App.h>
+#include <l1/startinfo.h>
 
 CObject(HelloWorld) {
   CObjInterface(App) *ft;
@@ -70,8 +71,12 @@ EBBRC
 HelloWorld_start(AppRef _self, int argc, char **argv, 
 		 char **environ)
 {
+  struct startinfo si;
+
   lrt_printf("Hello world!\n");
   dumpArgsAndEnviron(argc, argv, environ);
+  si_get_args(&si);
+  dumpArgsAndEnviron(si.argc, si.argv, si.environ);
   if (argv) {
     lrt_printf("%s: PASSED\n", argv[0]);
   }

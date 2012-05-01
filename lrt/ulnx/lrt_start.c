@@ -51,6 +51,12 @@ lrt_startinfo(void)
   return start_args.start_info;
 }
 
+char *
+lrt_startinfo_addr(void)
+{
+  return (char *)start_args.start_info;
+}
+
 extern intptr_t
 lrt_startinfo_size(void)
 {
