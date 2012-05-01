@@ -46,8 +46,7 @@
 #include <l0/L0Prim.h>
 #include <l1/MsgMgr.h>
 #include <l1/MsgMgrPrim.h>
-#include <l1/L1.h>
-#include <l1/L1Prim.h>
+#include <l1/App.h>
 
 CObject(L0Prim) {
   COBJ_EBBFuncTbl(L0);
@@ -74,17 +73,20 @@ L0Prim_version(L0Ref _self, uint64_t *v)
 static EBBRC 
 L0Prim_startEvent(L0Ref _self)
 {
+  lrt_pic_ackipi();
+
+#if 1
+  app_start();
+#else
   L0PrimRef self = (L0PrimRef) _self;
   EBBRC rc;
-
-  lrt_pic_ackipi();
 
   // call the next layer startup
   rc = L1PrimInit();
   LRT_RCAssert(rc);
 
   COBJ_EBBCALL(theL1Id, start, self->startInfo);
-
+#endif
   lrt_pic_enableipi();
 
   return 0;

@@ -1,9 +1,11 @@
 o get rid of start arguments to applications, make a global variable
-o get rid of L1prim and L0prim, and make EBBcall to start app
 o make msgmgr called from apps that need it
+
+o get rid of L1prim and L0prim, and make EBBcall to start app
+
 o implement event manager interface
 
-
+o change the msgtst to start just one core
 
 o change event manager interface:
   o MyEL()

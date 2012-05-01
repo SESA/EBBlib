@@ -62,4 +62,6 @@ extern const int app_start_model;
   const int app_start_model = SM;		       \
   APP_BASE(REPTYPE);					       
 
+extern EBBRC app_start(void);
+
 #endif
