@@ -65,7 +65,7 @@ inline static EventLoc NextEventLoc(lrt_event_loc l) {return lrt_next_event_loc(
 inline static EventLoc NumEventLoc() {return lrt_num_event_loc();}
 
 typedef uint8_t EventNo;	/* up to 256 events (matches intel) */
-struct IRQ;
+union IRQ;
 
 /* 
  * key local to eventmgr for allocating specific reserved events/interrupt
@@ -79,7 +79,7 @@ COBJ_EBBType(EventMgrPrim) {
   EBBRC (*bindEvent) (EventMgrPrimRef _self, EventNo eventNo,
 		      EBBId handler, FuncNum fn); 
 
-  EBBRC (*routeIRQ) (EventMgrPrimRef _self, struct IRQ *isrc, EventNo eventNo,
+  EBBRC (*routeIRQ) (EventMgrPrimRef _self, union IRQ *isrc, EventNo eventNo,
 		     EventLoc el); 
 
   EBBRC (*triggerEvent) (EventMgrPrimRef _self, EventNo eventNo, EventLoc el);

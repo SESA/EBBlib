@@ -1,5 +1,5 @@
-#ifndef __LRT_EVENT_LOC_H__
-#define __LRT_EVENT_LOC_H__
+#ifndef __LRT_EVENT_H__
+#define __LRT_EVENT_H__
 /*
  * Copyright (C) 2012 by Project SESA, Boston University
  *
@@ -22,6 +22,18 @@
  * THE SOFTWARE.
  */
 
+union IRQ {
+  uint64_t raw;
+  struct {
+    uint32_t fd;
+    uint32_t flags;
+  } unix_pic_src;
+};
+
+// FIXME: change to event interface, and put in platform specific includes
+typedef void (*lrt_pic_handler)(void);
+
 extern intptr_t lrt_pic_add_core();
+extern intptr_t lrt_pic_init(lrt_pic_handler h);
 
 #endif

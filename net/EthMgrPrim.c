@@ -43,6 +43,7 @@
 
 #include <net/lrt/ethlib.h>
 #include <strings.h>
+#include <l0/lrt/event.h>
 
 #define VERBOSE_PR(...) ( lrt_printf(__VA_ARGS__) )
 
@@ -54,7 +55,7 @@ CObject(EthMgrPrim) {
   COBJ_EBBFuncTbl(EthMgr);
 
   EthTypeMgrId typeMgrs[NUMETHTYPES];
-  uintptr_t ev;
+  EventNo ev;
   uintptr_t rcnt;
 };
 
@@ -100,7 +101,7 @@ EthMgrPrimCreate(EthMgrId *id, char *nic)
   EBBRC rc;
   EthMgrPrimRef repRef;
   CObjEBBRootSharedRef rootRef;
-  lrt_pic_src nicisrc, nicosrc;
+  union IRQ nicisrc, nicosrc;
 
   rc = EBBPrimMalloc(sizeof(EthMgrPrim), &repRef, EBB_MEM_DEFAULT);
   LRT_RCAssert(rc);

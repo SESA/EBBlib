@@ -34,6 +34,7 @@
 #include <l0/l0_start.h>
 #include <l0/lrt/mem.h>
 #include <l0/lrt/trans.h>
+#include <l0/lrt/event.h>
 
 static struct start_args_t {
   intptr_t cores;

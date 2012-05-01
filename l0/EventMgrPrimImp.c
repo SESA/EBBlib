@@ -67,7 +67,7 @@ EventMgrPrim_bindEvent(EventMgrPrimRef _self, EventNo eventNo,
 }
 
 EBBRC 
-EventMgrPrim_routeIRQ(EventMgrPrimRef _self, struct IRQ *isrc, EventNo eventNo,
+EventMgrPrim_routeIRQ(EventMgrPrimRef _self, union IRQ *isrc, EventNo eventNo,
 		      EventLoc el)
 {
   LRT_Assert(0);
