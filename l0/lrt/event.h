@@ -22,12 +22,18 @@
  * THE SOFTWARE.
  */
 
-union IRQ {
-  uint64_t raw;
-  struct {
-    uint32_t fd;
-    uint32_t flags;
-  } unix_pic_src;
+#define LRT_ULNX_PICFLAG_READ  (1<<0)  // READ:  BIT 0
+#define LRT_ULNX_PICFLAG_WRITE (1<<1)  // WRITE: BIT 1
+#define LRT_ULNX_PICFLAG_ERROR (1<<2)  // ERRORL BIT 2
+
+struct IRQ_t {
+  union {
+    uint64_t raw;
+    struct {
+      uint32_t fd;
+      uint32_t flags;
+    } unix_pic_src;
+  };
 };
 
 // FIXME: change to event interface, and put in platform specific includes

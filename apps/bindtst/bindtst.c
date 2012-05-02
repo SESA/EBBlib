@@ -206,18 +206,18 @@ BindTst_start(AppRef _self)
   int master=0;
   int sense=0;			/* sense of thread for barrier */
 
-  if (MyEL() == 0) {
+  if (MyEventLoc() == 0) {
     master = 1;
-    init_barrier(&bar, EventMgr_NumEL());
+    init_barrier(&bar, NumEventLoc());
 
     // last thing; initialize cores will unblock everyone else
-    cores = EventMgr_NumEL();
+    cores = NumEventLoc();
   } else {
     // everyone but first core blocks here
     while ((volatile int)cores == 0){}
   }
 
-  lrt_printf("bindtst: START, core %d of cores %d\n", (int)MyEL(), cores);
+  lrt_printf("bindtst: START, core %d of cores %d\n", MyEventLoc(), cores);
 
   barrier(&bar, &sense); 
 

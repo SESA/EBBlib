@@ -5,7 +5,9 @@ o get rid of L1prim and L0prim, and make EBBcall to start app
 
 o implement event manager interface
 
+o clean up the crap I added to event.h
 o change the msgtst to start just one core
+o get rid of EventHandler
 
 o change event manager interface:
   o MyEL()

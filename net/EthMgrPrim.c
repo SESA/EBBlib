@@ -101,7 +101,7 @@ EthMgrPrimCreate(EthMgrId *id, char *nic)
   EBBRC rc;
   EthMgrPrimRef repRef;
   CObjEBBRootSharedRef rootRef;
-  union IRQ nicisrc, nicosrc;
+  IRQ nicisrc, nicosrc;
 
   rc = EBBPrimMalloc(sizeof(EthMgrPrim), &repRef, EBB_MEM_DEFAULT);
   LRT_RCAssert(rc);
@@ -126,12 +126,11 @@ EthMgrPrimCreate(EthMgrId *id, char *nic)
   if (nic) {
     rc = ethlib_nic_init(nic, &nicisrc, &nicosrc);
     if (EBBRC_SUCCESS(rc)) {
-      rc = EBBCALL(theEventMgrPrimId, registerHandler, repRef->ev, 
-		   (EventHandlerId)*id, COBJ_FUNCNUM(repRef, inEvent),
-		   &nicisrc);
+      rc = EBBCALL(theEventMgrPrimId, bindEvent, repRef->ev, 
+		   (EBBId)*id, COBJ_FUNCNUM(repRef, inEvent));
       LRT_RCAssert(rc);
-
-      rc = EBBCALL(theEventMgrPrimId, eventEnable, repRef->ev);
+      rc = EBBCALL(theEventMgrPrimId, routeIRQ, 
+		   &nicisrc, repRef->ev, MyEventLoc());
       LRT_RCAssert(rc);
     }
   }

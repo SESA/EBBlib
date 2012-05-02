@@ -47,6 +47,9 @@
  * All event handling ebbs must conform to these types
  * Any existing ebbs that want to handle events must be
  * frontended by an event handler EBB
+ 
+ * FIXME: get rid of this type, now any function in EBB can
+ *  be used to dispatch an event
  */
 COBJ_EBBType(EventHandler) {
   EBBRC (*handleEvent) (EventHandlerRef _self);
@@ -65,7 +68,8 @@ inline static EventLoc NextEventLoc(lrt_event_loc l) {return lrt_next_event_loc(
 inline static EventLoc NumEventLoc() {return lrt_num_event_loc();}
 
 typedef uint8_t EventNo;	/* up to 256 events (matches intel) */
-union IRQ;
+struct IRQ_t;
+typedef struct IRQ_t IRQ;
 
 /* 
  * key local to eventmgr for allocating specific reserved events/interrupt
@@ -79,7 +83,7 @@ COBJ_EBBType(EventMgrPrim) {
   EBBRC (*bindEvent) (EventMgrPrimRef _self, EventNo eventNo,
 		      EBBId handler, FuncNum fn); 
 
-  EBBRC (*routeIRQ) (EventMgrPrimRef _self, union IRQ *isrc, EventNo eventNo,
+  EBBRC (*routeIRQ) (EventMgrPrimRef _self, IRQ *isrc, EventNo eventNo,
 		     EventLoc el); 
 
   EBBRC (*triggerEvent) (EventMgrPrimRef _self, EventNo eventNo, EventLoc el);

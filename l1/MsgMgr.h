@@ -43,15 +43,15 @@ COBJ_EBBType(MsgHandler) {
  */
 COBJ_EBBType(MsgMgr) {
   /* send message to id at event location */
-  EBBRC (*msg0) (MsgMgrRef _self, EvntLoc loc, MsgHandlerId id);
+  EBBRC (*msg0) (MsgMgrRef _self, EventLoc loc, MsgHandlerId id);
 
-  EBBRC (*msg1) (MsgMgrRef _self, EvntLoc loc, MsgHandlerId id, 
+  EBBRC (*msg1) (MsgMgrRef _self, EventLoc loc, MsgHandlerId id, 
 		 uintptr_t a1);
 
-  EBBRC (*msg2) (MsgMgrRef _self, EvntLoc loc, MsgHandlerId id, 
+  EBBRC (*msg2) (MsgMgrRef _self, EventLoc loc, MsgHandlerId id, 
 		 uintptr_t a1, uintptr_t a2);
 
-  EBBRC (*msg3) (MsgMgrRef _self, EvntLoc loc, MsgHandlerId id, 
+  EBBRC (*msg3) (MsgMgrRef _self, EventLoc loc, MsgHandlerId id, 
 		 uintptr_t a1, uintptr_t a2, uintptr_t a3);
 
   // we implement a event handler for IPIs

@@ -44,6 +44,12 @@
 // globally known id of the message mgr
 MsgMgrId theMsgMgrId = 0;
 
+// the root of both message manager and event handler
+static CObjEBBRootMultiImpRef rootRefMM = 0, rootRefEH = 0;
+
+// the event reserved for the message manager
+static EventNo theMsgMgrEvent = 0;
+
 
 /* -- start routines & types to be implemented, put somewhere global*/
 typedef long LockType;
@@ -68,7 +74,7 @@ enum{MAXARGS = 3};
 
 typedef struct MsgStore_struc {
   struct MsgStore_struc *next;
-  EvntLoc home;			/* node this was allocated on */
+  EventLoc home;			/* node this was allocated on */
   MsgHandlerId id;
   uintptr_t numargs;
   uintptr_t args[MAXARGS];
@@ -84,13 +90,13 @@ CObject(MsgMgrPrim) {
 
   CObjectDefine(EvHdlr) evHdlr;
 
-  EvntLoc eventLoc;
+  EventLoc eventLoc;
   LockType msgqueuelock;
   MsgStore *msgqueue; 
   LockType freelistlock;
   MsgStore *freelist; 
   // FIXME: abstract at event mgr
-  MsgMgrPrimRef reps[LRT_PIC_MAX_PICS];
+  MsgMgrPrimRef reps[LRT_MAX_EL];
   // reference to the single root
   CObjEBBRootMultiRef theRootMM;
 };
@@ -107,7 +113,7 @@ MsgMgrPrim_enqueueMsg(MsgMgrPrimRef target, MsgStore *msg)
   target->msgqueue = msg;
   spinUnlock(&target->msgqueuelock);
   if (queueempty) {
-    COBJ_EBBCALL(theEventMgrPrimId, dispatchIPI, target->eventLoc);
+    COBJ_EBBCALL(theEventMgrPrimId, triggerEvent, theMsgMgrEvent, target->eventLoc);
   }
   return EBBRC_OK;
 }
@@ -126,7 +132,7 @@ MsgMgrPrim_dequeueMsgHead(MsgMgrPrimRef target)
 }
 
 static EBBRC
-MsgMgrPrim_findTarget(MsgMgrPrimRef self, EvntLoc loc, MsgMgrPrimRef *target)
+MsgMgrPrim_findTarget(MsgMgrPrimRef self, EventLoc loc, MsgMgrPrimRef *target)
 {
   RepListNode *node;
   EBBRep * rep = NULL;
@@ -160,7 +166,7 @@ allocMsg(MsgMgrPrimRef self)
   if (msg != NULL) {
     self->freelist = msg->next; 
     spinUnlock(&self->freelistlock);
-    msg->home = MyEL();
+    msg->home = MyEventLoc();
     // lrt_printf("%s:%s found free message\n", __FILE__, __func__);
     return msg ;
   }
@@ -172,7 +178,7 @@ allocMsg(MsgMgrPrimRef self)
   rc = EBBPrimMalloc(sizeof(*msg), &msg, EBB_MEM_DEFAULT);
   LRT_RCAssert(rc);
 
-  msg->home = MyEL();
+  msg->home = MyEventLoc();
 
   return msg;
 }
@@ -193,7 +199,7 @@ freeMsg(MsgMgrPrimRef self, MsgStore *msg)
 }
 
 static EBBRC 
-MsgMgrPrim_msg0(MsgMgrRef _self, EvntLoc loc, MsgHandlerId id)
+MsgMgrPrim_msg0(MsgMgrRef _self, EventLoc loc, MsgHandlerId id)
 {
   MsgMgrPrimRef self = (MsgMgrPrimRef)_self;
   MsgStore *msg;  
@@ -214,7 +220,7 @@ MsgMgrPrim_msg0(MsgMgrRef _self, EvntLoc loc, MsgHandlerId id)
 }
 
 static EBBRC 
-MsgMgrPrim_msg1(MsgMgrRef _self, EvntLoc loc, MsgHandlerId id, uintptr_t a1)
+MsgMgrPrim_msg1(MsgMgrRef _self, EventLoc loc, MsgHandlerId id, uintptr_t a1)
 {
   MsgMgrPrimRef self = (MsgMgrPrimRef)_self;
   MsgStore *msg;  
@@ -236,7 +242,7 @@ MsgMgrPrim_msg1(MsgMgrRef _self, EvntLoc loc, MsgHandlerId id, uintptr_t a1)
 }
 
 static EBBRC 
-MsgMgrPrim_msg2(MsgMgrRef _self, EvntLoc loc, MsgHandlerId id, uintptr_t a1, 
+MsgMgrPrim_msg2(MsgMgrRef _self, EventLoc loc, MsgHandlerId id, uintptr_t a1, 
 		uintptr_t a2)
 {
   MsgMgrPrimRef self = (MsgMgrPrimRef)_self;
@@ -259,7 +265,7 @@ MsgMgrPrim_msg2(MsgMgrRef _self, EvntLoc loc, MsgHandlerId id, uintptr_t a1,
 }
 
 static EBBRC 
-MsgMgrPrim_msg3(MsgMgrRef _self, EvntLoc loc, MsgHandlerId id, 
+MsgMgrPrim_msg3(MsgMgrRef _self, EventLoc loc, MsgHandlerId id, 
 		uintptr_t a1, uintptr_t a2, uintptr_t a3)
 {
   MsgMgrPrimRef self = (MsgMgrPrimRef)_self;
@@ -287,9 +293,6 @@ MsgMgrPrim_handleEvent(EventHandlerRef _self)
 {
   MsgMgrPrimRef self = (MsgMgrPrimRef)ContainingCOPtr(_self,MsgMgrPrim,evHdlr);
   MsgStore *msg;
-  EBBRC rc;
-  rc = COBJ_EBBCALL(theEventMgrPrimId, ackIPI);
-  LRT_RCAssert(rc);
 
   msg = MsgMgrPrim_dequeueMsgHead(self);
   while (msg != NULL) {
@@ -311,14 +314,6 @@ MsgMgrPrim_handleEvent(EventHandlerRef _self)
     freeMsg(self, msg);
     msg = MsgMgrPrim_dequeueMsgHead(self);
   }
-  // we are re-enabling interrupts before returning to event mgr
-  // not obvious yet if we should be doing this here, or lower down, 
-  // but its at least reasonable that we want to execute an entire message
-  // disabled. Note, a whole chain of messages may be invoked here, so, 
-  // the implicit assumption is that  you re-disable interrupts if you enable
-  // them at the end of a message. 
-  rc = COBJ_EBBCALL(theEventMgrPrimId, enableIPI);
-  LRT_RCAssert(rc);
   return EBBRC_OK;
 }
 
@@ -361,35 +356,27 @@ MsgMgrPrim_createRep(CObjEBBRootMultiImpRef rootRefMM,
   MsgMgrPrim_SetFT(repRef);
   int i;
 
-  repRef->eventLoc = MyEL();
+  repRef->eventLoc = MyEventLoc();
   repRef->msgqueuelock = 0;
   repRef->msgqueue = 0;
   repRef->freelistlock = 0;
   repRef->freelist = 0;
-  for (i=0; i<LRT_PIC_MAX_PICS ; i++ ) {
+  for (i=0; i<LRT_MAX_EL ; i++ ) {
     repRef->reps[i] = NULL;
   }
   repRef->theRootMM = (CObjEBBRootMultiRef)rootRefMM;
 
-  // register this rep to take over the IPI on this core, note, this
-  // needs to be before we tell the root about ourselves, since otherwise 
-  // have a race condition where the rep can say there is a message handler on
-  // this core, but we are not yet up. 
-  COBJ_EBBCALL(theEventMgrPrimId, registerIPIHandler, ehid, NOFUNCNUM);
-
   // now tell the root for event handler its pseudo representative on this core
   // note, EH must by set up before MM
-  rootRefMM->ft->addRepOn((CObjEBBRootMultiRef)rootRefEH, MyEL(),
+  rootRefMM->ft->addRepOn((CObjEBBRootMultiRef)rootRefEH, MyEventLoc(),
 			  (EBBRep *)(void *)&(repRef->evHdlr));
 
   // tell the root for MsgMgr its rep on this core
-  rootRefMM->ft->addRepOn((CObjEBBRootMultiRef)rootRefMM, MyEL(),
+  rootRefMM->ft->addRepOn((CObjEBBRootMultiRef)rootRefMM, MyEventLoc(),
 			  (EBBRep *)repRef);
 
   return EBBRC_OK;
 };
-
-static CObjEBBRootMultiImpRef rootRefMM = 0, rootRefEH = 0;
 
 EBBRC
 MsgMgrPrim_Init(void)
@@ -417,15 +404,23 @@ MsgMgrPrim_Init(void)
     LRT_RCAssert(rc); 
     rc = EBBBindPrimId(id, CObjEBBMissFunc, (EBBMissArg)rootRefEH);
     LRT_RCAssert(rc); 
-    theMsgMgrEHId = (EventHandlerId)id;
+
+    // allocate the event and bind it before publishing the msgmgr id, since 
+    // publishing the MsgMgrEHId will unblock everyone
+    rc = COBJ_EBBCALL(theEventMgrPrimId, allocEventNo, &theMsgMgrEvent);
+    LRT_RCAssert(rc); 
+
     LRT_Assert(id != NULL);
+    rc = COBJ_EBBCALL(theEventMgrPrimId, bindEvent, theMsgMgrEvent, id, NOFUNCNUM);
+    LRT_RCAssert(rc); 
+
+    // now unblock everyone
+    theMsgMgrEHId = (EventHandlerId)id;
   } else {
     while (((volatile uintptr_t)theMsgMgrEHId)==-1);
   }
 
-  // initialize the msgmgr rep on this core, since we need to take
-  // over the event locally for IPI even before anyone sends a message from
-  // this event location
+  // initialize the msgmgr rep on this core, could do this lazily
   LRT_Assert(theMsgMgrEHId != NULL);
   MsgMgrPrim_createRep(rootRefMM, rootRefEH, theMsgMgrEHId);
   return EBBRC_OK;

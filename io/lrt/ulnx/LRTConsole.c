@@ -19,6 +19,7 @@
 #include <unistd.h>
 #include <sys/ioctl.h>
 #include <signal.h>
+#include <l0/lrt/event.h>
 
 /* FROM : Advanced Programming in the UNIX Environment, Addison-Wesley,
    1992, ISBN 0-201-56317-7
@@ -145,21 +146,21 @@ tty_init(int fd) {
 // back to my test code
 
 EBBRC 
-LRTConsoleRead(lrt_pic_src *in, char *buf, int len, int *n)
+LRTConsoleRead(struct IRQ_t *in, char *buf, int len, int *n)
 {
   *n = read(in->unix_pic_src.fd, buf, len);
   return (*n>=0) ? EBBRC_OK : EBBRC_GENERIC_FAILURE;
 }
 
 EBBRC 
-LRTConsoleWrite(lrt_pic_src *out, char *buf, int len, int *n)
+LRTConsoleWrite(struct IRQ_t *out, char *buf, int len, int *n)
 {
   *n = write(out->unix_pic_src.fd, buf, len);
   return (*n>=0) ? EBBRC_OK : EBBRC_GENERIC_FAILURE;
 }
 
 EBBRC 
-LRTConsoleInit(lrt_pic_src *in, lrt_pic_src *out, lrt_pic_src *err)
+LRTConsoleInit(struct IRQ_t *in, struct IRQ_t *out, struct IRQ_t *err)
 {
   int opt = 1;
 

@@ -76,7 +76,7 @@ MsgHandlerTst_msg2(MsgHandlerRef _self, uintptr_t numtosend, uintptr_t id)
   }
 
   LRT_Assert(numtosend > 0);
-  nxt = EventMgr_NextEL(MyEL());
+  nxt = NextEventLoc(MyEventLoc());
   
   do {
     rc = COBJ_EBBCALL(theMsgMgrId, msg2, nxt, sid, numtosend, id);
@@ -175,16 +175,16 @@ MsgTst_start(AppRef _self)
   int numtosend = 100;
   EBBRC rc;
 
-  lrt_printf("MsgTst, core %" PRIxPTR " number of cores %" PRIxPTR, MyEL(), 
-	     EventMgr_NumEL());
+  lrt_printf("MsgTst, core %d number of cores %d", MyEventLoc(), 
+	     NumEventLoc());
 
   // initialize the message handler, this will take over the
   // IPI on this core. 
   rc = MsgMgrPrim_Init();
   LRT_RCAssert(rc);
 
-  if (MyEL() != 0) {
-    lrt_printf("MsgTst, core %" PRIxPTR " returning to event loop", MyEL());
+  if (MyEventLoc() != 0) {
+    lrt_printf("MsgTst, core %d returning to event loop", MyEventLoc());
     return EBBRC_OK;
   }
   

@@ -22,8 +22,9 @@
  * THE SOFTWARE.
  */
 
-EBBRC LRTConsoleInit(lrt_pic_src *in, lrt_pic_src *out, lrt_pic_src *err);
-EBBRC LRTConsoleRead(lrt_pic_src *in, char *buf, int len, int *n);
-EBBRC LRTConsoleWrite(lrt_pic_src *out, char *buf, int len, int *n);
+#include <l0/lrt/event.h>
+EBBRC LRTConsoleInit(struct IRQ_t *in, struct IRQ_t *out, struct IRQ_t *err);
+EBBRC LRTConsoleRead(struct IRQ_t *in, char *buf, int len, int *n);
+EBBRC LRTConsoleWrite(struct IRQ_t *out, char *buf, int len, int *n);
 
 #endif

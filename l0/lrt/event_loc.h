@@ -33,6 +33,7 @@
  */
 typedef int lrt_event_loc;
 
+// this is used for any static sized arrays; should try to get rid of it
 #define LRT_MAX_EL 64
 
 inline static lrt_event_loc lrt_my_event_loc();

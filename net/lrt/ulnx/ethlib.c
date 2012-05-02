@@ -27,6 +27,7 @@
 #include <pthread.h>
 
 #include <stdint.h>
+#include <l0/lrt/event.h>
 
 enum {PCAP_DEFAULT_SNAPLEN = 1500};
 
@@ -49,7 +50,7 @@ ethlib_nic_readpkt(void) {
 }
 
 intptr_t
-ethlib_nic_init(char *dev, lrt_pic_src *sin, lrt_pic_src *sout)
+ethlib_nic_init(char *dev, struct IRQ_t *sin, struct IRQ_t *sout)
 {
   int i;
   char errbuf[PCAP_ERRBUF_SIZE];

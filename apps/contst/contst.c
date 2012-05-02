@@ -103,10 +103,10 @@ CObject(Console)
 {
   COBJ_EBBFuncTbl(CharStream);
 
-  lrt_pic_src indev;
-  lrt_pic_src outdev;
-  uintptr_t inEV;
-  uintptr_t outEV;
+  struct IRQ_t indev;
+  struct IRQ_t outdev;
+  EventNo inEV;
+  EventNo outEV;
 
   intptr_t inlen;
   intptr_t outlen;
@@ -134,7 +134,12 @@ Console_putChar(CharStreamRef _self, char c)
     self->out_c[end] = c;
     self->outlen++;
     if (self->outlen==1) {
-      COBJ_EBBCALL(theEventMgrPrimId, eventEnable, self->outEV);
+      // re-enable interrupts on output, comming to this core
+      // note, this is an expensive operation, the only reason we need to
+      // do this is that having space for writting will always return, i.e., the "interrupt"
+      // for output space is level triggered.  On an edge triggered interrupt we wouldn't
+      // disable the output IRQ when we have nothing to send
+      COBJ_EBBCALL(theEventMgrPrimId, routeIRQ, &self->outdev, self->outEV, MyEventLoc());
     }
     rc = EBBRC_OK;
   }
@@ -192,7 +197,11 @@ Console_outEvent(CharStreamRef _self)
       self->outstart += n;
       if (self->outlen==0) {
 	self->outstart=0;
-	COBJ_EBBCALL(theEventMgrPrimId, eventDisable, self->outEV);
+	// disable output IRQ: note, this is an expensive operation, the only reason we need to
+	// do this is that having space for writting will always return, i.e., the "interrupt"
+	// for output space is level triggered.  On an edge triggered interrupt we wouldn't
+	// disable the output IRQ when we have nothing to send
+	COBJ_EBBCALL(theEventMgrPrimId, routeIRQ, &self->outdev, self->outEV, EVENT_LOC_NONE);
       }
     }
   }
@@ -214,7 +223,7 @@ ConsoleSetFT(ConsoleRef o)
 }
 
 EBBRC
-ConsoleCreate(ConsoleId *id, lrt_pic_src in, lrt_pic_src out, InAction action)
+ConsoleCreate(ConsoleId *id, struct IRQ_t in, struct IRQ_t out, InAction action)
 {
   ConsoleRef repRef;
   EBBRC rc;
@@ -239,20 +248,19 @@ ConsoleCreate(ConsoleId *id, lrt_pic_src in, lrt_pic_src out, InAction action)
   // setup up input event handling
   rc = COBJ_EBBCALL(theEventMgrPrimId, allocEventNo, &(repRef->inEV));
   LRT_RCAssert(rc);
-  rc = COBJ_EBBCALL(theEventMgrPrimId, registerHandler, repRef->inEV, 
-		    (EventHandlerId) *id, COBJ_FUNCNUM(repRef, inEvent), &in);
+  rc = COBJ_EBBCALL(theEventMgrPrimId, bindEvent, repRef->inEV, (EBBId)*id, 
+	       COBJ_FUNCNUM(repRef, inEvent));
   LRT_RCAssert(rc);
 
   // setup up output handling
   rc = COBJ_EBBCALL(theEventMgrPrimId, allocEventNo, &(repRef->outEV));
   LRT_RCAssert(rc);
-  rc = COBJ_EBBCALL(theEventMgrPrimId, registerHandler, repRef->outEV, 
-		    (EventHandlerId) *id, COBJ_FUNCNUM(repRef, outEvent), 
-		    &out);
+  rc = COBJ_EBBCALL(theEventMgrPrimId, bindEvent, repRef->outEV, (EBBId)*id, 
+	       COBJ_FUNCNUM(repRef, outEvent));
   LRT_RCAssert(rc);
 
-  // now enable input handing as we are ready to roll
-  rc = COBJ_EBBCALL(theEventMgrPrimId, eventEnable, repRef->inEV);
+  // we are ready to roll, enable the routing of input interrupts
+  rc = COBJ_EBBCALL(theEventMgrPrimId, routeIRQ, &in, repRef->inEV, MyEventLoc());
   LRT_RCAssert(rc);
 
   return EBBRC_OK;
@@ -267,7 +275,7 @@ static EBBRC
 ConsTst_start(AppRef _self)
 {
   EBBRC rc;
-  lrt_pic_src in, out, err;
+  struct IRQ_t in, out, err;
   ConsoleId id;
 
   rc = LRTConsoleInit(&in,&out,&err);
