@@ -42,6 +42,11 @@ extern lrt_event_loc lrt_num_event_loc();
 
 // include platform specific event_loc, get rid of following 
 // that I put in to get the world compiling
-inline static lrt_event_loc lrt_my_event_loc() {return 0;}
+#ifdef __APPLE__
+extern lrt_event_loc lrt_my_event_loc();
+#else
+extern __thread lrt_event_loc lrt_event_myloc;
+inline static lrt_event_loc lrt_my_event_loc() {return lrt_event_myloc;}
+#endif
 
 #endif

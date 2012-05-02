@@ -78,3 +78,9 @@ invoke the MsgMgr createRep code, which will allocate memory, which
 will invoke the createRep code on the MemoryMgr...  
 
 
+
+#if 0
+
+  // JA: CONFUSED WHY IS this independent of lrt_pic_add_core?
+#endif
+

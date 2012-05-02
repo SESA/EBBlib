@@ -37,8 +37,8 @@
 #include <l0/lrt/event.h>
 
 static struct start_args_t {
-  intptr_t cores;
-  volatile intptr_t cores_to_start;
+  intptr_t physcores;		/* actual physical cores we have */
+  intptr_t cores;		/* logical cores we are starting */
   uintptr_t start_info;
   intptr_t start_info_size;
 } start_args;
@@ -66,18 +66,7 @@ lrt_startinfo_size(void)
 // first code to be runnining on an interrupt
 void lrt_start(void)
 {
-  // check cores
-  // start up another core, with the 
-  fprintf(stderr, "%s: start pic id %d!\n", __func__, lrt_my_event_loc());
-  if (start_args.cores_to_start > 0) {
-    while (__sync_fetch_and_add(&start_args.cores_to_start, -1) > 0) {
-      intptr_t core;
-      core = lrt_pic_add_core();
-      fprintf(stderr, "***%s: started core %" PRIxPTR "!\n", __func__, core);
-    }
-  }
-
-  // JA: CONFUSED WHY IS this independent of lrt_pic_add_core?
+  // event initialization done before we got here
   lrt_mem_init();
   lrt_trans_init();
   l0_start(lrt_startinfo());
@@ -124,7 +113,6 @@ parse_ebbos_arg(int i, char **argv, int *s)
     ret = 2;			/* 2 arguments to be handled */
     start_args.cores=atoi(argv[i+1]);
     fprintf(stderr, "EBBOS: overriding cores to %ld\n", start_args.cores);
-    start_args.cores_to_start = start_args.cores -1;
   } else {
     fprintf(stderr, "EBBOS: unknown argument stripped: %s\n", argv[i]);
   }
@@ -222,23 +210,55 @@ static num_phys_cores()
 #endif
 }
 
+#include <pthread.h>
+void
+start_cores(int cores)
+{
+  int i;
+  cpu_set_t cpus;
+
+  // check cores
+  // start up another core, with the 
+  fprintf(stderr, "%s: start pic id %d!\n", __func__, lrt_my_event_loc());
+  pthread_attr_t attr; 
+  
+  pthread_attr_init(&attr);
+  pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
+  
+
+  for (i=0; i<start_args.cores; i++) {
+    CPU_ZERO(&cpus);
+    // pin to a core
+    CPU_SET(i%start_args.physcores, &cpus);
+    pthread_attr_setaffinity_np(&attr, sizeof(cpu_set_t), &cpus);
+    // this will call lrt_start on each thread
+    if (pthread_create((pthread_t *)(&val), &attr, event_init, (void *)i) != 0) {
+      perror("pthread_create");
+      return 0;
+    }
+  }
+  // main core dies, all threads are pthreads
+}
+
 int
 main(int argc, char **argv, char **environ) 
 {
   fprintf(stderr, "%s: start!\n", __func__); 
 
-  start_args.cores = num_phys_cores();
-  start_args.cores_to_start = start_args.cores-1;
+  start_args.physcores = start_args.cores = num_phys_cores();
   start_args.start_info = 0;
   start_args.start_info_size = 0;
   
+  // may change number of cores 
   startinfo(argc, argv, environ, &start_args.start_info, &start_args.start_info_size);
 
+  lrt_event_preinit(cores);
+  lrt_mem_preinit(cores);
+  lrt_trans_preinit(cores);
+
+  // calls event init on all cores, first event is lrt_start
+  start_cores(cores);
+  
   //  dumpstartargs();
-#ifdef LRT_STANDALONE_TEST
-  LRT_STANDALONE_TEST
-#else
-  lrt_pic_init(lrt_start);
-#endif
   return -1;
 }

@@ -53,7 +53,7 @@ struct lrt_event_local_data {
   int pipefd_write; //For synthesized events from potentially other locations
 };
 
-//To be allocated at alloc, the array of local event data
+//To be allocated at preinit, the array of local event data
 static struct lrt_event_local_data *event_data; 
 
 static const intptr_t PIPE_UDATA = -1;
@@ -99,7 +99,9 @@ lrt_event_loop(void)
     FuncNum fnum = desc->fnum;
     
     //this infrastructure should be pulled out of this file
+#if 0
     //*(EBBId_DREF((EBBRepRef *)id))[fnum];
+#endif
     printf("dispatching to id: %lx, funcnum: %d\n",
 	   (uintptr_t)id, (int)fnum);
 
@@ -108,9 +110,26 @@ lrt_event_loop(void)
   }
 }
 
-void __attribute__ ((noreturn))
-lrt_event_init(void (*reset)(void))
+#ifdef __APPLE__
+pthread_key_t lrt_event_myloc_pthreadkey;
+lrt_event_loc lrt_my_event_loc()
 {
+  return ((lrt_event_loc)pthread_getspecific(lrt_event_myloc_pthreadkey));
+};
+#else
+__thread lrt_event_loc lrt_event_myloc;
+#endif
+
+
+void *
+lrt_event_init(void *myid)
+{
+#ifdef __APPLE__
+  pthread_setspecific(lrt_event_myid_pthreadkey, myid);
+#else
+  lrt_event_myid = myid;
+#endif
+  
   //get my local event data
   struct lrt_event_local_data *ldata = &event_data[lrt_my_event_loc()];
 
@@ -145,7 +164,9 @@ lrt_event_init(void (*reset)(void))
   //FIXME: check for errors
   #endif
 
-  reset();
+  // we call the start routine to initialize 
+  // mem and trans before falling into the loop
+  lrt_start();
   lrt_event_loop();
 }
 
