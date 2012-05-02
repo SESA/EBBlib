@@ -23,7 +23,9 @@
 #include <config.h>
 
 #include <stdint.h>
-#if __DARWIN__
+#include <stdio.h>
+#include <stdlib.h>
+#if __APPLE__
 #include <sys/types.h>
 #include <sys/event.h>
 #include <sys/time.h>
@@ -88,7 +90,7 @@ lrt_event_loop(void)
     } else {
       //IRQ occurred
 #if __APPLE__
-      ev = (lrt_event_num)kev.udata;
+      ev = (lrt_event_num)(intptr_t)kev.udata;
 #endif
     }
 
@@ -97,7 +99,9 @@ lrt_event_loop(void)
     FuncNum fnum = desc->fnum;
     
     //this infrastructure should be pulled out of this file
-    EBBId_DREF(id)->obj[fnum];
+    //*(EBBId_DREF((EBBRepRef *)id))[fnum];
+    printf("dispatching to id: %lx, funcnum: %d\n",
+	   (uintptr_t)id, (int)fnum);
 
     //an optimization here would be to keep reading from the pipe or checking
     //other events before going back around the loop
