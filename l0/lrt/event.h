@@ -22,11 +22,14 @@
  * THE SOFTWARE.
  */
 
-extern void *lrt_event_init(void *myloc);
-extern void lrt_event_preinit(int cores);
-
 #include <l0/types.h>
 #include <l0/lrt/event_num.h>
+
+extern void *lrt_event_init(void *myloc);
+extern void lrt_event_preinit(int cores);
+extern void lrt_event_bind_event(lrt_event_num num, EBBId handler,
+				 FuncNum fnum);
+
 #ifdef LRT_ULNX
 #include <l0/lrt/ulnx/event.h>
 #elif LRT_BARE

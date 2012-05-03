@@ -174,3 +174,10 @@ lrt_event_preinit(int num_cores)
   //FIXME: check for errors
   //FIXME: initialize event table
 }
+
+void 
+lrt_event_bind_event(lrt_event_num num, EBBId handler, FuncNum fnum)
+{
+  lrt_event_table[num].id = handler;
+  lrt_event_table[num].fnum = fnum;
+}

@@ -83,7 +83,8 @@ EBBRC
 EventMgrPrim_bindEvent(EventMgrPrimRef _self, EventNo eventNo,
 	  EBBId handler, FuncNum fn)
 {
-  LRT_Assert(0);
+  lrt_event_bind_event(eventNo, handler, fn);
+  return EBBRC_OK;
 }
 
 EBBRC 
