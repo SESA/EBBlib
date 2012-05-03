@@ -211,22 +211,9 @@ static num_phys_cores()
 #endif
 }
 
-
-#ifdef __APPLE__
-pthread_key_t lrt_event_myloc_pthreadkey;
-lrt_event_loc lrt_my_event_loc()
-{
-  uintptr_t tmp;
-  tmp = (uintptr_t)pthread_getspecific(lrt_event_myloc_pthreadkey);
-  return ((lrt_event_loc)tmp);
-};
-#else
-__thread lrt_event_loc lrt_event_myloc;
-#endif
-
-
 /* ----------------- move event.c -------------------- */
 
+#if 0
 void *
 lrt_event_init(void *myloc)
 {
@@ -243,6 +230,7 @@ lrt_event_init(void *myloc)
   exit(0);
 }
 void lrt_event_preinit(int cores){};
+#endif
 void lrt_mem_preinit(int cores) {};
 void lrt_trans_preinit(int cores){};
 
@@ -276,8 +264,6 @@ start_cores(int cores)
   pthread_attr_init(&attr);
   pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
   
-  pthread_key_create(&lrt_event_myloc_pthreadkey, NULL);
-
   for (i=0; i<start_args.cores; i++) {
 #ifndef __APPLE__
     CPU_ZERO(&cpus);
@@ -292,8 +278,10 @@ start_cores(int cores)
       return;
     }
   }
-  sleep(30);
-  // main core dies, all threads are pthreads
+  // for now, wait until child exits; eventually
+  // put in synchronizatoin here that will do something good when 
+  // core exits
+  pause();		   
 }
 
 int

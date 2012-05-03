@@ -145,28 +145,6 @@ CObject(MsgTst) {
   CObjInterface(App) *ft;
 };
 
-#if 0
-// FIXME: this msg test is really bogus, you are on an event, running for a really long time, 
-// we should be sending to other nodes, and somehow waiting for events ourselves
-EBBRC 
-MsgTst_start(AppRef _self, int argc, char **argv, char **environ)
-{
-  MsgHandlerId id = InitMsgHandlerTst();
-  int i;
-
-  for (i=0; i<1000; i++) {
-    // bogus call to test IPI to msgmgr
-    COBJ_EBBCALL(theMsgMgrId, msg0, 0, id);
-    COBJ_EBBCALL(theMsgMgrId, msg1, 0, id, 1);
-    COBJ_EBBCALL(theMsgMgrId, msg2, 0, id, 1, 2);
-    COBJ_EBBCALL(theMsgMgrId, msg3, 0, id, 1, 2, 3);
-    COBJ_EBBCALL(theMsgMgrId, msg0, 0, id);
-  }
-
-  return EBBRC_OK;
-}
-#endif
-
 
 EBBRC 
 MsgTst_start(AppRef _self)

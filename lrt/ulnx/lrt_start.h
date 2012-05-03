@@ -1,5 +1,5 @@
-#ifndef __LRT_EVENT_H__
-#define __LRT_EVENT_H__
+#ifndef LRT_ULNX_START
+#define LRT_ULNX_START
 /*
  * Copyright (C) 2012 by Project SESA, Boston University
  *
@@ -21,32 +21,6 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-
-extern void *lrt_event_init(void *myloc);
-extern void lrt_event_preinit(int cores);
-
-#include <l0/types.h>
-#include <l0/lrt/event_num.h>
-#ifdef LRT_ULNX
-#include <l0/lrt/ulnx/event.h>
-#elif LRT_BARE
-#include <l0/lrt/bare/event.h>
-#endif
-
-/* CLEAN UP EVERYTING BELOW */
-
-#define LRT_ULNX_PICFLAG_READ  (1<<0)  // READ:  BIT 0
-#define LRT_ULNX_PICFLAG_WRITE (1<<1)  // WRITE: BIT 1
-#define LRT_ULNX_PICFLAG_ERROR (1<<2)  // ERRORL BIT 2
-
-struct IRQ_t {
-  union {
-    uint64_t raw;
-    struct {
-      uint32_t fd;
-      uint32_t flags;
-    } unix_pic_src;
-  };
-};
-
+// first code to be running on all cores after event_init
+extern void lrt_start(void);
 #endif

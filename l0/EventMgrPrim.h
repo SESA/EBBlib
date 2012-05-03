@@ -42,6 +42,8 @@
 
 #include <l0/cobj/cobj.h>
 #include <l0/cobj/CObjEBB.h>
+#include <l0/lrt/event_loc.h>
+#include <l0/lrt/event_num.h>
 
 /* 
  * All event handling ebbs must conform to these types
@@ -59,7 +61,6 @@ COBJ_EBBType(EventHandler) {
 #define EVENTFUNC(funcName) EBBRC (* funcName)(void * _self);
 typedef EVENTFUNC(GenericEventFunc);
 
-#include <l0/lrt/event_loc.h>
 typedef lrt_event_loc EventLoc;
 static const EventLoc EVENT_LOC_ALL=-1;
 static const EventLoc EVENT_LOC_NONE=-2; /* disable this IRQ */
@@ -67,7 +68,7 @@ inline static EventLoc MyEventLoc() {return lrt_my_event_loc();}
 inline static EventLoc NextEventLoc(lrt_event_loc l) {return lrt_next_event_loc(l);}
 inline static EventLoc NumEventLoc() {return lrt_num_event_loc();}
 
-typedef uint8_t EventNo;	/* up to 256 events (matches intel) */
+typedef lrt_event_num EventNo;
 struct IRQ_t;
 typedef struct IRQ_t IRQ;
 

@@ -40,6 +40,11 @@
 #include <l0/EventMgrPrimImp.h>
 #include <l0/MemMgr.h>
 #include <l0/MemMgrPrim.h>
+#include <l0/lrt/event.h>
+
+STATIC_ASSERT(LRT_EVENT_NUM_EVENTS % 8 == 0,
+	      "num allocatable events isn't divisible by 8");
+static uint8_t alloc_table[LRT_EVENT_NUM_ALLOCATABLE_EVENTS / 8];
 
 CObject(EventMgrPrimImp){
   CObjInterface(EventMgrPrim) *ft;
@@ -50,13 +55,28 @@ EventMgrPrimId theEventMgrPrimId=0;
 static EBBRC 
 EventMgrPrim_allocEventNo(EventMgrPrimRef _self, EventNo *eventNoPtr)
 {
-  LRT_Assert(0);
+  int i;
+  //we start from the beginning and just find the first
+  // unallocated event
+  for (i = 0; i < LRT_EVENT_NUM_ALLOCATABLE_EVENTS; i++) {
+    uint8_t res = __sync_fetch_and_or(&alloc_table[i / 8], 1 << (i % 8));
+    if (!(res & (1 << (i % 8)))) {
+      break;
+    }
+  }
+  if (i >= LRT_EVENT_NUM_ALLOCATABLE_EVENTS) {
+    return EBBRC_OUTOFRESOURCES;
+  }
+  *eventNoPtr = i + LRT_EVENT_FIRST_ALLOCATABLE_EVENT;
+  return EBBRC_OK;
 }
 
 EBBRC 
 EventMgrPrim_freeEventNo(EventMgrPrimRef _self, EventNo eventNo)
 {
-  LRT_Assert(0);
+  eventNo -= LRT_EVENT_FIRST_ALLOCATABLE_EVENT;
+  __sync_fetch_and_and(&alloc_table[eventNo / 8], ~(1 << (eventNo % 8)));
+  return EBBRC_OK;
 }
 
 EBBRC 

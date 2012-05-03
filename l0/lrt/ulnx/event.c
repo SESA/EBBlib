@@ -25,27 +25,20 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #if __APPLE__
+#include <pthread.h>
 #include <sys/types.h>
 #include <sys/event.h>
 #include <sys/time.h>
 #endif
-
 #include <l0/types.h>
 #include <lrt/assert.h>
-
-struct lrt_event_descriptor {
-  EBBId id; 
-  FuncNum fnum;
-};
-
-#define LRT_NUM_EVENTS (256)
-typedef uint8_t lrt_event_num;
-STATIC_ASSERT((1 << (sizeof(lrt_event_num) * 8)) >= LRT_NUM_EVENTS,
-	      "lrt_event_num cannot hold the range of events!");
+#include <l0/lrt/event.h>
+#include <lrt/ulnx/lrt_start.h>
 
 //the global event table
-struct lrt_event_descriptor lrt_event_table[LRT_NUM_EVENTS];
+struct lrt_event_descriptor lrt_event_table[LRT_EVENT_NUM_EVENTS];
 
 struct lrt_event_local_data {
   int fd; //either epollfd or kqueuefd
@@ -114,7 +107,7 @@ lrt_event_loop(void)
 pthread_key_t lrt_event_myloc_pthreadkey;
 lrt_event_loc lrt_my_event_loc()
 {
-  return ((lrt_event_loc)pthread_getspecific(lrt_event_myloc_pthreadkey));
+  return ((lrt_event_loc)(uintptr_t)pthread_getspecific(lrt_event_myloc_pthreadkey));
 };
 #else
 __thread lrt_event_loc lrt_event_myloc;
@@ -174,10 +167,10 @@ void
 lrt_event_preinit(int num_cores)
 {
   event_data = malloc(sizeof(*event_data) * num_cores);
-  //FIXME: check for errors
-}
+#if __APPLE__
+  pthread_key_create(&lrt_event_myloc_pthreadkey, NULL);
+#endif
 
-int main ()
-{
-  return 0;
+  //FIXME: check for errors
+  //FIXME: initialize event table
 }
