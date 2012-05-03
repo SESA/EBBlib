@@ -35,6 +35,7 @@
 #include <l0/lrt/mem.h>
 #include <l0/lrt/trans.h>
 #include <l0/lrt/event.h>
+#include <pthread.h>
 
 static struct start_args_t {
   intptr_t physcores;		/* actual physical cores we have */
@@ -210,33 +211,88 @@ static num_phys_cores()
 #endif
 }
 
-#include <pthread.h>
+
+#ifdef __APPLE__
+pthread_key_t lrt_event_myloc_pthreadkey;
+lrt_event_loc lrt_my_event_loc()
+{
+  uintptr_t tmp;
+  tmp = (uintptr_t)pthread_getspecific(lrt_event_myloc_pthreadkey);
+  return ((lrt_event_loc)tmp);
+};
+#else
+__thread lrt_event_loc lrt_event_myloc;
+#endif
+
+
+/* ----------------- move event.c -------------------- */
+
+void *
+lrt_event_init(void *myloc)
+{
+#ifdef __APPLE__
+  pthread_setspecific(lrt_event_myloc_pthreadkey, myloc);
+#else
+  lrt_event_myloc = myloc;
+#endif
+
+  fprintf(stderr, "KLUDGE, %d calling init\n", lrt_my_event_loc());
+  lrt_start();
+  fprintf(stderr, "KLUDGE, %d done calling init\n", lrt_my_event_loc());
+  sleep(20);
+  exit(0);
+}
+void lrt_event_preinit(int cores){};
+void lrt_mem_preinit(int cores) {};
+void lrt_trans_preinit(int cores){};
+
+/* get number of logical pics, i.e., cores */
+lrt_event_loc lrt_num_event_loc()
+{
+  return start_args.cores;
+}
+
+/* get next pic in some sequence from current one; loops */
+lrt_event_loc lrt_next_event_loc(lrt_event_loc l)
+{
+  return (l+1)%start_args.cores;
+}
+
+/* ----------------- move event.c -------------------- */
+
 void
 start_cores(int cores)
 {
   int i;
+#ifndef __APPLE__
   cpu_set_t cpus;
+#endif
 
   // check cores
   // start up another core, with the 
-  fprintf(stderr, "%s: start pic id %d!\n", __func__, lrt_my_event_loc());
+  fprintf(stderr, "%s: starting cores %d\n", __func__, cores);
   pthread_attr_t attr; 
   
   pthread_attr_init(&attr);
   pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
   
+  pthread_key_create(&lrt_event_myloc_pthreadkey, NULL);
 
   for (i=0; i<start_args.cores; i++) {
+#ifndef __APPLE__
     CPU_ZERO(&cpus);
     // pin to a core
     CPU_SET(i%start_args.physcores, &cpus);
     pthread_attr_setaffinity_np(&attr, sizeof(cpu_set_t), &cpus);
+#endif
     // this will call lrt_start on each thread
-    if (pthread_create((pthread_t *)(&val), &attr, event_init, (void *)i) != 0) {
+    uintptr_t val;		/* we don't actually need the thread id I think anywhere */
+    if (pthread_create((pthread_t *)(&val), &attr, lrt_event_init, (void *)(uintptr_t)i) != 0) {
       perror("pthread_create");
-      return 0;
+      return;
     }
   }
+  sleep(30);
   // main core dies, all threads are pthreads
 }
 
@@ -252,12 +308,12 @@ main(int argc, char **argv, char **environ)
   // may change number of cores 
   startinfo(argc, argv, environ, &start_args.start_info, &start_args.start_info_size);
 
-  lrt_event_preinit(cores);
-  lrt_mem_preinit(cores);
-  lrt_trans_preinit(cores);
+  lrt_event_preinit(start_args.cores);
+  lrt_mem_preinit(start_args.cores);
+  lrt_trans_preinit(start_args.cores);
 
   // calls event init on all cores, first event is lrt_start
-  start_cores(cores);
+  start_cores(start_args.cores);
   
   //  dumpstartargs();
   return -1;

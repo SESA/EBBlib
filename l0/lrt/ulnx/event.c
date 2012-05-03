@@ -122,12 +122,12 @@ __thread lrt_event_loc lrt_event_myloc;
 
 
 void *
-lrt_event_init(void *myid)
+lrt_event_init(void *myloc)
 {
 #ifdef __APPLE__
-  pthread_setspecific(lrt_event_myid_pthreadkey, myid);
+  pthread_setspecific(lrt_event_myloc_pthreadkey, myloc);
 #else
-  lrt_event_myid = myid;
+  lrt_event_myloc = myloc;
 #endif
   
   //get my local event data

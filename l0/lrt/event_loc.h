@@ -36,10 +36,6 @@ typedef int lrt_event_loc;
 // this is used for any static sized arrays; should try to get rid of it
 #define LRT_MAX_EL 64
 
-inline static lrt_event_loc lrt_my_event_loc();
-extern lrt_event_loc lrt_next_event_loc(lrt_event_loc l);
-extern lrt_event_loc lrt_num_event_loc();
-
 // include platform specific event_loc, get rid of following 
 // that I put in to get the world compiling
 #ifdef __APPLE__
@@ -48,5 +44,6 @@ extern lrt_event_loc lrt_my_event_loc();
 extern __thread lrt_event_loc lrt_event_myloc;
 inline static lrt_event_loc lrt_my_event_loc() {return lrt_event_myloc;}
 #endif
-
+extern lrt_event_loc lrt_next_event_loc(lrt_event_loc l);
+extern lrt_event_loc lrt_num_event_loc();
 #endif
