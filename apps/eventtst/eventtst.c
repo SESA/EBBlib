@@ -24,6 +24,7 @@
 #include <l1/App.h>
 #include <lrt/io.h>
 #include <l0/EventMgrPrim.h>
+#include <lrt/exit.h>
 
 CObject(EventTst) {
   CObjInterface(EventTst) *ft;
@@ -145,6 +146,7 @@ EventTst_start(AppRef _self)
   test_bind(self);
   test_triggerlocal(self);
 
+  lrt_exit(0);
   return EBBRC_OK;
 }
 
@@ -163,6 +165,7 @@ static EBBRC
 EventTst_triggerRemoteTestEvent(EventTstRef _self)
 {
   EBBRC rc;
+
   rc = COBJ_EBBCALL(theEventMgrPrimId, freeEventNo, remoteEV);
   LRT_RCAssert(rc);
   lrt_printf("EventTst: triggerremotetest succeeded on core %d\n",
