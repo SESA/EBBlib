@@ -25,16 +25,16 @@
 #include <lrt/io.h>
 #include <l0/EventMgrPrim.h>
 
-COBJ_EBBType(EventTst) {
-  CObjImplements(App);
-  
-}
 CObject(EventTst) {
-  CObjInterface(App) *ft;
+  CObjInterface(EventTst) *ft;
+};
+
+CObjInterface(EventTst) {
+  CObjImplements(App);
+  EBBRC (*inEvent) (EventTstRef _self);
 };
 
 #define TABSIZE 200
- 
 
 static void test_allocate()
 {
@@ -84,13 +84,15 @@ static void test_allocate()
 
 static void test_bind(EventTstRef self)
 {
+  EBBRC rc;
   EventNo ev;
   lrt_printf("EventTst: bindtesttest started\n");
   rc = COBJ_EBBCALL(theEventMgrPrimId, allocEventNo, &ev);
   LRT_RCAssert(rc);
   
   rc = COBJ_EBBCALL(theEventMgrPrimId, bindEvent, ev, (EBBId)theAppId, 
-		    COBJ_FUNCNUM(self, inEvent))
+		    COBJ_FUNCNUM(self, inEvent));
+
   LRT_RCAssert(rc);
   lrt_printf("EventTst: bindtest succeeded\n");
 
@@ -103,13 +105,23 @@ EventTst_start(AppRef _self)
   lrt_printf("EventTst, core %d number of cores %d\n", MyEventLoc(), NumEventLoc());
 
   test_allocate();
-  test_bind(_self);
+  test_bind(self);
 
-  return 0;
+  return EBBRC_OK;
 }
 
-CObjInterface(App) EventTst_ftable = {
-  .start = EventTst_start
+static EBBRC
+EventTst_inEvent(EventTstRef _self)
+{
+  lrt_printf("Got event!\n");
+  return EBBRC_OK;
+}
+
+CObjInterface(EventTst) EventTst_ftable = {
+  .App_if = {
+    .start = EventTst_start
+  },
+  .inEvent = EventTst_inEvent
 };
 
 APP(EventTst, APP_START_ONE);
