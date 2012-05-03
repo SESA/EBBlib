@@ -31,7 +31,7 @@ CObject(EventTst) {
 
 CObjInterface(EventTst) {
   CObjImplements(App);
-  EBBRC (*inEvent) (EventTstRef _self);
+  EBBRC (*triggerLocalTestEvent) (EventTstRef _self);
 };
 
 #define TABSIZE 200
@@ -93,7 +93,7 @@ test_bind(EventTstRef self)
   LRT_RCAssert(rc);
   
   rc = COBJ_EBBCALL(theEventMgrPrimId, bindEvent, ev, (EBBId)theAppId, 
-		    COBJ_FUNCNUM(self, inEvent));
+		    COBJ_FUNCNUM(self, triggerLocalTestEvent));
 
   LRT_RCAssert(rc);
   lrt_printf("EventTst: bindtest succeeded\n");
@@ -102,10 +102,10 @@ test_bind(EventTstRef self)
 }
 
 static void
-test_trigger(EventNo ev)
+test_triggerlocal(EventNo ev)
 {
   EBBRC rc;
-  lrt_printf("EventTst: triggertest started\n");
+  lrt_printf("EventTst: triggerlocaltest started\n");
   
   rc = COBJ_EBBCALL(theEventMgrPrimId, triggerEvent, ev, MyEventLoc());
 }
@@ -118,15 +118,15 @@ EventTst_start(AppRef _self)
 
   test_allocate();
   EventNo ev = test_bind(self);
-  test_trigger(ev);
+  test_triggerlocal(ev);
 
   return EBBRC_OK;
 }
 
 static EBBRC
-EventTst_inEvent(EventTstRef _self)
+EventTst_triggerLocalTestEvent(EventTstRef _self)
 {
-  lrt_printf("EventTst: triggertest succeeded\n");
+  lrt_printf("EventTst: triggerlocaltest succeeded\n");
   return EBBRC_OK;
 }
 
@@ -134,7 +134,7 @@ CObjInterface(EventTst) EventTst_ftable = {
   .App_if = {
     .start = EventTst_start
   },
-  .inEvent = EventTst_inEvent
+  .triggerLocalTestEvent = EventTst_triggerLocalTestEvent
 };
 
 APP(EventTst, APP_START_ONE);
