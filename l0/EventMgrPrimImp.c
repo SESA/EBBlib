@@ -97,7 +97,8 @@ EventMgrPrim_routeIRQ(EventMgrPrimRef _self, IRQ *isrc, EventNo eventNo,
 EBBRC 
 EventMgrPrim_triggerEvent(EventMgrPrimRef _self, EventNo eventNo, EventLoc el)
 {
-  LRT_Assert(0);
+  lrt_event_trigger_event(eventNo, el);
+  return EBBRC_OK;
 }
 
 CObjInterface(EventMgrPrim) EventMgrPrimImp_ftable = {

@@ -29,6 +29,7 @@ extern void *lrt_event_init(void *myloc);
 extern void lrt_event_preinit(int cores);
 extern void lrt_event_bind_event(lrt_event_num num, EBBId handler,
 				 FuncNum fnum);
+extern void lrt_event_trigger_event(lrt_event_num num, lrt_event_loc loc);
 
 #ifdef LRT_ULNX
 #include <l0/lrt/ulnx/event.h>

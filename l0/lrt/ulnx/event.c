@@ -92,11 +92,8 @@ lrt_event_loop(void)
     FuncNum fnum = desc->fnum;
     
     //this infrastructure should be pulled out of this file
-#if 0
-    //*(EBBId_DREF((EBBRepRef *)id))[fnum];
-#endif
-    printf("dispatching to id: %lx, funcnum: %d\n",
-	   (uintptr_t)id, (int)fnum);
+    EBBRepRef ref = EBBId_DREF((EBBRepRef *)id);
+    (void)(*ref)[fnum](ref);
 
     //an optimization here would be to keep reading from the pipe or checking
     //other events before going back around the loop
@@ -167,11 +164,12 @@ void
 lrt_event_preinit(int num_cores)
 {
   event_data = malloc(sizeof(*event_data) * num_cores);
+  //FIXME: check for errors
 #if __APPLE__
   pthread_key_create(&lrt_event_myloc_pthreadkey, NULL);
+  //FIXME: check for errors
 #endif
 
-  //FIXME: check for errors
   //FIXME: initialize event table
 }
 
@@ -180,4 +178,18 @@ lrt_event_bind_event(lrt_event_num num, EBBId handler, FuncNum fnum)
 {
   lrt_event_table[num].id = handler;
   lrt_event_table[num].fnum = fnum;
+}
+
+void
+lrt_event_trigger_event(lrt_event_num num, lrt_event_loc loc)
+{
+  int pipefd;
+
+  //protects from a race on startup
+  do {
+    pipefd = *(volatile int *)&event_data[loc].pipefd_write;
+  } while (pipefd == 0);
+
+  write(pipefd, &num, sizeof(num));
+  //FIXME: check for errors
 }

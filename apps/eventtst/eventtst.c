@@ -36,7 +36,8 @@ CObjInterface(EventTst) {
 
 #define TABSIZE 200
 
-static void test_allocate()
+static void
+test_allocate()
 {
   lrt_printf("EventTst: alloc test started\n");
 
@@ -82,11 +83,12 @@ static void test_allocate()
 }
 
 
-static void test_bind(EventTstRef self)
+static EventNo 
+test_bind(EventTstRef self)
 {
   EBBRC rc;
   EventNo ev;
-  lrt_printf("EventTst: bindtesttest started\n");
+  lrt_printf("EventTst: bindtest started\n");
   rc = COBJ_EBBCALL(theEventMgrPrimId, allocEventNo, &ev);
   LRT_RCAssert(rc);
   
@@ -96,6 +98,16 @@ static void test_bind(EventTstRef self)
   LRT_RCAssert(rc);
   lrt_printf("EventTst: bindtest succeeded\n");
 
+  return ev;
+}
+
+static void
+test_trigger(EventNo ev)
+{
+  EBBRC rc;
+  lrt_printf("EventTst: triggertest started\n");
+  
+  rc = COBJ_EBBCALL(theEventMgrPrimId, triggerEvent, ev, MyEventLoc());
 }
 
 static EBBRC 
@@ -105,7 +117,8 @@ EventTst_start(AppRef _self)
   lrt_printf("EventTst, core %d number of cores %d\n", MyEventLoc(), NumEventLoc());
 
   test_allocate();
-  test_bind(self);
+  EventNo ev = test_bind(self);
+  test_trigger(ev);
 
   return EBBRC_OK;
 }
@@ -113,7 +126,7 @@ EventTst_start(AppRef _self)
 static EBBRC
 EventTst_inEvent(EventTstRef _self)
 {
-  lrt_printf("Got event!\n");
+  lrt_printf("EventTst: triggertest succeeded\n");
   return EBBRC_OK;
 }
 
