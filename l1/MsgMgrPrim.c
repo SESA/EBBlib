@@ -44,8 +44,8 @@
 // globally known id of the message mgr
 MsgMgrId theMsgMgrId = 0;
 
-// the root of both message manager and event handler
-static CObjEBBRootMultiImpRef rootRefMM = 0, rootRefEH = 0;
+// the root of both message manager
+static CObjEBBRootMultiImpRef rootRefMM = 0;
 
 // the event reserved for the message manager
 static EventNo theMsgMgrEvent = 0;
@@ -80,16 +80,8 @@ typedef struct MsgStore_struc {
   uintptr_t args[MAXARGS];
 } MsgStore;
 
-
-CObject(EvHdlr) {
-  COBJ_EBBFuncTbl(EventHandler);
-}; 
-
 CObject(MsgMgrPrim) {
-  COBJ_EBBFuncTbl(MsgMgr);
-
-  CObjectDefine(EvHdlr) evHdlr;
-
+  CObjInterface(MsgMgrPrim) *ft;
   EventLoc eventLoc;
   LockType msgqueuelock;
   MsgStore *msgqueue; 
@@ -100,6 +92,14 @@ CObject(MsgMgrPrim) {
   // reference to the single root
   CObjEBBRootMultiRef theRootMM;
 };
+
+CObjInterface(MsgMgrPrim) {
+  CObjImplements(MsgMgr);
+  EBBRC (*handleEvent) (MsgMgrPrimRef _self);
+};
+  
+
+
 
 static EBBRC
 MsgMgrPrim_enqueueMsg(MsgMgrPrimRef target, MsgStore *msg)
@@ -136,22 +136,33 @@ MsgMgrPrim_findTarget(MsgMgrPrimRef self, EventLoc loc, MsgMgrPrimRef *target)
 {
   RepListNode *node;
   EBBRep * rep = NULL;
-  rep = (EBBRep *)self->reps[loc];
-  if (rep == NULL) {
-    for (node = self->theRootMM->ft->nextRep(self->theRootMM, 0, 
-					     &rep);
-	 node != NULL; 
-	 node = self->theRootMM->ft->nextRep(self->theRootMM, node, 
-					   &rep)) {
-      LRT_Assert(rep != NULL);
-      if (((MsgMgrPrimRef)rep)->eventLoc == loc) break;
+  int sent_event = 0;
+
+  while (1) {
+    rep = (EBBRep *)self->reps[loc];
+    if (rep == NULL) {
+      for (node = self->theRootMM->ft->nextRep(self->theRootMM, 0, 
+					       &rep);
+	   node != NULL; 
+	   node = self->theRootMM->ft->nextRep(self->theRootMM, node, 
+					       &rep)) {
+	LRT_Assert(rep != NULL);
+	if (((MsgMgrPrimRef)rep)->eventLoc == loc) break;
+      }
+      self->reps[loc] = (MsgMgrPrimRef)rep;
     }
-    self->reps[loc] = (MsgMgrPrimRef)rep;
-  }
-  // FIXME: handle case that rep doesn't yet exist
-  *target = (MsgMgrPrimRef)rep;
-  if (rep == NULL) {
-    return EBBRC_NOTFOUND;
+    // FIXME: handle case that rep doesn't yet exist
+    *target = (MsgMgrPrimRef)rep;
+    if (rep != NULL) {
+      return EBBRC_OK; 
+    }
+    if (!sent_event) {
+      lrt_printf("MsgMgr: no rep on loc %d\n, kicking the bugger\n", loc);
+      COBJ_EBBCALL(theEventMgrPrimId, triggerEvent, theMsgMgrEvent, loc);
+      sent_event=1; 
+    } else {
+      lrt_printf("x");      
+    }
   }
   return EBBRC_OK;
 }
@@ -289,9 +300,8 @@ MsgMgrPrim_msg3(MsgMgrRef _self, EventLoc loc, MsgHandlerId id,
 };
 
 static EBBRC 
-MsgMgrPrim_handleEvent(EventHandlerRef _self)
+MsgMgrPrim_handleEvent(MsgMgrPrimRef self)
 {
-  MsgMgrPrimRef self = (MsgMgrPrimRef)ContainingCOPtr(_self,MsgMgrPrim,evHdlr);
   MsgStore *msg;
 
   msg = MsgMgrPrim_dequeueMsgHead(self);
@@ -318,39 +328,27 @@ MsgMgrPrim_handleEvent(EventHandlerRef _self)
 }
 
 //MsgMgr part of the interface 
-CObjInterface(MsgMgr) MsgMgrPrim_ftable = {
-  .msg0 = MsgMgrPrim_msg0,
-  .msg1 = MsgMgrPrim_msg1,
-  .msg2 = MsgMgrPrim_msg2,
-  .msg3 = MsgMgrPrim_msg3,
-  {// the implementation of the event handler functions
-    .handleEvent = MsgMgrPrim_handleEvent
-  }
+CObjInterface(MsgMgrPrim) MsgMgrPrim_ftable = {
+  .MsgMgr_if = {
+    .msg0 = MsgMgrPrim_msg0,
+    .msg1 = MsgMgrPrim_msg1,
+    .msg2 = MsgMgrPrim_msg2,
+    .msg3 = MsgMgrPrim_msg3
+  },
+  .handleEvent = MsgMgrPrim_handleEvent
 };
 
 static inline void
 MsgMgrPrim_SetFT(MsgMgrPrimRef o)
 {
   o->ft = &MsgMgrPrim_ftable; 
-  o->evHdlr.ft = &(MsgMgrPrim_ftable.EventHandler_if);
 };
 
 
 static EBBRep *
-MsgMgrPrim_createRepAssert(CObjEBBRootMultiRef root)
-{
-  LRT_Assert(0);
-  return NULL;
-}
-
-static EBBRC
-MsgMgrPrim_createRep(CObjEBBRootMultiImpRef rootRefMM, 
-		     CObjEBBRootMultiImpRef rootRefEH, 
-		     EventHandlerId ehid)
+MsgMgrPrim_createRep(CObjEBBRootMultiRef rootRefMM)
 {
   MsgMgrPrimRef repRef;
-  LRT_Assert(ehid != NULL);
-  
 
   EBBPrimMalloc(sizeof(MsgMgrPrim), &repRef, EBB_MEM_DEFAULT);
   MsgMgrPrim_SetFT(repRef);
@@ -364,45 +362,25 @@ MsgMgrPrim_createRep(CObjEBBRootMultiImpRef rootRefMM,
   for (i=0; i<LRT_MAX_EL ; i++ ) {
     repRef->reps[i] = NULL;
   }
-  repRef->theRootMM = (CObjEBBRootMultiRef)rootRefMM;
+  repRef->theRootMM = rootRefMM;
 
-  // now tell the root for event handler its pseudo representative on this core
-  // note, EH must by set up before MM
-  rootRefMM->ft->addRepOn((CObjEBBRootMultiRef)rootRefEH, MyEventLoc(),
-			  (EBBRep *)(void *)&(repRef->evHdlr));
-
-  // tell the root for MsgMgr its rep on this core
-  rootRefMM->ft->addRepOn((CObjEBBRootMultiRef)rootRefMM, MyEventLoc(),
-			  (EBBRep *)repRef);
-
-  return EBBRC_OK;
+  return (EBBRep *)repRef;
 };
 
 EBBRC
 MsgMgrPrim_Init(void)
 {
-  static EventHandlerId theMsgMgrEHId = 0;
-
-  if (__sync_bool_compare_and_swap(&theMsgMgrEHId, (MsgMgrId)0,
+  if (__sync_bool_compare_and_swap(&theMsgMgrId, (MsgMgrId)0,
 				   (MsgMgrId)-1)) {
     EBBRC rc;
     EBBId id;
 
     // create root for MsgMgr
-    rc = CObjEBBRootMultiImpCreate(&rootRefMM, MsgMgrPrim_createRepAssert);
+    rc = CObjEBBRootMultiImpCreate(&rootRefMM, MsgMgrPrim_createRep);
     LRT_RCAssert(rc);
     rc = EBBAllocPrimId(&id);
     LRT_RCAssert(rc); 
     rc = EBBBindPrimId(id, CObjEBBMissFunc, (EBBMissArg)rootRefMM);
-    LRT_RCAssert(rc); 
-    theMsgMgrId = (MsgMgrId)id;
-
-    // create root for EventHandler part of MsgMgr
-    rc = CObjEBBRootMultiImpCreate(&rootRefEH, MsgMgrPrim_createRepAssert);
-    LRT_RCAssert(rc);
-    rc = EBBAllocPrimId(&id);
-    LRT_RCAssert(rc); 
-    rc = EBBBindPrimId(id, CObjEBBMissFunc, (EBBMissArg)rootRefEH);
     LRT_RCAssert(rc); 
 
     // allocate the event and bind it before publishing the msgmgr id, since 
@@ -411,18 +389,14 @@ MsgMgrPrim_Init(void)
     LRT_RCAssert(rc); 
 
     LRT_Assert(id != NULL);
-    rc = COBJ_EBBCALL(theEventMgrPrimId, bindEvent, theMsgMgrEvent, id, NOFUNCNUM);
+    rc = COBJ_EBBCALL(theEventMgrPrimId, bindEvent, theMsgMgrEvent, id, 
+		      __builtin_offsetof(struct MsgMgrPrim_if, handleEvent)/sizeof(COBJFunc));
     LRT_RCAssert(rc); 
 
-    // now unblock everyone
-    theMsgMgrEHId = (EventHandlerId)id;
+    theMsgMgrId = (MsgMgrId)id;
   } else {
-    while (((volatile uintptr_t)theMsgMgrEHId)==-1);
+    while (((volatile uintptr_t)theMsgMgrId)==-1);
   }
-
-  // initialize the msgmgr rep on this core, could do this lazily
-  LRT_Assert(theMsgMgrEHId != NULL);
-  MsgMgrPrim_createRep(rootRefMM, rootRefEH, theMsgMgrEHId);
   return EBBRC_OK;
 }
 

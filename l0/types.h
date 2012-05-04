@@ -54,9 +54,6 @@ typedef EBBRep *EBBRepRef;
 typedef uintptr_t FuncNum;
 typedef uintptr_t EBBMissArg;
 
-//FIXME: JA do the right thing with this constant
-#define NOFUNCNUM  ((uintptr_t)-1)
-
 //first arg is the address of the EBBRep that will be executed
 //second arg is the local table pointer so that a rep can be installed
 typedef EBBRC (*EBBMissFunc) (EBBRep **, EBBLTrans *, FuncNum,

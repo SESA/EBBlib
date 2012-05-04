@@ -66,7 +66,7 @@ MsgHandlerTst_msg1(MsgHandlerRef _self, uintptr_t a1)
 static EBBRC 
 MsgHandlerTst_msg2(MsgHandlerRef _self, uintptr_t numtosend, uintptr_t id)
 {
-  uintptr_t nxt = 0;
+  EventLoc nxt = 0;
   MsgHandlerId sid = (MsgHandlerId)id;
   EBBRC rc;
 
@@ -79,6 +79,7 @@ MsgHandlerTst_msg2(MsgHandlerRef _self, uintptr_t numtosend, uintptr_t id)
   nxt = NextEventLoc(MyEventLoc());
   
   do {
+    lrt_printf("msgtst %d -> %d\n", MyEventLoc(), nxt);
     rc = COBJ_EBBCALL(theMsgMgrId, msg2, nxt, sid, numtosend, id);
     //if (rc == EBBRC_NOTFOUND) lrt_printf("*");
 
@@ -153,7 +154,7 @@ MsgTst_start(AppRef _self)
   int numtosend = 100;
   EBBRC rc;
 
-  lrt_printf("MsgTst, core %d number of cores %d", MyEventLoc(), 
+  lrt_printf("MsgTst, core %d number of cores %d\n", MyEventLoc(), 
 	     NumEventLoc());
 
   // initialize the message handler, this will take over the
@@ -162,7 +163,7 @@ MsgTst_start(AppRef _self)
   LRT_RCAssert(rc);
 
   if (MyEventLoc() != 0) {
-    lrt_printf("MsgTst, core %d returning to event loop", MyEventLoc());
+    lrt_printf("MsgTst, core %d returning to event loop\n", MyEventLoc());
     return EBBRC_OK;
   }
   
@@ -177,4 +178,4 @@ CObjInterface(App) MsgTst_ftable = {
   .start = MsgTst_start
 };
 
-APP(MsgTst, APP_START_ALL);
+APP(MsgTst, APP_START_ONE);

@@ -53,9 +53,6 @@ COBJ_EBBType(MsgMgr) {
 
   EBBRC (*msg3) (MsgMgrRef _self, EventLoc loc, MsgHandlerId id, 
 		 uintptr_t a1, uintptr_t a2, uintptr_t a3);
-
-  // we implement a event handler for IPIs
-  CObjImplements(EventHandler);
 };
 
 
