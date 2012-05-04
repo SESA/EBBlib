@@ -1,3 +1,7 @@
+o create macro for COBJ_FUNC_NUMTYPE
+o implement broadcast event
+o fix stupid memory manager
+
 o get rid of start arguments to applications, make a global variable
 o make msgmgr called from apps that need it
 
