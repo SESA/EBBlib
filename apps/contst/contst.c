@@ -108,6 +108,7 @@ CObject(Console)
   struct IRQ_t outdev;
   EventNo inEV;
   EventNo outEV;
+  int outIRQDisabled;
 
   intptr_t inlen;
   intptr_t outlen;
@@ -135,12 +136,11 @@ Console_putChar(CharStreamRef _self, char c)
     self->out_c[end] = c;
     self->outlen++;
     if (self->outlen==1) {
-      // re-enable interrupts on output, comming to this core
-      // note, this is an expensive operation, the only reason we need to
-      // do this is that having space for writting will always return, i.e., the "interrupt"
-      // for output space is level triggered.  On an edge triggered interrupt we wouldn't
-      // disable the output IRQ when we have nothing to send
-      COBJ_EBBCALL(theEventMgrPrimId, routeIRQ, &self->outdev, self->outEV, 
+      // signal an event to asynchronously write the data
+      // FIXME: switch to going to any location
+      // FIXME: if outIRQDisabled is not set, we don't need to schedule event 
+      //   event will be signalled automatically. 
+      COBJ_EBBCALL(theEventMgrPrimId, triggerEvent, self->outEV, 
 		   EVENT_LOC_SINGLE, MyEventLoc());
     }
     rc = EBBRC_OK;
@@ -199,13 +199,22 @@ Console_outEvent(CharStreamRef _self)
       self->outstart += n;
       if (self->outlen==0) {
 	self->outstart=0;
-	// disable output IRQ: note, this is an expensive operation, the only reason we need to
-	// do this is that having space for writting will always return, i.e., the "interrupt"
-	// for output space is level triggered.  On an edge triggered interrupt we wouldn't
-	// disable the output IRQ when we have nothing to send
-	COBJ_EBBCALL(theEventMgrPrimId, routeIRQ, &self->outdev, self->outEV, 
-		     EVENT_LOC_NONE, 0);
+	if (!self->outIRQDisabled) {
+	  // disable output IRQ: do this aggressively, since 
+	  // FIXME: this is not atomic, but, clearly this is all broken,
+	  //  since we have no locking in console
+	  self->outIRQDisabled = 1;
+	  // disable output IRQ
+	  COBJ_EBBCALL(theEventMgrPrimId, routeIRQ, &self->outdev, self->outEV, 
+		       EVENT_LOC_NONE, 0);
+	}
       }
+    }
+  } else {			/* assume getting 0 means write failed */
+    if (self->outIRQDisabled) {
+      self->outIRQDisabled = 0;
+      COBJ_EBBCALL(theEventMgrPrimId, routeIRQ, &self->outdev, self->outEV, 
+		   EVENT_LOC_SINGLE, MyEventLoc());
     }
   }
 
