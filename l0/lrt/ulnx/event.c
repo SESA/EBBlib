@@ -215,7 +215,14 @@ void
 lrt_event_route_irq(struct IRQ_t *isrc, lrt_event_num num, 
 		    enum lrt_event_loc_desc desc, lrt_event_loc loc)
 {
-#if 0
+  //No changes necessary if this conditional is true
+  if ((desc == LRT_EVENT_LOC_NONE && isrc->desc == LRT_EVENT_LOC_NONE) ||
+      (num == isrc->num &&
+       ((desc == LRT_EVENT_LOC_ALL && isrc->desc == LRT_EVENT_LOC_ALL) ||
+	(desc == LRT_EVENT_LOC_SINGLE && isrc->desc == LRT_EVENT_LOC_SINGLE &&
+	 loc == isrc->loc)))) {
+    return;
+  }
 #if __APPLE__
   int numkevents = __builtin_popcount(isrc->flags);
 
@@ -243,43 +250,63 @@ lrt_event_route_irq(struct IRQ_t *isrc, lrt_event_num num,
   };
 #endif
 
-  if (num != isrc->num) {
-    //different events, remove all and add the right ones
-    if (isrc->num == LRT_EVENT_LOC_ALL) {
-      int num_event = lrt_num_event_loc();
-      for (int i = 0; i < num_event; i++) {
-	struct lrt_event_local_data *ldata = &event_data[old_index];
-	
+  if (isrc->desc == LRT_EVENT_LOC_ALL || desc == LRT_EVENT_LOC_ALL) {
+    lrt_event_loc num_event_loc = lrt_num_event_loc();
+    for (lrt_event_loc i = 0; i < num_event_loc; i++) {
+      struct lrt_event_local_data *ldata = &event_data[i];
+      //TODO: I would guess this statement could be written better...
+      //This checks if the irq is currently mapped in on core i
+      // and not requested to be mapped or having a different event.
+      //In such a case, remove the event
+      if ((isrc->desc == LRT_EVENT_LOC_ALL ||
+	   (isrc->desc == LRT_EVENT_LOC_SINGLE && isrc->loc == i)) &&
+	  !(num == isrc->num && 
+	    (desc == LRT_EVENT_LOC_ALL ||
+	     (desc == LRT_EVENT_LOC_SINGLE && loc == i)))) {
+#if __APPLE__
+	kevent(ldata->fd, kevs_remove, numkevents, NULL, 0, &timeout);
+#endif		
+      }
+      //This checks if the irq is requested to be mapped in on core i
+      // and not already mapped or having a different event
+      //In such a case, add the event
+      if ((desc == LRT_EVENT_LOC_ALL ||
+	   (desc == LRT_EVENT_LOC_SINGLE && loc == i)) &&
+	  !(num == isrc->num &&
+	    (isrc->desc == LRT_EVENT_LOC_ALL ||
+	     (isrc->desc == LRT_EVENT_LOC_SINGLE && isrc->loc == i)))) {
+#if __APPLE__
+	kevent(ldata->fd, kevs_add, numkevents, NULL, 0, &timeout);
+#endif		
       }
     }
-  //remove existing routes
-  lrt_event_loc old_loc = isrc->loc;
-  lrt_event_loc new_loc = loc;
-  while (old_loc != 0 || new_loc != 0) {
-    int old_index = __builtin_ffs(old_loc) - 1;
-    int new_index = __builtin_ffs(new_loc) - 1;
-
-    if (old_index == new_index) {
-      //old routing matches new routing, no change for this core
-      continue;
-    } else if (new_index == -1 || old_index < new_index) {
-      //old routing is set but not set in new routing, remove it
-      struct lrt_event_local_data *ldata = &event_data[old_index];
+  } else {
+    //Checks if the irq is currently mapped and either is on a different
+    // event or is not mapped to the same event, then removes
+    if (isrc->desc == LRT_EVENT_LOC_SINGLE &&
+	!(num == isrc->num &&
+	  desc == LRT_EVENT_LOC_SINGLE &&
+	  isrc->loc == loc)) {
+      struct lrt_event_local_data *ldata = &event_data[isrc->loc];
 #if __APPLE__
       kevent(ldata->fd, kevs_remove, numkevents, NULL, 0, &timeout);
-      //FIXME: error checking
 #endif
-      old_loc &= ~(1 << old_index); 
-    } else {
-      //new routing is set but not set in old routing, add it
-      struct lrt_event_local_data *ldata = &event_data[new_index];
+    }
+    //Checks if the request is to map it and either is on a different event
+    // or not the same location
+    if (desc == LRT_EVENT_LOC_SINGLE &&
+	!(num == isrc->num &&
+	  isrc->desc == LRT_EVENT_LOC_SINGLE &&
+	  isrc->loc == loc)) {
+      struct lrt_event_local_data *ldata = &event_data[loc];
 #if __APPLE__
       kevent(ldata->fd, kevs_add, numkevents, NULL, 0, &timeout);
-      //FIXME: error checking
 #endif
-      new_loc &= ~(1 << new_index);
     }
   }
-  isrc->loc = loc; //store the previous location
-#endif
+
+  //update the IRQ struct
+  isrc->desc = desc;
+  isrc->loc = loc;
+  isrc->num = num;
 }

@@ -24,6 +24,7 @@
 #include <l1/App.h>
 #include <lrt/io.h>
 #include <l0/EventMgrPrim.h>
+#include <l0/lrt/event_irq_def.h>
 #include <lrt/exit.h>
 
 CObject(EventTst) {
@@ -34,6 +35,7 @@ CObjInterface(EventTst) {
   CObjImplements(App);
   EBBRC (*triggerLocalTestEvent) (EventTstRef _self);
   EBBRC (*triggerRemoteTestEvent) (EventTstRef _self);
+  EBBRC (*irqLocalTestEvent) (EventTstRef _self);
 };
 
 #define TABSIZE 200
@@ -53,7 +55,6 @@ test_allocate()
     if (tab[i].used == 0) {
       rc = COBJ_EBBCALL(theEventMgrPrimId, allocEventNo, &tab[i].ev);
       LRT_RCAssert(rc);
-
       tab[i].used = 1;
       lrt_printf("\tEventTst, got event %d\n", tab[i].ev);
     }
@@ -137,6 +138,37 @@ test_triggerremote(EventTstRef self)
   LRT_RCAssert(rc);
 }
 
+//FIXME: make this compliant with other LRTs
+static EventNo irqEV;
+static int pipes[2];
+static struct IRQ_t irq;
+
+static void
+test_irqlocal(EventTstRef self)
+{
+  EBBRC rc;
+  lrt_printf("EventTst: irqlocaltest started\n");
+  
+  rc = COBJ_EBBCALL(theEventMgrPrimId, allocEventNo, &irqEV);
+  LRT_RCAssert(rc);
+  rc = COBJ_EBBCALL(theEventMgrPrimId, bindEvent, irqEV, (EBBId)theAppId, 
+		    COBJ_FUNCNUM(self, irqLocalTestEvent));  
+  LRT_RCAssert(rc);
+
+  pipe(pipes);
+  //FIXME: error check
+  irq.flags = LRT_EVENT_IRQ_READ;
+  irq.fd = pipes[0];
+
+  rc = COBJ_EBBCALL(theEventMgrPrimId, routeIRQ, &irq, irqEV,
+		    EVENT_LOC_SINGLE, MyEventLoc());
+  LRT_RCAssert(rc);
+
+  //Now trigger the event
+  char c = '.';
+  write(pipes[1], &c, sizeof(c));
+}
+
 static EBBRC 
 EventTst_start(AppRef _self)
 {
@@ -170,6 +202,16 @@ EventTst_triggerRemoteTestEvent(EventTstRef _self)
   LRT_RCAssert(rc);
   lrt_printf("EventTst: triggerremotetest succeeded on core %d\n",
 	     MyEventLoc());
+  test_irqlocal(_self);
+  return EBBRC_OK;
+}
+
+static EBBRC
+EventTst_irqLocalTestEvent(EventTstRef _self)
+{
+  char c;
+  read(pipes[0], &c, sizeof(c));
+  lrt_printf("EventTst: irqlocaltest succeeded\n");
   return EBBRC_OK;
 }
 
@@ -178,7 +220,8 @@ CObjInterface(EventTst) EventTst_ftable = {
     .start = EventTst_start
   },
   .triggerLocalTestEvent = EventTst_triggerLocalTestEvent,
-  .triggerRemoteTestEvent = EventTst_triggerRemoteTestEvent
+  .triggerRemoteTestEvent = EventTst_triggerRemoteTestEvent,
+  .irqLocalTestEvent = EventTst_irqLocalTestEvent
 };
 
 APP(EventTst, APP_START_ONE);

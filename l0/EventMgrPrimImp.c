@@ -91,7 +91,8 @@ EBBRC
 EventMgrPrim_routeIRQ(EventMgrPrimRef _self, IRQ *isrc, EventNo eventNo,
 		      enum EventLocDesc desc, EventLoc el)
 {
-  LRT_Assert(0);
+  lrt_event_route_irq(isrc, eventNo, desc, el);
+  return EBBRC_OK;
 }
 
 EBBRC 
