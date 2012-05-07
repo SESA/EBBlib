@@ -32,6 +32,11 @@
  * this may change, we include the corresponding header file here.
  */
 typedef int lrt_event_loc;
+enum lrt_event_loc_desc {
+  LRT_EVENT_LOC_NONE = 0,
+  LRT_EVENT_LOC_SINGLE = 1,
+  LRT_EVENT_LOC_ALL = 2
+};  
 
 // this is used for any static sized arrays; should try to get rid of it
 #define LRT_MAX_EL 64

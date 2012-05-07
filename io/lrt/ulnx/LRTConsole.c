@@ -19,7 +19,7 @@
 #include <unistd.h>
 #include <sys/ioctl.h>
 #include <signal.h>
-#include <l0/lrt/event.h>
+#include <l0/lrt/event_irq_def.h>
 
 /* FROM : Advanced Programming in the UNIX Environment, Addison-Wesley,
    1992, ISBN 0-201-56317-7
@@ -148,14 +148,14 @@ tty_init(int fd) {
 EBBRC 
 LRTConsoleRead(struct IRQ_t *in, char *buf, int len, int *n)
 {
-  *n = read(in->unix_pic_src.fd, buf, len);
+  *n = read(in->fd, buf, len);
   return (*n>=0) ? EBBRC_OK : EBBRC_GENERIC_FAILURE;
 }
 
 EBBRC 
 LRTConsoleWrite(struct IRQ_t *out, char *buf, int len, int *n)
 {
-  *n = write(out->unix_pic_src.fd, buf, len);
+  *n = write(out->fd, buf, len);
   return (*n>=0) ? EBBRC_OK : EBBRC_GENERIC_FAILURE;
 }
 
@@ -175,14 +175,14 @@ LRTConsoleInit(struct IRQ_t *in, struct IRQ_t *out, struct IRQ_t *err)
   ioctl(STDOUT_FILENO, FIONBIO, &opt);
   ioctl(STDERR_FILENO, FIONBIO, &opt);
 
-  in->unix_pic_src.fd  = STDIN_FILENO;
-  in->unix_pic_src.flags = (LRT_ULNX_PICFLAG_READ | LRT_ULNX_PICFLAG_ERROR);
+  in->fd  = STDIN_FILENO;
+  in->flags = LRT_EVENT_IRQ_READ;
 
-  out->unix_pic_src.fd = STDOUT_FILENO;
-  out->unix_pic_src.flags = (LRT_ULNX_PICFLAG_WRITE | LRT_ULNX_PICFLAG_ERROR);
+  out->fd = STDOUT_FILENO;
+  out->flags = LRT_EVENT_IRQ_WRITE;
   
-  err->unix_pic_src.fd = STDERR_FILENO;
-  err->unix_pic_src.flags = (LRT_ULNX_PICFLAG_WRITE | LRT_ULNX_PICFLAG_ERROR);
+  err->fd = STDERR_FILENO;
+  err->flags = LRT_EVENT_IRQ_WRITE;
 
   return EBBRC_OK;
 }

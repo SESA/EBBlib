@@ -89,15 +89,16 @@ EventMgrPrim_bindEvent(EventMgrPrimRef _self, EventNo eventNo,
 
 EBBRC 
 EventMgrPrim_routeIRQ(EventMgrPrimRef _self, IRQ *isrc, EventNo eventNo,
-		      EventLoc el)
+		      enum EventLocDesc desc, EventLoc el)
 {
   LRT_Assert(0);
 }
 
 EBBRC 
-EventMgrPrim_triggerEvent(EventMgrPrimRef _self, EventNo eventNo, EventLoc el)
+EventMgrPrim_triggerEvent(EventMgrPrimRef _self, EventNo eventNo, 
+			  enum EventLocDesc desc, EventLoc el)
 {
-  lrt_event_trigger_event(eventNo, el);
+  lrt_event_trigger_event(eventNo, desc, el);
   return EBBRC_OK;
 }
 

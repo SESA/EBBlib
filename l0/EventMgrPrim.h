@@ -42,6 +42,7 @@
 
 #include <l0/cobj/cobj.h>
 #include <l0/cobj/CObjEBB.h>
+#include <l0/lrt/event_irq.h>
 #include <l0/lrt/event_loc.h>
 #include <l0/lrt/event_num.h>
 
@@ -61,16 +62,18 @@ COBJ_EBBType(EventHandler) {
 #define EVENTFUNC(funcName) EBBRC (* funcName)(void * _self);
 typedef EVENTFUNC(GenericEventFunc);
 
+enum EventLocDesc {  
+  EVENT_LOC_NONE = LRT_EVENT_LOC_NONE, /* disable this IRQ */
+  EVENT_LOC_SINGLE = LRT_EVENT_LOC_SINGLE,
+  EVENT_LOC_ALL = LRT_EVENT_LOC_ALL
+};
+
 typedef lrt_event_loc EventLoc;
-static const EventLoc EVENT_LOC_ALL=-1;
-static const EventLoc EVENT_LOC_NONE=-2; /* disable this IRQ */
 inline static EventLoc MyEventLoc() {return lrt_my_event_loc();}
-inline static EventLoc NextEventLoc(lrt_event_loc l) {return lrt_next_event_loc(l);}
+inline static EventLoc NextEventLoc(EventLoc l) {return lrt_next_event_loc(l);}
 inline static EventLoc NumEventLoc() {return lrt_num_event_loc();}
 
 typedef lrt_event_num EventNo;
-struct IRQ_t;
-typedef struct IRQ_t IRQ;
 
 /* 
  * key local to eventmgr for allocating specific reserved events/interrupt
@@ -85,13 +88,13 @@ COBJ_EBBType(EventMgrPrim) {
 		      EBBId handler, FuncNum fn); 
 
   EBBRC (*routeIRQ) (EventMgrPrimRef _self, IRQ *isrc, EventNo eventNo,
-		     EventLoc el); 
+		     enum EventLocDesc desc, EventLoc el); 
 
-  EBBRC (*triggerEvent) (EventMgrPrimRef _self, EventNo eventNo, EventLoc el);
+  EBBRC (*triggerEvent) (EventMgrPrimRef _self, EventNo eventNo, 
+			 enum EventLocDesc desc, EventLoc el);
 };
 
 // the ID of the one and only event manager
 extern EventMgrPrimId theEventMgrPrimId;
-
 
 #endif

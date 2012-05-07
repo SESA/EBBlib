@@ -113,7 +113,8 @@ MsgMgrPrim_enqueueMsg(MsgMgrPrimRef target, MsgStore *msg)
   target->msgqueue = msg;
   spinUnlock(&target->msgqueuelock);
   if (queueempty) {
-    COBJ_EBBCALL(theEventMgrPrimId, triggerEvent, theMsgMgrEvent, target->eventLoc);
+    COBJ_EBBCALL(theEventMgrPrimId, triggerEvent, theMsgMgrEvent, 
+		 EVENT_LOC_SINGLE, target->eventLoc);
   }
   return EBBRC_OK;
 }
@@ -158,7 +159,8 @@ MsgMgrPrim_findTarget(MsgMgrPrimRef self, EventLoc loc, MsgMgrPrimRef *target)
     }
     if (!sent_event) {
       lrt_printf("MsgMgr: no rep on loc %d\n, kicking the bugger\n", loc);
-      COBJ_EBBCALL(theEventMgrPrimId, triggerEvent, theMsgMgrEvent, loc);
+      COBJ_EBBCALL(theEventMgrPrimId, triggerEvent, theMsgMgrEvent, 
+		   EVENT_LOC_SINGLE, loc);
       sent_event=1; 
     } else {
       lrt_printf("x");      

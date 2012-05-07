@@ -43,6 +43,7 @@
 #include <l0/MemMgrPrim.h>
 #include <l1/App.h>
 #include <io/lrt/LRTConsole.h>
+#include <l0/lrt/event_irq_def.h>
 
 static EBBRC
 AllocAndBind(EventHandlerId * id, EBBRepRef repRef)
@@ -139,7 +140,8 @@ Console_putChar(CharStreamRef _self, char c)
       // do this is that having space for writting will always return, i.e., the "interrupt"
       // for output space is level triggered.  On an edge triggered interrupt we wouldn't
       // disable the output IRQ when we have nothing to send
-      COBJ_EBBCALL(theEventMgrPrimId, routeIRQ, &self->outdev, self->outEV, MyEventLoc());
+      COBJ_EBBCALL(theEventMgrPrimId, routeIRQ, &self->outdev, self->outEV, 
+		   EVENT_LOC_SINGLE, MyEventLoc());
     }
     rc = EBBRC_OK;
   }
@@ -201,7 +203,8 @@ Console_outEvent(CharStreamRef _self)
 	// do this is that having space for writting will always return, i.e., the "interrupt"
 	// for output space is level triggered.  On an edge triggered interrupt we wouldn't
 	// disable the output IRQ when we have nothing to send
-	COBJ_EBBCALL(theEventMgrPrimId, routeIRQ, &self->outdev, self->outEV, EVENT_LOC_NONE);
+	COBJ_EBBCALL(theEventMgrPrimId, routeIRQ, &self->outdev, self->outEV, 
+		     EVENT_LOC_NONE, 0);
       }
     }
   }
@@ -260,7 +263,8 @@ ConsoleCreate(ConsoleId *id, struct IRQ_t in, struct IRQ_t out, InAction action)
   LRT_RCAssert(rc);
 
   // we are ready to roll, enable the routing of input interrupts
-  rc = COBJ_EBBCALL(theEventMgrPrimId, routeIRQ, &in, repRef->inEV, MyEventLoc());
+  rc = COBJ_EBBCALL(theEventMgrPrimId, routeIRQ, &in, repRef->inEV, 
+		    EVENT_LOC_SINGLE, MyEventLoc());
   LRT_RCAssert(rc);
 
   return EBBRC_OK;

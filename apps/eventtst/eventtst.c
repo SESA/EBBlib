@@ -115,7 +115,8 @@ test_triggerlocal(EventTstRef self)
   rc = COBJ_EBBCALL(theEventMgrPrimId, bindEvent, localEV, (EBBId)theAppId, 
 		    COBJ_FUNCNUM(self, triggerLocalTestEvent));
   LRT_RCAssert(rc);
-  rc = COBJ_EBBCALL(theEventMgrPrimId, triggerEvent, localEV, MyEventLoc());
+  rc = COBJ_EBBCALL(theEventMgrPrimId, triggerEvent, localEV, 
+		    EVENT_LOC_SINGLE, MyEventLoc());
   LRT_RCAssert(rc);
 }
 
@@ -132,7 +133,7 @@ test_triggerremote(EventTstRef self)
 		    COBJ_FUNCNUM(self, triggerRemoteTestEvent));
   LRT_RCAssert(rc);
   rc = COBJ_EBBCALL(theEventMgrPrimId, triggerEvent, remoteEV, 
-		    NextEventLoc(MyEventLoc()));
+		    EVENT_LOC_SINGLE, NextEventLoc(MyEventLoc()));
   LRT_RCAssert(rc);
 }
 
@@ -146,7 +147,6 @@ EventTst_start(AppRef _self)
   test_bind(self);
   test_triggerlocal(self);
 
-  lrt_exit(0);
   return EBBRC_OK;
 }
 

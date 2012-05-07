@@ -273,7 +273,8 @@ start_cores(int cores)
 #endif
     // this will call lrt_start on each thread
     uintptr_t val;		/* we don't actually need the thread id I think anywhere */
-    if (pthread_create((pthread_t *)(&val), &attr, lrt_event_init, (void *)(uintptr_t)i) != 0) {
+    if (pthread_create((pthread_t *)(&val), &attr, lrt_event_init, 
+		       (void *)(uintptr_t)i) != 0) {
       perror("pthread_create");
       return;
     }

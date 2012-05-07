@@ -35,6 +35,7 @@
 #include <l0/types.h>
 #include <lrt/assert.h>
 #include <l0/lrt/event.h>
+#include <l0/lrt/event_irq_def.h>
 #include <lrt/ulnx/lrt_start.h>
 
 //the global event table
@@ -181,15 +182,104 @@ lrt_event_bind_event(lrt_event_num num, EBBId handler, FuncNum fnum)
 }
 
 void
-lrt_event_trigger_event(lrt_event_num num, lrt_event_loc loc)
+lrt_event_trigger_event(lrt_event_num num, 
+			enum lrt_event_loc_desc desc, 
+			lrt_event_loc loc)
 {
   int pipefd;
 
-  //protects from a race on startup
-  do {
-    pipefd = *(volatile int *)&event_data[loc].pipefd_write;
-  } while (pipefd == 0);
-
-  write(pipefd, &num, sizeof(num));
+  //TODO: Do something better for a local event
+  
+  if (desc == LRT_EVENT_LOC_SINGLE) {
+    //protects from a race on startup
+    do {
+      pipefd = *(volatile int *)&event_data[loc].pipefd_write;
+    } while (pipefd == 0);
+    
+    write(pipefd, &num, sizeof(num));
+  } else if (desc == LRT_EVENT_LOC_ALL) {
+    lrt_event_loc num = lrt_num_event_loc();
+    for (lrt_event_loc i = 0; i < num; i++) {
+      //protects from a race on startup
+      do {
+	pipefd = *(volatile int *)&event_data[i].pipefd_write;
+      } while (pipefd == 0);
+      
+      write(pipefd, &num, sizeof(num));    
+    }
+  }
   //FIXME: check for errors
+}
+
+void
+lrt_event_route_irq(struct IRQ_t *isrc, lrt_event_num num, 
+		    enum lrt_event_loc_desc desc, lrt_event_loc loc)
+{
+#if 0
+#if __APPLE__
+  int numkevents = __builtin_popcount(isrc->flags);
+
+  struct kevent kevs_add[numkevents];
+  struct kevent kevs_remove[numkevents];
+  
+  int i = numkevents;
+  if (isrc->flags & LRT_EVENT_IRQ_READ) {
+    EV_SET(&kevs_add[--i], isrc->fd, EVFILT_READ,
+	   EV_ADD, 0, 0, (void *)(uintptr_t)num);
+    EV_SET(&kevs_remove[i], isrc->fd, EVFILT_READ,
+	   EV_DELETE, 0, 0, (void *)(uintptr_t)num);
+  }
+
+  if (isrc->flags & LRT_EVENT_IRQ_WRITE) {
+    EV_SET(&kevs_add[--i], isrc->fd, EVFILT_WRITE,
+	   EV_ADD, 0, 0, (void *)(uintptr_t)num);
+    EV_SET(&kevs_remove[i], isrc->fd, EVFILT_WRITE,
+	   EV_DELETE, 0, 0, (void *)(uintptr_t)num);
+  }
+
+  struct timespec timeout = {
+    .tv_sec = 0,
+    .tv_nsec = 0
+  };
+#endif
+
+  if (num != isrc->num) {
+    //different events, remove all and add the right ones
+    if (isrc->num == LRT_EVENT_LOC_ALL) {
+      int num_event = lrt_num_event_loc();
+      for (int i = 0; i < num_event; i++) {
+	struct lrt_event_local_data *ldata = &event_data[old_index];
+	
+      }
+    }
+  //remove existing routes
+  lrt_event_loc old_loc = isrc->loc;
+  lrt_event_loc new_loc = loc;
+  while (old_loc != 0 || new_loc != 0) {
+    int old_index = __builtin_ffs(old_loc) - 1;
+    int new_index = __builtin_ffs(new_loc) - 1;
+
+    if (old_index == new_index) {
+      //old routing matches new routing, no change for this core
+      continue;
+    } else if (new_index == -1 || old_index < new_index) {
+      //old routing is set but not set in new routing, remove it
+      struct lrt_event_local_data *ldata = &event_data[old_index];
+#if __APPLE__
+      kevent(ldata->fd, kevs_remove, numkevents, NULL, 0, &timeout);
+      //FIXME: error checking
+#endif
+      old_loc &= ~(1 << old_index); 
+    } else {
+      //new routing is set but not set in old routing, add it
+      struct lrt_event_local_data *ldata = &event_data[new_index];
+#if __APPLE__
+      kevent(ldata->fd, kevs_add, numkevents, NULL, 0, &timeout);
+      //FIXME: error checking
+#endif
+      new_loc &= ~(1 << new_index);
+    }
+  }
+  isrc->loc = loc; //store the previous location
+#endif
 }

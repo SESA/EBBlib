@@ -43,7 +43,7 @@
 
 #include <net/lrt/ethlib.h>
 #include <strings.h>
-#include <l0/lrt/event.h>
+#include <l0/lrt/event_irq_def.h>
 
 #define VERBOSE_PR(...) ( lrt_printf(__VA_ARGS__) )
 
@@ -130,7 +130,7 @@ EthMgrPrimCreate(EthMgrId *id, char *nic)
 		   (EBBId)*id, COBJ_FUNCNUM(repRef, inEvent));
       LRT_RCAssert(rc);
       rc = EBBCALL(theEventMgrPrimId, routeIRQ, 
-		   &nicisrc, repRef->ev, MyEventLoc());
+		   &nicisrc, repRef->ev, EVENT_LOC_SINGLE, MyEventLoc());
       LRT_RCAssert(rc);
     }
   }

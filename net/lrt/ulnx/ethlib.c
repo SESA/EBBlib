@@ -27,7 +27,7 @@
 #include <pthread.h>
 
 #include <stdint.h>
-#include <l0/lrt/event.h>
+#include <l0/lrt/event_irq_def.h>
 
 enum {PCAP_DEFAULT_SNAPLEN = 1500};
 
@@ -89,13 +89,13 @@ ethlib_nic_init(char *dev, struct IRQ_t *sin, struct IRQ_t *sout)
     return -1;
   }
 
-  sin->unix_pic_src.fd = pcap_get_selectable_fd(hdl);
-  assert(sin->unix_pic_src.fd != -1);
+  sin->fd = pcap_get_selectable_fd(hdl);
+  assert(sin->fd != -1);
 
-  sin->unix_pic_src.flags = (LRT_ULNX_PICFLAG_READ | LRT_ULNX_PICFLAG_ERROR);
+  sin->flags = (LRT_EVENT_IRQ_READ);
 
-  sout->unix_pic_src.fd = sin->unix_pic_src.fd;
-  sout->unix_pic_src.flags = (LRT_ULNX_PICFLAG_WRITE | LRT_ULNX_PICFLAG_ERROR);
+  sout->fd = sin->fd;
+  sout->flags = (LRT_EVENT_IRQ_WRITE);
   
   return 0;
 }
