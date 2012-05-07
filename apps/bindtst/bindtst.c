@@ -45,6 +45,7 @@
 #include <l0/MemMgr.h>
 #include <l0/MemMgrPrim.h>
 #include <l1/App.h>
+#include <sync/barrier.h>
 
 /************ CODE TO BE MOVE ONCE HAPPY **********/
 
@@ -195,39 +196,8 @@ CObject(BindTst) {
 EBBInstance s0Inst;
 EBBInstance s1Inst;
 
-typedef struct {
-  int parties;
-  int count;
-  volatile int sense;
-} barrier_type;
-
-void
-init_barrier(barrier_type *b, int c)
-{
-  b->parties = c;
-  b->count = c;
-  b->sense = 0;
-}
-
-
-void
-barrier(barrier_type *b, int *thrsense)
-{
-  int mysense = !*thrsense; 
-  *thrsense = mysense;
-
-  if (__sync_fetch_and_sub(&b->count, 1) == 1) {
-    // last guy resets barrier, and changes sense
-    b->count = b->parties;
-    b->sense = mysense;
-  } else {
-    // spin on sense changing
-    while (b->sense != mysense){}
-  }
-}
-
 volatile int cores=0;
-barrier_type bar;
+struct barrier_s bar;
 
 
 EBBRC
