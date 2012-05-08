@@ -155,7 +155,8 @@ test_irqlocal(EventTstRef self)
 		    COBJ_FUNCNUM(self, irqLocalTestEvent));  
   LRT_RCAssert(rc);
 
-  pipe(pipes);
+  int ret = pipe(pipes);
+  LRT_Assert(ret == 0);
   //FIXME: error check
   irq.flags = LRT_EVENT_IRQ_READ;
   irq.fd = pipes[0];
@@ -166,7 +167,8 @@ test_irqlocal(EventTstRef self)
 
   //Now trigger the event
   char c = '.';
-  write(pipes[1], &c, sizeof(c));
+  ssize_t ret2 = write(pipes[1], &c, sizeof(c));
+  LRT_Assert(ret2 == sizeof(c));
 }
 
 static EBBRC 
@@ -210,7 +212,8 @@ static EBBRC
 EventTst_irqLocalTestEvent(EventTstRef _self)
 {
   char c;
-  read(pipes[0], &c, sizeof(c));
+  ssize_t rc = read(pipes[0], &c, sizeof(c));
+  LRT_Assert(rc == sizeof(c));
   lrt_printf("EventTst: irqlocaltest succeeded\n");
   return EBBRC_OK;
 }

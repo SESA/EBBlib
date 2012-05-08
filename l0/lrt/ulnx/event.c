@@ -70,10 +70,10 @@ lrt_event_loop(void)
     kevent(ldata->fd, NULL, 0, &kev, 1, NULL);
     //FIXME: check for errors
 #elif __linux__
-    struct epoll_event ev;
+    struct epoll_event kev;
 
     //This call blocks until an event occurred
-    epoll_wait(ldata->fd, &ev, 1, -1);
+    epoll_wait(ldata->fd, &kev, 1, -1);
     //FIXME: check for errors
 #endif
 
@@ -83,7 +83,7 @@ lrt_event_loop(void)
 #if __APPLE__
 	kev.udata == (void *)PIPE_UDATA
 #elif __linux__
-	if ev.data.u64 == (uint64_t)PIPE_UDATA
+	kev.data.u64 == (uint64_t)PIPE_UDATA
 #endif
 	) {
       //We received at least a byte on the pipe
@@ -91,7 +91,8 @@ lrt_event_loop(void)
       //This is technically a blocking read, but I don't believe it
       //matters because we only woke up because the pipe was ready
       //to read and we are the only reader
-      read(ldata->pipefd_read, &ev, sizeof(ev));
+      ssize_t rc = read(ldata->pipefd_read, &ev, sizeof(ev));
+      LRT_Assert(rc == sizeof(ev));
       //FIXME: check for errors
       
     } else {
@@ -99,7 +100,7 @@ lrt_event_loop(void)
 #if __APPLE__
       ev = (lrt_event_num)(intptr_t)kev.udata;
 #elif __linux__
-      ev = (lrt_event_num)kev.u64;
+      ev = (lrt_event_num)kev.data.u64;
 #endif
     }
     
@@ -124,10 +125,6 @@ lrt_event_loc lrt_my_event_loc()
 };
 #elif __linux__
 __thread lrt_event_loc lrt_event_myloc;
-lrt_event_loc lrt_my_event_loc()
-{
-  return lrt_event_myloc;
-}
 #endif
 
 
@@ -137,7 +134,7 @@ lrt_event_init(void *myloc)
 #ifdef __APPLE__
   pthread_setspecific(lrt_event_myloc_pthreadkey, myloc);
 #else
-  lrt_event_myloc = myloc;
+  lrt_event_myloc = (lrt_event_loc)(uintptr_t)myloc;
 #endif
   
   //get my local event data
@@ -153,7 +150,8 @@ lrt_event_init(void *myloc)
   #endif
 
   int pipes[2];
-  pipe(pipes);
+  int rc = pipe(pipes);
+  LRT_Assert(rc == 0);
   //FIXME: check for errors
 
   ldata->pipefd_read = pipes[0];
@@ -177,9 +175,9 @@ lrt_event_init(void *myloc)
   //FIXME: check for errors
   #elif __linux__
   struct epoll_event ev = {
-    .events = EPOLLIN;
+    .events = EPOLLIN,
     .data.u64 = (uint64_t)PIPE_UDATA
-  }
+  };
   epoll_ctl(ldata->fd, EPOLL_CTL_ADD, ldata->pipefd_read, &ev);
   #endif
 
@@ -224,7 +222,9 @@ lrt_event_trigger_event(lrt_event_num num,
       pipefd = *(volatile int *)&event_data[loc].pipefd_write;
     } while (pipefd == 0);
     
-    write(pipefd, &num, sizeof(num));
+    ssize_t rc = write(pipefd, &num, sizeof(num));
+    LRT_Assert(rc == sizeof(num));
+    //FIXME: check errors
   } else if (desc == LRT_EVENT_LOC_ALL) {
     lrt_event_loc num = lrt_num_event_loc();
     for (lrt_event_loc i = 0; i < num; i++) {
@@ -233,7 +233,8 @@ lrt_event_trigger_event(lrt_event_num num,
 	pipefd = *(volatile int *)&event_data[i].pipefd_write;
       } while (pipefd == 0);
       
-      write(pipefd, &num, sizeof(num));    
+      ssize_t rc = write(pipefd, &num, sizeof(num));    
+      LRT_Assert(rc == sizeof(num));
     }
   }
   //FIXME: check for errors
