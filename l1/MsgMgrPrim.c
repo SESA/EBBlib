@@ -392,7 +392,8 @@ MsgMgrPrim_Init(void)
 
     LRT_Assert(id != NULL);
     rc = COBJ_EBBCALL(theEventMgrPrimId, bindEvent, theMsgMgrEvent, id, 
-		      __builtin_offsetof(struct MsgMgrPrim_if, handleEvent)/sizeof(COBJFunc));
+		      COBJ_FUNCNUM_FROM_TYPE(struct MsgMgrPrim_if, 
+					     handleEvent));
     LRT_RCAssert(rc); 
 
     theMsgMgrId = (MsgMgrId)id;

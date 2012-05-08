@@ -63,8 +63,11 @@
 // 'generic' cobj function pointer
 typedef void (*COBJFunc) (void *);
 
+#define COBJ_FUNCNUM_FROM_TYPE(type, funcName) \
+  ( __builtin_offsetof( type, funcName)/sizeof(COBJFunc) )
 #define COBJ_FUNCNUM(ref, funcName) \
-  ( __builtin_offsetof( typeof(*(ref->ft)), funcName)/sizeof(COBJFunc) )
+  (COBJ_FUNCNUM_FROM_TYPE(typeof(*(ref->ft)), funcName))
+
 
 // you will likely need to cast to make use of this
 #define COBJ_FUNC(ref, funcNum) \
