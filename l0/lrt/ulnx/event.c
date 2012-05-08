@@ -31,7 +31,10 @@
 #include <sys/types.h>
 #include <sys/event.h>
 #include <sys/time.h>
+#elif __linux__
+#include <sys/epoll.h>
 #endif
+
 #include <l0/types.h>
 #include <lrt/assert.h>
 #include <l0/lrt/event.h>
@@ -66,28 +69,40 @@ lrt_event_loop(void)
     //to batch some events
     kevent(ldata->fd, NULL, 0, &kev, 1, NULL);
     //FIXME: check for errors
+#elif __linux__
+    struct epoll_event ev;
+
+    //This call blocks until an event occurred
+    epoll_wait(ldata->fd, &ev, 1, -1);
+    //FIXME: check for errors
 #endif
 
     lrt_event_num ev;
-
+    
+    if (
 #if __APPLE__
-    if(kev.udata == (void *)PIPE_UDATA) {
+	kev.udata == (void *)PIPE_UDATA
+#elif __linux__
+	if ev.data.u64 == (uint64_t)PIPE_UDATA
 #endif
+	) {
       //We received at least a byte on the pipe
-
+      
       //This is technically a blocking read, but I don't believe it
       //matters because we only woke up because the pipe was ready
       //to read and we are the only reader
       read(ldata->pipefd_read, &ev, sizeof(ev));
       //FIXME: check for errors
-            
+      
     } else {
       //IRQ occurred
 #if __APPLE__
       ev = (lrt_event_num)(intptr_t)kev.udata;
+#elif __linux__
+      ev = (lrt_event_num)kev.u64;
 #endif
     }
-
+    
     struct lrt_event_descriptor *desc = &lrt_event_table[ev];
     EBBId id = desc->id;
     FuncNum fnum = desc->fnum;
@@ -95,7 +110,7 @@ lrt_event_loop(void)
     //this infrastructure should be pulled out of this file
     EBBRepRef ref = EBBId_DREF((EBBRepRef *)id);
     (void)(*ref)[fnum](ref);
-
+    
     //an optimization here would be to keep reading from the pipe or checking
     //other events before going back around the loop
   }
@@ -107,8 +122,12 @@ lrt_event_loc lrt_my_event_loc()
 {
   return ((lrt_event_loc)(uintptr_t)pthread_getspecific(lrt_event_myloc_pthreadkey));
 };
-#else
+#elif __linux__
 __thread lrt_event_loc lrt_event_myloc;
+lrt_event_loc lrt_my_event_loc()
+{
+  return lrt_event_myloc;
+}
 #endif
 
 
@@ -127,6 +146,9 @@ lrt_event_init(void *myloc)
   //setup
   #if __APPLE__
   ldata->fd = kqueue();
+  //FIXME: check for errors
+  #elif __linux__
+  ldata->fd = epoll_create(1);
   //FIXME: check for errors
   #endif
 
@@ -153,6 +175,12 @@ lrt_event_init(void *myloc)
   //add it to the keventfd
   kevent(ldata->fd,  &kev, 1, NULL, 0, &timeout);
   //FIXME: check for errors
+  #elif __linux__
+  struct epoll_event ev = {
+    .events = EPOLLIN;
+    .data.u64 = (uint64_t)PIPE_UDATA
+  }
+  epoll_ctl(ldata->fd, EPOLL_CTL_ADD, ldata->pipefd_read, &ev);
   #endif
 
   // we call the start routine to initialize 
@@ -248,6 +276,16 @@ lrt_event_route_irq(struct IRQ_t *isrc, lrt_event_num num,
     .tv_sec = 0,
     .tv_nsec = 0
   };
+#elif __linux__
+  struct epoll_event ev;
+  ev.data.u64 = num;
+  if (isrc->flags & LRT_EVENT_IRQ_READ) {
+    ev.events |= EPOLLIN;
+  }
+  
+  if (isrc->flags & LRT_EVENT_IRQ_WRITE) {
+    ev.events |= EPOLLOUT;
+  }
 #endif
 
   if (isrc->desc == LRT_EVENT_LOC_ALL || desc == LRT_EVENT_LOC_ALL) {
@@ -265,6 +303,8 @@ lrt_event_route_irq(struct IRQ_t *isrc, lrt_event_num num,
 	     (desc == LRT_EVENT_LOC_SINGLE && loc == i)))) {
 #if __APPLE__
 	kevent(ldata->fd, kevs_remove, numkevents, NULL, 0, &timeout);
+#elif __linux__
+	epoll_ctl(ldata->fd, EPOLL_CTL_DEL, isrc->fd, NULL);
 #endif		
       }
       //This checks if the irq is requested to be mapped in on core i
@@ -277,6 +317,8 @@ lrt_event_route_irq(struct IRQ_t *isrc, lrt_event_num num,
 	     (isrc->desc == LRT_EVENT_LOC_SINGLE && isrc->loc == i)))) {
 #if __APPLE__
 	kevent(ldata->fd, kevs_add, numkevents, NULL, 0, &timeout);
+#elif __linux__
+	epoll_ctl(ldata->fd, EPOLL_CTL_ADD, isrc->fd, &ev);
 #endif		
       }
     }
@@ -290,6 +332,8 @@ lrt_event_route_irq(struct IRQ_t *isrc, lrt_event_num num,
       struct lrt_event_local_data *ldata = &event_data[isrc->loc];
 #if __APPLE__
       kevent(ldata->fd, kevs_remove, numkevents, NULL, 0, &timeout);
+#elif __linux__
+      epoll_ctl(ldata->fd, EPOLL_CTL_DEL, isrc->fd, NULL);
 #endif
     }
     //Checks if the request is to map it and either is on a different event
@@ -301,6 +345,8 @@ lrt_event_route_irq(struct IRQ_t *isrc, lrt_event_num num,
       struct lrt_event_local_data *ldata = &event_data[loc];
 #if __APPLE__
       kevent(ldata->fd, kevs_add, numkevents, NULL, 0, &timeout);
+#elif __linux__
+      epoll_ctl(ldata->fd, EPOLL_CTL_ADD, isrc->fd, &ev);
 #endif
     }
   }
