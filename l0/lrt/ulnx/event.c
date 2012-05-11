@@ -53,6 +53,7 @@ struct lrt_event_local_data {
 
 //To be allocated at preinit, the array of local event data
 static struct lrt_event_local_data *event_data; 
+static int num_cores = 0;
 
 static const intptr_t PIPE_UDATA = -1;
 
@@ -196,9 +197,24 @@ lrt_event_init(void *myloc)
   lrt_event_loop();
 }
 
-void
-lrt_event_preinit(int num_cores)
+
+/* get number of logical pics, i.e., cores */
+lrt_event_loc 
+lrt_num_event_loc()
 {
+  return num_cores;
+}
+
+/* get next pic in some sequence from current one; loops */
+lrt_event_loc lrt_next_event_loc(lrt_event_loc l)
+{
+  return (l+1)%num_cores;
+}
+
+void
+lrt_event_preinit(int cores)
+{
+  num_cores = cores;
   event_data = malloc(sizeof(*event_data) * num_cores);
   //FIXME: check for errors
 #if __APPLE__

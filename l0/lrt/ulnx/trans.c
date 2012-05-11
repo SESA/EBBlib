@@ -47,3 +47,7 @@ void
 lrt_trans_init(void)
 {
 }
+
+//FIXME:
+void 
+lrt_trans_preinit(int cores){};

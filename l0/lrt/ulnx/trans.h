@@ -13,8 +13,8 @@
 #define LRT_TRANS_TBLSIZE (1 << LRT_TRANS_LG2_TBLSIZE)
 
 struct TransMemDesc {
-  uint8_t GMem [LRT_TRANS_TBLSIZE];
-  uint8_t LMem [LRT_TRANS_TBLSIZE * LRT_MAX_EL];
+  uint8_t GMem[LRT_TRANS_TBLSIZE];
+  uint8_t LMem[LRT_TRANS_TBLSIZE * LRT_MAX_EL];
 };
 
 extern struct TransMemDesc TransMem;
@@ -92,7 +92,8 @@ lrt_trans_lt2gt(struct lrt_trans *lt)
 #ifdef __cplusplus
 extern "C" {
 #endif
-void lrt_trans_init(void);
+extern void lrt_trans_init(void);
+extern void lrt_trans_preinit(int cores);
 #ifdef __cplusplus
 }
 #endif

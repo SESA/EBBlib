@@ -22,6 +22,7 @@
 
 #include <config.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <l0/lrt/ulnx/mem.h>
 
 #include <l0/lrt/event_loc.h>
@@ -36,7 +37,7 @@ enum { LRT_MEM_PERPIC=LRT_MEM_PAGESIZE * LRT_MEM_PAGESPERPIC };
 struct BootMemDesc {
   uintptr_t start;
   uintptr_t end;
-} bootMem[LRT_MAX_EL];
+} *bootMem; // was array of [LRT_MAX_EL];
 
 uintptr_t 
 lrt_mem_start(void)
@@ -66,3 +67,9 @@ lrt_mem_init(void)
   return 1;
 }
 
+// FIXME
+void 
+lrt_mem_preinit(int cores)
+{
+  bootMem = malloc(sizeof(struct BootMemDesc) * cores);
+}

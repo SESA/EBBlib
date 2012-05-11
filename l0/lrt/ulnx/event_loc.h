@@ -23,6 +23,9 @@
 #error should be included from l0/lrt/event_loc.h
 #endif
 
+// FIXME: this is used for any static sized arrays; should try to get rid of it
+#define LRT_MAX_EL 64
+
 #ifdef __APPLE__
 extern lrt_event_loc lrt_my_event_loc();
 #else
