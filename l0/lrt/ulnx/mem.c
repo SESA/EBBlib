@@ -37,7 +37,7 @@ enum { LRT_MEM_PERPIC=LRT_MEM_PAGESIZE * LRT_MEM_PAGESPERPIC };
 struct BootMemDesc {
   uintptr_t start;
   uintptr_t end;
-} *bootMem; // was array of [LRT_MAX_EL];
+} *bootMem; 
 
 uintptr_t 
 lrt_mem_start(void)

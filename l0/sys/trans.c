@@ -44,13 +44,14 @@ EBBGTrans * const ALLOCATED = (EBBGTrans *)-1;
 
 int sysTransValidate()
 {
-  uintptr_t psize = LRT_TRANS_TBLSIZE / LRT_MAX_EL;
+  int cores = lrt_num_event_loc();
+  uintptr_t psize = LRT_TRANS_TBLSIZE / cores;
 
   // ensure that tables divide evenly among max ELs
-  if (psize * LRT_MAX_EL != LRT_TRANS_TBLSIZE) return 0;
+  if (psize * cores != LRT_TRANS_TBLSIZE) return 0;
 
   // there should be at least one page of translations per el
-  if ((LRT_TRANS_TBLSIZE / LRT_MAX_EL) < LRT_TRANS_PAGESIZE) return 0;
+  if ((LRT_TRANS_TBLSIZE / cores) < LRT_TRANS_PAGESIZE) return 0;
 
   // we initialized trans memory to 0 so allocated must be a non-zero value
   if (ALLOCATED == 0) return 0;
@@ -67,8 +68,9 @@ int sysTransValidate()
 static inline uintptr_t
 mygmem_size(void)
 {
-  return LRT_TRANS_TBLSIZE / LRT_MAX_EL;
+  return LRT_TRANS_TBLSIZE / lrt_num_event_loc();
 }
+
 
 // This el's portion of the gtable
 static inline uintptr_t
@@ -193,8 +195,6 @@ TransEBBIdFree(EBBId id) {
   gt->free = ALLOCATED;
 }
 
-STATIC_ASSERT(LRT_MAX_EL<=64, "maximum bits in corebv in EBBTransStruct");
-
 static void
 TransEBBIdInvalidateCaches(EBBId id)
 {
@@ -230,6 +230,9 @@ void
 trans_init(void)
 {
   LRT_Assert(sysTransValidate());
+  // maximum bits in corebv in EBBTransStruct
+  LRT_Assert(lrt_num_event_loc() <= 64);
+
   bzero((void *)mygmem(), mygmem_size());
   initLTable();
 }

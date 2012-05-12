@@ -88,7 +88,7 @@ CObject(MsgMgrPrim) {
   LockType freelistlock;
   MsgStore *freelist; 
   // FIXME: abstract at event mgr
-  MsgMgrPrimRef reps[LRT_MAX_EL];
+  MsgMgrPrimRef *reps;
   // reference to the single root
   CObjEBBRootMultiRef theRootMM;
 };
@@ -351,17 +351,20 @@ static EBBRep *
 MsgMgrPrim_createRep(CObjEBBRootMultiRef rootRefMM)
 {
   MsgMgrPrimRef repRef;
+  int i;
+  EBBRC rc;
 
   EBBPrimMalloc(sizeof(MsgMgrPrim), &repRef, EBB_MEM_DEFAULT);
   MsgMgrPrim_SetFT(repRef);
-  int i;
 
   repRef->eventLoc = MyEventLoc();
   repRef->msgqueuelock = 0;
   repRef->msgqueue = 0;
   repRef->freelistlock = 0;
   repRef->freelist = 0;
-  for (i=0; i<LRT_MAX_EL ; i++ ) {
+  rc = EBBPrimMalloc(sizeof(repRef->reps)*lrt_num_event_loc(), &repRef->reps, EBB_MEM_DEFAULT);
+  LRT_RCAssert(rc);
+  for (i=0; i<lrt_num_event_loc() ; i++ ) {
     repRef->reps[i] = NULL;
   }
   repRef->theRootMM = rootRefMM;

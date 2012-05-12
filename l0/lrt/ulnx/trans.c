@@ -22,6 +22,7 @@
 
 #include <config.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <l0/lrt/ulnx/trans.h>
 
 #include <assert.h>
@@ -50,4 +51,10 @@ lrt_trans_init(void)
 
 //FIXME:
 void 
-lrt_trans_preinit(int cores){};
+lrt_trans_preinit(int cores)
+{
+  TransMem.GMem = malloc(LRT_TRANS_TBLSIZE);
+  assert(TransMem.GMem);
+  TransMem.LMem = malloc(LRT_TRANS_TBLSIZE * cores);
+  assert(TransMem.LMem);
+}
