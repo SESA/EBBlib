@@ -125,6 +125,7 @@ parse_ebbos_arg(int i, char **argv, int *s)
     fprintf(stderr, "EBBOS: overriding cores to %ld\n", start_args.cores);
   } else {
     fprintf(stderr, "EBBOS: unknown argument stripped: %s\n", argv[i]);
+    exit(1);
   }
   return ret;
 }
