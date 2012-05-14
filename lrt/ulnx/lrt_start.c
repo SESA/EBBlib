@@ -30,12 +30,21 @@
 #include <inttypes.h>
 #include <string.h>
 #include <assert.h>
+#include <pthread.h>
+
+#if __APPLE__
+#include <mach/thread_policy.h>
+#include <mach/thread_act.h>
+#include <mach/kern_return.h>
+#include <sys/types.h>
+#include <sys/sysctl.h>
+#endif
 
 #include <l0/l0_start.h>
 #include <l0/lrt/mem.h>
 #include <l0/lrt/trans.h>
 #include <l0/lrt/event.h>
-#include <pthread.h>
+
 
 static struct start_args_t {
   intptr_t physcores;		/* actual physical cores we have */
@@ -188,24 +197,17 @@ int
 static num_phys_cores()
 {
 #ifdef __APPLE__
-  /* 
-   * seems to be three options, for now pick ncpu, which is the maximum, presumably hyperthreaded
-   */
-#if 0
-  char *clrname = "hw.physicalcpu_max";
-  char *clrname = "hw.logicalcpu_max";
-#endif
-  char *clrname = "hw.ncpu";
-  int mib[4], numcores;
-  size_t len, size;
-  len = 4;
-  sysctlnametomib(clrname, mib, &len);
-  size = sizeof(numcores);
-  if (sysctl(mib, len, &numcores, &size, NULL, 0)==-1) {
-    perror("sysctl");
+  //DS: activecpu is the number currently active (in case of hotplugging)
+  int numthreads;
+  size_t size;
+
+  size = sizeof(numthreads);
+  if (sysctlbyname("hw.activecpu", &numthreads, &size, NULL, 0) == -1) {
+    perror("sysctlbyname");
     return -1;
   }
-  return numcores;
+
+  return numthreads;
 #else // if LINUX/UNIX
   return sysconf(_SC_NPROCESSORS_ONLN);
 #endif
@@ -213,24 +215,6 @@ static num_phys_cores()
 
 /* ----------------- move event.c -------------------- */
 
-#if 0
-void *
-lrt_event_init(void *myloc)
-{
-#ifdef __APPLE__
-  pthread_setspecific(lrt_event_myloc_pthreadkey, myloc);
-#else
-  lrt_event_myloc = myloc;
-#endif
-
-  fprintf(stderr, "KLUDGE, %d calling init\n", lrt_my_event_loc());
-  lrt_start();
-  fprintf(stderr, "KLUDGE, %d done calling init\n", lrt_my_event_loc());
-  sleep(20);
-  exit(0);
-}
-void lrt_event_preinit(int cores){};
-#endif
 void lrt_mem_preinit(int cores) {};
 void lrt_trans_preinit(int cores){};
 
@@ -252,9 +236,6 @@ void
 start_cores(int cores)
 {
   int i;
-#ifndef __APPLE__
-  cpu_set_t cpus;
-#endif
 
   // check cores
   // start up another core, with the 
@@ -265,19 +246,40 @@ start_cores(int cores)
   pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
   
   for (i=0; i<start_args.cores; i++) {
-#ifndef __APPLE__
+    pthread_t tid; /* we don't actually need the thread id I think anywhere */
+#ifdef __APPLE__
+    //unique affinity is what we want, the scheduler takes this
+    // as a suggestion. tag = 0 means no affinity preference
+    thread_affinity_policy_data_t aff = {
+      .affinity_tag = (i % start_args.physcores) + 1
+    };
+    //Create the thread suspended so we can get the tid
+    if (pthread_create_suspended_np(&tid, &attr, lrt_event_init,
+				    (void *)(uintptr_t)i) == -1) {
+      perror("pthread_create_suspended_np");
+      return;
+    }
+    //now set its affinity to the unique value
+    kern_return_t err = thread_policy_set(pthread_mach_thread_np(tid),
+					  THREAD_AFFINITY_POLICY,
+					  (thread_policy_t)&aff,
+					  THREAD_AFFINITY_POLICY_COUNT);
+    LRT_Assert(err == KERN_SUCCESS);
+    //now start the thread
+    err = thread_resume(pthread_mach_thread_np(tid));
+    LRT_Assert(err == KERN_SUCCESS);
+#elif __linux__
+    cpu_set_t cpus;
     CPU_ZERO(&cpus);
-    // pin to a core
+    // pin to a core, round robined over the physical cores
     CPU_SET(i%start_args.physcores, &cpus);
     pthread_attr_setaffinity_np(&attr, sizeof(cpu_set_t), &cpus);
-#endif
-    // this will call lrt_start on each thread
-    uintptr_t val;		/* we don't actually need the thread id I think anywhere */
-    if (pthread_create((pthread_t *)(&val), &attr, lrt_event_init, 
+    if (pthread_create(&tid, &attr, lrt_event_init, 
 		       (void *)(uintptr_t)i) != 0) {
       perror("pthread_create");
       return;
     }
+#endif
   }
   // for now, wait until child exits; eventually
   // put in synchronizatoin here that will do something good when 
