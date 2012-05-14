@@ -118,7 +118,7 @@ EBBMgrPrimInit()
     LRT_RCAssert(rc);
     theEBBMgrPrimId = (EBBMgrPrimId)id;
   } else {
-    while (((volatile uintptr_t)theEBBMemMgrPrimId)==-1);
+    while (((volatile uintptr_t)theEBBMgrPrimId)==-1);
   }
   return rc;
 }

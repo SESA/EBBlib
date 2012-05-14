@@ -22,6 +22,7 @@
 
 #include <config.h>
 
+#include <errno.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -73,7 +74,15 @@ lrt_event_loop(void)
     struct epoll_event kev;
 
     //This call blocks until an event occurred
-    epoll_wait(ldata->fd, &kev, 1, -1);
+    int rc;
+    do {
+      rc = epoll_wait(ldata->fd, &kev, 1, -1);
+    } while(rc == -1 && errno == EINTR);
+    
+    if (rc == -1) {
+      perror("epoll");
+      LRT_Assert(0);
+    }
     //FIXME: check for errors
 #endif
 
