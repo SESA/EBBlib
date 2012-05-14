@@ -221,7 +221,7 @@ start_cores(int cores)
 
   // check cores
   // start up another core, with the 
-  fprintf(stderr, "EBBOS:%s: starting cores %d\n", __func__, cores);
+  fprintf(stdout, "EBBOS:%s: starting cores %d\n", __func__, cores);
   pthread_attr_t attr; 
   
   pthread_attr_init(&attr);

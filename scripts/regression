@@ -1,28 +1,22 @@
 #!/bin/bash
 #set -x
 
-function runalltests {
-  echo "running bindtst with args " $1
-  ./bindtst/bindtst $1 > last_res
+function runtst {
+  echo "running " $1 "with args " $2 
+  $1 $2 > last_res
   rc=$?
   if [[ $rc != 0 ]] ; then 
-      echo "bindtst failed" >& 2
+      echo $1 "failed" >& 2
       exit $rc
   fi	
-  echo "running msgtst with args " $1
-  ./msgtst/msgtst $1 > last_res
-  rc=$?
-  if [[ $rc != 0 ]] ; then 
-     echo "msgtst failed" >& 2
-     exit $rc
-  fi	
-  echo "running primalloctst with args " $1
-  ./primalloctst/primalloctst $1 > last_res
-  rc=$?
-  if [[ $rc != 0 ]] ; then 
-     echo "primalloctst failed" >& 2
-     exit $rc
-  fi	
+}
+
+function runalltests {
+  runtst ./bindtst/bindtst "$1"
+  runtst ./msgtst/msgtst "$1"
+  runtst ./primalloctst/primalloctst "$1"
+  runtst ./helloworld/helloworld "$1"
+  runtst ./helloworldcpp/helloworldcpp "$1"
 }
 
 cd apps;
