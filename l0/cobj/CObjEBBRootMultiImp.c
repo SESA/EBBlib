@@ -116,10 +116,15 @@ CObjEBBRootMulti_handleMiss(CObjEBBRootRef _self, EBBRep **obj, EBBLTrans *lt,
   rep = locked_FindRepOn(self, myel);
   if (rep==NULL) {
     rep = self->createRep((CObjEBBRootMultiRef)self);
+    // note, the locked_addrepon will allocate memory, so this line
+    // which puts the entry in the translation table must come before
+    // since the miss may be on the memory allocator
+    EBBCacheObj(lt, rep);
     locked_AddRepOn(self, myel, rep);
+  } else {
+    EBBCacheObj(lt, rep);
   }
   unlockReps(self);
-  EBBCacheObj(lt, rep);
   *obj = rep;
   return EBBRC_OK;
 }

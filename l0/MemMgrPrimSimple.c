@@ -218,8 +218,19 @@ EBBMemMgrPrimSimpleSetFT(EBBMemMgrPrimSimpleRef o) {o->ft = &EBBMemMgrPrimSimple
 static EBBRep *
 MemMgrPrimRB_createRep(CObjEBBRootMultiRef _self)
 {
-  LRT_Assert(0);
-  return NULL;
+  EBBMemMgrPrimSimpleRef repRef;
+
+  // no where to alloc rep from other than the memory
+  // we are creating this rep to manage so we do the obvious
+  // and hack off some memory for the rep itself.
+  // "create the rep"
+  repRef = (EBBMemMgrPrimSimpleRef)lrt_mem_start();
+
+  // initialize the rep memory
+  EBBMemMgrPrimSimpleSetFT(repRef); 
+  init_rep(repRef, _self, lrt_mem_end());
+
+  return (EBBRep *)repRef;
 }
 
 EBBRC
@@ -227,8 +238,6 @@ EBBMemMgrPrimSimpleInit()
 {
   static CObjEBBRootMultiImp theRoot;
   CObjEBBRootMultiImpRef rootRef = &theRoot;
-  EBBMemMgrPrimSimpleRef repRef;
-  EBBLTrans *lt;
   EBBRC rc;
   EBBId id;
   
@@ -244,84 +253,9 @@ EBBMemMgrPrimSimpleInit()
     // racing with root creation...wait till root is ready
     while ((*(volatile uintptr_t *)&theEBBMemMgrPrimId)==-1);
   }
-  // no where to alloc rep from other than the memory
-  // we are creating this rep to manage so we do the obvious
-  // and hack off some memory for the rep itself.
-  // "create the rep"
-  repRef = (EBBMemMgrPrimSimpleRef)lrt_mem_start();
-
-  // initialize the rep memory
-  EBBMemMgrPrimSimpleSetFT(repRef); 
-  init_rep(repRef, (CObjEBBRootMultiRef)rootRef, lrt_mem_end());
-
-  // manually install rep into local table so that memory allocations 
-  // can work immediate without recursion
-  lt = (EBBLTrans *)lrt_trans_id2lt((uintptr_t)theEBBMemMgrPrimId);
-  EBBCacheObj(lt, (EBBRep *)repRef); 
-
-  // it is now safe to call the allocator assuming that the 
-  // ltrans is stable between last and the next one that 
-  // may use dynamic memory to add the rep to the root
-  rootRef->ft->addRepOn((CObjEBBRootMultiRef)rootRef, MyEventLoc(), (EBBRep *)repRef);
-
-  // Ok at this point the memory manager is up on this EL
-  // and missing on the local table is also safe for this EL
-  // as the rep has been added explicity to the root.
-
   return EBBRC_OK;
 }
 
 EBBRC EBBMemMgrPrimInit(void) {
   return EBBMemMgrPrimSimpleInit();
 }
-
-#if 0
-// ALTENATIVE -- CHIMERA: QUEENS, CLONES, DRONES
-// hmmm not sure if it would not be better to start off with thinking
-// about the role of firstRep embedding the Root
-// this implies a single rep object and a multirep are more similar
-// and my evolve more naturally ... this makes it more natural to think
-// of hybrids and devolve the role of the root and thus centeralized data
-struct EBBMemMgrData {
-  void *mem;
-  uintptr_t len;
-};
-
-CObject(EBBMemMgrPrimSimpleQueen) {
-  CObjInterface(EBBMemMgr) *ft;
-  CObjEBBRootMulti root;
-  struct EBBMemMgrData data;
-};
-
-CObject(EBBMemMgrPrimSimpleDrone) {
-  CObjInterface(EBBMemMgr) *ft;
-  EBBMemMgrPrimSimpleQueenRef *queen;
-  struct EBBMemMgrData data;
-};
-
-EBBRC
-EBBMemMgrPrimSimpleInit()
-{
-  EBBRC rc;
-  EBBId id;
-
-  repRef = (EBBMemMgrPrimSimpleRef)lrt_mem_start();
-  if (__sync_bool_compare_and_swap(&(theEBBMemMgrPrimId), 0, -1)) {
-    EBBMemMgrPrimSimpleQueen_init(repRef, lrt_mem_end());              
-    __sync_bool_compare_and_swap(&(theEBBMemMgrPrimId), -1, id);
-  } else {   
-    // races on root setup is taken care of here
-    while (((volatile uintptr_t)theEBBMemMgrPrimId)==-1);
-    EBBMemMgrPrimSimpleDrone_init(repRef, lrt_mem_end());              
-  }
-  theRoot.addRepOn(lrt_pic_id, theRep);               // Add my rep to the Root
-  return EBBRC_OK;
-}
-#endif
-
-
-
-
-
-
-
