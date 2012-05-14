@@ -1,20 +1,23 @@
 #!/bin/bash
-set -x
+#set -x
 
 function runalltests {
-  ./bindtst/bindtst $1
+  echo "running bindtst with args " $1
+  ./bindtst/bindtst $1 > last_res
   rc=$?
   if [[ $rc != 0 ]] ; then 
       echo "bindtst failed" >& 2
       exit $rc
   fi	
-  ./msgtst/msgtst $1
+  echo "running msgtst with args " $1
+  ./msgtst/msgtst $1 > last_res
   rc=$?
   if [[ $rc != 0 ]] ; then 
      echo "msgtst failed" >& 2
      exit $rc
   fi	
-  ./primalloctst/primalloctst $1
+  echo "running primalloctst with args " $1
+  ./primalloctst/primalloctst $1 > last_res
   rc=$?
   if [[ $rc != 0 ]] ; then 
      echo "primalloctst failed" >& 2
@@ -34,5 +37,5 @@ else
   echo "---- running all test with default cores ---"
   runalltests 
   echo "---- running all test with 63 cores ---"
-  runalltests "-ebbos_cores 64"
+  runalltests "-ebbos_cores 63"
 fi

@@ -122,7 +122,7 @@ parse_ebbos_arg(int i, char **argv, int *s)
     // overridding the number of cores
     ret = 2;			/* 2 arguments to be handled */
     start_args.cores=atoi(argv[i+1]);
-    fprintf(stderr, "EBBOS: overriding cores to %ld\n", start_args.cores);
+    fprintf(stdout, "EBBOS: overriding cores to %ld\n", start_args.cores);
   } else {
     fprintf(stderr, "EBBOS: unknown argument stripped: %s\n", argv[i]);
     exit(1);
@@ -221,7 +221,7 @@ start_cores(int cores)
 
   // check cores
   // start up another core, with the 
-  fprintf(stderr, "%s: starting cores %d\n", __func__, cores);
+  fprintf(stderr, "EBBOS:%s: starting cores %d\n", __func__, cores);
   pthread_attr_t attr; 
   
   pthread_attr_init(&attr);
@@ -272,8 +272,6 @@ start_cores(int cores)
 int
 main(int argc, char **argv, char **environ) 
 {
-  fprintf(stderr, "%s: start!\n", __func__); 
-
   start_args.physcores = start_args.cores = num_phys_cores();
   start_args.start_info = 0;
   start_args.start_info_size = 0;
