@@ -1,4 +1,4 @@
-AM_CFLAGS = -Wall -Werror -g3
+AM_CFLAGS = -Wall -Werror -fno-strict-aliasing -g3
 if STD_GNU_99
 AM_CFLAGS += -std=gnu99
 endif
