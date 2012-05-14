@@ -14,6 +14,12 @@ function runalltests {
      echo "msgtst failed" >& 2
      exit $rc
   fi	
+  ./primalloctst/primalloctst $1
+  rc=$?
+  if [[ $rc != 0 ]] ; then 
+     echo "primalloctst failed" >& 2
+     exit $rc
+  fi	
 }
 
 cd apps;
