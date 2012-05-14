@@ -38,6 +38,7 @@ extern EBBMgrPrimId theEBBMgrPrimId;
 
 extern EBBRC EBBMgrPrimInit(void);
 
+
 static inline EBBRC
 EBBAllocPrimId(EBBId *id)
 {

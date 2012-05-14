@@ -72,7 +72,8 @@ int sysTransValidate()
 static inline uintptr_t
 mygmem_size(void)
 {
-  return LRT_TRANS_TBLSIZE / lrt_num_event_loc();
+  // round up so aligned on sizeof(EBBGTrans)
+  return ((LRT_TRANS_TBLSIZE / lrt_num_event_loc())/sizeof(EBBGTrans))*sizeof(EBBGTrans);
 }
 
 
