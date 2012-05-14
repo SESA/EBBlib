@@ -118,20 +118,13 @@ EventMgrPrimSetFT(EventMgrPrimImpRef o)
 }
 
 static EBBRep *
-EventMgrPrimImp_createRepAssert(CObjEBBRootMultiRef root) 
-{
-  LRT_Assert(0);
-  return NULL;
-}
-
-static EventMgrPrimImpRef
-EventMgrPrimImp_createRep(CObjEBBRootMultiImpRef root) 
+EventMgrPrimImp_createRep(CObjEBBRootMultiRef root) 
 {
   EventMgrPrimImpRef repRef;
 
   LRT_RCAssert(EBBPrimMalloc(sizeof(EventMgrPrimImp), &repRef, EBB_MEM_DEFAULT));
   EventMgrPrimSetFT(repRef);
-  return repRef;
+  return (EBBRep *)repRef;
 }
 
 EBBRC
@@ -139,13 +132,11 @@ EventMgrPrimImpInit(void)
 {
   EBBRC rc;
   static CObjEBBRootMultiImpRef rootRef;
-  EventMgrPrimImpRef repRef;
-  EventLoc myel;
 
   if (__sync_bool_compare_and_swap(&theEventMgrPrimId, (EventMgrPrimId)0,
 				   (EventMgrPrimId)-1)) {
     EBBId id;
-     rc = CObjEBBRootMultiImpCreate(&rootRef, EventMgrPrimImp_createRepAssert);
+     rc = CObjEBBRootMultiImpCreate(&rootRef, EventMgrPrimImp_createRep);
     LRT_RCAssert(rc);
     rc = EBBAllocPrimId(&id);
     LRT_RCAssert(rc);
@@ -155,12 +146,6 @@ EventMgrPrimImpInit(void)
   } else {
     while ((*(volatile uintptr_t *)&theEventMgrPrimId)==-1);
   }
-  // It makes no sense to handle miss on this object lazily, since it will 
-  // always be invoked on every node, everything is in an event
-  repRef = EventMgrPrimImp_createRep(rootRef);
-  myel = MyEventLoc();
-  
-  rootRef->ft->addRepOn((CObjEBBRootMultiRef)rootRef, myel, (EBBRep *)repRef);
   return EBBRC_OK;
 };
 
