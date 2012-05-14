@@ -214,7 +214,7 @@ BindTst_start(AppRef _self)
     cores = NumEventLoc();
   } else {
     // everyone but first core blocks here
-    while ((volatile int)cores == 0){}
+    while (*(volatile int *)&cores == 0){}
   }
 
   lrt_printf("bindtst: START, core %d of cores %d\n", MyEventLoc(), cores);

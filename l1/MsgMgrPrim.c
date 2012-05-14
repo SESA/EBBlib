@@ -401,7 +401,7 @@ MsgMgrPrim_Init(void)
 
     theMsgMgrId = (MsgMgrId)id;
   } else {
-    while (((volatile uintptr_t)theMsgMgrId)==-1);
+    while ((*(volatile uintptr_t *)&theMsgMgrId)==-1);
   }
   return EBBRC_OK;
 }

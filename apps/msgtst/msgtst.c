@@ -136,7 +136,7 @@ InitMsgHandlerTst()
     LRT_RCAssert(rc);
     theMsgHandlerTstId = (MsgHandlerId)id;
   } else {
-    while (((volatile uintptr_t)theMsgHandlerTstId)==-1);
+    while ((*(volatile uintptr_t *)&theMsgHandlerTstId)==-1);
   }
   return theMsgHandlerTstId;
 };

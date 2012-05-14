@@ -54,7 +54,7 @@ EBBRC app_start(void)
     LRT_RCAssert(rc);
     theAppId = (AppId)id;
   } else {
-    while (((volatile uintptr_t)theAppId)==-1);
+    while ((*(volatile uintptr_t *)&theAppId)==-1);
   }
 
   // WE ARE NOW DONE WITH L1 INITIALIZATION : 

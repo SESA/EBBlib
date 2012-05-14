@@ -153,7 +153,7 @@ EventMgrPrimImpInit(void)
     LRT_RCAssert(rc);
     theEventMgrPrimId = (EventMgrPrimId)id;
   } else {
-    while (((volatile uintptr_t)theEventMgrPrimId)==-1);
+    while ((*(volatile uintptr_t *)&theEventMgrPrimId)==-1);
   }
   // It makes no sense to handle miss on this object lazily, since it will 
   // always be invoked on every node, everything is in an event
