@@ -45,10 +45,14 @@ EBBGTrans * const ALLOCATED = (EBBGTrans *)-1;
 int sysTransValidate()
 {
   int cores = lrt_num_event_loc();
-  uintptr_t psize = LRT_TRANS_TBLSIZE / cores;
 
+#if 0
+  uintptr_t psize = LRT_TRANS_TBLSIZE / cores;
+  // FIXME: now that we allocaate based on number of cores, rather than
+  // MAX... 
   // ensure that tables divide evenly among max ELs
   if (psize * cores != LRT_TRANS_TBLSIZE) return 0;
+#endif
 
   // there should be at least one page of translations per el
   if ((LRT_TRANS_TBLSIZE / cores) < LRT_TRANS_PAGESIZE) return 0;
