@@ -1,5 +1,6 @@
-#ifndef __EBB_CONSTS_H__
-#define __EBB_CONSTS_H__
+#ifndef L0_SYS_TRANS_DEF_H
+#define L0_SYS_TRANS_DEF_H
+
 /*
  * Copyright (C) 2011 by Project SESA, Boston University
  *
@@ -22,12 +23,34 @@
  * THE SOFTWARE.
  */
 
-#include <l0/lrt/const.h>
+#include <stdint.h>
 
-#define EBB_TRANS_MAX_NODES (1024)
-#define EBB_TRANS_PAGE_SIZE (4096)
-#define EBB_TRANS_NUM_PAGES (1024)
-#define EBB_TRANS_MAX_ELS (LRT_TRANS_MAX_ELS_ASM)
-#define EBB_TRANS_MAX_FUNCS (256)
+#include <l0/lrt/trans.h>
+
+union EBBTransStruct {
+  struct {
+    union {
+      uintptr_t v1;
+      EBBRep *obj; //as a local entry
+      EBBMissFunc mf; //as a global entry
+    };
+    union {
+      uintptr_t v2;
+      EBBFunc *ftable; //as a local entry (by default)
+      EBBMissArg arg; //as a global entry
+    };
+    union {
+      uintptr_t v3;
+      EBBGTrans *free;
+    };
+    union {
+      uintptr_t v4;
+      uint64_t corebv;	// bitvector of cores where object is cached in translation table
+			// note, object may have been accessed in larger set of nodes and
+			// tranlated id may be on stack in other nodes
+    };
+  };
+  struct lrt_trans padding;
+};
 
 #endif

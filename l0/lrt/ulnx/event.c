@@ -36,7 +36,7 @@
 #include <sys/epoll.h>
 #endif
 
-#include <l0/types.h>
+#include <l0/lrt/trans.h>
 #include <lrt/assert.h>
 #include <l0/lrt/event.h>
 #include <l0/lrt/event_irq_def.h>

@@ -22,7 +22,7 @@
  * THE SOFTWARE.
  */
 
-#include <l0/types.h>
+#include <l0/lrt/trans.h>
 
 #define DEFAULT_FUNC_DEC(OP) \
   extern EBBRC EBBDefFunc_ ## OP (void *, ...);

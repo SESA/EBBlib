@@ -1,7 +1,6 @@
 #include <config.h>
 #include <arch/powerpc/asm.h>
 #include <arch/powerpc/asdef.h>
-#include <l0/const.h>
 	
 .section ".text"
 .align 2

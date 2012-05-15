@@ -24,7 +24,7 @@
 #include <stdint.h>
 #include <stddef.h>
 
-#include <l0/types.h>
+#include <l0/lrt/trans.h>
 #include <l1/startinfo.h>
 #include <lrt/startinfo.h>
 #include <l0/MemMgrPrim.h>

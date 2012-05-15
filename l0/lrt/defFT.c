@@ -22,9 +22,8 @@
 #include <config.h>
 #include <stdint.h>
 #include <l0/lrt/trans.h>
-#include <l0/sys/trans.h>
-#include <l0/sys/trans-def.h>
-#include <l0/sys/defFT.h>
+#include <l0/lrt/trans-def.h>
+#include <l0/lrt/defFT.h>
 
 //takes the function table pointer and function number and
 //invokes the miss handler then

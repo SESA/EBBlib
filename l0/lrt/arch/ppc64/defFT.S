@@ -1,7 +1,6 @@
 #include <config.h>
 
 #include <arch/ppc64/asdef.h>
-#include <l0/const.h>
 
 .section ".text"
 .align 2

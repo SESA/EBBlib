@@ -29,11 +29,7 @@
 #include <lrt/assert.h>
 #include <lrt/string.h>
 #include <l0/lrt/trans.h>
-#include <l0/types.h>
-#include <l0/sys/trans.h>
-#include <l0/sys/trans-def.h>
-
-// JA FIXME: Need to decided who really uses lrt_pic_myid versus myEL()
+#include <l0/lrt/trans-def.h>
 
 EBBGTrans * const ALLOCATED = (EBBGTrans *)-1;
 
@@ -45,14 +41,6 @@ EBBGTrans * const ALLOCATED = (EBBGTrans *)-1;
 int sysTransValidate()
 {
   int cores = lrt_num_event_loc();
-
-#if 0
-  uintptr_t psize = LRT_TRANS_TBLSIZE / cores;
-  // FIXME: now that we allocaate based on number of cores, rather than
-  // MAX... 
-  // ensure that tables divide evenly among max ELs
-  if (psize * cores != LRT_TRANS_TBLSIZE) return 0;
-#endif
 
   // there should be at least one page of translations per el
   if ((LRT_TRANS_TBLSIZE / cores) < LRT_TRANS_PAGESIZE) return 0;
@@ -73,7 +61,8 @@ static inline uintptr_t
 mygmem_size(void)
 {
   // round up so aligned on sizeof(EBBGTrans)
-  return ((LRT_TRANS_TBLSIZE / lrt_num_event_loc())/sizeof(EBBGTrans))*sizeof(EBBGTrans);
+  return ((LRT_TRANS_TBLSIZE / lrt_num_event_loc())/
+          sizeof(EBBGTrans))*sizeof(EBBGTrans);
 }
 
 

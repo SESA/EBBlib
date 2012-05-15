@@ -23,8 +23,6 @@
 #include <config.h>
 #include <inttypes.h>
 #include <l0/lrt/trans.h>
-#include <l0/types.h>
-#include <l0/sys/trans.h>
 
 extern EBBId TransEBBIdAlloc(void);
 extern void TransEBBIdBind(EBBId id, EBBMissFunc mf, EBBMissArg arg);

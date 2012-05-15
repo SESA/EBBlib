@@ -22,7 +22,7 @@
  * THE SOFTWARE.
  */
 
-#include <l0/types.h>
+#include <l0/lrt/trans.h>
 #include <l0/cobj/cobj.h>
 #include <l0/cobj/CObjEBB.h>
 
