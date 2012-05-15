@@ -44,8 +44,8 @@
 // globally known id of the message mgr
 MsgMgrId theMsgMgrId = 0;
 
-// the root of both message manager
-static CObjEBBRootMultiImpRef rootRefMM = 0;
+// the root of message manager
+static CObjEBBRootMultiImpRef rootRef = 0;
 
 // the event reserved for the message manager
 static EventNo theMsgMgrEvent = 0;
@@ -348,13 +348,14 @@ MsgMgrPrim_SetFT(MsgMgrPrimRef o)
 
 
 static EBBRep *
-MsgMgrPrim_createRep(CObjEBBRootMultiRef rootRefMM)
+MsgMgrPrim_createRep(CObjEBBRootMultiRef rootRef)
 {
   MsgMgrPrimRef repRef;
   int i;
   EBBRC rc;
 
-  EBBPrimMalloc(sizeof(MsgMgrPrim), &repRef, EBB_MEM_DEFAULT);
+  rc = EBBPrimMalloc(sizeof(MsgMgrPrim), &repRef, EBB_MEM_DEFAULT);
+  LRT_RCAssert(rc);
   MsgMgrPrim_SetFT(repRef);
 
   repRef->eventLoc = MyEventLoc();
@@ -367,7 +368,7 @@ MsgMgrPrim_createRep(CObjEBBRootMultiRef rootRefMM)
   for (i=0; i<lrt_num_event_loc() ; i++ ) {
     repRef->reps[i] = NULL;
   }
-  repRef->theRootMM = rootRefMM;
+  repRef->theRootMM = rootRef;
 
   return (EBBRep *)repRef;
 };
@@ -381,15 +382,12 @@ MsgMgrPrim_Init(void)
     EBBId id;
 
     // create root for MsgMgr
-    rc = CObjEBBRootMultiImpCreate(&rootRefMM, MsgMgrPrim_createRep);
+    rc = CObjEBBRootMultiImpCreate(&rootRef, MsgMgrPrim_createRep);
     LRT_RCAssert(rc);
     rc = EBBAllocPrimId(&id);
     LRT_RCAssert(rc); 
-    rc = EBBBindPrimId(id, CObjEBBMissFunc, (EBBMissArg)rootRefMM);
+    rc = EBBBindPrimId(id, CObjEBBMissFunc, (EBBMissArg)rootRef);
     LRT_RCAssert(rc); 
-
-    // allocate the event and bind it before publishing the msgmgr id, since 
-    // publishing the MsgMgrEHId will unblock everyone
     rc = COBJ_EBBCALL(theEventMgrPrimId, allocEventNo, &theMsgMgrEvent);
     LRT_RCAssert(rc); 
 
