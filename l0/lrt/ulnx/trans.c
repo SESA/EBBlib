@@ -44,11 +44,6 @@ struct lrt_trans *lrt_trans_id2rlt(lrt_event_loc el, uintptr_t oid)
 			      lrt_trans_offset(lrt_trans_idbase(), oid));
 }
 
-void
-lrt_trans_init(void)
-{
-}
-
 //FIXME:
 void 
 lrt_trans_preinit(int cores)

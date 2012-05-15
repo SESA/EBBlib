@@ -38,8 +38,6 @@
 #include <l0/cobj/CObjEBBRootMultiImp.h>
 #include <l1/App.h>
 
-extern void trans_init(void);
-
 /* 
  * Three main EBB's are EBBMgrPrim, EventMgrPrim EBBMemMgrPrim    
  * There creation and initialization are interdependent and requires 
@@ -71,7 +69,6 @@ EBB_init(uintptr_t startInfo)
 void
 l0_start(uintptr_t startInfo)
 {
-  trans_init();
   if ((app_start_model == APP_START_ALL) || (MyEventLoc() == 0)) {
     EBB_init(startInfo);
     app_start();

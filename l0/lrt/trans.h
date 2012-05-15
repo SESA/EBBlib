@@ -104,7 +104,7 @@ EBBId_DREF_Inline(EBBId id) {
 extern EBBFunc EBBDefFT[EBB_TRANS_MAX_FUNCS];
 
 extern struct lrt_trans *lrt_trans_id2rlt(lrt_event_loc el, uintptr_t objid);
-extern void trans_init(void);
+extern void lrt_trans_init(void);
 
 // real implementations come from these files
 #ifdef LRT_ULNX

@@ -92,7 +92,7 @@ lrt_trans_lt2gt(struct lrt_trans *lt)
 #ifdef __cplusplus
 extern "C" {
 #endif
-extern void lrt_trans_init(void);
+extern void lrt_trans_init_specific(void);
 extern void lrt_trans_preinit(int cores);
 #ifdef __cplusplus
 }

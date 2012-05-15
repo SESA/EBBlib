@@ -39,7 +39,7 @@
 extern EBBId TransEBBIdAlloc(void);
 extern void TransEBBIdFree(EBBId id);
 extern void TransEBBIdBind(EBBId id, EBBMissFunc mf, EBBMissArg arg);
-extern void TransEBBIdUnBind(EBBId id, EBBMissFunc mf, EBBMissArg arg); 
+extern void TransEBBIdUnBind(EBBId id, EBBMissFunc mf, EBBMissArg arg);
 
 EBBMgrPrimId theEBBMgrPrimId=0;
 
@@ -69,23 +69,23 @@ BindId (EBBMgrPrimRef _self, EBBId id, EBBMissFunc mf, EBBMissArg arg) {
 static EBBRC
 UnBindId (EBBMgrPrimRef _self, EBBId id) {
   lrt_printf("%s: NYI: PLEASE FIXME!: NONE OF THIS WORKS\n",
-	     __func__);
+             __func__);
   return EBBRC_OK;
 }
 
 static CObjInterface(EBBMgrPrim) EBBMgrPrimImp_ftable = {
-  .AllocId = AllocId, 
-  .FreeId = FreeId, 
-  .BindId = BindId, 
-  .UnBindId = UnBindId, 
+  .AllocId = AllocId,
+  .FreeId = FreeId,
+  .BindId = BindId,
+  .UnBindId = UnBindId,
 };
 
 #if 0
-static EBBRC 
+static EBBRC
 EBBMgrPrimErrMF (EBBRep **_self, EBBLTrans *lt,
-		 FuncNum fnum, EBBMissArg arg) {
-  lrt_printf("%s: _self=%p: lt=%p fnum=%p arg=%p", __func__, 
-		 _self, lt, (void *)fnum, (void *)arg);
+                 FuncNum fnum, EBBMissArg arg) {
+  lrt_printf("%s: _self=%p: lt=%p fnum=%p arg=%p", __func__,
+                 _self, lt, (void *)fnum, (void *)arg);
   return EBBRC_GENERIC_FAILURE;
 }
 #endif
@@ -101,11 +101,11 @@ EBBMgrPrimImp_createRep(CObjEBBRootMultiRef _self) {
 }
 
 EBBRC
-EBBMgrPrimInit() 
+EBBMgrPrimInit()
 {
   EBBRC rc = EBBRC_OK;
   if (__sync_bool_compare_and_swap(&theEBBMgrPrimId, (EBBMgrPrimId)0,
-				   (EBBMgrPrimId)-1)) {
+                                   (EBBMgrPrimId)-1)) {
     EBBId id;
     CObjEBBRootMultiImpRef rootRef;
     rc = CObjEBBRootMultiImpCreate(&rootRef, EBBMgrPrimImp_createRep);
@@ -121,31 +121,31 @@ EBBMgrPrimInit()
   return rc;
 }
 
-EBBRC EBBDestroyPrimId(EBBId id) 
+EBBRC EBBDestroyPrimId(EBBId id)
 {
   EBBRC rc;
-  
+
   // destroy needs to unbind id and trigger resource reclaimation
   //  eg. free unbound id, and
   //      call root's free method on all appropriate locations
-  // 
+  //
   // unbind should only leave id rebound to null
   // free id should allow id to be reused
   // destory unbinds and frees id along with invoke instances specific
   // free logic
 
-  //FIXME: got rid of unbind from lower level, should always do a 
+  //FIXME: got rid of unbind from lower level, should always do a
   // bind to NULL
 
   // rc = COBJ_EBBCALL(theEBBMgrPrimId, UnBindId, id, NULL, NULL);
-  
+
 #if 0
   // this may have side effects so I am skipping it
   rc = COBJ_EBBCALL(theEBBMgrPrimId, FreeId, id);
 #endif
 
   lrt_printf("%s: NYI: PLEASE FIXME!: NONE OF THIS WORKS\n",
-	     __func__);
+             __func__);
   // FIMXE:
   rc = 0;
   return rc;
