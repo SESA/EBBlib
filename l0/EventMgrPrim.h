@@ -46,19 +46,6 @@
 #include <l0/lrt/event_loc.h>
 #include <l0/lrt/event_num.h>
 
-/* 
- * All event handling ebbs must conform to these types
- * Any existing ebbs that want to handle events must be
- * frontended by an event handler EBB
- 
- * FIXME: get rid of this type, now any function in EBB can
- *  be used to dispatch an event
- */
-COBJ_EBBType(EventHandler) {
-  EBBRC (*handleEvent) (EventHandlerRef _self);
-  EBBRC (*init) (EventHandlerRef _self, uintptr_t extra);
-};
-
 #define EVENTFUNC(funcName) EBBRC (* funcName)(void * _self);
 typedef EVENTFUNC(GenericEventFunc);
 

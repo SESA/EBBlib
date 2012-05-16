@@ -46,7 +46,7 @@
 #include <l0/lrt/event_irq_def.h>
 
 static EBBRC
-AllocAndBind(EventHandlerId * id, EBBRepRef repRef)
+AllocAndBind(EBBId *id, EBBRepRef repRef)
 {
   EBBRC rc;
   CObjEBBRootSharedRef rootRef;
@@ -54,10 +54,10 @@ AllocAndBind(EventHandlerId * id, EBBRepRef repRef)
   rc = CObjEBBRootSharedCreate(&rootRef, repRef);
   LRT_RCAssert(rc);
 
-  rc = EBBAllocPrimId((EBBId *)id);
+  rc = EBBAllocPrimId(id);
   LRT_RCAssert(rc);
 
-  rc = CObjEBBBind((EBBId)*id, rootRef); 
+  rc = CObjEBBBind(*id, rootRef); 
   LRT_RCAssert(rc);
 
   return EBBRC_OK;
@@ -251,7 +251,7 @@ ConsoleCreate(ConsoleId *id, struct IRQ_t in, struct IRQ_t out, InAction action)
   repRef->indev    = in;
   repRef->outdev   = out;
 
-  rc = AllocAndBind((EventHandlerId *)id, (EBBRepRef)repRef);
+  rc = AllocAndBind((EBBId *)id, (EBBRepRef)repRef);
   LRT_RCAssert(rc);
 
   repRef->action = action;
