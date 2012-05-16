@@ -26,6 +26,24 @@
 #include <l0/cobj/cobj.h>
 #include <l0/cobj/CObjEBB.h>
 
+typedef enum { 
+  EBBRC_GENERIC_FAILURE = -1, 
+  EBBRC_BADPARAMETER = -2,
+  EBBRC_OUTOFRESOURCES = -3,
+  EBBRC_RETRY = -4,
+  EBBRC_NOTFOUND = -5,
+  EBBRC_OK = 0 
+} EBBRC_STDVALS;
+
+typedef lrt_trans_rc EBBRC;
+#define EBBRC_SUCCESS(rc) LRT_TRANS_SUCCESS(rc)
+
+typedef lrt_trans_func EBBFunc;
+typedef lrt_trans_rep EBBRep;
+typedef lrt_trans_rep_ref EBBRepRef;
+typedef lrt_trans_func_num FuncNum;
+typedef lrt_trans_miss_arg EBBMissArg;
+
 COBJ_EBBType(EBBMgrPrim) {
   EBBRC (*AllocId) (EBBMgrPrimRef _self, EBBId *id);
   EBBRC (*FreeId) (EBBMgrPrimRef _self, EBBId id);

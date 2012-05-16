@@ -48,26 +48,24 @@ typedef EBBTrans EBBLTrans;
 
 typedef EBBTrans *EBBId;
 
-typedef intptr_t EBBRC;
-typedef enum { 
-  EBBRC_GENERIC_FAILURE = -1, 
-  EBBRC_BADPARAMETER = -2,
-  EBBRC_OUTOFRESOURCES = -3,
-  EBBRC_RETRY = -4,
-  EBBRC_NOTFOUND = -5,
-  EBBRC_OK = 0 
-} EBBRC_STDVALS;
 
-#define EBBRC_SUCCESS(rc) ( rc >= 0 )
-//The argument type here has to be void * because c sucks
-// and won't let me forward declare a typedef
-// It should be of type EBBRep *
-typedef EBBRC (*EBBFunc) (void *);
-typedef EBBFunc *EBBRep;
-typedef EBBRep *EBBRepRef;
+typedef intptr_t lrt_trans_rc;	/* negative value is an error */
 
-typedef uintptr_t FuncNum;
-typedef uintptr_t EBBMissArg;
+#define LRT_TRANS_SUCCESS(rc) ( rc >= 0 )
+
+struct lrt_trans_rep_s;
+typedef struct lrt_trans_rep_s *lrt_trans_rep_ref;
+typedef lrt_trans_rc (*lrt_trans_func) (lrt_trans_rep_ref);
+typedef struct lrt_trans_rep_s {
+  lrt_trans_func *ft;
+} lrt_trans_rep;
+
+typedef uint8_t lrt_trans_func_num;
+typedef uintptr_t lrt_trans_miss_arg;
+--------------
+typedef lrt_trans_rc (*lrt_trans_miss_func) (lrt_trans_rep_ref *, 
+					     EBBLTrans *, FuncNum,
+                              EBBMissArg);
 
 //first arg is the address of the EBBRep that will be executed
 //second arg is the local table pointer so that a rep can be installed
