@@ -27,120 +27,6 @@
 #include <l0/lrt/event_irq_def.h>
 #include <lrt/exit.h>
 
-// move exit handler into L1 service
-// --------------------------------------------------------------------------
-#include <l0/EBBMgrPrim.h>
-#include <l0/cobj/CObjEBBRootShared.h>
-
-COBJ_EBBType(ExitHandler) 
-{
-  EBBRC (*triggerExit) (ExitHandlerRef _self, int status); 
-  EVENTFUNC(handleEvent);      /* actual event that signals an exit */
-};
-
-CObject(ExitHandlerImp) {
-  CObjInterface(ExitHandler) *ft;
-  int exitStatus;
-};
-
-
-// globally known id of the exit handler
-ExitHandlerId theExitHandlerId = 0;
-
-// internally used event for signalling exit
-static EventNo theExitHandlerEvent = 0;
-
-static EBBRC
-ExitHandlerImp_handleEvent(void *_self)
-{
-  ExitHandlerImpRef self = (ExitHandlerImpRef)_self;
-  lrt_exit(self->exitStatus);
-  return EBBRC_OK;
-}
-
-static EBBRC
-ExitHandlerImp_triggerExit(ExitHandlerRef _self, int status)
-{
-  EBBRC rc;
-  ExitHandlerImpRef self = (ExitHandlerImpRef)_self;
-  self->exitStatus = status;
-  rc = COBJ_EBBCALL(theEventMgrPrimId, triggerEvent, theExitHandlerEvent, 
-	       EVENT_LOC_SINGLE, MyEventLoc());
-  LRT_RCAssert(rc);
-  return EBBRC_OK;
-}
-
-CObjInterface(ExitHandler) ExitHandlerImp_ftable = {
-  .handleEvent = ExitHandlerImp_handleEvent,
-  .triggerExit = ExitHandlerImp_triggerExit
-};
-
-
-void
-ExitHandlerImp_SetFT(ExitHandlerImpRef o)
-{
-  o->ft = &ExitHandlerImp_ftable;
-}
-
-static EBBRep *
-ExitHandler_createRep(void)
-{
-  ExitHandlerImpRef repRef;
-  EBBRC rc;
-
-  rc = EBBPrimMalloc(sizeof(ExitHandlerImp), &repRef, EBB_MEM_DEFAULT);
-  LRT_RCAssert(rc);
-
-  ExitHandlerImp_SetFT(repRef);
-  repRef->exitStatus = 0;
-
-  return (EBBRep *)repRef;
-};
-
-EBBRC
-ExitHandlerImp_Init(void)
-{
-  CObjEBBRootSharedRef rootRef;
-  // there could be a race, with this called on multiple cores
-  // simultaneously
-  if (__sync_bool_compare_and_swap(&theExitHandlerId, (ExitHandlerId)0,
-				   (ExitHandlerId)-1)) {
-    EBBRC rc;
-    EBBId id;
-
-    // create single rep aggressively, since we want to minize
-    // functinality on the call path to exit
-    EBBRep *rep = ExitHandler_createRep();
-
-    // create root for ExitHandler
-    rc = CObjEBBRootSharedCreate(&rootRef, rep);
-    LRT_RCAssert(rc);
-    rc = EBBAllocPrimId(&id);
-    LRT_RCAssert(rc); 
-    rc = EBBBindPrimId(id, CObjEBBMissFunc, (EBBMissArg)rootRef);
-    LRT_RCAssert(rc); 
-
-    LRT_Assert(id != NULL);
-
-    // allocate event number and bind to handleEvent function
-    rc = COBJ_EBBCALL(theEventMgrPrimId, allocEventNo, &theExitHandlerEvent);
-    LRT_RCAssert(rc); 
-    rc = COBJ_EBBCALL(theEventMgrPrimId, bindEvent, theExitHandlerEvent, id, 
-		      COBJ_FUNCNUM_FROM_TYPE(CObjInterface(ExitHandler), 
-					     handleEvent));
-    LRT_RCAssert(rc); 
-
-    
-    theExitHandlerId = (ExitHandlerId)id;
-  } else {
-    while ((*(volatile uintptr_t *)&theExitHandlerId)==-1);
-  }
-  return EBBRC_OK;
-}
-
-// -------------------------------------------------------------------------
-
-
 CObject(EventTst) {
   CObjInterface(EventTst) *ft;
 };
@@ -287,21 +173,46 @@ test_irqlocal(EventTstRef self)
   LRT_Assert(ret2 == sizeof(c));
 }
 
+/*
+ * first runs tests that run to completion, then 
+ * starts subsequent tests in context of event 
+ * initiated by previous tests
+ */
+EBBRC 
+runNextTest(EventTstRef self)
+{
+  static int testStage = 0;
+  switch(testStage) {
+  case 0:
+    testStage++;
+    test_allocate();
+    test_bind(self);
+    test_triggerlocal(self);
+    break;
+  case 1:
+    testStage++;
+    test_triggerremote(self);
+    break;
+  case 2:
+    testStage++;
+    test_irqlocal(self);
+    break;
+  case 3:
+    lrt_exit(0);
+    break;
+  }
+  return EBBRC_OK;
+}
+
 static EBBRC 
 EventTst_start(AppRef _self)
 {
   EventTstRef self = (EventTstRef)_self;
-  EBBRC rc;
 
   lrt_printf("EventTst, core %d number of cores %d\n", MyEventLoc(), 
 	     NumEventLoc());
 
-  test_allocate();
-  test_bind(self);
-  test_triggerlocal(self);
-
-  ExitHandlerImp_Init();
-  rc = COBJ_EBBCALL(theExitHandlerId, triggerExit, 0);
+  runNextTest(self);
   
   return EBBRC_OK;
 }
@@ -313,7 +224,7 @@ EventTst_triggerLocalTestEvent(EventTstRef _self)
   rc = COBJ_EBBCALL(theEventMgrPrimId, freeEventNo, localEV);
   LRT_RCAssert(rc);
   lrt_printf("EventTst: triggerlocaltest succeeded\n");
-  test_triggerremote(_self);
+  runNextTest(_self);
   return EBBRC_OK;
 }
 
@@ -326,7 +237,7 @@ EventTst_triggerRemoteTestEvent(EventTstRef _self)
   LRT_RCAssert(rc);
   lrt_printf("EventTst: triggerremotetest succeeded on core %d\n",
 	     MyEventLoc());
-  test_irqlocal(_self);
+  runNextTest(_self);
   return EBBRC_OK;
 }
 
@@ -337,6 +248,7 @@ EventTst_irqLocalTestEvent(EventTstRef _self)
   ssize_t rc = read(pipes[0], &c, sizeof(c));
   LRT_Assert(rc == sizeof(c));
   lrt_printf("EventTst: irqlocaltest succeeded\n");
+  runNextTest(_self);
   return EBBRC_OK;
 }
 
