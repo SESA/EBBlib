@@ -28,6 +28,7 @@
 #include <lrt/misc.h>
 #include <lrt/assert.h>
 #include <lrt/string.h>
+#include <l0/lrt/event_loc.h>
 #include <l0/lrt/trans.h>
 #include <l0/lrt/trans-def.h>
 #include <sync/barrier.h>
@@ -77,7 +78,7 @@ static inline lrt_trans_gtrans *
 lrt_trans_my_gmem(void)
 {
   lrt_trans_gtrans *gmem = lrt_trans_gmem();
-  return gmem + lrt_trans_my_num_gtrans();
+  return gmem + lrt_my_event_loc() * lrt_trans_my_num_gtrans();
 }
 
 static void
