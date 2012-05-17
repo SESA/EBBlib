@@ -22,28 +22,33 @@
 
 #include <config.h>
 #include <stdint.h>
-#include <l0/lrt/ulnx/trans.h>
-
+#include <stdlib.h>
 #include <assert.h>
+#include <l0/lrt/trans.h>
 
-struct TransMemDesc TransMem;
+struct lrt_trans_mem_desc lrt_trans_mem;
 
 // get the base address of a remote local memory translation table
-static void *
+static lrt_trans_ltrans *
 lrt_trans_lmemr(lrt_event_loc el)
 {
-  uintptr_t elbase = el * LRT_TRANS_TBLSIZE;
-  return (&(TransMem.LMem[elbase]));
+  ptrdiff_t index = el * LRT_TRANS_TBLSIZE / sizeof(lrt_trans_ltrans);
+  return lrt_trans_mem.lmem + index;
 }
 
 // returns the pointer to a remote local translation entry for a object id
-struct lrt_trans *lrt_trans_id2rlt(lrt_event_loc el, uintptr_t oid)
+lrt_trans_ltrans *lrt_trans_id2rlt(lrt_event_loc el, lrt_trans_id oid)
 {
-  return (struct lrt_trans *)(((uintptr_t)lrt_trans_lmemr(el)) + 
-			      lrt_trans_offset(lrt_trans_idbase(), oid));
+  lrt_trans_ltrans *lmem = lrt_trans_lmemr(el);
+  ptrdiff_t index = oid - lrt_trans_idbase();
+  return lmem + index;
 }
 
 void
-lrt_trans_init(void)
+lrt_trans_preinit(int cores)
 {
+  lrt_trans_mem.gmem = malloc(LRT_TRANS_TBLSIZE);
+  assert(lrt_trans_mem.gmem);
+  lrt_trans_mem.lmem = malloc(LRT_TRANS_TBLSIZE * cores);
+  assert(lrt_trans_mem.lmem);
 }

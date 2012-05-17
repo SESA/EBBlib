@@ -1,0 +1,35 @@
+#!/bin/bash
+#set -x
+
+function runtst {
+  echo "running " $1 "with args " $2 
+  $1 $2 > last_res
+  rc=$?
+  if [[ $rc != 0 ]] ; then 
+      echo $1 "failed" >& 2
+      exit $rc
+  fi	
+}
+
+function runalltests {
+  runtst ./bindtst/bindtst "$1"
+  runtst ./msgtst/msgtst "$1"
+  runtst ./primalloctst/primalloctst "$1"
+  runtst ./helloworld/helloworld "$1"
+  runtst ./helloworldcpp/helloworldcpp "$1"
+}
+
+cd apps;
+if [[ "$1" == f ]] ; then
+  for i in {1..61} 
+  do
+    runalltests "-ebbos_cores $i"
+  done
+else
+  echo "---- running all test with 1 cores ---"
+  runalltests "-ebbos_cores 1"
+  echo "---- running all test with default cores ---"
+  runalltests 
+  echo "---- running all test with 63 cores ---"
+  runalltests "-ebbos_cores 63"
+fi

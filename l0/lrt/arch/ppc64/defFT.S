@@ -1,7 +1,6 @@
 #include <config.h>
 
 #include <arch/ppc64/asdef.h>
-#include <l0/const.h>
 
 .section ".text"
 .align 2
@@ -34,7 +33,7 @@ defaultFuncCommon:
 	la r3, 0x30(r1) //first param: &this
 	mr r4, r11 //second param: method number
 	stdu r1, -(0x70+(13*8))(r1) //push frame
-	bl GenericDefaultFunc //call generic function
+	bl lrt_trans_default_func //call generic function
 	la r1, (0x70+(13*8))(r1)
 	ld r0, 16(r1)
 	mtlr r0

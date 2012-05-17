@@ -102,7 +102,7 @@ EBBMemMgrPrimStupidInit()
   CObjEBBRootMultiImpRef rootRef = &theRoot;
   EBBMemMgrPrimStupidRef repRef;
   EBBLTrans *lt;
-  EBBRC rc;
+  EBBRC rc __attribute__((unused));
   EBBId id;
   
   if (__sync_bool_compare_and_swap(&(theEBBMemMgrPrimId), 0, -1)) {
@@ -111,11 +111,10 @@ EBBMemMgrPrimStupidInit()
     LRT_RCAssert(rc);
     rc = CObjEBBBindBoot(id, rootRef); 
     LRT_RCAssert(rc);
-    
     __sync_bool_compare_and_swap(&(theEBBMemMgrPrimId), -1, id);
   } else {   
     // racing with root creation...wait till root is ready
-    while (((volatile uintptr_t)theEBBMemMgrPrimId)==-1);
+    while ((*(volatile uintptr_t *)(&theEBBMemMgrPrimId)) == -1);
   }
   // no where to alloc rep from other than the memory
   // we are creating this rep to manage so we do the obvious
@@ -135,7 +134,7 @@ EBBMemMgrPrimStupidInit()
   // it is now safe to call the allocator assuming that the 
   // ltrans is stable between last and the next one that 
   // may use dynamic memory to add the rep to the root
-  rootRef->ft->addRepOn((CObjEBBRootMultiRef)rootRef, MyEL(), (EBBRep *)repRef);
+  rootRef->ft->addRepOn((CObjEBBRootMultiRef)rootRef, MyEventLoc(), (EBBRep *)repRef);
 
   // Ok at this point the memory manager is up on this EL
   // and missing on the local table is also safe for this EL

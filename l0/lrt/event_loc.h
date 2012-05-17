@@ -38,9 +38,6 @@ enum lrt_event_loc_desc {
   LRT_EVENT_LOC_ALL = 2
 };  
 
-// this is used for any static sized arrays; should try to get rid of it
-#define LRT_MAX_EL 64
-
 // can't put protype for this, since inline on some platforms
 // extern lrt_event_loc lrt_my_event_loc();
 extern lrt_event_loc lrt_next_event_loc(lrt_event_loc l);

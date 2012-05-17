@@ -28,8 +28,6 @@
 #include <lrt/io.h>
 #include <l0/lrt/trans.h>
 #include <lrt/exit.h>
-#include <l0/types.h>
-#include <l0/sys/trans.h>
 #include <lrt/assert.h>
 #include <l0/cobj/CObjEBB.h>
 #include <l0/EBBMgrPrim.h>
@@ -56,7 +54,7 @@ typedef struct {
 
 #define EBBRC_NULL (-6)
 
-EBBRC nullmissmf(EBBRep **repptr, EBBLTrans *lt, FuncNum fn, EBBMissArg a)
+EBBRC nullmissmf(EBBRep **repptr, EBBLTrans *lt, EBBFuncNum fn, EBBMissArg a)
 {
   return EBBRC_NULL;
 }
@@ -214,7 +212,7 @@ BindTst_start(AppRef _self)
     cores = NumEventLoc();
   } else {
     // everyone but first core blocks here
-    while ((volatile int)cores == 0){}
+    while (*(volatile int *)&cores == 0){}
   }
 
   lrt_printf("bindtst: START, core %d of cores %d\n", MyEventLoc(), cores);

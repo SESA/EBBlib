@@ -25,8 +25,6 @@
 #include <l0/cobj/cobj.h>
 #include <lrt/io.h>
 #include <l0/lrt/trans.h>
-#include <l0/types.h>
-#include <l0/sys/trans.h>
 #include <lrt/assert.h>
 #include <l0/cobj/CObjEBB.h>
 #include <l0/EBBMgrPrim.h>
@@ -44,8 +42,8 @@
 // globally known id of the message mgr
 MsgMgrId theMsgMgrId = 0;
 
-// the root of both message manager
-static CObjEBBRootMultiImpRef rootRefMM = 0;
+// the root of message manager
+static CObjEBBRootMultiImpRef rootRef = 0;
 
 // the event reserved for the message manager
 static EventNo theMsgMgrEvent = 0;
@@ -88,7 +86,7 @@ CObject(MsgMgrPrim) {
   LockType freelistlock;
   MsgStore *freelist; 
   // FIXME: abstract at event mgr
-  MsgMgrPrimRef reps[LRT_MAX_EL];
+  MsgMgrPrimRef *reps;
   // reference to the single root
   CObjEBBRootMultiRef theRootMM;
 };
@@ -348,23 +346,27 @@ MsgMgrPrim_SetFT(MsgMgrPrimRef o)
 
 
 static EBBRep *
-MsgMgrPrim_createRep(CObjEBBRootMultiRef rootRefMM)
+MsgMgrPrim_createRep(CObjEBBRootMultiRef rootRef)
 {
   MsgMgrPrimRef repRef;
-
-  EBBPrimMalloc(sizeof(MsgMgrPrim), &repRef, EBB_MEM_DEFAULT);
-  MsgMgrPrim_SetFT(repRef);
   int i;
+  EBBRC rc;
+
+  rc = EBBPrimMalloc(sizeof(MsgMgrPrim), &repRef, EBB_MEM_DEFAULT);
+  LRT_RCAssert(rc);
+  MsgMgrPrim_SetFT(repRef);
 
   repRef->eventLoc = MyEventLoc();
   repRef->msgqueuelock = 0;
   repRef->msgqueue = 0;
   repRef->freelistlock = 0;
   repRef->freelist = 0;
-  for (i=0; i<LRT_MAX_EL ; i++ ) {
+  rc = EBBPrimMalloc(sizeof(repRef->reps)*lrt_num_event_loc(), &repRef->reps, EBB_MEM_DEFAULT);
+  LRT_RCAssert(rc);
+  for (i=0; i<lrt_num_event_loc() ; i++ ) {
     repRef->reps[i] = NULL;
   }
-  repRef->theRootMM = rootRefMM;
+  repRef->theRootMM = rootRef;
 
   return (EBBRep *)repRef;
 };
@@ -378,15 +380,12 @@ MsgMgrPrim_Init(void)
     EBBId id;
 
     // create root for MsgMgr
-    rc = CObjEBBRootMultiImpCreate(&rootRefMM, MsgMgrPrim_createRep);
+    rc = CObjEBBRootMultiImpCreate(&rootRef, MsgMgrPrim_createRep);
     LRT_RCAssert(rc);
     rc = EBBAllocPrimId(&id);
     LRT_RCAssert(rc); 
-    rc = EBBBindPrimId(id, CObjEBBMissFunc, (EBBMissArg)rootRefMM);
+    rc = EBBBindPrimId(id, CObjEBBMissFunc, (EBBMissArg)rootRef);
     LRT_RCAssert(rc); 
-
-    // allocate the event and bind it before publishing the msgmgr id, since 
-    // publishing the MsgMgrEHId will unblock everyone
     rc = COBJ_EBBCALL(theEventMgrPrimId, allocEventNo, &theMsgMgrEvent);
     LRT_RCAssert(rc); 
 
@@ -398,7 +397,7 @@ MsgMgrPrim_Init(void)
 
     theMsgMgrId = (MsgMgrId)id;
   } else {
-    while (((volatile uintptr_t)theMsgMgrId)==-1);
+    while ((*(volatile uintptr_t *)&theMsgMgrId)==-1);
   }
   return EBBRC_OK;
 }

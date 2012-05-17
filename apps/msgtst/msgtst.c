@@ -28,8 +28,6 @@
 #include <lrt/io.h>
 #include <l0/lrt/trans.h>
 #include <lrt/exit.h>
-#include <l0/types.h>
-#include <l0/sys/trans.h>
 #include <lrt/assert.h>
 #include <l0/cobj/CObjEBB.h>
 #include <l0/EBBMgrPrim.h>
@@ -136,7 +134,7 @@ InitMsgHandlerTst()
     LRT_RCAssert(rc);
     theMsgHandlerTstId = (MsgHandlerId)id;
   } else {
-    while (((volatile uintptr_t)theMsgHandlerTstId)==-1);
+    while ((*(volatile uintptr_t *)&theMsgHandlerTstId)==-1);
   }
   return theMsgHandlerTstId;
 };

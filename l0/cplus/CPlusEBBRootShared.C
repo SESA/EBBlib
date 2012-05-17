@@ -25,7 +25,6 @@
 #include <stdint.h>
 #include <lrt/assert.h>
 #include <l0/lrt/trans.h>
-#include <l0/types.h>
 #include <l0/cobj/cobj.h>
 #include <l0/cobj/CObjEBB.h>
 #include <l0/EBBMgrPrim.h>
@@ -37,14 +36,14 @@
 #include <l0/cplus/CPlusEBBRootShared.H>
 
 /* virtual */ EBBRC
-CPlusEBBRootShared::handleMiss(CPlusEBB **obj, EBBLTrans *lt, FuncNum fnum)
+CPlusEBBRootShared::handleMiss(CPlusEBB **obj, EBBLTrans *lt, EBBFuncNum fnum)
 {
   EBBCacheObj(lt, (EBBRep *)theRep);
   *obj = theRep;
   return EBBRC_OK;
 }
 
-void * 
+void *
 CPlusEBBRootShared::operator new(size_t size)
 {
   void *val;
@@ -54,7 +53,7 @@ CPlusEBBRootShared::operator new(size_t size)
   return val;
 }
 
-void 
+void
 CPlusEBBRootShared::operator delete(void * p, size_t size)
 {
   // NYI
