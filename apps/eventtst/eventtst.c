@@ -38,6 +38,8 @@ CObjInterface(EventTst) {
   EBBRC (*irqLocalTestEvent) (EventTstRef _self);
 };
 
+
+
 #define TABSIZE 200
 
 static void
@@ -50,7 +52,7 @@ test_allocate()
     int used;
   } tab[TABSIZE];
   EBBRC rc;
- 
+
   for(int i=0; i<100; i++) {
     if (tab[i].used == 0) {
       rc = COBJ_EBBCALL(theEventMgrPrimId, allocEventNo, &tab[i].ev);
@@ -81,7 +83,7 @@ test_allocate()
       tab[i].used = 0;
     }
   }
-    
+
   lrt_printf("EventTst: alloctest succeeded\n");
 }
 
@@ -94,9 +96,9 @@ test_bind(EventTstRef self)
   lrt_printf("EventTst: bindtest started\n");
   rc = COBJ_EBBCALL(theEventMgrPrimId, allocEventNo, &ev);
   LRT_RCAssert(rc);
-  
-  rc = COBJ_EBBCALL(theEventMgrPrimId, bindEvent, ev, (EBBId)theAppId, 
-		    COBJ_FUNCNUM(self, triggerLocalTestEvent));
+
+  rc = COBJ_EBBCALL(theEventMgrPrimId, bindEvent, ev, (EBBId)theAppId,
+                    COBJ_FUNCNUM(self, triggerLocalTestEvent));
   LRT_RCAssert(rc);
   rc = COBJ_EBBCALL(theEventMgrPrimId, freeEventNo, ev);
   LRT_RCAssert(rc);
@@ -111,13 +113,13 @@ test_triggerlocal(EventTstRef self)
 {
   EBBRC rc;
   lrt_printf("EventTst: triggerlocaltest started\n");
-  rc = COBJ_EBBCALL(theEventMgrPrimId, allocEventNo, &localEV);  
+  rc = COBJ_EBBCALL(theEventMgrPrimId, allocEventNo, &localEV);
   LRT_RCAssert(rc);
-  rc = COBJ_EBBCALL(theEventMgrPrimId, bindEvent, localEV, (EBBId)theAppId, 
-		    COBJ_FUNCNUM(self, triggerLocalTestEvent));
+  rc = COBJ_EBBCALL(theEventMgrPrimId, bindEvent, localEV, (EBBId)theAppId,
+                    COBJ_FUNCNUM(self, triggerLocalTestEvent));
   LRT_RCAssert(rc);
-  rc = COBJ_EBBCALL(theEventMgrPrimId, triggerEvent, localEV, 
-		    EVENT_LOC_SINGLE, MyEventLoc());
+  rc = COBJ_EBBCALL(theEventMgrPrimId, triggerEvent, localEV,
+                    EVENT_LOC_SINGLE, MyEventLoc());
   LRT_RCAssert(rc);
 }
 
@@ -128,13 +130,13 @@ test_triggerremote(EventTstRef self)
 {
   EBBRC rc;
   lrt_printf("EventTst: triggerremotetest started\n");
-  rc = COBJ_EBBCALL(theEventMgrPrimId, allocEventNo, &remoteEV);  
+  rc = COBJ_EBBCALL(theEventMgrPrimId, allocEventNo, &remoteEV);
   LRT_RCAssert(rc);
-  rc = COBJ_EBBCALL(theEventMgrPrimId, bindEvent, remoteEV, (EBBId)theAppId, 
-		    COBJ_FUNCNUM(self, triggerRemoteTestEvent));
+  rc = COBJ_EBBCALL(theEventMgrPrimId, bindEvent, remoteEV, (EBBId)theAppId,
+                    COBJ_FUNCNUM(self, triggerRemoteTestEvent));
   LRT_RCAssert(rc);
-  rc = COBJ_EBBCALL(theEventMgrPrimId, triggerEvent, remoteEV, 
-		    EVENT_LOC_SINGLE, NextEventLoc(MyEventLoc()));
+  rc = COBJ_EBBCALL(theEventMgrPrimId, triggerEvent, remoteEV,
+                    EVENT_LOC_SINGLE, NextEventLoc(MyEventLoc()));
   LRT_RCAssert(rc);
 }
 
@@ -148,11 +150,11 @@ test_irqlocal(EventTstRef self)
 {
   EBBRC rc;
   lrt_printf("EventTst: irqlocaltest started\n");
-  
+
   rc = COBJ_EBBCALL(theEventMgrPrimId, allocEventNo, &irqEV);
   LRT_RCAssert(rc);
-  rc = COBJ_EBBCALL(theEventMgrPrimId, bindEvent, irqEV, (EBBId)theAppId, 
-		    COBJ_FUNCNUM(self, irqLocalTestEvent));  
+  rc = COBJ_EBBCALL(theEventMgrPrimId, bindEvent, irqEV, (EBBId)theAppId,
+                    COBJ_FUNCNUM(self, irqLocalTestEvent));
   LRT_RCAssert(rc);
 
   int ret = pipe(pipes);
@@ -162,7 +164,7 @@ test_irqlocal(EventTstRef self)
   irq.fd = pipes[0];
 
   rc = COBJ_EBBCALL(theEventMgrPrimId, routeIRQ, &irq, irqEV,
-		    EVENT_LOC_SINGLE, MyEventLoc());
+                    EVENT_LOC_SINGLE, MyEventLoc());
   LRT_RCAssert(rc);
 
   //Now trigger the event
@@ -171,16 +173,47 @@ test_irqlocal(EventTstRef self)
   LRT_Assert(ret2 == sizeof(c));
 }
 
+/*
+ * first runs tests that run to completion, then 
+ * starts subsequent tests in context of event 
+ * initiated by previous tests
+ */
+EBBRC 
+runNextTest(EventTstRef self)
+{
+  static int testStage = 0;
+  switch(testStage) {
+  case 0:
+    testStage++;
+    test_allocate();
+    test_bind(self);
+    test_triggerlocal(self);
+    break;
+  case 1:
+    testStage++;
+    test_triggerremote(self);
+    break;
+  case 2:
+    testStage++;
+    test_irqlocal(self);
+    break;
+  case 3:
+    lrt_exit(0);
+    break;
+  }
+  return EBBRC_OK;
+}
+
 static EBBRC 
 EventTst_start(AppRef _self)
 {
   EventTstRef self = (EventTstRef)_self;
-  lrt_printf("EventTst, core %d number of cores %d\n", MyEventLoc(), NumEventLoc());
 
-  test_allocate();
-  test_bind(self);
-  test_triggerlocal(self);
+  lrt_printf("EventTst, core %d number of cores %d\n", MyEventLoc(),
+             NumEventLoc());
 
+  runNextTest(self);
+  
   return EBBRC_OK;
 }
 
@@ -191,7 +224,7 @@ EventTst_triggerLocalTestEvent(EventTstRef _self)
   rc = COBJ_EBBCALL(theEventMgrPrimId, freeEventNo, localEV);
   LRT_RCAssert(rc);
   lrt_printf("EventTst: triggerlocaltest succeeded\n");
-  test_triggerremote(_self);
+  runNextTest(_self);
   return EBBRC_OK;
 }
 
@@ -204,7 +237,7 @@ EventTst_triggerRemoteTestEvent(EventTstRef _self)
   LRT_RCAssert(rc);
   lrt_printf("EventTst: triggerremotetest succeeded on core %d\n",
 	     MyEventLoc());
-  test_irqlocal(_self);
+  runNextTest(_self);
   return EBBRC_OK;
 }
 
@@ -215,6 +248,7 @@ EventTst_irqLocalTestEvent(EventTstRef _self)
   ssize_t rc = read(pipes[0], &c, sizeof(c));
   LRT_Assert(rc == sizeof(c));
   lrt_printf("EventTst: irqlocaltest succeeded\n");
+  runNextTest(_self);
   return EBBRC_OK;
 }
 

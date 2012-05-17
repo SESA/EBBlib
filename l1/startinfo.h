@@ -22,6 +22,8 @@
  * THE SOFTWARE.
  */
 
+#include <l0/EBBMgrPrim.h>
+
 struct startinfo {
   int argc;
   char **argv;

@@ -11,7 +11,6 @@
 #include <config.h>
 #include <arch/amd64/fpr.h>
 #include <arch/amd64/asm.h>
-#include <l0/const.h>
 	
 CODE_ENTRY(defaultFuncCommon)
 	FRAME_ENTER()
@@ -31,7 +30,7 @@ CODE_ENTRY(defaultFuncCommon)
 						// the method number has been deposited 
 						// by the macro DEFAULT_FUNC(OP) below
 
-	callq	C_TEXT(GenericDefaultFunc)
+	callq	C_TEXT(lrt_trans_default_func)
 
 	testq	%rax, %rax			
 	jg	OnSuccess //if value returned > 0 
@@ -66,10 +65,10 @@ OnSuccess:
 	jmp	*%rax
 
 #define DEFAULT_FUNC(OP)						\
-    C_TEXT_ENTRY(EBBDefFunc_ ## OP)					\
+    C_TEXT_ENTRY(lrt_trans_def_func_ ## OP)					\
 	movq	$OP, %r11	;\
 	jmp	defaultFuncCommon ;\
-    C_TEXT_END(EBBDefFunc_ ## OP)
+    C_TEXT_END(lrt_trans_def_func_ ## OP)
 	
 
 DEFAULT_FUNC(0) // Not sure we actually want this as the first vtable seems

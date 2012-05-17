@@ -36,7 +36,7 @@
 #include <sys/epoll.h>
 #endif
 
-#include <l0/types.h>
+#include <l0/lrt/trans.h>
 #include <lrt/assert.h>
 #include <l0/lrt/event.h>
 #include <l0/lrt/event_irq_def.h>
@@ -52,7 +52,8 @@ struct lrt_event_local_data {
 };
 
 //To be allocated at preinit, the array of local event data
-static struct lrt_event_local_data *event_data; 
+static struct lrt_event_local_data *event_data;
+static int num_cores = 0;
 
 static const intptr_t PIPE_UDATA = -1;
 
@@ -78,7 +79,7 @@ lrt_event_loop(void)
     do {
       rc = epoll_wait(ldata->fd, &kev, 1, -1);
     } while(rc == -1 && errno == EINTR);
-    
+
     if (rc == -1) {
       perror("epoll");
       LRT_Assert(0);
@@ -87,23 +88,23 @@ lrt_event_loop(void)
 #endif
 
     lrt_event_num ev;
-    
+
     if (
 #if __APPLE__
-	kev.udata == (void *)PIPE_UDATA
+        kev.udata == (void *)PIPE_UDATA
 #elif __linux__
-	kev.data.u64 == (uint64_t)PIPE_UDATA
+        kev.data.u64 == (uint64_t)PIPE_UDATA
 #endif
-	) {
+        ) {
       //We received at least a byte on the pipe
-      
+
       //This is technically a blocking read, but I don't believe it
       //matters because we only woke up because the pipe was ready
       //to read and we are the only reader
       ssize_t rc = read(ldata->pipefd_read, &ev, sizeof(ev));
       LRT_Assert(rc == sizeof(ev));
       //FIXME: check for errors
-      
+
     } else {
       //IRQ occurred
 #if __APPLE__
@@ -112,15 +113,15 @@ lrt_event_loop(void)
       ev = (lrt_event_num)kev.data.u64;
 #endif
     }
-    
+
     struct lrt_event_descriptor *desc = &lrt_event_table[ev];
-    EBBId id = desc->id;
-    FuncNum fnum = desc->fnum;
-    
+    lrt_trans_id id = desc->id;
+    lrt_trans_func_num fnum = desc->fnum;
+
     //this infrastructure should be pulled out of this file
-    EBBRepRef ref = EBBId_DREF((EBBRepRef *)id);
-    (void)(*ref)[fnum](ref);
-    
+    lrt_trans_rep_ref ref = lrt_trans_id_dref(id);
+    ref->ft[fnum](ref);
+
     //an optimization here would be to keep reading from the pipe or checking
     //other events before going back around the loop
   }
@@ -145,7 +146,7 @@ lrt_event_init(void *myloc)
 #else
   lrt_event_myloc = (lrt_event_loc)(uintptr_t)myloc;
 #endif
-  
+
   //get my local event data
   struct lrt_event_local_data *ldata = &event_data[lrt_my_event_loc()];
 
@@ -165,7 +166,7 @@ lrt_event_init(void *myloc)
 
   ldata->pipefd_read = pipes[0];
   //this act publishes that this event location is ready to receive events
-  ldata->pipefd_write = pipes[1]; 
+  ldata->pipefd_write = pipes[1];
 
   //add the pipe to the watched fd
   #if __APPLE__
@@ -177,7 +178,7 @@ lrt_event_init(void *myloc)
   //setup the read pipe event
   struct kevent kev;
   EV_SET(&kev, ldata->pipefd_read, EVFILT_READ,
-	 EV_ADD, 0, 0, (void *)PIPE_UDATA);
+         EV_ADD, 0, 0, (void *)PIPE_UDATA);
 
   //add it to the keventfd
   kevent(ldata->fd,  &kev, 1, NULL, 0, &timeout);
@@ -190,15 +191,30 @@ lrt_event_init(void *myloc)
   epoll_ctl(ldata->fd, EPOLL_CTL_ADD, ldata->pipefd_read, &ev);
   #endif
 
-  // we call the start routine to initialize 
+  // we call the start routine to initialize
   // mem and trans before falling into the loop
   lrt_start();
   lrt_event_loop();
 }
 
-void
-lrt_event_preinit(int num_cores)
+
+/* get number of logical pics, i.e., cores */
+lrt_event_loc
+lrt_num_event_loc()
 {
+  return num_cores;
+}
+
+/* get next pic in some sequence from current one; loops */
+lrt_event_loc lrt_next_event_loc(lrt_event_loc l)
+{
+  return (l+1)%num_cores;
+}
+
+void
+lrt_event_preinit(int cores)
+{
+  num_cores = cores;
   event_data = malloc(sizeof(*event_data) * num_cores);
   //FIXME: check for errors
 #if __APPLE__
@@ -209,40 +225,40 @@ lrt_event_preinit(int num_cores)
   //FIXME: initialize event table
 }
 
-void 
-lrt_event_bind_event(lrt_event_num num, EBBId handler, FuncNum fnum)
+void
+lrt_event_bind_event(lrt_event_num num, lrt_trans_id handler, lrt_trans_func_num fnum)
 {
   lrt_event_table[num].id = handler;
   lrt_event_table[num].fnum = fnum;
 }
 
 void
-lrt_event_trigger_event(lrt_event_num num, 
-			enum lrt_event_loc_desc desc, 
-			lrt_event_loc loc)
+lrt_event_trigger_event(lrt_event_num num,
+                        enum lrt_event_loc_desc desc,
+                        lrt_event_loc loc)
 {
   int pipefd;
 
   //TODO: Do something better for a local event
-  
+
   if (desc == LRT_EVENT_LOC_SINGLE) {
     //protects from a race on startup
     do {
       pipefd = *(volatile int *)&event_data[loc].pipefd_write;
     } while (pipefd == 0);
-    
+
     ssize_t rc = write(pipefd, &num, sizeof(num));
     LRT_Assert(rc == sizeof(num));
     //FIXME: check errors
   } else if (desc == LRT_EVENT_LOC_ALL) {
-    lrt_event_loc num = lrt_num_event_loc();
-    for (lrt_event_loc i = 0; i < num; i++) {
+    lrt_event_loc num_ev = lrt_num_event_loc();
+    for (lrt_event_loc i = 0; i < num_ev; i++) {
       //protects from a race on startup
       do {
-	pipefd = *(volatile int *)&event_data[i].pipefd_write;
+        pipefd = *(volatile int *)&event_data[i].pipefd_write;
       } while (pipefd == 0);
-      
-      ssize_t rc = write(pipefd, &num, sizeof(num));    
+
+      ssize_t rc = write(pipefd, &num, sizeof(num));
       LRT_Assert(rc == sizeof(num));
     }
   }
@@ -250,15 +266,15 @@ lrt_event_trigger_event(lrt_event_num num,
 }
 
 void
-lrt_event_route_irq(struct IRQ_t *isrc, lrt_event_num num, 
-		    enum lrt_event_loc_desc desc, lrt_event_loc loc)
+lrt_event_route_irq(struct IRQ_t *isrc, lrt_event_num num,
+                    enum lrt_event_loc_desc desc, lrt_event_loc loc)
 {
   //No changes necessary if this conditional is true
   if ((desc == LRT_EVENT_LOC_NONE && isrc->desc == LRT_EVENT_LOC_NONE) ||
       (num == isrc->num &&
        ((desc == LRT_EVENT_LOC_ALL && isrc->desc == LRT_EVENT_LOC_ALL) ||
-	(desc == LRT_EVENT_LOC_SINGLE && isrc->desc == LRT_EVENT_LOC_SINGLE &&
-	 loc == isrc->loc)))) {
+        (desc == LRT_EVENT_LOC_SINGLE && isrc->desc == LRT_EVENT_LOC_SINGLE &&
+         loc == isrc->loc)))) {
     return;
   }
 #if __APPLE__
@@ -266,20 +282,20 @@ lrt_event_route_irq(struct IRQ_t *isrc, lrt_event_num num,
 
   struct kevent kevs_add[numkevents];
   struct kevent kevs_remove[numkevents];
-  
+
   int i = numkevents;
   if (isrc->flags & LRT_EVENT_IRQ_READ) {
     EV_SET(&kevs_add[--i], isrc->fd, EVFILT_READ,
-	   EV_ADD, 0, 0, (void *)(uintptr_t)num);
+           EV_ADD, 0, 0, (void *)(uintptr_t)num);
     EV_SET(&kevs_remove[i], isrc->fd, EVFILT_READ,
-	   EV_DELETE, 0, 0, (void *)(uintptr_t)num);
+           EV_DELETE, 0, 0, (void *)(uintptr_t)num);
   }
 
   if (isrc->flags & LRT_EVENT_IRQ_WRITE) {
     EV_SET(&kevs_add[--i], isrc->fd, EVFILT_WRITE,
-	   EV_ADD, 0, 0, (void *)(uintptr_t)num);
+           EV_ADD, 0, 0, (void *)(uintptr_t)num);
     EV_SET(&kevs_remove[i], isrc->fd, EVFILT_WRITE,
-	   EV_DELETE, 0, 0, (void *)(uintptr_t)num);
+           EV_DELETE, 0, 0, (void *)(uintptr_t)num);
   }
 
   struct timespec timeout = {
@@ -292,7 +308,7 @@ lrt_event_route_irq(struct IRQ_t *isrc, lrt_event_num num,
   if (isrc->flags & LRT_EVENT_IRQ_READ) {
     ev.events |= EPOLLIN;
   }
-  
+
   if (isrc->flags & LRT_EVENT_IRQ_WRITE) {
     ev.events |= EPOLLOUT;
   }
@@ -307,38 +323,38 @@ lrt_event_route_irq(struct IRQ_t *isrc, lrt_event_num num,
       // and not requested to be mapped or having a different event.
       //In such a case, remove the event
       if ((isrc->desc == LRT_EVENT_LOC_ALL ||
-	   (isrc->desc == LRT_EVENT_LOC_SINGLE && isrc->loc == i)) &&
-	  !(num == isrc->num && 
-	    (desc == LRT_EVENT_LOC_ALL ||
-	     (desc == LRT_EVENT_LOC_SINGLE && loc == i)))) {
+           (isrc->desc == LRT_EVENT_LOC_SINGLE && isrc->loc == i)) &&
+          !(num == isrc->num &&
+            (desc == LRT_EVENT_LOC_ALL ||
+             (desc == LRT_EVENT_LOC_SINGLE && loc == i)))) {
 #if __APPLE__
-	kevent(ldata->fd, kevs_remove, numkevents, NULL, 0, &timeout);
+        kevent(ldata->fd, kevs_remove, numkevents, NULL, 0, &timeout);
 #elif __linux__
-	epoll_ctl(ldata->fd, EPOLL_CTL_DEL, isrc->fd, NULL);
-#endif		
+        epoll_ctl(ldata->fd, EPOLL_CTL_DEL, isrc->fd, NULL);
+#endif
       }
       //This checks if the irq is requested to be mapped in on core i
       // and not already mapped or having a different event
       //In such a case, add the event
       if ((desc == LRT_EVENT_LOC_ALL ||
-	   (desc == LRT_EVENT_LOC_SINGLE && loc == i)) &&
-	  !(num == isrc->num &&
-	    (isrc->desc == LRT_EVENT_LOC_ALL ||
-	     (isrc->desc == LRT_EVENT_LOC_SINGLE && isrc->loc == i)))) {
+           (desc == LRT_EVENT_LOC_SINGLE && loc == i)) &&
+          !(num == isrc->num &&
+            (isrc->desc == LRT_EVENT_LOC_ALL ||
+             (isrc->desc == LRT_EVENT_LOC_SINGLE && isrc->loc == i)))) {
 #if __APPLE__
-	kevent(ldata->fd, kevs_add, numkevents, NULL, 0, &timeout);
+        kevent(ldata->fd, kevs_add, numkevents, NULL, 0, &timeout);
 #elif __linux__
-	epoll_ctl(ldata->fd, EPOLL_CTL_ADD, isrc->fd, &ev);
-#endif		
+        epoll_ctl(ldata->fd, EPOLL_CTL_ADD, isrc->fd, &ev);
+#endif
       }
     }
   } else {
     //Checks if the irq is currently mapped and either is on a different
     // event or is not mapped to the same event, then removes
     if (isrc->desc == LRT_EVENT_LOC_SINGLE &&
-	!(num == isrc->num &&
-	  desc == LRT_EVENT_LOC_SINGLE &&
-	  isrc->loc == loc)) {
+        !(num == isrc->num &&
+          desc == LRT_EVENT_LOC_SINGLE &&
+          isrc->loc == loc)) {
       struct lrt_event_local_data *ldata = &event_data[isrc->loc];
 #if __APPLE__
       kevent(ldata->fd, kevs_remove, numkevents, NULL, 0, &timeout);
@@ -349,9 +365,9 @@ lrt_event_route_irq(struct IRQ_t *isrc, lrt_event_num num,
     //Checks if the request is to map it and either is on a different event
     // or not the same location
     if (desc == LRT_EVENT_LOC_SINGLE &&
-	!(num == isrc->num &&
-	  isrc->desc == LRT_EVENT_LOC_SINGLE &&
-	  isrc->loc == loc)) {
+        !(num == isrc->num &&
+          isrc->desc == LRT_EVENT_LOC_SINGLE &&
+          isrc->loc == loc)) {
       struct lrt_event_local_data *ldata = &event_data[loc];
 #if __APPLE__
       kevent(ldata->fd, kevs_add, numkevents, NULL, 0, &timeout);

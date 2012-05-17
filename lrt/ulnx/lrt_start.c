@@ -122,9 +122,10 @@ parse_ebbos_arg(int i, char **argv, int *s)
     // overridding the number of cores
     ret = 2;			/* 2 arguments to be handled */
     start_args.cores=atoi(argv[i+1]);
-    fprintf(stderr, "EBBOS: overriding cores to %ld\n", start_args.cores);
+    fprintf(stdout, "EBBOS: overriding cores to %ld\n", start_args.cores);
   } else {
     fprintf(stderr, "EBBOS: unknown argument stripped: %s\n", argv[i]);
+    exit(1);
   }
   return ret;
 }
@@ -213,25 +214,6 @@ static num_phys_cores()
 #endif
 }
 
-/* ----------------- move event.c -------------------- */
-
-void lrt_mem_preinit(int cores) {};
-void lrt_trans_preinit(int cores){};
-
-/* get number of logical pics, i.e., cores */
-lrt_event_loc lrt_num_event_loc()
-{
-  return start_args.cores;
-}
-
-/* get next pic in some sequence from current one; loops */
-lrt_event_loc lrt_next_event_loc(lrt_event_loc l)
-{
-  return (l+1)%start_args.cores;
-}
-
-/* ----------------- move event.c -------------------- */
-
 void
 start_cores(int cores)
 {
@@ -239,7 +221,7 @@ start_cores(int cores)
 
   // check cores
   // start up another core, with the 
-  fprintf(stderr, "%s: starting cores %d\n", __func__, cores);
+  fprintf(stdout, "EBBOS:%s: starting cores %d\n", __func__, cores);
   pthread_attr_t attr; 
   
   pthread_attr_init(&attr);
@@ -290,8 +272,6 @@ start_cores(int cores)
 int
 main(int argc, char **argv, char **environ) 
 {
-  fprintf(stderr, "%s: start!\n", __func__); 
-
   start_args.physcores = start_args.cores = num_phys_cores();
   start_args.start_info = 0;
   start_args.start_info_size = 0;
@@ -302,7 +282,6 @@ main(int argc, char **argv, char **environ)
   lrt_event_preinit(start_args.cores);
   lrt_mem_preinit(start_args.cores);
   lrt_trans_preinit(start_args.cores);
-
   // calls event init on all cores, first event is lrt_start
   start_cores(start_args.cores);
   

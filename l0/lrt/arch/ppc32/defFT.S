@@ -1,7 +1,6 @@
 #include <config.h>
 #include <arch/powerpc/asm.h>
 #include <arch/powerpc/asdef.h>
-#include <l0/const.h>
 	
 .section ".text"
 .align 2
@@ -29,7 +28,7 @@ defaultFuncCommon:
 	la r3, ((-64)+(-1)*4)(r1) //first param: &this	
 	mr r4, r11                //second param: method number
 	stwu r1, -(8+(8*8)+(8*4))(r1) //push frame
-	bl GenericDefaultFunc //call generic function
+	bl lrt_trans_default_func //call generic function
 	la r1, (8+(8*8)+(8*4))(r1)    //pop frame
 	lwz r0, 0x4(r1)               //restore link register
 	mtlr r0

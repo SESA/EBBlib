@@ -26,9 +26,9 @@
 extern "C" {
 #endif
 
-#include <l0/types.h>
+#include <l0/lrt/trans.h>
 
-void lrt_exit(EBBRC rc);
+void lrt_exit(lrt_trans_rc rc);
 
 #ifdef __cplusplus
 }

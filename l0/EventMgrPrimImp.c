@@ -27,8 +27,6 @@
 #include <l0/cobj/cobj.h>
 #include <lrt/io.h>
 #include <l0/lrt/trans.h>
-#include <l0/types.h>
-#include <l0/sys/trans.h>
 #include <lrt/assert.h>
 #include <l0/cobj/CObjEBB.h>
 #include <l0/EBBMgrPrim.h>
@@ -43,7 +41,7 @@
 #include <l0/lrt/event.h>
 
 STATIC_ASSERT(LRT_EVENT_NUM_EVENTS % 8 == 0,
-	      "num allocatable events isn't divisible by 8");
+              "num allocatable events isn't divisible by 8");
 static uint8_t alloc_table[LRT_EVENT_NUM_ALLOCATABLE_EVENTS / 8];
 
 CObject(EventMgrPrimImp){
@@ -52,7 +50,7 @@ CObject(EventMgrPrimImp){
 
 EventMgrPrimId theEventMgrPrimId=0;
 
-static EBBRC 
+static EBBRC
 EventMgrPrim_allocEventNo(EventMgrPrimRef _self, EventNo *eventNoPtr)
 {
   int i;
@@ -71,7 +69,7 @@ EventMgrPrim_allocEventNo(EventMgrPrimRef _self, EventNo *eventNoPtr)
   return EBBRC_OK;
 }
 
-EBBRC 
+EBBRC
 EventMgrPrim_freeEventNo(EventMgrPrimRef _self, EventNo eventNo)
 {
   eventNo -= LRT_EVENT_FIRST_ALLOCATABLE_EVENT;
@@ -79,36 +77,36 @@ EventMgrPrim_freeEventNo(EventMgrPrimRef _self, EventNo eventNo)
   return EBBRC_OK;
 }
 
-EBBRC 
+EBBRC
 EventMgrPrim_bindEvent(EventMgrPrimRef _self, EventNo eventNo,
-	  EBBId handler, FuncNum fn)
+          EBBId handler, EBBFuncNum fn)
 {
   lrt_event_bind_event(eventNo, handler, fn);
   return EBBRC_OK;
 }
 
-EBBRC 
+EBBRC
 EventMgrPrim_routeIRQ(EventMgrPrimRef _self, IRQ *isrc, EventNo eventNo,
-		      enum EventLocDesc desc, EventLoc el)
+                      enum EventLocDesc desc, EventLoc el)
 {
   lrt_event_route_irq(isrc, eventNo, desc, el);
   return EBBRC_OK;
 }
 
-EBBRC 
-EventMgrPrim_triggerEvent(EventMgrPrimRef _self, EventNo eventNo, 
-			  enum EventLocDesc desc, EventLoc el)
+EBBRC
+EventMgrPrim_triggerEvent(EventMgrPrimRef _self, EventNo eventNo,
+                          enum EventLocDesc desc, EventLoc el)
 {
   lrt_event_trigger_event(eventNo, desc, el);
   return EBBRC_OK;
 }
 
 CObjInterface(EventMgrPrim) EventMgrPrimImp_ftable = {
-  .allocEventNo = EventMgrPrim_allocEventNo, 
-  .freeEventNo = EventMgrPrim_freeEventNo, 
-  .bindEvent = EventMgrPrim_bindEvent, 
-  .routeIRQ = EventMgrPrim_routeIRQ, 
-  .triggerEvent = EventMgrPrim_triggerEvent 
+  .allocEventNo = EventMgrPrim_allocEventNo,
+  .freeEventNo = EventMgrPrim_freeEventNo,
+  .bindEvent = EventMgrPrim_bindEvent,
+  .routeIRQ = EventMgrPrim_routeIRQ,
+  .triggerEvent = EventMgrPrim_triggerEvent
 };
 
 static void
@@ -118,20 +116,13 @@ EventMgrPrimSetFT(EventMgrPrimImpRef o)
 }
 
 static EBBRep *
-EventMgrPrimImp_createRepAssert(CObjEBBRootMultiRef root) 
-{
-  LRT_Assert(0);
-  return NULL;
-}
-
-static EventMgrPrimImpRef
-EventMgrPrimImp_createRep(CObjEBBRootMultiImpRef root) 
+EventMgrPrimImp_createRep(CObjEBBRootMultiRef root)
 {
   EventMgrPrimImpRef repRef;
 
   LRT_RCAssert(EBBPrimMalloc(sizeof(EventMgrPrimImp), &repRef, EBB_MEM_DEFAULT));
   EventMgrPrimSetFT(repRef);
-  return repRef;
+  return (EBBRep *)repRef;
 }
 
 EBBRC
@@ -139,13 +130,11 @@ EventMgrPrimImpInit(void)
 {
   EBBRC rc;
   static CObjEBBRootMultiImpRef rootRef;
-  EventMgrPrimImpRef repRef;
-  EventLoc myel;
 
   if (__sync_bool_compare_and_swap(&theEventMgrPrimId, (EventMgrPrimId)0,
-				   (EventMgrPrimId)-1)) {
+                                   (EventMgrPrimId)-1)) {
     EBBId id;
-     rc = CObjEBBRootMultiImpCreate(&rootRef, EventMgrPrimImp_createRepAssert);
+     rc = CObjEBBRootMultiImpCreate(&rootRef, EventMgrPrimImp_createRep);
     LRT_RCAssert(rc);
     rc = EBBAllocPrimId(&id);
     LRT_RCAssert(rc);
@@ -153,14 +142,7 @@ EventMgrPrimImpInit(void)
     LRT_RCAssert(rc);
     theEventMgrPrimId = (EventMgrPrimId)id;
   } else {
-    while (((volatile uintptr_t)theEventMgrPrimId)==-1);
+    while ((*(volatile uintptr_t *)&theEventMgrPrimId)==-1);
   }
-  // It makes no sense to handle miss on this object lazily, since it will 
-  // always be invoked on every node, everything is in an event
-  repRef = EventMgrPrimImp_createRep(rootRef);
-  myel = MyEventLoc();
-  
-  rootRef->ft->addRepOn((CObjEBBRootMultiRef)rootRef, myel, (EBBRep *)repRef);
   return EBBRC_OK;
 };
-
