@@ -22,13 +22,12 @@
  * THE SOFTWARE.
  */
 
-#include <l0/lrt/trans.h>
+#include <l0/EBBMgrPrim.h>
 
-COBJ_EBBType(CObjEBBRoot) 
+COBJ_EBBType(CObjEBBRoot)
 {
   EBBRC (*handleMiss)(CObjEBBRootRef self, EBBRep **obj,
-		      EBBLTrans *lt, FuncNum fnum);
+                      EBBLTrans *lt, EBBFuncNum fnum);
 };
 
 #endif
-

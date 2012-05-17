@@ -32,8 +32,6 @@
 #include <l0/lrt/trans-def.h>
 #include <sync/barrier.h>
 
-EBBGTrans * const ALLOCATED = (EBBGTrans *)-1;
-
 // Policy for managing global translation memory is software's responsibility
 // We are choosing to use a simple partitioning scheme in which each event location
 // manages its own local portion.  Local size and thus position are determined by
@@ -47,56 +45,50 @@ int sysTransValidate()
   if ((LRT_TRANS_TBLSIZE / cores) < LRT_TRANS_PAGESIZE) return 0;
 
   // we initialized trans memory to 0 so allocated must be a non-zero value
-  if (ALLOCATED == 0) return 0;
-
-  // ensure sizes of trans structs all match
-  if (sizeof(EBBGTrans) != sizeof(struct lrt_trans)) return 0;
-  if (sizeof(EBBLTrans) != sizeof(struct lrt_trans)) return 0;
+  if (LRT_TRANS_ID_FREE != 0) return 0;
 
   return 1;
 }
 
 
 // Size of a el's portion of the gtable
-static inline uintptr_t
-mygmem_size(void)
+static inline size_t
+lrt_trans_my_gmem_size(void)
 {
-  // round up so aligned on sizeof(EBBGTrans)
+  // round down so aligned on sizeof(EBBGTrans)
   return ((LRT_TRANS_TBLSIZE / lrt_num_event_loc())/
-          sizeof(EBBGTrans))*sizeof(EBBGTrans);
+          sizeof(lrt_trans_gtrans))*sizeof(lrt_trans_gtrans);
 }
 
+//get number of GTrans in the table
+static ptrdiff_t
+lrt_trans_my_num_gtrans(void) {
+  return lrt_trans_my_gmem_size() / sizeof(lrt_trans_gtrans);
+}
+
+//get number of LTrans in the table
+static ptrdiff_t
+lrt_trans_my_num_ltrans(void) {
+  return LRT_TRANS_TBLSIZE / sizeof(lrt_trans_ltrans);
+}
 
 // This el's portion of the gtable
-static inline uintptr_t
-mygmem(void)
+static inline lrt_trans_gtrans *
+lrt_trans_my_gmem(void)
 {
-  uintptr_t ret = (uintptr_t)lrt_trans_gmem();
-  return ret + (lrt_my_event_loc() * mygmem_size());
+  lrt_trans_gtrans *gmem = lrt_trans_gmem();
+  return gmem + lrt_trans_my_num_gtrans();
 }
 
-static inline
-EBBId
-gt2id(EBBGTrans *gt) {
-  return (EBBId)lrt_trans_gt2id((struct lrt_trans *)gt);
-}
-
-static inline
-EBBGTrans *
-id2gt(EBBId id) {
-  return (EBBGTrans *)lrt_trans_id2gt((uintptr_t)id);
-}
-
-
-void
-trans_mark_core_used(EBBGTrans *gt, lrt_event_loc core)
+static void
+trans_mark_core_used(lrt_trans_gtrans *gt, lrt_event_loc core)
 {
   uint64_t mask = (uint64_t)1 << core;
   gt->corebv |= mask;
 }
 
-int
-trans_test_core_used(EBBGTrans *gt, int core)
+static int
+trans_test_core_used(lrt_trans_gtrans *gt, int core)
 {
   uint64_t mask = (uint64_t)1 << core;
   if (gt->corebv | mask) return 1;
@@ -104,117 +96,83 @@ trans_test_core_used(EBBGTrans *gt, int core)
 }
 
 void
-EBBCacheObj(EBBLTrans *lt, EBBRep *obj) {
-  EBBGTrans *gt = (EBBGTrans *)lrt_trans_lt2gt((struct lrt_trans *)lt);
-  lt->obj = obj;
+lrt_trans_cache_obj(lrt_trans_ltrans *lt, lrt_trans_rep_ref ref) {
+  lt->ref = ref;
+  lrt_trans_gtrans *gt = lrt_trans_lt2gt(lt);
   trans_mark_core_used(gt, lrt_my_event_loc());
 }
 
-//get number of GTrans in the table
-uintptr_t
-myNumGTrans() {
-  return mygmem_size() / sizeof(EBBGTrans);
-}
-
-//get my portion of the gtable
-EBBGTrans *
-myGTable() {
-  return (EBBGTrans *)mygmem();
-}
-
-//get number of LTrans in the table
-uintptr_t
-myNumLTrans() {
-  return LRT_TRANS_TBLSIZE / sizeof(EBBLTrans);
-}
-
-void
-EBBInitGTrans(EBBGTrans *gt, EBBMissFunc mf, EBBMissArg arg) {
+static void
+lrt_trans_set_gtrans(lrt_trans_gtrans *gt, lrt_trans_miss_func mf,
+                     lrt_trans_miss_arg arg) {
   gt->mf = mf;
   gt->arg = arg;
 }
 
-void
-EBBInitLTrans(EBBLTrans *lt) {
-  lt->obj = &lt->ftable;
-  lt->ftable = EBBDefFT;
+static void
+lrt_trans_init_ltrans(lrt_trans_ltrans *lt) {
+  lt->ref = &lt->rep;
+  lt->rep = lrt_trans_def_rep;
 }
 
-void
-initGTable(EBBMissFunc mf, EBBMissArg arg) {
-  EBBGTrans *gt = myGTable();
-  uintptr_t i, len;
+static void
+lrt_trans_init_ltable() {
+  lrt_trans_ltrans *lt = lrt_trans_lmem();
 
-  len = myNumGTrans();
+  int len = lrt_trans_my_num_ltrans();
 
-  // We expect that all the global trans memory had been zero'd
-  // and that any early allocations have set the free field
-  // to ALLOCATED (a non-zero value)
-  for (i = 0; i < len; i++) {
-    if (gt[i].free != ALLOCATED) EBBInitGTrans(&gt[i], mf, arg);
+  for (int i = 0 ; i < len; i++) {
+    lrt_trans_init_ltrans(lt + i);
   }
 }
 
-void
-initLTable() {
-  EBBLTrans *lt = (EBBLTrans *)lrt_trans_lmem();
+lrt_trans_id
+lrt_trans_id_alloc() {
   uintptr_t i, len;
 
-  len = myNumLTrans();
+  len = lrt_trans_my_num_gtrans();
 
-  for (i = 0 ; i < len; i++) {
-    EBBInitLTrans(&lt[i]);
-  }
-}
-
-EBBId
-TransEBBIdAlloc() {
-  EBBGTrans *gt;
-  uintptr_t i, len;
-
-  len = myNumGTrans();
-
-  gt = myGTable(); //Get my piece of the global table
+  lrt_trans_gtrans *gt = lrt_trans_my_gmem(); //Get my piece of the global table
   for (i = 0; i < len; i++) {
-    if (gt[i].free != ALLOCATED) {
-      gt[i].free = ALLOCATED;
-      return gt2id(&gt[i]);
+    if (gt[i].alloc_status == LRT_TRANS_ID_FREE) {
+      gt[i].alloc_status = LRT_TRANS_ID_ALLOCATED;
+      return lrt_trans_gt2id(&gt[i]);
     }
   }
   return NULL;
 }
 
 void
-TransEBBIdFree(EBBId id) {
-  EBBGTrans *gt = id2gt(id);
-  gt->free = ALLOCATED;
+lrt_trans_id_free(lrt_trans_id id) {
+  lrt_trans_gtrans *gt = lrt_trans_id2gt(id);
+  gt->alloc_status = LRT_TRANS_ID_FREE;
 }
 
 static void
-TransEBBIdInvalidateCaches(EBBId id)
+lrt_trans_invalidate_caches(lrt_trans_id id)
 {
   lrt_event_loc el = lrt_my_event_loc();
-  EBBGTrans *gt = id2gt(id);
+  lrt_trans_gtrans *gt = lrt_trans_id2gt(id);
 
   do{
     if (trans_test_core_used(gt, el)) {
-      EBBLTrans *lt = (EBBLTrans *)lrt_trans_id2rlt(el, (uintptr_t)id);
+      lrt_trans_ltrans *lt = lrt_trans_id2rlt(el, id);
       LRT_Assert(lt != NULL);
 
-      EBBInitLTrans(lt);
+      lrt_trans_init_ltrans(lt);
     }
     el = lrt_next_event_loc(el);
   } while (el != lrt_my_event_loc());
 }
 
 void
-TransEBBIdBind(EBBId id, EBBMissFunc mf, EBBMissArg arg) {
-  EBBGTrans *gt = id2gt(id);
-  gt->mf = mf;
-  gt->arg = arg;
+lrt_trans_id_bind(lrt_trans_id id, lrt_trans_miss_func mf,
+                  lrt_trans_miss_arg arg) {
+  lrt_trans_gtrans *gt = lrt_trans_id2gt(id);
+  lrt_trans_set_gtrans(gt, mf, arg);
 
   // invalidate all the local translation caches
-  TransEBBIdInvalidateCaches(id);
+  lrt_trans_invalidate_caches(id);
 }
 
 
@@ -225,7 +183,6 @@ lrt_trans_init(void)
   // maximum bits in corebv in EBBTransStruct
   LRT_Assert(lrt_num_event_loc() <= 64);
 
-  bzero((void *)mygmem(), mygmem_size());
-  initLTable();
-
+  bzero(lrt_trans_gmem(), lrt_trans_my_gmem_size());
+  lrt_trans_init_ltable();
 }

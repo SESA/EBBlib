@@ -22,7 +22,7 @@
  * THE SOFTWARE.
  */
 
-/* 
+/*
  * The Event Manager (EM) is one of the primordial objects.  The EM
  * will be a fully distributed objects.  Clients can register with the
  * EM objects to handle specific events.  That will cause a customized
@@ -37,7 +37,7 @@
  *
  * The current implementation is very simple, a shared table of
  * handlers, no dynamically generated code yet. ... but wanted to
- * document the plan.  
+ * document the plan.
  */
 
 #include <l0/cobj/cobj.h>
@@ -46,11 +46,11 @@
 #include <l0/lrt/event_loc.h>
 #include <l0/lrt/event_num.h>
 
-/* 
+/*
  * All event handling ebbs must conform to these types
  * Any existing ebbs that want to handle events must be
  * frontended by an event handler EBB
- 
+
  * FIXME: get rid of this type, now any function in EBB can
  *  be used to dispatch an event
  */
@@ -62,7 +62,7 @@ COBJ_EBBType(EventHandler) {
 #define EVENTFUNC(funcName) EBBRC (* funcName)(void * _self);
 typedef EVENTFUNC(GenericEventFunc);
 
-enum EventLocDesc {  
+enum EventLocDesc {
   EVENT_LOC_NONE = LRT_EVENT_LOC_NONE, /* disable this IRQ */
   EVENT_LOC_SINGLE = LRT_EVENT_LOC_SINGLE,
   EVENT_LOC_ALL = LRT_EVENT_LOC_ALL
@@ -75,7 +75,7 @@ inline static EventLoc NumEventLoc() {return lrt_num_event_loc();}
 
 typedef lrt_event_num EventNo;
 
-/* 
+/*
  * key local to eventmgr for allocating specific reserved events/interrupt
  * sources
  */
@@ -85,13 +85,13 @@ COBJ_EBBType(EventMgrPrim) {
   EBBRC (*freeEventNo) (EventMgrPrimRef _self, EventNo eventNo);
 
   EBBRC (*bindEvent) (EventMgrPrimRef _self, EventNo eventNo,
-		      EBBId handler, FuncNum fn); 
+                      EBBId handler, EBBFuncNum fn);
 
   EBBRC (*routeIRQ) (EventMgrPrimRef _self, IRQ *isrc, EventNo eventNo,
-		     enum EventLocDesc desc, EventLoc el); 
+                     enum EventLocDesc desc, EventLoc el);
 
-  EBBRC (*triggerEvent) (EventMgrPrimRef _self, EventNo eventNo, 
-			 enum EventLocDesc desc, EventLoc el);
+  EBBRC (*triggerEvent) (EventMgrPrimRef _self, EventNo eventNo,
+                         enum EventLocDesc desc, EventLoc el);
 };
 
 // the ID of the one and only event manager

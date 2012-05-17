@@ -25,9 +25,9 @@
 #include <l0/lrt/trans.h>
 
 #define DEFAULT_FUNC_DEC(OP) \
-  extern EBBRC EBBDefFunc_ ## OP (void *, ...);
+  extern lrt_trans_rc lrt_trans_def_func_ ## OP (lrt_trans_rep, ...);
 
-DEFAULT_FUNC_DEC(0) 
+DEFAULT_FUNC_DEC(0)
 DEFAULT_FUNC_DEC(1)
 DEFAULT_FUNC_DEC(2)
 DEFAULT_FUNC_DEC(3)

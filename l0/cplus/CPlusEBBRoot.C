@@ -7,15 +7,14 @@
 #include <l0/cplus/CPlusEBB.H>
 #include <l0/cplus/CPlusEBBRoot.H>
 
-/* static */ EBBRC 
-CPlusEBBRoot::CPlusEBBMissFunc(EBBRep **rep, EBBLTrans *lt, FuncNum fnum, 
-			       EBBMissArg arg)
+/* static */ EBBRC
+CPlusEBBRoot::CPlusEBBMissFunc(EBBRep **rep, EBBLTrans *lt, EBBFuncNum fnum,
+                               EBBMissArg arg)
 {
   return ((CPlusEBBRoot *)arg)->handleMiss((CPlusEBB **)rep, lt, fnum);
 }
 
-/* static */ EBBRC 
+/* static */ EBBRC
 CPlusEBBRoot::EBBBind(EBBId id, CPlusEBBRoot *root) {
   return EBBBindPrimId(id, CPlusEBBMissFunc, (EBBMissArg) root);
 };
-

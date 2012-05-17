@@ -1,7 +1,9 @@
 #ifndef __LRT_ULNX_TRANS_H_
 #define __LRT_ULNX_TRANS_H__
 
+#include <stddef.h>
 #include <stdint.h>
+
 #include <l0/lrt/event_loc.h>
 
 #define LRT_TRANS_LG2_PAGESIZE (12)
@@ -12,81 +14,79 @@
   (LRT_TRANS_LG2_PAGESIZE + LRT_TRANS_LG2_NUMPAGES)
 #define LRT_TRANS_TBLSIZE (1 << LRT_TRANS_LG2_TBLSIZE)
 
-struct TransMemDesc {
-  uint8_t *GMem; 
-  uint8_t *LMem; 
+struct lrt_trans_mem_desc {
+  lrt_trans_gtrans *GMem;
+  lrt_trans_ltrans *LMem;
 };
 
-extern struct TransMemDesc TransMem;
+extern struct lrt_trans_mem_desc lrt_trans_mem;
 
-static inline void * 
+static inline lrt_trans_gtrans *
 lrt_trans_gmem(void)
 {
-  return TransMem.GMem;
+  return lrt_trans_mem.GMem;
 }
 
-static inline void *
+static inline lrt_trans_ltrans *
 lrt_trans_lmem(void)
 {
-  uintptr_t picbase = lrt_my_event_loc() * LRT_TRANS_TBLSIZE;
-  return (&(TransMem.LMem[picbase]));
+  uintptr_t picbase = lrt_my_event_loc() * LRT_TRANS_TBLSIZE /
+    sizeof(lrt_trans_ltrans);
+  return lrt_trans_mem.LMem + picbase;
 }
 
-static inline uintptr_t
-lrt_trans_offset(uintptr_t base, uintptr_t t) 
-{
-  return (uintptr_t)(t - base);
-}
-
-static inline uintptr_t
+static inline lrt_trans_id
 lrt_trans_idbase(void)
 {
-  return (uintptr_t)&(TransMem.LMem[0]);
+  return &(lrt_trans_mem.LMem[0]);
 }
 
-static inline struct lrt_trans *
-lrt_trans_id2lt(uintptr_t i)
+static inline lrt_trans_ltrans *
+lrt_trans_id2lt(lrt_trans_id id)
 {
-  return (struct lrt_trans *)(((uintptr_t)lrt_trans_lmem()) + 
-			      lrt_trans_offset(lrt_trans_idbase(), i));
-}
-    
-static inline uintptr_t 
-lrt_trans_lt2id(struct lrt_trans *t)
-{
-  return (uintptr_t)(lrt_trans_idbase() + 
-		     lrt_trans_offset((uintptr_t)lrt_trans_lmem(), (uintptr_t)t));
+  lrt_trans_ltrans *lmem = lrt_trans_lmem();
+  ptrdiff_t index = id - lrt_trans_idbase();
+  return lmem + index;
 }
 
-static inline struct lrt_trans *
-lrt_trans_id2gt(uintptr_t i)
+static inline lrt_trans_id
+lrt_trans_lt2id(lrt_trans_ltrans *lt)
 {
-  return (struct lrt_trans *)(((uintptr_t)lrt_trans_gmem()) + 
-			      lrt_trans_offset(lrt_trans_idbase(), i));
+  lrt_trans_ltrans *lmem = lrt_trans_lmem();
+  ptrdiff_t index = lt - lmem;
+  return lrt_trans_idbase() + index;
 }
 
-static inline uintptr_t
-lrt_trans_gt2id(struct lrt_trans *t)
+static inline lrt_trans_gtrans *
+lrt_trans_id2gt(lrt_trans_id id)
 {
-  return (uintptr_t)(lrt_trans_idbase() + 
-		     lrt_trans_offset((uintptr_t)lrt_trans_gmem(),
-				      (uintptr_t)t));
+  lrt_trans_gtrans *gmem = lrt_trans_gmem();
+  ptrdiff_t index = id - lrt_trans_idbase();
+  return gmem + index;
 }
 
-static inline struct lrt_trans *
-lrt_trans_gt2lt(struct lrt_trans *gt)
+static inline lrt_trans_id
+lrt_trans_gt2id(lrt_trans_gtrans *gt)
 {
-  return (struct lrt_trans *)(((uintptr_t)lrt_trans_lmem()) + 
-			      lrt_trans_offset((uintptr_t)lrt_trans_gmem(), 
-					       (uintptr_t)gt)); 
+  lrt_trans_gtrans *gmem = lrt_trans_gmem();
+  ptrdiff_t index = gt - gmem;
+  return lrt_trans_idbase() + index;
 }
 
-static inline struct lrt_trans *
-lrt_trans_lt2gt(struct lrt_trans *lt)
+static inline lrt_trans_ltrans *
+lrt_trans_gt2lt(lrt_trans_gtrans *gt)
 {
-  return (struct lrt_trans *)(((uintptr_t)lrt_trans_gmem()) + 
-			      lrt_trans_offset((uintptr_t)lrt_trans_lmem(), 
-					       (uintptr_t)lt));
+  lrt_trans_gtrans *gmem = lrt_trans_gmem();
+  ptrdiff_t index = gt - gmem;
+  return lrt_trans_lmem() + index;
+}
+
+static inline lrt_trans_gtrans *
+lrt_trans_lt2gt(lrt_trans_ltrans *lt)
+{
+  lrt_trans_ltrans *lmem = lrt_trans_lmem();
+  ptrdiff_t index = lt - lmem;
+  return lrt_trans_gmem() +  index;
 }
 
 #ifdef __cplusplus

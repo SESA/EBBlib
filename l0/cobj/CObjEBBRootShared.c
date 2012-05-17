@@ -29,7 +29,7 @@
 #include <l0/MemMgr.h>
 #include <l0/MemMgrPrim.h>
 
-CObject(CObjEBBRootSharedImp) 
+CObject(CObjEBBRootSharedImp)
 {
   CObjInterface(CObjEBBRootShared) *ft;
   EBBRep *theRep;
@@ -40,8 +40,8 @@ CObject(CObjEBBRootSharedImp)
 //Then simply return EBBRC_OK and the default func will
 //handle the rest. Return any failure code to have the call fail
 EBBRC
-CObjEBBRootSharedImp_handleMiss(CObjEBBRootRef _self, EBBRep **obj, EBBLTrans *lt, 
-			     FuncNum fnum)
+CObjEBBRootSharedImp_handleMiss(CObjEBBRootRef _self, EBBRep **obj, EBBLTrans *lt,
+                             EBBFuncNum fnum)
 {
   CObjEBBRootSharedImpRef self = (CObjEBBRootSharedImpRef)_self;
   EBBCacheObj(lt, self->theRep);
@@ -62,17 +62,17 @@ CObjInterface(CObjEBBRootShared) CObjEBBRootSharedImp_ftable = {
 };
 
 void
-CObjEBBRootSharedSetFT(CObjEBBRootSharedRef o) 
+CObjEBBRootSharedSetFT(CObjEBBRootSharedRef o)
 {
-  o->ft = &CObjEBBRootSharedImp_ftable; 
+  o->ft = &CObjEBBRootSharedImp_ftable;
 }
 
 EBBRC
-CObjEBBRootSharedCreate(CObjEBBRootSharedRef *rootRef, 
-			EBBRepRef repRef)
+CObjEBBRootSharedCreate(CObjEBBRootSharedRef *rootRef,
+                        EBBRepRef repRef)
 {
   EBBRC rc;
-  
+
   rc = EBBPrimMalloc(sizeof(CObjEBBRootSharedImp), rootRef, EBB_MEM_DEFAULT);
   if (EBBRC_SUCCESS(rc)) {
     CObjEBBRootSharedSetFT(*rootRef);

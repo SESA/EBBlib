@@ -80,23 +80,12 @@ static CObjInterface(EBBMgrPrim) EBBMgrPrimImp_ftable = {
   .UnBindId = UnBindId,
 };
 
-#if 0
-static EBBRC
-EBBMgrPrimErrMF (EBBRep **_self, EBBLTrans *lt,
-                 FuncNum fnum, EBBMissArg arg) {
-  lrt_printf("%s: _self=%p: lt=%p fnum=%p arg=%p", __func__,
-                 _self, lt, (void *)fnum, (void *)arg);
-  return EBBRC_GENERIC_FAILURE;
-}
-#endif
-
 static EBBRep *
 EBBMgrPrimImp_createRep(CObjEBBRootMultiRef _self) {
   EBBMgrPrimImpRef repRef;
   EBBPrimMalloc(sizeof(EBBMgrPrimImp), &repRef, EBB_MEM_DEFAULT);
   repRef->ft = &EBBMgrPrimImp_ftable;
   repRef->theRoot = _self;
-  //  initGTable(EBBMgrPrimErrMF, 0);
   return (EBBRep *)repRef;
 }
 

@@ -30,22 +30,22 @@
 struct TransMemDesc TransMem;
 
 // get the base address of a remote local memory translation table
-static void *
+static lrt_trans_ltrans *
 lrt_trans_lmemr(lrt_event_loc el)
 {
-  uintptr_t elbase = el * LRT_TRANS_TBLSIZE;
-  return (&(TransMem.LMem[elbase]));
+  ptrdiff_t index = el * LRT_TRANS_TBLSIZE / sizeof(lrt_trans_ltrans);
+  return TransMem.LMem + index;
 }
 
 // returns the pointer to a remote local translation entry for a object id
-struct lrt_trans *lrt_trans_id2rlt(lrt_event_loc el, uintptr_t oid)
+struct lrt_trans *lrt_trans_id2rlt(lrt_event_loc el, lrt_trans_id oid)
 {
-  return (struct lrt_trans *)(((uintptr_t)lrt_trans_lmemr(el)) + 
-			      lrt_trans_offset(lrt_trans_idbase(), oid));
+  lrt_trans_ltrans *lmem = lrt_trans_lmemr(el);
+  ptrdiff_t index = oid - lrt_trans_idbase();
+  return lmem + index;
 }
 
-//FIXME:
-void 
+void
 lrt_trans_preinit(int cores)
 {
   TransMem.GMem = malloc(LRT_TRANS_TBLSIZE);

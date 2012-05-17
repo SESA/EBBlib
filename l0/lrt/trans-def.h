@@ -27,30 +27,30 @@
 
 #include <l0/lrt/trans.h>
 
-union EBBTransStruct {
-  struct {
-    union {
-      uintptr_t v1;
-      EBBRep *obj; //as a local entry
-      EBBMissFunc mf; //as a global entry
-    };
-    union {
-      uintptr_t v2;
-      EBBFunc *ftable; //as a local entry (by default)
-      EBBMissArg arg; //as a global entry
-    };
-    union {
-      uintptr_t v3;
-      EBBGTrans *free;
-    };
-    union {
-      uintptr_t v4;
-      uint64_t corebv;	// bitvector of cores where object is cached in translation table
-			// note, object may have been accessed in larger set of nodes and
-			// tranlated id may be on stack in other nodes
-    };
-  };
-  struct lrt_trans padding;
-};
+/* union EBBTransStruct { */
+/*   struct { */
+/*     union { */
+/*       uintptr_t v1; */
+/*       EBBRep *obj; //as a local entry */
+/*       EBBMissFunc mf; //as a global entry */
+/*     }; */
+/*     union { */
+/*       uintptr_t v2; */
+/*       EBBFunc *ftable; //as a local entry (by default) */
+/*       EBBMissArg arg; //as a global entry */
+/*     }; */
+/*     union { */
+/*       uintptr_t v3; */
+/*       EBBGTrans *free; */
+/*     }; */
+/*     union { */
+/*       uintptr_t v4; */
+/*       uint64_t corebv;	// bitvector of cores where object is cached in translation table */
+/*                      // note, object may have been accessed in larger set of nodes and */
+/*                      // tranlated id may be on stack in other nodes */
+/*     }; */
+/*   }; */
+/*   struct lrt_trans padding; */
+/* }; */
 
 #endif
