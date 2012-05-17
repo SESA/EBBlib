@@ -26,8 +26,6 @@
 #include <l0/lrt/types.h>
 #include <l0/cobj/cobj.h>
 #include <l0/lrt/trans.h>
-#include <l0/types.h>
-#include <l0/sys/trans.h>
 #include <l0/cobj/CObjEBB.h>
 #include <l0/EBBMgrPrim.h>
 #include <l0/MemMgr.h> 
@@ -39,8 +37,6 @@
 #include <l0/cobj/CObjEBBRootMulti.h>
 #include <l0/cobj/CObjEBBRootMultiImp.h>
 #include <l1/App.h>
-
-extern void trans_init(void);
 
 /* 
  * Three main EBB's are EBBMgrPrim, EventMgrPrim EBBMemMgrPrim    
@@ -73,7 +69,6 @@ EBB_init(uintptr_t startInfo)
 void
 l0_start(uintptr_t startInfo)
 {
-  trans_init();
   if ((app_start_model == APP_START_ALL) || (MyEventLoc() == 0)) {
     EBB_init(startInfo);
     app_start();

@@ -22,6 +22,8 @@
  * THE SOFTWARE.
  */
 
+#include <l0/EBBMgrPrim.h>
+
 extern EBBRC EBBAllocPrimIdBoot(EBBId *id);
 extern EBBRC EBBBindPrimIdBoot(EBBId id, EBBMissFunc mf, EBBMissArg arg);
 

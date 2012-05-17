@@ -28,7 +28,6 @@
 #include <l0/lrt/types.h>
 #include <l0/cobj/cobj.h>
 #include <l0/lrt/trans.h>
-#include <l0/types.h>
 #include <l0/cobj/CObjEBB.h>
 #include <l0/cobj/CObjEBBRoot.h>
 #include <l0/cobj/CObjEBBRootMulti.h>
@@ -76,7 +75,7 @@ locked_FindRepOn(CObjEBBRootMultiImpRef self, uintptr_t el)
   return rep;
 }
 
-static void 
+static void
 locked_AddRepOn(CObjEBBRootMultiImpRef self, uintptr_t el, EBBRep *rep)
 {
   struct RepListNode_s *rd;
@@ -84,7 +83,7 @@ locked_AddRepOn(CObjEBBRootMultiImpRef self, uintptr_t el, EBBRep *rep)
 
   LRT_Assert(self->lock!=0);
   rc = EBBPrimMalloc(sizeof(struct RepListNode_s), &rd,
-		     EBB_MEM_GLOBAL);
+                     EBB_MEM_GLOBAL);
   LRT_RCAssert(rc);
   rd->rep = rep;
   rd->el = el;
@@ -103,10 +102,10 @@ CObjEBBRootMulti_addRepOn(CObjEBBRootMultiRef _self, uintptr_t el, EBBRep *rep)
   unlockReps(self);
 }
 
-static 
+static
 EBBRC
 CObjEBBRootMulti_handleMiss(CObjEBBRootRef _self, EBBRep **obj, EBBLTrans *lt,
-			    FuncNum fnum) 
+                            EBBFuncNum fnum)
 {
   CObjEBBRootMultiImpRef self = (CObjEBBRootMultiImpRef)_self;
   uintptr_t myel = MyEventLoc();
@@ -132,8 +131,8 @@ CObjEBBRootMulti_handleMiss(CObjEBBRootRef _self, EBBRep **obj, EBBLTrans *lt,
 
 static
 RepListNode *
-CObjEBBRootMulti_nextRep(CObjEBBRootMultiRef _self, RepListNode *curr, 
-			 EBBRep **rep)
+CObjEBBRootMulti_nextRep(CObjEBBRootMultiRef _self, RepListNode *curr,
+                         EBBRep **rep)
 {
   CObjEBBRootMultiImpRef self = (CObjEBBRootMultiImpRef)_self;
   RepListNode *ret;

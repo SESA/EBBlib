@@ -22,22 +22,22 @@
  * THE SOFTWARE.
  */
 
-#include <l0/types.h>
+#include <l0/lrt/trans.h>
 #include <l0/lrt/event_irq.h>
 #include <l0/lrt/event_loc.h>
 #include <l0/lrt/event_num.h>
 
 extern void *lrt_event_init(void *myloc);
 extern void lrt_event_preinit(int cores);
-extern void lrt_event_bind_event(lrt_event_num num, EBBId handler,
-				 FuncNum fnum);
-extern void lrt_event_trigger_event(lrt_event_num num, 
-				    enum lrt_event_loc_desc desc,
-				    lrt_event_loc loc);
-extern void lrt_event_route_irq(struct IRQ_t *isrc, 
-				lrt_event_num num,
-				enum lrt_event_loc_desc desc, 
-				lrt_event_loc loc);
+extern void lrt_event_bind_event(lrt_event_num num, lrt_trans_id handler,
+                                 lrt_trans_func_num fnum);
+extern void lrt_event_trigger_event(lrt_event_num num,
+                                    enum lrt_event_loc_desc desc,
+                                    lrt_event_loc loc);
+extern void lrt_event_route_irq(struct IRQ_t *isrc,
+                                lrt_event_num num,
+                                enum lrt_event_loc_desc desc,
+                                lrt_event_loc loc);
 
 #ifdef LRT_ULNX
 #include <l0/lrt/ulnx/event.h>

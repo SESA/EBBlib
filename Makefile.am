@@ -30,8 +30,8 @@ AM_CCASFLAGS += -m32
 endif
 
 # Make these blank so that they can be added to
-CLEANFILES =
-EXTRA_DIST =
+CLEANFILES = apps/last_res
+EXTRA_DIST = scripts/regression
 noinst_LIBRARIES =
 
 lib_LIBRARIES = libebb.a

@@ -22,15 +22,47 @@
  * THE SOFTWARE.
  */
 
-#include <l0/types.h>
-#include <l0/cobj/cobj.h>
+#include <l0/lrt/trans.h>
+
+typedef enum {
+  EBBRC_GENERIC_FAILURE = -1,
+  EBBRC_BADPARAMETER = -2,
+  EBBRC_OUTOFRESOURCES = -3,
+  EBBRC_RETRY = -4,
+  EBBRC_NOTFOUND = -5,
+  EBBRC_OK = 0
+} EBBRC_STDVALS;
+
+typedef lrt_trans_rc EBBRC;
+#define EBBRC_SUCCESS(rc) LRT_TRANS_RC_SUCCESS(rc)
+
+typedef lrt_trans_func EBBFunc;
+typedef lrt_trans_rep EBBRep;
+typedef lrt_trans_rep_ref EBBRepRef;
+typedef lrt_trans_func_num EBBFuncNum;
+typedef lrt_trans_miss_arg EBBMissArg;
+typedef lrt_trans_miss_func EBBMissFunc;
+//This type is equivalent to:
+//typedef EBBRC (*EBBMissFunc) (EBBRepRef *,
+//                              EBBLTrans *,
+//                              EBBFuncNum,
+//                              EBBMissArg);
+typedef lrt_trans_ltrans EBBLTrans;
+typedef lrt_trans_id EBBId;
+
+static inline void
+EBBCacheObj(EBBLTrans *lt, EBBRepRef ref) {
+  lrt_trans_cache_obj(lt, ref);
+}
+
+#define EBBId_DREF(id) ((typeof(*id))lrt_trans_id_dref((EBBId)id))
 #include <l0/cobj/CObjEBB.h>
 
 COBJ_EBBType(EBBMgrPrim) {
   EBBRC (*AllocId) (EBBMgrPrimRef _self, EBBId *id);
   EBBRC (*FreeId) (EBBMgrPrimRef _self, EBBId id);
-  EBBRC (*BindId) (EBBMgrPrimRef _self, EBBId id, EBBMissFunc mf, 
-		   EBBMissArg arg);
+  EBBRC (*BindId) (EBBMgrPrimRef _self, EBBId id, EBBMissFunc mf,
+                   EBBMissArg arg);
   // note, this will just result in a bind of the id to null
   EBBRC (*UnBindId) (EBBMgrPrimRef _self, EBBId id);
 };
@@ -47,7 +79,7 @@ EBBAllocPrimId(EBBId *id)
 
 static inline EBBRC
 EBBBindPrimId(EBBId id, EBBMissFunc mf, EBBMissArg arg)
-{  
+{
   return COBJ_EBBCALL(theEBBMgrPrimId, BindId, id, mf, arg);
 }
 

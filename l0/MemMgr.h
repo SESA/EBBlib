@@ -22,10 +22,12 @@
  * THE SOFTWARE.
  */
 
+#include <l0/EBBMgrPrim.h>
 #include <l0/cobj/CObjEBB.h>
+
 typedef enum {EBB_MEM_LOCAL, EBB_MEM_LOCAL_PADDED,
-	      EBB_MEM_GLOBAL, EBB_MEM_GLOBAL_PADDED,
-	      EBB_MEM_DEFAULT = EBB_MEM_GLOBAL} EBB_MEM_POOL;
+              EBB_MEM_GLOBAL, EBB_MEM_GLOBAL_PADDED,
+              EBB_MEM_DEFAULT = EBB_MEM_GLOBAL} EBB_MEM_POOL;
 
 CObject(EBBMemMgr) {
   CObjInterface(EBBMemMgr) *ft;

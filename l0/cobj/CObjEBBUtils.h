@@ -22,6 +22,8 @@
  * THE SOFTWARE.
  */
 
+extern EBBRC CObjEBBMissFunc(EBBRep **, EBBLTrans *, EBBFuncNum, EBBMissArg);
+
 static inline EBBRC
 CObjEBBBind(EBBId id, void *root)
 {

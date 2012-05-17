@@ -21,22 +21,19 @@
  */
 
 #include <config.h>
-#include <inttypes.h>
-#include <l0/lrt/trans.h>
-#include <l0/types.h>
-#include <l0/sys/trans.h>
 
-extern EBBId TransEBBIdAlloc(void);
-extern void TransEBBIdBind(EBBId id, EBBMissFunc mf, EBBMissArg arg);
+#include <inttypes.h>
+
+#include <l0/EBBMgrPrim.h>
 
 EBBRC
 EBBAllocPrimIdBoot(EBBId *id) {
-  *id = TransEBBIdAlloc();
+  *id = lrt_trans_id_alloc();
   return EBBRC_OK;
 }
 
 EBBRC
 EBBBindPrimIdBoot(EBBId id, EBBMissFunc mf, EBBMissArg arg) {
-  TransEBBIdBind(id, mf, arg);
+  lrt_trans_id_bind(id, mf, arg);
   return EBBRC_OK;
 }

@@ -1,1 +1,0 @@
-l0_sys_arch_powerpc_sources = l0/sys/arch/ppc32/defFT.S
