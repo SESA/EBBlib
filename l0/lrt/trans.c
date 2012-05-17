@@ -128,7 +128,7 @@ lrt_trans_init_ltable() {
 }
 
 lrt_trans_id
-lrt_trans_id_alloc() 
+lrt_trans_id_alloc()
 {
   uintptr_t i, len;
 
@@ -145,7 +145,7 @@ lrt_trans_id_alloc()
 }
 
 void
-lrt_trans_id_free(lrt_trans_id id) 
+lrt_trans_id_free(lrt_trans_id id)
 {
   lrt_trans_gtrans *gt = lrt_trans_id2gt(id);
   gt->alloc_status = LRT_TRANS_ID_FREE;
@@ -170,7 +170,7 @@ lrt_trans_invalidate_caches(lrt_trans_id id)
 
 void
 lrt_trans_id_bind(lrt_trans_id id, lrt_trans_miss_func mf,
-                  lrt_trans_miss_arg arg) 
+                  lrt_trans_miss_arg arg)
 {
   lrt_trans_gtrans *gt = lrt_trans_id2gt(id);
   lrt_trans_set_gtrans(gt, mf, arg);
@@ -187,6 +187,6 @@ lrt_trans_init(void)
   // maximum bits in corebv in EBBTransStruct
   LRT_Assert(lrt_num_event_loc() <= 64);
 
-  bzero(lrt_trans_gmem(), lrt_trans_my_gmem_size());
+  bzero(lrt_trans_my_gmem(), lrt_trans_my_gmem_size());
   lrt_trans_init_ltable();
 }
