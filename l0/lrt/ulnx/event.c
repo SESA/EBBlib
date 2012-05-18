@@ -40,7 +40,7 @@
 #include <lrt/assert.h>
 #include <l0/lrt/event.h>
 #include <l0/lrt/event_irq_def.h>
-#include <lrt/ulnx/lrt_start.h>
+#include <l0/lrt/ulnx/lrt_start.h>
 
 //the global event table
 struct lrt_event_descriptor lrt_event_table[LRT_EVENT_NUM_EVENTS];
