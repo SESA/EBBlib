@@ -41,15 +41,16 @@ typedef lrt_trans_rep EBBRep;
 typedef lrt_trans_rep_ref EBBRepRef;
 typedef lrt_trans_func_num EBBFuncNum;
 typedef lrt_trans_miss_arg EBBMissArg;
-typedef lrt_trans_miss_func EBBMissFunc;
-//This type is equivalent to:
-//typedef EBBRC (*EBBMissFunc) (EBBRepRef *,
-//                              EBBLTrans *,
-//                              EBBFuncNum,
-//                              EBBMissArg);
 typedef lrt_trans_ltrans EBBLTrans;
 typedef lrt_trans_id EBBId;
-
+typedef EBBRC (*EBBMissFunc) (EBBRepRef *,
+                              EBBLTrans *,
+                              EBBFuncNum,
+                              EBBMissArg);
+#ifndef __cplusplus
+STATIC_ASSERT(__builtin_types_compatible_p(lrt_trans_miss_func, EBBMissFunc),
+                "EBBMissFunc and lrt_trans_miss_func are not compatible types");
+#endif
 static inline void
 EBBCacheObj(EBBLTrans *lt, EBBRepRef ref) {
   lrt_trans_cache_obj(lt, ref);
