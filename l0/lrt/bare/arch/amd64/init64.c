@@ -27,9 +27,9 @@
 #include <arch/amd64/apic.h>
 #include <arch/amd64/cpu.h>
 #include <arch/amd64/multiboot.h>
+#include <l0/lrt/event.h>
 #include <l0/lrt/bare/stdio.h>
 #include <l0/lrt/bare/arch/amd64/lrt_start.h>
-#include <l0/lrt/bare/arch/amd64/pic.h>
 #include <l0/lrt/bare/arch/amd64/serial.h>
 
 FILE com1;
@@ -51,19 +51,19 @@ clear_bss(void)
 }
 
 void __attribute__ ((noreturn))
-init64(multiboot_info_t *mbi) { 
+init64(multiboot_info_t *mbi) {
 
   /* Zero out these segment selectors so we dont have issues later */
   __asm__ volatile (
-		    "mov %w[zero], %%ds\n\t"
-		    "mov %w[zero], %%es\n\t"
-		    "mov %w[zero], %%ss\n\t"
-		    "mov %w[zero], %%gs\n\t"
-		    "mov %w[zero], %%fs\n\t"
-		    :
-		    :
-		    [zero] "r" (0x0)
-		    );
+                    "mov %w[zero], %%ds\n\t"
+                    "mov %w[zero], %%es\n\t"
+                    "mov %w[zero], %%ss\n\t"
+                    "mov %w[zero], %%gs\n\t"
+                    "mov %w[zero], %%fs\n\t"
+                    :
+                    :
+                    [zero] "r" (0x0)
+                    );
 
   //Initialize ctors
   extern char start_ctors[];
@@ -76,8 +76,15 @@ init64(multiboot_info_t *mbi) {
   /* serial init */
   serial_init(COM1, &com1);
   stdout = &com1;
-  printf("Initializing the pic\n");
-  lrt_pic_init(lrt_start_isr);
+  printf("Serial initialized\n");
+
+  /* //get start args */
+  /* lrt_event_preinit(start_args.cores); */
+  /* lrt_mem_preinit(start_args.cores); */
+  /* lrt_trans_preinit(start_args.cores); */
+  /* //start_cores */
+
+  lrt_event_init(0);
 
   LRT_Assert(0);
 }

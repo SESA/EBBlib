@@ -178,10 +178,12 @@ lrt_trans_id_bind(lrt_trans_id id, lrt_trans_miss_func mf,
   lrt_trans_invalidate_caches(id);
 }
 
+extern void lrt_trans_specific_init();
 
 void
 lrt_trans_init(void)
 {
+  lrt_trans_specific_init();
   LRT_Assert(sysTransValidate());
   // maximum bits in corebv in EBBTransStruct
   LRT_Assert(lrt_num_event_loc() <= 64);

@@ -10,11 +10,8 @@ l0_lrt_bare_arch_amd64_sources = \
 	l0/lrt/bare/arch/amd64/isrtbl.c \
 	l0/lrt/bare/arch/amd64/lrt_start.c \
 	l0/lrt/bare/arch/amd64/lrt_start.h \
-	l0/lrt/bare/arch/amd64/lrt_start_isr.S \
 	l0/lrt/bare/arch/amd64/mem.c \
 	l0/lrt/bare/arch/amd64/mem.h \
-	l0/lrt/bare/arch/amd64/pic.c \
-	l0/lrt/bare/arch/amd64/pic.h \
 	l0/lrt/bare/arch/amd64/serial.c \
 	l0/lrt/bare/arch/amd64/serial.h \
 	l0/lrt/bare/arch/amd64/start.S \

@@ -23,24 +23,25 @@
 #include <config.h>
 #include <stdint.h>
 
-#include <l0/types.h>
+#include <l0/EBBMgrPrim.h>
+#include <l0/EventMgrPrim.h>
 
 EBBRC
-LRTConsoleInit(lrt_pic_src *in, lrt_pic_src *out, lrt_pic_src *err)
+LRTConsoleInit(IRQ *in, IRQ *out, IRQ *err)
 {
   LRT_Assert(0);
   return EBBRC_OK;
 }
 
 EBBRC
-LRTConsoleRead(lrt_pic_src *in, char *buf, int len, int *n)
+LRTConsoleRead(IRQ *in, char *buf, int len, int *n)
 {
   LRT_Assert(0);
   return EBBRC_OK;
 }
 
 EBBRC
-LRTConsoleWrite(lrt_pic_src *out, char *buf, int len, int *n)
+LRTConsoleWrite(IRQ *out, char *buf, int len, int *n)
 {
   LRT_Assert(0);
   return EBBRC_OK;

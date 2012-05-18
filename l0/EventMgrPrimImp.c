@@ -42,7 +42,7 @@
 
 STATIC_ASSERT(LRT_EVENT_NUM_EVENTS % 8 == 0,
               "num allocatable events isn't divisible by 8");
-static uint8_t alloc_table[LRT_EVENT_NUM_ALLOCATABLE_EVENTS / 8];
+static uint8_t alloc_table[LRT_EVENT_NUM_EVENTS / 8];
 
 CObject(EventMgrPrimImp){
   CObjInterface(EventMgrPrim) *ft;
@@ -56,23 +56,22 @@ EventMgrPrim_allocEventNo(EventMgrPrimRef _self, EventNo *eventNoPtr)
   int i;
   //we start from the beginning and just find the first
   // unallocated event
-  for (i = 0; i < LRT_EVENT_NUM_ALLOCATABLE_EVENTS; i++) {
+  for (i = 0; i < LRT_EVENT_NUM_EVENTS; i++) {
     uint8_t res = __sync_fetch_and_or(&alloc_table[i / 8], 1 << (i % 8));
     if (!(res & (1 << (i % 8)))) {
       break;
     }
   }
-  if (i >= LRT_EVENT_NUM_ALLOCATABLE_EVENTS) {
+  if (i >= LRT_EVENT_NUM_EVENTS) {
     return EBBRC_OUTOFRESOURCES;
   }
-  *eventNoPtr = i + LRT_EVENT_FIRST_ALLOCATABLE_EVENT;
+  *eventNoPtr = i;
   return EBBRC_OK;
 }
 
 EBBRC
 EventMgrPrim_freeEventNo(EventMgrPrimRef _self, EventNo eventNo)
 {
-  eventNo -= LRT_EVENT_FIRST_ALLOCATABLE_EVENT;
   __sync_fetch_and_and(&alloc_table[eventNo / 8], ~(1 << (eventNo % 8)));
   return EBBRC_OK;
 }

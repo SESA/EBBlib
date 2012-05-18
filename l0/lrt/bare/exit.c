@@ -26,7 +26,7 @@
 #include <l0/lrt/exit.h>
 #include <lrt/io.h>
 
-void lrt_exit(EBBRC i)
+void lrt_exit(lrt_trans_rc i)
 {
   lrt_printf("Exit called: %" PRIiPTR"\n", i);
   while (1) ;

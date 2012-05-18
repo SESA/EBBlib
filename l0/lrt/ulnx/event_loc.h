@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  */
 #ifndef __LRT_EVENT_LOC_H__
-#error should be included from l0/lrt/event_loc.h
+#error "should be included from l0/lrt/event_loc.h"
 #endif
 
 #ifdef __APPLE__
@@ -29,4 +29,3 @@ extern lrt_event_loc lrt_my_event_loc();
 extern __thread lrt_event_loc lrt_event_myloc;
 inline static lrt_event_loc lrt_my_event_loc() {return lrt_event_myloc;}
 #endif
-

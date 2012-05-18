@@ -23,6 +23,7 @@
  */
 
 #include <l0/lrt/trans.h>
+#include <l0/cobj/CObjEBB.h>
 
 typedef enum {
   EBBRC_GENERIC_FAILURE = -1,
@@ -48,8 +49,8 @@ typedef EBBRC (*EBBMissFunc) (EBBRepRef *,
                               EBBFuncNum,
                               EBBMissArg);
 #ifndef __cplusplus
-STATIC_ASSERT(__builtin_types_compatible_p(lrt_trans_miss_func, EBBMissFunc),
-                "EBBMissFunc and lrt_trans_miss_func are not compatible types");
+STATIC_ASSERT(__builtin_types_compatible_p(EBBMissFunc, lrt_trans_miss_func),
+              "EBBMissFunc and lrt_trans_miss_func are not compatible types");
 #endif
 static inline void
 EBBCacheObj(EBBLTrans *lt, EBBRepRef ref) {
@@ -57,7 +58,6 @@ EBBCacheObj(EBBLTrans *lt, EBBRepRef ref) {
 }
 
 #define EBBId_DREF(id) ((typeof(*id))lrt_trans_id_dref((EBBId)id))
-#include <l0/cobj/CObjEBB.h>
 
 COBJ_EBBType(EBBMgrPrim) {
   EBBRC (*AllocId) (EBBMgrPrimRef _self, EBBId *id);

@@ -28,7 +28,7 @@
 #include <l0/lrt/trans.h>
 #include <l0/cobj/CObjEBB.h>
 #include <l0/EBBMgrPrim.h>
-#include <l0/MemMgr.h> 
+#include <l0/MemMgr.h>
 #include <l0/MemMgrPrim.h>
 #include <l0/EventMgrPrim.h>
 #include <l0/EventMgrPrimImp.h>
@@ -38,12 +38,12 @@
 #include <l0/cobj/CObjEBBRootMultiImp.h>
 #include <l1/App.h>
 
-/* 
- * Three main EBB's are EBBMgrPrim, EventMgrPrim EBBMemMgrPrim    
- * There creation and initialization are interdependent and requires 
- * fancy footwork 
- * 
- * The three "Init" calls all basically just initialize the ID, 
+/*
+ * Three main EBB's are EBBMgrPrim, EventMgrPrim EBBMemMgrPrim
+ * There creation and initialization are interdependent and requires
+ * fancy footwork
+ *
+ * The three "Init" calls all basically just initialize the ID,
  * the real initialization is done as part of a miss on a rep
  * Note, we should be able to get rid of these with some compiler tricks
  */
@@ -75,4 +75,3 @@ l0_start(uintptr_t startInfo)
     // will fall through
   }
 }
-

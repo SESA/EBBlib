@@ -22,6 +22,8 @@
  * THE SOFTWARE.
  */
 
+#include <l0/lrt/event_irq.h>
+
 //intptr_t ethlib_nic_init(char *dev, lrt_pic_src *sin, lrt_pic_src *out);
 intptr_t ethlib_nic_init(char *dev, IRQ *sin, IRQ *out);
 intptr_t ethlib_nic_readpkt(void);

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 by Project SESA, Boston University
+ * Copyright (C) 2011 by Project SESA, Boston University
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,39 +20,47 @@
  * THE SOFTWARE.
  */
 
-#include <config.h>
-#include <stdint.h>
-#include <stdlib.h>
-#include <assert.h>
-#include <l0/lrt/trans.h>
+#include <l0/lrt/event.h>
+#include <l0/lrt/bare/arch/amd64/lrt_start.h>
+#include <lrt/io.h>
 
-struct lrt_trans_mem_desc lrt_trans_mem;
-
-// get the base address of a remote local memory translation table
-static lrt_trans_ltrans *
-lrt_trans_lmemr(lrt_event_loc el)
+lrt_event_loc
+lrt_num_event_loc()
 {
-  ptrdiff_t index = el * LRT_TRANS_TBLSIZE / sizeof(lrt_trans_ltrans);
-  return lrt_trans_mem.lmem + index;
+  return 1;
 }
 
-// returns the pointer to a remote local translation entry for a object id
-lrt_trans_ltrans *lrt_trans_id2rlt(lrt_event_loc el, lrt_trans_id oid)
+lrt_event_loc
+lrt_next_event_loc(lrt_event_loc l)
 {
-  lrt_trans_ltrans *lmem = lrt_trans_lmemr(el);
-  ptrdiff_t index = oid - lrt_trans_idbase();
-  return lmem + index;
+  return 0;
+}
+
+void *
+lrt_event_init(void *myloc)
+{
+  lrt_start();
+  lrt_printf("entering event loop!");
+  while (1)
+    ;
 }
 
 void
-lrt_trans_specific_init()
+lrt_event_bind_event(lrt_event_num num, lrt_trans_id handler,
+                     lrt_trans_func_num fnum)
 {
+  LRT_Assert(0);
 }
+
 void
-lrt_trans_preinit(int cores)
+lrt_event_trigger_event(lrt_event_num num, enum lrt_event_loc_desc desc,
+                        lrt_event_loc loc)
 {
-  lrt_trans_mem.gmem = malloc(LRT_TRANS_TBLSIZE);
-  assert(lrt_trans_mem.gmem);
-  lrt_trans_mem.lmem = malloc(LRT_TRANS_TBLSIZE * cores);
-  assert(lrt_trans_mem.lmem);
+  LRT_Assert(0);
+}
+
+void lrt_event_route_irq(struct IRQ_t *isrc, lrt_event_num num,
+                         enum lrt_event_loc_desc desc, lrt_event_loc loc)
+{
+  LRT_Assert(0);
 }
