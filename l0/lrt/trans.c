@@ -30,7 +30,6 @@
 #include <lrt/string.h>
 #include <l0/lrt/event_loc.h>
 #include <l0/lrt/trans.h>
-#include <l0/lrt/trans-def.h>
 #include <sync/barrier.h>
 
 // Policy for managing global translation memory is software's responsibility
