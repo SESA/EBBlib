@@ -27,7 +27,6 @@ struct lrt_event_descriptor {
   lrt_trans_id id;
   lrt_trans_func_num fnum;
 };
-
 //first 32 interrupts are reserved
 #define LRT_EVENT_NUM_EVENTS (256 - 32)
 
