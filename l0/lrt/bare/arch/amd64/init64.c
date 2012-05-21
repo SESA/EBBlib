@@ -28,17 +28,13 @@
 #include <arch/amd64/cpu.h>
 #include <arch/amd64/multiboot.h>
 #include <l0/lrt/event.h>
+#include <l0/lrt/mem.h>
 #include <l0/lrt/bare/stdio.h>
+#include <l0/lrt/bare/arch/amd64/acpi.h>
 #include <l0/lrt/bare/arch/amd64/lrt_start.h>
 #include <l0/lrt/bare/arch/amd64/serial.h>
 
 FILE com1;
-
-static inline void __attribute__ ((noreturn))
-panic (void) {
-  while(1)
-    ;
-}
 
 static inline void
 clear_bss(void)
@@ -50,9 +46,10 @@ clear_bss(void)
   }
 }
 
+multiboot_info_t *bootinfo;
+
 void __attribute__ ((noreturn))
 init64(multiboot_info_t *mbi) {
-
   /* Zero out these segment selectors so we dont have issues later */
   __asm__ volatile (
                     "mov %w[zero], %%ds\n\t"
@@ -65,11 +62,16 @@ init64(multiboot_info_t *mbi) {
                     [zero] "r" (0x0)
                     );
 
+  clear_bss();
+
+  bootinfo = mbi;
+
   //Initialize ctors
   extern char start_ctors[];
   extern char end_ctors[];
-  void (*ctor) (void) = (void (*) (void))start_ctors;
-  while ((char *)ctor < end_ctors) {
+  for (void (*ctor) (void) = (void (*) (void))start_ctors;
+       ctor < (void (*) (void))end_ctors;
+       ctor++) {
     ctor();
   }
 
@@ -79,8 +81,11 @@ init64(multiboot_info_t *mbi) {
   printf("Serial initialized\n");
 
   /* //get start args */
-  /* lrt_event_preinit(start_args.cores); */
-  /* lrt_mem_preinit(start_args.cores); */
+  acpi_init();
+  int cores = acpi_get_num_cores();
+  lrt_printf("num cores = %d\n", cores);
+  lrt_mem_preinit(cores);
+  lrt_event_preinit(cores);
   /* lrt_trans_preinit(start_args.cores); */
   /* //start_cores */
 

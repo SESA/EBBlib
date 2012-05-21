@@ -24,21 +24,21 @@
 
 .globl _start
 .section .init.startup32
-	
+
 .code32
 _start:
-	lea _mini_stack-4, %esp
-	mov 0, %ebp
-	push %eax
-	push %ebx
-	call init32
-	cli
+        lea _mini_stack-4, %esp
+        mov 0, %ebp
+        push %eax
+        push %ebx
+        call init32
+        cli
 _hang:
-	jmp _hang
+        jmp _hang
 
-	.align 16
-	.space 0x4000
-_mini_stack:	
+        .align 16
+        .space 0x1000
+_mini_stack:
 
 .set MULTIBOOT_MAGIC,		MULTIBOOT_HEADER_MAGIC
 .set MULTIBOOT_FLAGS,		MULTIBOOT_PAGE_ALIGN | MULTIBOOT_MEMORY_INFO

@@ -30,10 +30,12 @@
 #include <l0/lrt/bare/arch/amd64/lrt_start.h>
 #include <lrt/io.h>
 
+int num_event_loc;
+
 lrt_event_loc
 lrt_num_event_loc()
 {
-  return 1;
+  return num_event_loc;
 }
 
 lrt_event_loc
@@ -64,8 +66,13 @@ init_idt(void)
   for (int i = 0; i < 256; i++) {
     idt_map_vec(i, isrtbl[i]);
   }
+}
 
-  load_idtr(idt, sizeof(idt));
+void
+lrt_event_preinit(int cores)
+{
+  num_event_loc = cores;
+  init_idt();
 }
 
 void __attribute__ ((noreturn))
@@ -79,11 +86,14 @@ lrt_event_loop(void)
     __asm__ volatile("hlt");
   }
 }
+
 void *
 lrt_event_init(void *myloc)
 {
   LRT_Assert(has_lapic());
-  init_idt();
+
+  load_idtr(idt, sizeof(idt));
+
   disable_pic();
   //Disable the pit, irq 0 could have fired and therefore wouldn't
   //have been masked and then we enable interrupts so we must reset
@@ -95,11 +105,9 @@ lrt_event_init(void *myloc)
   //it
   disable_rtc();
 
-  acpi_init();
-
   enable_lapic();
 
-  //get lapic id and set it as my event id...
+  lrt_printf("my lapic id = %d\n", get_lapic_id());
 
   // call lrt_start before entering the loop
   lrt_start();
@@ -143,7 +151,7 @@ void lrt_event_route_irq(struct IRQ_t *isrc, lrt_event_num num,
 
 void
 exception_common(uint8_t num) {
-  lrt_printf("Received exception %d\n!");
+  lrt_printf("Received exception %d\n!", num);
   LRT_Assert(0);
 }
 

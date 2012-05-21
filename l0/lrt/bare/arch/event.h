@@ -23,12 +23,6 @@
 #error "Should only be included through l0/lrt/event.h"
 #endif
 
-#include <l0/lrt/bare/arch/event.h>
-
-struct lrt_event_descriptor {
-  lrt_trans_id id;
-  lrt_trans_func_num fnum;
-};
-
-STATIC_ASSERT((1 << (sizeof(lrt_event_num) * 8)) >= LRT_EVENT_NUM_EVENTS,
-              "lrt_event_num cannot hold the range of events!");
+#ifdef ARCH_AMD64
+#include <l0/lrt/bare/arch/amd64/event.h>
+#endif
