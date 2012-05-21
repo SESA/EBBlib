@@ -23,9 +23,22 @@
 #error "should be included from l0/lrt/event_loc.h"
 #endif
 
-//FIXME: not multicore compliant
 static inline lrt_event_loc
 lrt_my_event_loc(void)
 {
   return 0;
 }
+
+/* #include <lrt/assert.h> */
+
+/* STATIC_ASSERT(sizeof(lrt_event_loc) == 4, */
+/*               "event_loc is not the right size"); */
+
+/* static inline lrt_event_loc */
+/* lrt_my_event_loc(void) */
+/* { */
+/*   lrt_event_loc loc; */
+/*   asm("movl %%gs:(0), %[loc]" */
+/*       : [loc] "=r" (loc)); */
+/*   return loc; */
+/* } */

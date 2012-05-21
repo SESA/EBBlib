@@ -53,8 +53,8 @@ lrt_mem_preinit(int cores) {
 }
 
 void *
-lrt_mem_alloc(size_t size, size_t aligned) {
-  struct lrt_mem_desc *desc = &bootmem[lrt_my_event_loc()];
+lrt_mem_alloc(size_t size, size_t aligned, lrt_event_loc loc) {
+  struct lrt_mem_desc *desc = &bootmem[loc];
   char *ptr = desc->current;
   //align up
   ptr = (char *)((((uintptr_t)ptr + aligned - 1) / aligned) * aligned);
