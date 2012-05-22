@@ -32,6 +32,7 @@
 #define LRT_TRANS_GMEM (0xFFFFFFFF00000000) //upper 4GB of memory
 #define LRT_TRANS_LMEM (0xFFFFFFFE00000000) //next 4GB of memory
 
+extern void lrt_trans_preinit(int cores);
 extern void lrt_trans_init(void);
 
 static inline lrt_trans_gtrans *

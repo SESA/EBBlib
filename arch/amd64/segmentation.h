@@ -47,41 +47,6 @@ typedef union {
 
 STATIC_ASSERT(sizeof(segdesc) == 8, "segdesc packing issue");
 
-typedef union {
-  uint64_t raw[2];
-  struct {
-    uint64_t limit_low :16;
-    uint64_t base_low :24;
-    uint64_t type :4;
-    uint64_t s :1;
-    uint64_t dpl :2;
-    uint64_t p :1;
-    uint64_t limit_high :4;
-    uint64_t avl :1;
-    uint64_t l :1;
-    uint64_t d :1;
-    uint64_t g :1;
-    uint64_t base_high :40;
-    uint64_t reserved0 :8;
-    uint64_t zero :5;
-    uint64_t reserved1 :19;
-  };
-} tssdesc;
-
-STATIC_ASSERT(sizeof(tssdesc) == 16, "tssdesc packing issue");
-
-typedef struct {
-  uint32_t reserved0;
-  uint64_t rsp[3] __attribute__ ((packed));
-  uint64_t reserved1;
-  uint64_t ist[7] __attribute__ ((packed));
-  uint64_t reserved2;
-  uint16_t reserved3;
-  uint16_t iopbm_offset;
-} tss;
-
-STATIC_ASSERT(sizeof(tss) == 104, "tss packing issue");
-
 typedef struct {
   uint16_t limit;
   uintptr_t base __attribute__((packed));

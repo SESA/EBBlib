@@ -25,7 +25,9 @@
 #include <arch/amd64/pic.h>
 #include <arch/amd64/pit.h>
 #include <arch/amd64/rtc.h>
+#include <arch/amd64/segmentation.h>
 #include <l0/lrt/event.h>
+#include <l0/lrt/mem.h>
 #include <l0/lrt/bare/arch/amd64/acpi.h>
 #include <l0/lrt/bare/arch/amd64/lrt_start.h>
 #include <lrt/io.h>
@@ -46,7 +48,7 @@ lrt_next_event_loc(lrt_event_loc l)
 
 static struct lrt_event_descriptor lrt_event_table[LRT_EVENT_NUM_EVENTS];
 
-idtdesc idt[256] __attribute__ ((aligned(8)));
+static idtdesc *idt;
 
 static inline void
 idt_map_vec(uint8_t vec, void *addr) {
@@ -72,6 +74,7 @@ void
 lrt_event_preinit(int cores)
 {
   num_event_loc = cores;
+  idt = lrt_mem_alloc(sizeof(idtdesc) * 256, 8, 0);
   init_idt();
 }
 
@@ -88,11 +91,11 @@ lrt_event_loop(void)
 }
 
 void *
-lrt_event_init(void *myloc)
+lrt_event_init(void *unused)
 {
   LRT_Assert(has_lapic());
 
-  load_idtr(idt, sizeof(idt));
+  load_idtr(idt, sizeof(idtdesc) * 256);
 
   disable_pic();
   //Disable the pit, irq 0 could have fired and therefore wouldn't
@@ -107,10 +110,32 @@ lrt_event_init(void *myloc)
 
   enable_lapic();
 
-  lrt_printf("my lapic id = %d\n", get_lapic_id());
+  lrt_event_loc loc = get_lapic_id();
+
+  lrt_event_loc *myloc = lrt_mem_alloc(sizeof(lrt_event_loc),
+                                       sizeof(lrt_event_loc),
+                                       loc);
+
+  *myloc = loc;
+
+  asm volatile (
+                "wrmsr"
+                :
+                : "d" ((uintptr_t)myloc >> 32),
+                  "a" ((uintptr_t)myloc),
+                  "c" (0xc0000101));
 
   // call lrt_start before entering the loop
-  lrt_start();
+  // We switch stacks here to our own dynamically allocated stack
+#define STACK_SIZE (1 << 14)
+  char *myStack = lrt_mem_alloc(STACK_SIZE, 16, lrt_my_event_loc());
+
+  asm volatile (
+                "mov %[stack], %%rsp\n\t"
+                "call lrt_start"
+                :
+                : [stack] "r" (&myStack[STACK_SIZE])
+                );
   lrt_event_loop();
 }
 

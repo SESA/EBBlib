@@ -76,6 +76,4 @@ lrt_mem_end() {
 }
 
 void lrt_mem_init() {
-  lrt_printf("lrt_mem_init called!\n");
-  //nop
 }

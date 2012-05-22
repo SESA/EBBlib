@@ -86,10 +86,10 @@ init64(multiboot_info_t *mbi) {
   lrt_printf("num cores = %d\n", cores);
   lrt_mem_preinit(cores);
   lrt_event_preinit(cores);
-  /* lrt_trans_preinit(start_args.cores); */
+  lrt_trans_preinit(cores);
   /* //start_cores */
 
-  lrt_event_init(0);
+  lrt_event_init(NULL); //unused parameter
 
   LRT_Assert(0);
 }
