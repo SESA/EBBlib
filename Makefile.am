@@ -1,4 +1,6 @@
+if LRT_ULNX
 TESTS = scripts/regression
+endif
 
 AM_CFLAGS = -Wall -Werror -fno-strict-aliasing -g3
 if STD_GNU_99
