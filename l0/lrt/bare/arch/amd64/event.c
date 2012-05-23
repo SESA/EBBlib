@@ -43,7 +43,7 @@ lrt_num_event_loc()
 lrt_event_loc
 lrt_next_event_loc(lrt_event_loc l)
 {
-  return 0;
+  return (l + 1) % lrt_num_event_loc();
 }
 
 static lrt_event_loc bsp_loc;
@@ -100,6 +100,8 @@ lrt_event_preinit(int cores)
   //have been masked and then we enable interrupts so we must disable
   //it
   disable_rtc();
+
+  enable_lapic();
 }
 
 void __attribute__ ((noreturn))
@@ -145,6 +147,7 @@ lrt_event_init(void *unused)
 
   asm volatile (
                 "mov %[stack], %%rsp\n\t"
+                "mfence\n\t"
                 "movl $0x0, %[smp_lock]\n\t"
                 "call lrt_start"
                 :

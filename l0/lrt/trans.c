@@ -91,7 +91,7 @@ static int
 trans_test_core_used(lrt_trans_gtrans *gt, int core)
 {
   uint64_t mask = (uint64_t)1 << core;
-  if (gt->corebv | mask) return 1;
+  if (gt->corebv & mask) return 1;
   return 0;
 }
 
@@ -150,7 +150,7 @@ lrt_trans_id_free(lrt_trans_id id)
   gt->alloc_status = LRT_TRANS_ID_FREE;
 }
 
-static void __attribute__((unused))
+static void
 lrt_trans_invalidate_caches(lrt_trans_id id)
 {
   lrt_event_loc el = lrt_my_event_loc();
@@ -175,7 +175,7 @@ lrt_trans_id_bind(lrt_trans_id id, lrt_trans_miss_func mf,
   lrt_trans_set_gtrans(gt, mf, arg);
 
   // invalidate all the local translation caches
-  //lrt_trans_invalidate_caches(id);
+  lrt_trans_invalidate_caches(id);
 }
 
 extern void lrt_trans_specific_init();
