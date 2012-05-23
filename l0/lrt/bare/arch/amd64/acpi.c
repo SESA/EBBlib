@@ -64,6 +64,34 @@ int acpi_get_num_cores()
   return ret;
 }
 
+int acpi_get_bsp()
+{
+  madt *madt_ptr;
+  ACPI_STATUS status = AcpiGetTable("APIC", 0, (ACPI_TABLE_HEADER **)&madt_ptr);
+  LRT_Assert(status == AE_OK);
+
+  uint32_t size = madt_ptr->header.Length - sizeof(madt);
+  uint8_t *ptr = (uint8_t *)(madt_ptr + 1);
+  do {
+    if (*ptr == PROCESSOR_LOCAL_APIC) {
+      lapic_structure *ls = (lapic_structure *)ptr;
+      return ls->apic_id;
+    } else if (*ptr == IO_APIC) {
+      ioapic_structure *is = (ioapic_structure *)ptr;
+      size -= is->length;
+      ptr += is->length;
+    } else if (*ptr == INTERRUPT_SOURCE_OVERRIDE) {
+      iso_structure *is = (iso_structure *)ptr;
+      size -= is->length;
+      ptr += is->length;
+    } else {
+      //No definitions for other structures yet!
+      lrt_printf("Found MADT structed unimplimented: %d\n", *ptr);
+      LRT_Assert(0);
+    }
+  } while (size > 0);
+  return -1;
+}
 void
 acpi_init()
 {

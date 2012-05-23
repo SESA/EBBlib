@@ -25,5 +25,6 @@
 
 void acpi_init(void);
 int acpi_get_num_cores(void);
+int acpi_get_bsp(void);
 
 #endif

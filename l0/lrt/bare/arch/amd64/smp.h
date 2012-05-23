@@ -1,5 +1,8 @@
+#ifndef L0_LRT_BARE_ARCH_AMD64_SMP_H
+#define L0_LRT_BARE_ARCH_AMD64_SMP_H
+
 /*
- * Copyright (C) 2012 by Project SESA, Boston University
+ * Copyright (C) 2011 by Project SESA, Boston University
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -19,23 +22,13 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#ifndef __LRT_EVENT_LOC_H__
-#error "should be included from l0/lrt/event_loc.h"
+
+#define SMP_START_ADDRESS (0x4000)
+#define SMP_STACK_SIZE (1 << 10)
+
+#ifndef ASM_FILE
+extern volatile int smp_lock;
+extern char *_smp_stack;
 #endif
 
-#include <lrt/assert.h>
-
-STATIC_ASSERT(sizeof(lrt_event_loc) == 4,
-              "event_loc is not the right size");
-
-void lrt_event_set_bsp(lrt_event_loc loc);
-lrt_event_loc lrt_event_bsp_loc(void);
-
-static inline lrt_event_loc
-lrt_my_event_loc(void)
-{
-  lrt_event_loc loc;
-  asm volatile ("movl %%gs:(0), %[loc]"
-                : [loc] "=r" (loc));
-  return loc;
-}
+#endif

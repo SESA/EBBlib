@@ -77,9 +77,9 @@ void serial_init(uint16_t out, FILE *stream) {
   linectl |= 3;
   /* for 1 stop bit, we leave bit #2 as 0 */
   /* leave bit #3 as 0 for no pairty */
-  /* commit changes : */  
+  /* commit changes : */
   sysOut8(out+LINE_CNTL_REG, linectl);
-  
+
   stream->cookie = (uintptr_t)out;
   stream->write = serial_write;
 }

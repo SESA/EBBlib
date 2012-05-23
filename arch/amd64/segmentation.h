@@ -49,7 +49,7 @@ STATIC_ASSERT(sizeof(segdesc) == 8, "segdesc packing issue");
 
 typedef struct {
   uint16_t limit;
-  uintptr_t base __attribute__((packed));
+  segdesc *base __attribute__((packed));
 } gdtr;
 
 STATIC_ASSERT(sizeof(gdtr) == (2 + sizeof(uintptr_t)), "gdtr packing issue");
@@ -59,7 +59,7 @@ load_gdtr(segdesc *base, uint16_t limit)
 {
   gdtr gdtr;
   gdtr.limit = limit - 1; //limit is length - 1
-  gdtr.base = (uintptr_t)base;
+  gdtr.base = base;
   __asm__ volatile (
                     "lgdt %[gdtr]"
                     :

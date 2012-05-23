@@ -32,7 +32,7 @@
 #include <l0/lrt/bare/arch/amd64/lrt_start.h>
 #include <lrt/io.h>
 
-int num_event_loc;
+static int num_event_loc;
 
 lrt_event_loc
 lrt_num_event_loc()
@@ -46,6 +46,19 @@ lrt_next_event_loc(lrt_event_loc l)
   return 0;
 }
 
+static lrt_event_loc bsp_loc;
+
+void
+lrt_event_set_bsp(lrt_event_loc loc)
+{
+  bsp_loc = loc;
+}
+
+lrt_event_loc
+lrt_event_bsp_loc()
+{
+  return bsp_loc;
+}
 static struct lrt_event_descriptor lrt_event_table[LRT_EVENT_NUM_EVENTS];
 
 static idtdesc *idt;
@@ -74,8 +87,19 @@ void
 lrt_event_preinit(int cores)
 {
   num_event_loc = cores;
-  idt = lrt_mem_alloc(sizeof(idtdesc) * 256, 8, 0);
+  idt = lrt_mem_alloc(sizeof(idtdesc) * 256, 8, lrt_event_bsp_loc());
   init_idt();
+  LRT_Assert(has_lapic());
+  disable_pic();
+  //Disable the pit, irq 0 could have fired and therefore wouldn't
+  //have been masked and then we enable interrupts so we must reset
+  //the PIT (and we may as well prevent it from firing)
+  disable_pit();
+
+  //Disable the rtc, irq 8 could have fired and therefore wouldn't
+  //have been masked and then we enable interrupts so we must disable
+  //it
+  disable_rtc();
 }
 
 void __attribute__ ((noreturn))
@@ -90,23 +114,12 @@ lrt_event_loop(void)
   }
 }
 
+volatile int smp_lock;
+
 void *
 lrt_event_init(void *unused)
 {
-  LRT_Assert(has_lapic());
-
   load_idtr(idt, sizeof(idtdesc) * 256);
-
-  disable_pic();
-  //Disable the pit, irq 0 could have fired and therefore wouldn't
-  //have been masked and then we enable interrupts so we must reset
-  //the PIT (and we may as well prevent it from firing)
-  disable_pit();
-
-  //Disable the rtc, irq 8 could have fired and therefore wouldn't
-  //have been masked and then we enable interrupts so we must disable
-  //it
-  disable_rtc();
 
   enable_lapic();
 
@@ -132,9 +145,11 @@ lrt_event_init(void *unused)
 
   asm volatile (
                 "mov %[stack], %%rsp\n\t"
+                "movl $0x0, %[smp_lock]\n\t"
                 "call lrt_start"
                 :
-                : [stack] "r" (&myStack[STACK_SIZE])
+                : [stack] "r" (&myStack[STACK_SIZE]),
+                  [smp_lock] "m" (smp_lock)
                 );
   lrt_event_loop();
 }

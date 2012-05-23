@@ -56,7 +56,6 @@ panic(void)
     ;
 }
 
-
 //all calls from this function should be inlined
 void __attribute__ ((section(".init.text32"),noreturn))
 init32(multiboot_info_t *mbi, uint32_t magic)

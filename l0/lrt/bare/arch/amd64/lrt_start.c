@@ -47,8 +47,6 @@
 void
 lrt_start(void)
 {
-  printf("lrt_start called!\n");
-
   lrt_mem_init();
   lrt_trans_init();
 

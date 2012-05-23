@@ -46,15 +46,17 @@ STATIC_ASSERT(LRT_TRANS_TBLSIZE == (LARGE_PAGE_SIZE),
 
 static char *theGMem;
 
+static lrt_trans_ltrans **lmem_table;
+
 void
 lrt_trans_preinit(int cores) {
   theGMem = lrt_mem_alloc(LRT_TRANS_TBLSIZE, LARGE_PAGE_SIZE, 0);
   pml4_ent *pml4 = get_pml4();
   pdpt_ent *trans_pdpt = lrt_mem_alloc(sizeof(pdpt_ent) * 512, PAGE_SIZE,
-                                       0);
+                                       lrt_event_bsp_loc());
   pd_2m_ent *trans_pdir = lrt_mem_alloc(sizeof(pd_2m_ent) * 1024,
                                         PAGE_SIZE,
-                                        0);
+                                        lrt_event_bsp_loc());
   for (int i = 0; i < 512; i++) {
     trans_pdpt[i].raw = 0;
     trans_pdir[i].raw = 0;
@@ -75,6 +77,9 @@ lrt_trans_preinit(int cores) {
   pml4[PML4_INDEX((void *)LRT_TRANS_GMEM)].rw = 1;
   pml4[PML4_INDEX((void *)LRT_TRANS_GMEM)].base =
     ((uint64_t)trans_pdpt) >> 12;
+  lmem_table = lrt_mem_alloc(sizeof(lrt_trans_ltrans *) * cores,
+                             sizeof(lrt_trans_ltrans *),
+                             lrt_event_bsp_loc());
 }
 
 void
@@ -85,8 +90,9 @@ lrt_trans_specific_init() {
                                        lrt_my_event_loc());
   pd_2m_ent *trans_pdir = lrt_mem_alloc(sizeof(pd_2m_ent) * 512, PAGE_SIZE,
                                         lrt_my_event_loc());
-  char *lmem = lrt_mem_alloc(LRT_TRANS_TBLSIZE, LARGE_PAGE_SIZE,
+  lrt_trans_ltrans *lmem = lrt_mem_alloc(LRT_TRANS_TBLSIZE, LARGE_PAGE_SIZE,
                              lrt_my_event_loc());
+  lmem_table[lrt_my_event_loc()] = lmem;
   pml4_ent *pml4 = get_pml4();
   pdpt_ent *existing_pdpt =
     (pdpt_ent *)((uintptr_t)pml4[PML4_INDEX((void *)LRT_TRANS_GMEM)].base <<
@@ -128,7 +134,7 @@ lrt_trans_specific_init() {
 // returns the pointer to a remote local translation entry for a object id
 lrt_trans_ltrans *lrt_trans_id2rlt(lrt_event_loc el, lrt_trans_id oid)
 {
-  LRT_Assert(el == lrt_my_event_loc());
-
-  return lrt_trans_id2lt(oid);
+  lrt_trans_ltrans *lmem = lmem_table[el];
+  ptrdiff_t index = oid - lrt_trans_idbase();
+  return lmem + index;
 }
