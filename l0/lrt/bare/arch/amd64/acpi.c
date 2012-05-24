@@ -32,7 +32,8 @@
 #define ACPI_MAX_INIT_TABLES    16
 static ACPI_TABLE_DESC TableArray[ACPI_MAX_INIT_TABLES];
 
-int acpi_get_num_cores()
+int
+acpi_get_num_cores()
 {
   madt *madt_ptr;
   ACPI_STATUS status = AcpiGetTable("APIC", 0, (ACPI_TABLE_HEADER **)&madt_ptr);
@@ -64,7 +65,8 @@ int acpi_get_num_cores()
   return ret;
 }
 
-int acpi_get_bsp()
+int
+acpi_get_bsp()
 {
   madt *madt_ptr;
   ACPI_STATUS status = AcpiGetTable("APIC", 0, (ACPI_TABLE_HEADER **)&madt_ptr);
@@ -92,6 +94,43 @@ int acpi_get_bsp()
   } while (size > 0);
   return -1;
 }
+
+ioapic *
+acpi_get_ioapic_addr()
+{
+  madt *madt_ptr;
+  ACPI_STATUS status = AcpiGetTable("APIC", 0, (ACPI_TABLE_HEADER **)&madt_ptr);
+  LRT_Assert(status == AE_OK);
+
+  uint32_t size = madt_ptr->header.Length - sizeof(madt);
+  uint8_t *ptr = (uint8_t *)(madt_ptr + 1);
+  uint8_t ioapics = 0;
+  ioapic *addr;
+  do {
+    if (*ptr == PROCESSOR_LOCAL_APIC) {
+      lapic_structure *ls = (lapic_structure *)ptr;
+      size -= ls->length;
+      ptr += ls->length;
+    } else if (*ptr == IO_APIC) {
+      ioapic_structure *is = (ioapic_structure *)ptr;
+      size -= is->length;
+      ptr += is->length;
+      addr = (ioapic *)(uintptr_t)is->ioapic_address;
+      ioapics++;
+    } else if (*ptr == INTERRUPT_SOURCE_OVERRIDE) {
+      iso_structure *is = (iso_structure *)ptr;
+      size -= is->length;
+      ptr += is->length;
+    } else {
+      //No definitions for other structures yet!
+      lrt_printf("Found MADT structed unimplimented: %d\n", *ptr);
+      LRT_Assert(0);
+    }
+  } while (size > 0);
+  LRT_Assert(ioapics == 1);
+  return addr;
+}
+
 void
 acpi_init()
 {

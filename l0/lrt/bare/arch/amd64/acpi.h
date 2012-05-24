@@ -23,8 +23,11 @@
  * THE SOFTWARE.
  */
 
+#include <arch/amd64/ioapic.h>
+
 void acpi_init(void);
 int acpi_get_num_cores(void);
 int acpi_get_bsp(void);
+ioapic *acpi_get_ioapic_addr(void);
 
 #endif

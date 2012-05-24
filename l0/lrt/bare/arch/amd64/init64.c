@@ -51,15 +51,15 @@ multiboot_info_t *bootinfo;
 
 char *_smp_stack;
 
-static void
+static void __attribute__ ((unused))
 init_smp(void)
 {
   _smp_stack = lrt_mem_alloc(SMP_STACK_SIZE, 16, lrt_event_bsp_loc());
-  extern char start_smp[];
-  extern char end_smp[];
+  extern char _smp_start[];
+  extern char _smp_end[];
 
-  for (int i = 0; i < (end_smp - start_smp); i++) {
-    ((char *)SMP_START_ADDRESS)[i] = start_smp[i];
+  for (int i = 0; i < (_smp_end - _smp_start); i++) {
+    ((char *)SMP_START_ADDRESS)[i] = _smp_start[i];
   }
 
   int cores = lrt_num_event_loc();

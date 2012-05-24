@@ -47,13 +47,13 @@
 // make call to the message handler
 // figure out number of cores, and send messages between them
 
-static EBBRC 
+static EBBRC
 MsgHandlerTst_msg0(MsgHandlerRef _self)
 {
   // ack that we are handing interrupt
   return EBBRC_OK;
 };
-static EBBRC 
+static EBBRC
 MsgHandlerTst_msg1(MsgHandlerRef _self, uintptr_t a1)
 {
   // ack that we are handing interrupt
@@ -61,7 +61,7 @@ MsgHandlerTst_msg1(MsgHandlerRef _self, uintptr_t a1)
   return EBBRC_OK;
 };
 
-static EBBRC 
+static EBBRC
 MsgHandlerTst_msg2(MsgHandlerRef _self, uintptr_t numtosend, uintptr_t id)
 {
   EventLoc nxt = 0;
@@ -75,7 +75,7 @@ MsgHandlerTst_msg2(MsgHandlerRef _self, uintptr_t numtosend, uintptr_t id)
 
   LRT_Assert(numtosend > 0);
   nxt = NextEventLoc(MyEventLoc());
-  
+
   do {
     lrt_printf("msgtst %d -> %d\n", MyEventLoc(), nxt);
     rc = COBJ_EBBCALL(theMsgMgrId, msg2, nxt, sid, numtosend, id);
@@ -84,9 +84,9 @@ MsgHandlerTst_msg2(MsgHandlerRef _self, uintptr_t numtosend, uintptr_t id)
   } while (rc == EBBRC_NOTFOUND);
   return EBBRC_OK;
 };
-static EBBRC 
-MsgHandlerTst_msg3(MsgHandlerRef _self, uintptr_t a1, uintptr_t a2, 
-		   uintptr_t a3)
+static EBBRC
+MsgHandlerTst_msg3(MsgHandlerRef _self, uintptr_t a1, uintptr_t a2,
+                   uintptr_t a3)
 {
   // ack that we are handing interrupt
   lrt_printf("[%s]", __func__);
@@ -96,7 +96,7 @@ MsgHandlerTst_msg3(MsgHandlerRef _self, uintptr_t a1, uintptr_t a2,
 
 CObject(MsgHandlerTst) {
   CObjInterface(MsgHandler) *ft;
-  CObjEBBRootMultiRef theRoot;	
+  CObjEBBRootMultiRef theRoot;
 };
 
 
@@ -122,7 +122,7 @@ InitMsgHandlerTst()
   static MsgHandlerId theMsgHandlerTstId=0;
 
   if (__sync_bool_compare_and_swap(&theMsgHandlerTstId, (MsgHandlerId)0,
-				   (MsgHandlerId)-1)) {
+                                   (MsgHandlerId)-1)) {
     EBBRC rc;
     CObjEBBRootMultiImpRef rootRef;
     EBBId id;
@@ -130,7 +130,7 @@ InitMsgHandlerTst()
     LRT_RCAssert(rc);
     rc = EBBAllocPrimId(&id);
     LRT_RCAssert(rc);
-    rc = CObjEBBBind(id, rootRef); 
+    rc = CObjEBBBind(id, rootRef);
     LRT_RCAssert(rc);
     theMsgHandlerTstId = (MsgHandlerId)id;
   } else {
@@ -145,18 +145,18 @@ CObject(MsgTst) {
 };
 
 
-EBBRC 
+EBBRC
 MsgTst_start(AppRef _self)
 {
   MsgHandlerId id = InitMsgHandlerTst();
   int numtosend = 100;
   EBBRC rc;
 
-  lrt_printf("MsgTst, core %d number of cores %d\n", MyEventLoc(), 
-	     NumEventLoc());
+  lrt_printf("MsgTst, core %d number of cores %d\n", MyEventLoc(),
+             NumEventLoc());
 
   // initialize the message handler, this will take over the
-  // IPI on this core. 
+  // IPI on this core.
   rc = MsgMgrPrim_Init();
   LRT_RCAssert(rc);
 
@@ -164,12 +164,12 @@ MsgTst_start(AppRef _self)
     lrt_printf("MsgTst, core %d returning to event loop\n", MyEventLoc());
     return EBBRC_OK;
   }
-  
+
   // kick off message send
   COBJ_EBBCALL(theMsgMgrId, msg2, 0, id, numtosend, (uintptr_t)id);
 
   return EBBRC_OK;
-  
+
 }
 
 CObjInterface(App) MsgTst_ftable = {

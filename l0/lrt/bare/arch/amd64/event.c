@@ -83,6 +83,7 @@ init_idt(void)
   }
 }
 
+void lrt_event_loop(void);
 void
 lrt_event_preinit(int cores)
 {
@@ -91,6 +92,7 @@ lrt_event_preinit(int cores)
   init_idt();
   LRT_Assert(has_lapic());
   disable_pic();
+
   //Disable the pit, irq 0 could have fired and therefore wouldn't
   //have been masked and then we enable interrupts so we must reset
   //the PIT (and we may as well prevent it from firing)
@@ -102,6 +104,9 @@ lrt_event_preinit(int cores)
   disable_rtc();
 
   enable_lapic();
+
+  ioapic *addr = acpi_get_ioapic_addr();
+  init_ioapic(addr);
 }
 
 void __attribute__ ((noreturn))
@@ -209,6 +214,50 @@ event_common(uint8_t num) {
   //this infrastructure should be pulled out of this file
   lrt_trans_rep_ref ref = lrt_trans_id_dref(id);
   ref->ft[fnum](ref);
+  static int first = 0;
+  if (lrt_my_event_loc() == 0) {
+    if (first == 0) {
+      lapic *LAPIC_BASE __attribute__ ((unused)) = (lapic *)0xfee00000;
+      ioapic *IOAPIC_BASE __attribute__ ((unused)) = (ioapic *)0xfec00000;
+      /* for (int i = 0; i < 24; i++) { */
+      /*   ioredirect tmp = ioapic_read_ioredirect(i); */
+      /*   lrt_printf("%lx\n", (uint64_t)tmp.val[0]); */
+      /* } */
+      /* lrt_printf("%x\n", LAPIC_BASE->isr_31_0); */
+      /* lrt_printf("%x\n", LAPIC_BASE->isr_63_32); */
+      /* lrt_printf("%x\n", LAPIC_BASE->isr_95_64); */
+      /* lrt_printf("%x\n", LAPIC_BASE->isr_127_96); */
+      /* lrt_printf("%x\n", LAPIC_BASE->isr_159_128); */
+      /* lrt_printf("%x\n", LAPIC_BASE->isr_191_160); */
+      /* lrt_printf("%x\n", LAPIC_BASE->isr_223_192); */
+      /* lrt_printf("%x\n", LAPIC_BASE->isr_255_224); */
+      /* lrt_printf("%x\n", LAPIC_BASE->tmr_31_0); */
+      /* lrt_printf("%x\n", LAPIC_BASE->tmr_63_32); */
+      /* lrt_printf("%x\n", LAPIC_BASE->tmr_95_64); */
+      /* lrt_printf("%x\n", LAPIC_BASE->tmr_127_96); */
+      /* lrt_printf("%x\n", LAPIC_BASE->tmr_159_128); */
+      /* lrt_printf("%x\n", LAPIC_BASE->tmr_191_160); */
+      /* lrt_printf("%x\n", LAPIC_BASE->tmr_223_192); */
+      /* lrt_printf("%x\n", LAPIC_BASE->tmr_255_224); */
+      /* lrt_printf("%x\n", LAPIC_BASE->irr_31_0); */
+      /* lrt_printf("%x\n", LAPIC_BASE->irr_63_32); */
+      /* lrt_printf("%x\n", LAPIC_BASE->irr_95_64); */
+      /* lrt_printf("%x\n", LAPIC_BASE->irr_127_96); */
+      /* lrt_printf("%x\n", LAPIC_BASE->irr_159_128); */
+      /* lrt_printf("%x\n", LAPIC_BASE->irr_191_160); */
+      /* lrt_printf("%x\n", LAPIC_BASE->irr_223_192); */
+      /* lrt_printf("%x\n", LAPIC_BASE->irr_255_224); */
+      /* lrt_printf("%x\n", LAPIC_BASE->esr); */
+      /* lrt_printf("%x\n", LAPIC_BASE->lvt_cmci); */
+      /* lrt_printf("%x\n", LAPIC_BASE->lvt_timer); */
+      /* lrt_printf("%x\n", LAPIC_BASE->lvt_thermal); */
+      /* lrt_printf("%x\n", LAPIC_BASE->lvt_pmc); */
+      /* lrt_printf("%x\n", LAPIC_BASE->lvt_lint0); */
+      /* lrt_printf("%x\n", LAPIC_BASE->lvt_lint1); */
+      /* lrt_printf("%x\n", LAPIC_BASE->lvt_error); */
+      first++;
+    }
+  }
 }
 
 extern void isr_0(void);

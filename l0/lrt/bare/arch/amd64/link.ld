@@ -37,9 +37,8 @@ SECTIONS
                 *(.mb_header);
                 *(.init.startup32);
                 *(.init.text32);
-                start_smp = .;
                 *(.init.smp);
-                end_smp = .;
+                _smp_end = .;
                 *(.init.data32);
         }
         .text ALIGN (4K) :

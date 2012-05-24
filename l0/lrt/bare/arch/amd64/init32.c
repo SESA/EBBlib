@@ -129,6 +129,13 @@ init32(multiboot_info_t *mbi, uint32_t magic)
     init_pdir[i].base = i;
   }
 
+  apic_pdir[502].present = 1;
+  apic_pdir[502].rw = 1;
+  apic_pdir[502].write_through = 1;
+  apic_pdir[502].cache_disable = 1;
+  apic_pdir[502].ps = 1;
+  apic_pdir[502].base = (uint64_t)(((uintptr_t)0xfec00000) >> 21);
+
   apic_pdir[503].present = 1;
   apic_pdir[503].rw = 1;
   apic_pdir[503].write_through = 1;
