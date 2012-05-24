@@ -43,27 +43,81 @@ acpi_get_num_cores()
   uint8_t *ptr = (uint8_t *)(madt_ptr + 1);
   int ret = 0;
   do {
-    if (*ptr == PROCESSOR_LOCAL_APIC) {
-      lapic_structure *ls = (lapic_structure *)ptr;
-      size -= ls->length;
-      ptr += ls->length;
-      ret++;
-    } else if (*ptr == IO_APIC) {
-      ioapic_structure *is = (ioapic_structure *)ptr;
-      size -= is->length;
-      ptr += is->length;
-    } else if (*ptr == INTERRUPT_SOURCE_OVERRIDE) {
-      iso_structure *is = (iso_structure *)ptr;
-      size -= is->length;
-      ptr += is->length;
-    } else {
+    switch( *ptr ) {
+    case PROCESSOR_LOCAL_APIC_N: 
+      {
+	lapic_structure *ls = (lapic_structure *)ptr;
+	size -= ls->length;
+	ptr += ls->length;
+	if(ls->flags&1) ret++;
+      }
+      break;
+    case IO_APIC_N:
+      {
+	ioapic_structure *is = (ioapic_structure *)ptr;
+	size -= is->length;
+	ptr += is->length;
+      }
+      break;
+    case INTERRUPT_SOURCE_OVERRIDE_N:
+      {
+	iso_structure *is = (iso_structure *)ptr;
+	size -= is->length;
+	ptr += is->length;
+      }
+      break;
+    case NMI_N:
+      lrt_printf("NMI MADT not yet implemented\n");
+      LRT_Assert(0);
+      break;
+    case LOCAL_APIC_NMI_N:
+      {
+	local_apic_nmi_structure *s = (local_apic_nmi_structure *)ptr;
+	size -= s->length;
+	ptr += s->length;
+      }
+      break;
+    case LOCAL_APIC_ADDRESS_OVERRIDE_N:
+      lrt_printf("LOCAL_APIC_ADDRESS_OVERRIDE MADT not yet implemented\n");
+      LRT_Assert(0);
+      break;
+    case IO_SAPIC_N:
+      lrt_printf("IO_SAPIC MADT not yet implemented\n");
+      LRT_Assert(0);
+      break;
+    case LOCAL_SAPC_N:
+      lrt_printf("LOCAL_SAPC MADT not yet implemented\n");
+      LRT_Assert(0);
+      break;
+    case PLATFORM_INTERRUPT_SOURCES_N:
+      lrt_printf("PLATFORM_INTERRUPT_SOURCES MADT not yet implemented\n");
+      LRT_Assert(0);
+      break;
+    case PLATFORM_LOCAL_X2APIC_N:
+      lrt_printf("PLATFORM_LOCAL_X2APIC MADT not yet implemented\n");
+      LRT_Assert(0);
+      break;
+    case LOCAL_X2APIC_NMI_N:
+      lrt_printf("LOCAL_X2APIC_NMI MADT not yet implemented\n");
+      LRT_Assert(0);
+      break;
+    case GIC_N:
+      lrt_printf("GIC MADT not yet implemented\n");
+      LRT_Assert(0);
+      break;
+    case GICD_N:
+      lrt_printf("GICD MADT not yet implemented\n");
+      LRT_Assert(0);
+      break;
+    default:
       //No definitions for other structures yet!
-      lrt_printf("Found MADT structed unimplimented: %d\n", *ptr);
+      lrt_printf("Found MADT struct unimplimented that we don't know about???:"
+		 " %d\n", *ptr);
       LRT_Assert(0);
     }
   } while (size > 0);
   return ret;
-}
+} 
 
 int
 acpi_get_bsp()

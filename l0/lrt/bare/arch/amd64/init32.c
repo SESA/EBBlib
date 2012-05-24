@@ -122,7 +122,7 @@ init32(multiboot_info_t *mbi, uint32_t magic)
   init_pdpt[3].rw = 1;
   init_pdpt[3].base = (uint64_t)(((uintptr_t)apic_pdir) >> 12);
 
-  for (int i = 0; i < 256; i++) {
+  for (int i = 0; i < 512; i++) {
     init_pdir[i].present = 1;
     init_pdir[i].rw = 1;
     init_pdir[i].ps = 1;
