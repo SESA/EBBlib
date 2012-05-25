@@ -140,14 +140,17 @@ test_triggerremote(EventTstRef self)
   LRT_RCAssert(rc);
 }
 
+#if 0
 //FIXME: make this compliant with other LRTs
 static EventNo irqEV;
 static int pipes[2];
 static struct IRQ_t irq;
+#endif
 
 static void
 test_irqlocal(EventTstRef self)
 {
+#if 0
   EBBRC rc;
   lrt_printf("EventTst: irqlocaltest started\n");
 
@@ -171,14 +174,15 @@ test_irqlocal(EventTstRef self)
   char c = '.';
   ssize_t ret2 = write(pipes[1], &c, sizeof(c));
   LRT_Assert(ret2 == sizeof(c));
+#endif
 }
 
 /*
- * first runs tests that run to completion, then 
- * starts subsequent tests in context of event 
+ * first runs tests that run to completion, then
+ * starts subsequent tests in context of event
  * initiated by previous tests
  */
-EBBRC 
+EBBRC
 runNextTest(EventTstRef self)
 {
   static int testStage = 0;
@@ -204,7 +208,7 @@ runNextTest(EventTstRef self)
   return EBBRC_OK;
 }
 
-static EBBRC 
+static EBBRC
 EventTst_start(AppRef _self)
 {
   EventTstRef self = (EventTstRef)_self;
@@ -213,7 +217,7 @@ EventTst_start(AppRef _self)
              NumEventLoc());
 
   runNextTest(self);
-  
+
   return EBBRC_OK;
 }
 
@@ -236,7 +240,7 @@ EventTst_triggerRemoteTestEvent(EventTstRef _self)
   rc = COBJ_EBBCALL(theEventMgrPrimId, freeEventNo, remoteEV);
   LRT_RCAssert(rc);
   lrt_printf("EventTst: triggerremotetest succeeded on core %d\n",
-	     MyEventLoc());
+             MyEventLoc());
   runNextTest(_self);
   return EBBRC_OK;
 }
@@ -244,11 +248,13 @@ EventTst_triggerRemoteTestEvent(EventTstRef _self)
 static EBBRC
 EventTst_irqLocalTestEvent(EventTstRef _self)
 {
+#if 0
   char c;
   ssize_t rc = read(pipes[0], &c, sizeof(c));
   LRT_Assert(rc == sizeof(c));
   lrt_printf("EventTst: irqlocaltest succeeded\n");
   runNextTest(_self);
+#endif
   return EBBRC_OK;
 }
 

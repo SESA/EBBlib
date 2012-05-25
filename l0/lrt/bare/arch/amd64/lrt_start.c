@@ -29,9 +29,7 @@
 #include <l0/lrt/bare/stdio.h>
 #include <l0/lrt/bare/arch/amd64/lrt_start.h>
 #include <l0/lrt/bare/arch/amd64/mem.h>
-#include <l0/lrt/bare/arch/amd64/pic.h>
-#include <l0/lrt/bare/arch/amd64/trans.h>
-#include <l0/sys/trans.h>
+#include <l0/lrt/trans.h>
 #include <lrt/assert.h>
 #include <lrt/io.h>
 
@@ -45,20 +43,14 @@
 //     through lrt_start_isr.S and then gets here
 
 //We assume the early boot stack is enough until later on when, for example,
-// the event manager gets us on an event and an associated stack. 
-void 
+// the event manager gets us on an event and an associated stack.
+void
 lrt_start(void)
 {
-  printf("lrt_start called!\n");
-
   lrt_mem_init();
   lrt_trans_init();
 
   l0_start(0);
-  
-  //Because we get here on an IPI, we need to send an eoi before returning
-  // to the assembly which does our iretq
-  lrt_pic_ackipi();
 }
 
 uintptr_t

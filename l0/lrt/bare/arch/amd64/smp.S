@@ -20,33 +20,54 @@
  * THE SOFTWARE.
  */
 
-#include <arch/amd64/multiboot.h>
+#include <l0/lrt/bare/arch/amd64/smp.h>
 
-.globl _start
-.section .init.startup32
+.section .init.smp, "ax"
+.code16
 
-.code32
-_start:
-        lea _mini_stack-4, %esp
-        mov 0, %ebp
-        push %eax
-        push %ebx
-        call init32
+.globl _smp_start
+_smp_start:
         cli
-_hang:
-        jmp _hang
 
-        .align 16
-        .space 0x1000
-_mini_stack:
+        //set our data segment to the same as code segment
+        mov %cs, %ax
+        mov %ax, %ds
+        //Have to offset because this code + data moves
+        lgdt _smp_gdt - _smp_start
 
-.set MULTIBOOT_MAGIC,		MULTIBOOT_HEADER_MAGIC
-.set MULTIBOOT_FLAGS,		MULTIBOOT_PAGE_ALIGN | MULTIBOOT_MEMORY_INFO
-.set MULTIBOOT_CHECKSUM,	-(MULTIBOOT_MAGIC + MULTIBOOT_FLAGS)
+        //set PAE and PGE
+        mov $0xa0, %eax
+        mov %eax, %cr4
 
-.section .mb_header
-.align 4
-_mb_header:
-.long MULTIBOOT_MAGIC
-.long MULTIBOOT_FLAGS
-.long MULTIBOOT_CHECKSUM
+        //point cr3 to the pml4
+        mov $init_pml4, %eax
+        mov %eax, %cr3
+
+        //set LME bit in EFER
+        mov $0xc0000080, %ecx
+        rdmsr
+        or $0x00000100, %eax
+        wrmsr
+
+        //Activate longmode, enable paging and protection
+        mov %cr0, %eax
+        or $0x80000001, %eax
+        mov %eax, %cr0
+
+        //Long jump using the long mode code segment
+        //This code gets moved so we need to calculate the address
+        ljmp $0x8, $_smp_64 - _smp_start + SMP_START_ADDRESS
+.code32
+.align 16
+_smp_gdt:
+        .word   2*8 - 1
+        .long   init_gdt
+        .word   0
+
+.code64
+_smp_64:
+        mov $_smp_stack + SMP_STACK_SIZE, %rsp
+        mov $0x0, %rdi
+        mov $lrt_event_init, %rax
+        call *%rax
+1:      jmp 1b

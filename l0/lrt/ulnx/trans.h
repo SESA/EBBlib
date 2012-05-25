@@ -115,9 +115,7 @@ lrt_trans_lt2gt(lrt_trans_ltrans *lt)
   return lrt_trans_gmem() +  index;
 }
 
-extern void lrt_trans_init_specific(void);
 extern void lrt_trans_preinit(int cores);
 #ifdef __cplusplus
 }
 #endif
-

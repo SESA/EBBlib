@@ -25,6 +25,7 @@
 
 #include <stdint.h>
 
+#include <lrt/io.h>
 #include <arch/amd64/sysio.h>
 
 static const uint16_t CMOS_SELECT = 0x70;
@@ -55,14 +56,13 @@ disable_rtc()
   uint8_t status_b = sysIn8(CMOS_REGISTER);
   //Mask off the three interrupts
   status_b &= ~(CMOS_STATUS_B_INT_UPDATE_ENDED |
-		CMOS_STATUS_B_INT_ALARM |
-		CMOS_STATUS_B_INT_PERIODIC);
+                CMOS_STATUS_B_INT_ALARM |
+                CMOS_STATUS_B_INT_PERIODIC);
   sysOut8(CMOS_SELECT, CMOS_STATUS_B);
   sysOut8(CMOS_REGISTER, status_b);
- 
+
   //We read register C to clear out pending interrupts
   sysOut8(CMOS_SELECT, CMOS_STATUS_C);
-  sysIn8(CMOS_REGISTER);
 }
 
 

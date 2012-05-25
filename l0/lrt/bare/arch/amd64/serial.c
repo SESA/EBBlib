@@ -44,12 +44,16 @@ static const uint16_t SCRATCH_REG      = 7;   /* Scratch register */
 
 static int
 serial_write(uintptr_t cookie, const char *str, int len) {
+  static volatile int lock;
+  while (!__sync_bool_compare_and_swap(&lock, 0, 1))
+    ;
   uint16_t outport = (uint16_t)cookie;
   for (int i = 0; i < len; i++) {
     while (!(sysIn8(outport + LINE_STATUS_REG) & (1 << 5)))
       ;
     sysOut8(outport, (uint8_t)str[i]);
   }
+  lock = 0;
   return (int)str[len - 1];
 }
 
@@ -77,9 +81,9 @@ void serial_init(uint16_t out, FILE *stream) {
   linectl |= 3;
   /* for 1 stop bit, we leave bit #2 as 0 */
   /* leave bit #3 as 0 for no pairty */
-  /* commit changes : */  
+  /* commit changes : */
   sysOut8(out+LINE_CNTL_REG, linectl);
-  
+
   stream->cookie = (uintptr_t)out;
   stream->write = serial_write;
 }

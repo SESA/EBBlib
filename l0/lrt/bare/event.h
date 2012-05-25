@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 by Project SESA, Boston University
+ * Copyright (C) 2011 by Project SESA, Boston University
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -19,40 +19,16 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+#ifndef __LRT_EVENT_H__
+#error "Should only be included through l0/lrt/event.h"
+#endif
 
-#include <config.h>
-#include <stdint.h>
-#include <stdlib.h>
-#include <assert.h>
-#include <l0/lrt/trans.h>
+#include <l0/lrt/bare/arch/event.h>
 
-struct lrt_trans_mem_desc lrt_trans_mem;
+struct lrt_event_descriptor {
+  lrt_trans_id id;
+  lrt_trans_func_num fnum;
+};
 
-// get the base address of a remote local memory translation table
-static lrt_trans_ltrans *
-lrt_trans_lmemr(lrt_event_loc el)
-{
-  ptrdiff_t index = el * LRT_TRANS_TBLSIZE / sizeof(lrt_trans_ltrans);
-  return lrt_trans_mem.lmem + index;
-}
-
-// returns the pointer to a remote local translation entry for a object id
-lrt_trans_ltrans *lrt_trans_id2rlt(lrt_event_loc el, lrt_trans_id oid)
-{
-  lrt_trans_ltrans *lmem = lrt_trans_lmemr(el);
-  ptrdiff_t index = oid - lrt_trans_idbase();
-  return lmem + index;
-}
-
-void
-lrt_trans_specific_init()
-{
-}
-void
-lrt_trans_preinit(int cores)
-{
-  lrt_trans_mem.gmem = malloc(LRT_TRANS_TBLSIZE);
-  assert(lrt_trans_mem.gmem);
-  lrt_trans_mem.lmem = malloc(LRT_TRANS_TBLSIZE * cores);
-  assert(lrt_trans_mem.lmem);
-}
+STATIC_ASSERT((1 << (sizeof(lrt_event_num) * 8)) >= LRT_EVENT_NUM_EVENTS,
+              "lrt_event_num cannot hold the range of events!");

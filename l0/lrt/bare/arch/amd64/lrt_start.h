@@ -23,7 +23,6 @@
  * THE SOFTWARE.
  */
 
-//not really a function, because we jump to it
-extern void lrt_start_isr(void);
+extern void lrt_start(void);
 
 #endif

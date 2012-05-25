@@ -1,4 +1,6 @@
+if LRT_ULNX
 TESTS = scripts/regression
+endif
 
 AM_CFLAGS = -Wall -Werror -fno-strict-aliasing -g3
 if STD_GNU_99
@@ -47,7 +49,7 @@ ebbos_libs = libebb.a
 if LRT_BARE
 
 BAREFLAGS = -nostdlib -nodefaultlibs
-AM_LDFLAGS = -u _start
+AM_LDFLAGS = -u _start -u _smp_start
 
 
 if CXX_FFREESTANDING

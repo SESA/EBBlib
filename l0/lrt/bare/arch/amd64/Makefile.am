@@ -2,21 +2,20 @@ l0_lrt_bare_arch_amd64_sources = \
 	l0/lrt/bare/arch/amd64/acpi.c \
 	l0/lrt/bare/arch/amd64/acpi.h \
 	l0/lrt/bare/arch/amd64/crt.c \
+	l0/lrt/bare/arch/amd64/event.c \
+	l0/lrt/bare/arch/amd64/event.h \
+	l0/lrt/bare/arch/amd64/event_loc.h \
 	l0/lrt/bare/arch/amd64/init64.c \
 	l0/lrt/bare/arch/amd64/init64.h \
-	l0/lrt/bare/arch/amd64/isr_common.c \
-	l0/lrt/bare/arch/amd64/isr.c \
-	l0/lrt/bare/arch/amd64/isr.h \
-	l0/lrt/bare/arch/amd64/isrtbl.c \
+	l0/lrt/bare/arch/amd64/isr.S \
 	l0/lrt/bare/arch/amd64/lrt_start.c \
 	l0/lrt/bare/arch/amd64/lrt_start.h \
-	l0/lrt/bare/arch/amd64/lrt_start_isr.S \
 	l0/lrt/bare/arch/amd64/mem.c \
 	l0/lrt/bare/arch/amd64/mem.h \
-	l0/lrt/bare/arch/amd64/pic.c \
-	l0/lrt/bare/arch/amd64/pic.h \
 	l0/lrt/bare/arch/amd64/serial.c \
 	l0/lrt/bare/arch/amd64/serial.h \
+	l0/lrt/bare/arch/amd64/smp.h \
+	l0/lrt/bare/arch/amd64/smp.S \
 	l0/lrt/bare/arch/amd64/start.S \
 	l0/lrt/bare/arch/amd64/trans.c \
 	l0/lrt/bare/arch/amd64/trans.h

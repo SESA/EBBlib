@@ -19,40 +19,23 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+#ifndef __LRT_EVENT_LOC_H__
+#error "should be included from l0/lrt/event_loc.h"
+#endif
 
-#include <config.h>
-#include <stdint.h>
-#include <stdlib.h>
-#include <assert.h>
-#include <l0/lrt/trans.h>
+#include <lrt/assert.h>
 
-struct lrt_trans_mem_desc lrt_trans_mem;
+STATIC_ASSERT(sizeof(lrt_event_loc) == 4,
+              "event_loc is not the right size");
 
-// get the base address of a remote local memory translation table
-static lrt_trans_ltrans *
-lrt_trans_lmemr(lrt_event_loc el)
+void lrt_event_set_bsp(lrt_event_loc loc);
+lrt_event_loc lrt_event_bsp_loc(void);
+
+static inline lrt_event_loc
+lrt_my_event_loc(void)
 {
-  ptrdiff_t index = el * LRT_TRANS_TBLSIZE / sizeof(lrt_trans_ltrans);
-  return lrt_trans_mem.lmem + index;
-}
-
-// returns the pointer to a remote local translation entry for a object id
-lrt_trans_ltrans *lrt_trans_id2rlt(lrt_event_loc el, lrt_trans_id oid)
-{
-  lrt_trans_ltrans *lmem = lrt_trans_lmemr(el);
-  ptrdiff_t index = oid - lrt_trans_idbase();
-  return lmem + index;
-}
-
-void
-lrt_trans_specific_init()
-{
-}
-void
-lrt_trans_preinit(int cores)
-{
-  lrt_trans_mem.gmem = malloc(LRT_TRANS_TBLSIZE);
-  assert(lrt_trans_mem.gmem);
-  lrt_trans_mem.lmem = malloc(LRT_TRANS_TBLSIZE * cores);
-  assert(lrt_trans_mem.lmem);
+  lrt_event_loc loc;
+  asm volatile ("movl %%gs:(0), %[loc]"
+                : [loc] "=r" (loc));
+  return loc;
 }

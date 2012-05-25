@@ -24,6 +24,7 @@
 
 #include <arch/amd64/multiboot.h>
 
+extern multiboot_info_t *bootinfo;
 extern void init64(multiboot_info_t *mbi);
 
 #endif
