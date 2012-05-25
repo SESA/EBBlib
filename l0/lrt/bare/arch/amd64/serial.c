@@ -73,7 +73,7 @@ void serial_init(uint16_t out, FILE *stream) {
   /* enable DLAB */
   sysOut8(out+LINE_CNTL_REG, (1<<7));
   /* set Divisor : */
-  sysOut8(out+BAUD_DIV_LSB, 3);
+  sysOut8(out+BAUD_DIV_LSB, 1);
   sysOut8(out+BAUD_DIV_MSB, 0);
   /* clear DLAB (Most sig bit = 0) */
   linectl = 0;

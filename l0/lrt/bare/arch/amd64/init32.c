@@ -35,13 +35,7 @@ __attribute__((aligned(PML4_ALIGN), section(".init.data32")));
 pdpt_ent init_pdpt[PDPT_NUM_ENTS]
 __attribute__((aligned(PDPT_ALIGN), section(".init.data32")));
 
-pd_2m_ent init_pdir[PDIR_NUM_ENTS]
-__attribute__((aligned(PDIR_ALIGN), section(".init.data32")));
-
-pdpt_ent apic_pdpt[PDPT_NUM_ENTS]
-__attribute__((aligned(PDPT_ALIGN), section(".init.data32")));
-
-pd_2m_ent apic_pdir[PDIR_NUM_ENTS]
+pd_2m_ent init_pdir[4][PDIR_NUM_ENTS]
 __attribute__((aligned(PDIR_ALIGN), section(".init.data32")));
 
 //One invalid entry and a code segment entry
@@ -103,9 +97,10 @@ init32(multiboot_info_t *mbi, uint32_t magic)
     init_pdpt[i].raw = 0;
   }
 
-  for (int i = 0; i < PDIR_NUM_ENTS; i++) {
-    init_pdir[i].raw = 0;
-    apic_pdir[i].raw = 0;
+  for (int i = 0; i < 4; i++) {
+    for (int j = 0; j < PDIR_NUM_ENTS; j++) {
+      init_pdir[i][j].raw = 0;
+    }
   }
 
 
@@ -114,34 +109,20 @@ init32(multiboot_info_t *mbi, uint32_t magic)
   init_pml4[0].rw = 1;
   init_pml4[0].base = (uint64_t)(((uintptr_t)init_pdpt) >> 12);
 
-  init_pdpt[0].present = 1;
-  init_pdpt[0].rw = 1;
-  init_pdpt[0].base = (uint64_t)(((uintptr_t)init_pdir) >> 12);
-
-  init_pdpt[3].present = 1;
-  init_pdpt[3].rw = 1;
-  init_pdpt[3].base = (uint64_t)(((uintptr_t)apic_pdir) >> 12);
-
-  for (int i = 0; i < 512; i++) {
-    init_pdir[i].present = 1;
-    init_pdir[i].rw = 1;
-    init_pdir[i].ps = 1;
-    init_pdir[i].base = i;
+  for (int i = 0; i < 4; i++) {
+    init_pdpt[i].present = 1;
+    init_pdpt[i].rw = 1;
+    init_pdpt[i].base = (uint64_t)(((uintptr_t)init_pdir[i]) >> 12);
   }
 
-  apic_pdir[502].present = 1;
-  apic_pdir[502].rw = 1;
-  apic_pdir[502].write_through = 1;
-  apic_pdir[502].cache_disable = 1;
-  apic_pdir[502].ps = 1;
-  apic_pdir[502].base = (uint64_t)(((uintptr_t)0xfec00000) >> 21);
-
-  apic_pdir[503].present = 1;
-  apic_pdir[503].rw = 1;
-  apic_pdir[503].write_through = 1;
-  apic_pdir[503].cache_disable = 1;
-  apic_pdir[503].ps = 1;
-  apic_pdir[503].base = (uint64_t)(((uintptr_t)0xfee00000) >> 21);
+  for (int i = 0; i < 4; i++) {
+    for (int j = 0; j < 512; j++) {
+      init_pdir[i][j].present = 1;
+      init_pdir[i][j].rw = 1;
+      init_pdir[i][j].ps = 1;
+      init_pdir[i][j].base = (i * 512) + j;
+    }
+  }
 
   // now that data structures are ready we load them into the VMM
   // facilities and turn on:
