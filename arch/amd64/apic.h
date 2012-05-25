@@ -197,6 +197,9 @@ enable_lapic(void)
 	 :
 	 : "a" (low), "d" (high), "c" (MSR_LAPIC_BASE)
 	 );
+  uint32_t sivr = LAPIC_BASE->sivr;
+  sivr |= 0x100;
+  LAPIC_BASE->sivr = sivr;
 }
 
 static inline uint32_t
@@ -227,6 +230,8 @@ get_lapic_eoi_broadcast_suppression(void)
   return lvr.eoi_broadcast_suppression;
 }
 
+#include <l0/lrt/event_loc.h>
+
 //TODO: There is a bit that we probably want to check that tells us if the ipi
 // was actually sent to the lapic or if it is still pending
 static inline void
@@ -234,7 +239,6 @@ send_ipi(lapic_icr_low icr_low, lapic_icr_high icr_high)
 {
   //IPI is fired on the lowest dword being set so we set high first
   LAPIC_BASE->lih.raw = icr_high.raw;
-
   LAPIC_BASE->lil.raw = icr_low.raw;
 }
 
@@ -245,4 +249,42 @@ send_eoi(void)
   LAPIC_BASE->ler.raw = 0;
 }
 
+static inline void
+dump_lapic(void)
+{
+  lrt_printf("[%d] lih.raw %x\n", lrt_my_event_loc(), LAPIC_BASE->lih.raw);
+  lrt_printf("[%d] lil.raw %x\n", lrt_my_event_loc(), LAPIC_BASE->lil.raw);
+
+  lrt_printf("isr_31_0: %x\n", LAPIC_BASE->isr_31_0);
+  lrt_printf("isr_63_32: %x\n", LAPIC_BASE->isr_63_32);
+  lrt_printf("isr_95_64: %x\n", LAPIC_BASE->isr_95_64);
+  lrt_printf("isr_127_96: %x\n", LAPIC_BASE->isr_127_96);
+  lrt_printf("isr_159_128: %x\n", LAPIC_BASE->isr_159_128);
+  lrt_printf("isr_191_160: %x\n", LAPIC_BASE->isr_191_160);
+  lrt_printf("isr_223_192: %x\n", LAPIC_BASE->isr_223_192);
+  lrt_printf("isr_255_224: %x\n", LAPIC_BASE->isr_255_224);
+  lrt_printf("tmr_31_0: %x\n", LAPIC_BASE->tmr_31_0);
+  lrt_printf("tmr_63_32: %x\n", LAPIC_BASE->tmr_63_32);
+  lrt_printf("tmr_95_64: %x\n", LAPIC_BASE->tmr_95_64);
+  lrt_printf("tmr_127_96: %x\n", LAPIC_BASE->tmr_127_96);
+  lrt_printf("tmr_159_128: %x\n", LAPIC_BASE->tmr_159_128);
+  lrt_printf("tmr_191_160: %x\n", LAPIC_BASE->tmr_191_160);
+  lrt_printf("tmr_223_192: %x\n", LAPIC_BASE->tmr_223_192);
+  lrt_printf("tmr_255_224: %x\n", LAPIC_BASE->tmr_255_224);
+  lrt_printf("irr_31_0: %x\n", LAPIC_BASE->irr_31_0);
+  lrt_printf("irr_63_32: %x\n", LAPIC_BASE->irr_63_32);
+  lrt_printf("irr_95_64: %x\n", LAPIC_BASE->irr_95_64);
+  lrt_printf("irr_127_96: %x\n", LAPIC_BASE->irr_127_96);
+  lrt_printf("irr_159_128: %x\n", LAPIC_BASE->irr_159_128);
+  lrt_printf("irr_191_160: %x\n", LAPIC_BASE->irr_191_160);
+  lrt_printf("irr_223_192: %x\n", LAPIC_BASE->irr_223_192);
+  lrt_printf("irr_255_224: %x\n", LAPIC_BASE->irr_255_224);
+  lrt_printf("esr: %x\n", LAPIC_BASE->esr);
+  lrt_printf("ldr: %x\n", LAPIC_BASE->ldr);
+  lrt_printf("dfr: %x\n", LAPIC_BASE->dfr);
+
+
+  lrt_printf("lapic id register: %x\n", LAPIC_BASE->lir.raw);
+
+}
 #endif

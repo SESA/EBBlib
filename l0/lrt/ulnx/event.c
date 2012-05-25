@@ -43,7 +43,7 @@
 #include <l0/lrt/ulnx/lrt_start.h>
 
 //the global event table
-struct lrt_event_descriptor lrt_event_table[LRT_EVENT_NUM_EVENTS];
+static struct lrt_event_descriptor lrt_event_table[LRT_EVENT_NUM_EVENTS];
 
 struct lrt_event_local_data {
   int fd; //either epollfd or kqueuefd

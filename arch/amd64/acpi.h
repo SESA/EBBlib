@@ -28,20 +28,37 @@
 #include <arch/amd64/acpica/include/acpi.h>
 #include <lrt/assert.h>
 
+enum {
+  PROCESSOR_LOCAL_APIC_N = 0,
+  IO_APIC_N = 1,
+  INTERRUPT_SOURCE_OVERRIDE_N = 2,
+  NMI_N = 3,
+  LOCAL_APIC_NMI_N = 4,
+  LOCAL_APIC_ADDRESS_OVERRIDE_N = 5,
+  IO_SAPIC_N = 6,
+  LOCAL_SAPC_N = 7,
+  PLATFORM_INTERRUPT_SOURCES_N = 8,
+  PLATFORM_LOCAL_X2APIC_N = 9,
+  LOCAL_X2APIC_NMI_N = 10,
+  GIC_N = 11,
+  GICD_N = 12
+};
+  
+
 // APIC Structure Types
-static const uint8_t PROCESSOR_LOCAL_APIC = 0;
-static const uint8_t IO_APIC = 1;
-static const uint8_t INTERRUPT_SOURCE_OVERRIDE = 2;
-static const uint8_t NMI = 3;
-static const uint8_t LOCAL_APIC_NMI = 4;
-static const uint8_t LOCAL_APIC_ADDRESS_OVERRIDE = 5;
-static const uint8_t IO_SAPIC = 6;
-static const uint8_t LOCAL_SAPC = 7;
-static const uint8_t PLATFORM_INTERRUPT_SOURCES = 8;
-static const uint8_t PLATFORM_LOCAL_X2APIC = 9;
-static const uint8_t LOCAL_X2APIC_NMI = 10;
-static const uint8_t GIC = 11;
-static const uint8_t GICD = 12;
+static const uint8_t PROCESSOR_LOCAL_APIC = PROCESSOR_LOCAL_APIC_N;
+static const uint8_t IO_APIC = IO_APIC_N;
+static const uint8_t INTERRUPT_SOURCE_OVERRIDE = INTERRUPT_SOURCE_OVERRIDE_N;
+static const uint8_t NMI = NMI_N;
+static const uint8_t LOCAL_APIC_NMI = LOCAL_APIC_NMI_N;
+static const uint8_t LOCAL_APIC_ADDRESS_OVERRIDE = LOCAL_APIC_ADDRESS_OVERRIDE_N;
+static const uint8_t IO_SAPIC = IO_SAPIC_N;
+static const uint8_t LOCAL_SAPC = LOCAL_SAPC_N;
+static const uint8_t PLATFORM_INTERRUPT_SOURCES = PLATFORM_INTERRUPT_SOURCES_N;
+static const uint8_t PLATFORM_LOCAL_X2APIC = PLATFORM_LOCAL_X2APIC_N;
+static const uint8_t LOCAL_X2APIC_NMI = LOCAL_X2APIC_NMI_N;
+static const uint8_t GIC = GIC_N;
+static const uint8_t GICD = GICD_N;
   
 typedef struct {
   ACPI_TABLE_HEADER header;
@@ -71,6 +88,16 @@ typedef struct {
 } ioapic_structure;
 
 STATIC_ASSERT(sizeof(ioapic_structure) == 12, "ioapic_structure packing issue");
+
+typedef struct {
+  uint8_t type;
+  uint8_t length;
+  uint8_t acpi_processor_id;
+  uint16_t flags;
+  uint8_t local_apic_lint;
+} __attribute__((packed)) local_apic_nmi_structure;
+
+STATIC_ASSERT(sizeof(local_apic_nmi_structure) == 6, "local_apic_nmi_structure packing issue");
 
 typedef struct {
   uint8_t type;

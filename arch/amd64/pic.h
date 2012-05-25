@@ -27,17 +27,36 @@
 
 #include <arch/amd64/sysio.h>
 
-static const uint16_t PIC_MASTER = 0x20;
-static const uint16_t PIC_SLAVE = 0xa0;
+static const uint16_t PIC_MASTER_COMMAND = 0x20;
+static const uint16_t PIC_MASTER_DATA = 0x21;
+static const uint16_t PIC_SLAVE_COMMAND = 0xa0;
+static const uint16_t PIC_SLAVE_DATA = 0xa1;
 
-static inline void 
+static const uint8_t ICW1_ICW4 = 0x01;
+static const uint8_t ICW1_INIT = 0x10;
+
+static const uint8_t ICW4_8086 = 0x01;
+
+static inline void
 disable_pic()
 {
+  sysOut8(PIC_MASTER_COMMAND, ICW1_ICW4 + ICW1_INIT);
+  sysOut8(PIC_SLAVE_COMMAND, ICW1_ICW4 + ICW1_INIT);
+
+  sysOut8(PIC_MASTER_DATA, 0x10);
+  sysOut8(PIC_SLAVE_DATA, 0x18);
+
+  sysOut8(PIC_MASTER_DATA, 1 << 2);
+  sysOut8(PIC_SLAVE_DATA, 2);
+
+  sysOut8(PIC_MASTER_DATA, ICW4_8086);
+  sysOut8(PIC_SLAVE_DATA, ICW4_8086);
+
   //Disable the pic by masking all irqs
   //OCW 4 to a pic with a0 set (hence the +1 addr) will mask irqs
   //We set all bits to mask all the irqs
-  sysOut8(PIC_MASTER + 1, 0xFF);
-  sysOut8(PIC_SLAVE + 1, 0xFF);  
+  sysOut8(PIC_MASTER_DATA, 0xff);
+  sysOut8(PIC_SLAVE_DATA, 0xff);
 }
 
 #endif

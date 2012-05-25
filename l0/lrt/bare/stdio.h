@@ -31,7 +31,7 @@ static const int EOF = -1;
 typedef struct {
   uintptr_t cookie;
   int (*write)(uintptr_t, const char *, int);
-} FILE;  
+} FILE;
 
 extern FILE *stdout;
 extern FILE *stdin;
@@ -47,7 +47,7 @@ extern
 #ifdef __cplusplus
 "C"
 #endif
-int printf(const char *format, ...);
+int printf(const char *format, ...) __attribute__ ((format (printf, 1, 2)));
 extern int fprintf(FILE *stream, const char *format, ...);
 extern int sprintf(char *str, const char *format, ...);
 extern int snprintf(char *str, size_t size, const char *format, ...);

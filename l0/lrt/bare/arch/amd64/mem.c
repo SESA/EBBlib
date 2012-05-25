@@ -24,24 +24,56 @@
 
 #include <stdint.h>
 
-#include <l0/lrt/bare/arch/amd64/mem.h>
+#include <l0/lrt/event.h>
+#include <l0/lrt/mem.h>
+#include <l0/lrt/bare/arch/amd64/init64.h>
 #include <lrt/io.h>
-
-static uintptr_t MEM_SIZE = (1 << 20); //1MB
 
 extern char kend[];
 
+struct lrt_mem_desc {
+  char *start;
+  char *current;
+  char *end;
+};
+
+struct lrt_mem_desc *bootmem;
+
+void
+lrt_mem_preinit(int cores) {
+  bootmem = (struct lrt_mem_desc *)kend;
+  char *ptr = kend + (sizeof(struct lrt_mem_desc) * cores);
+  uint64_t num_bytes = (((uint64_t)bootinfo->mem_upper) << 10) -
+    ((uint64_t)ptr - 0x100000);
+  for (int i = 0; i < cores; i++) {
+    bootmem[i].start = bootmem[i].current = ptr;
+    ptr += num_bytes / cores;
+    bootmem[i].end = ptr;
+  }
+}
+
+void *
+lrt_mem_alloc(size_t size, size_t aligned, lrt_event_loc loc) {
+  struct lrt_mem_desc *desc = &bootmem[loc];
+  char *ptr = desc->current;
+  //align up
+  ptr = (char *)((((uintptr_t)ptr + aligned - 1) / aligned) * aligned);
+  LRT_Assert((ptr + size) < desc->end);
+  desc->current = ptr + size;
+  return ptr;
+}
+
 uintptr_t
 lrt_mem_start() {
-  return (uintptr_t)kend;
+  //we give the current pointer, all other memory
+  // will never be freed
+  return (uintptr_t)bootmem[lrt_my_event_loc()].current;
 }
 
 uintptr_t
 lrt_mem_end() {
-  return (uintptr_t)kend + MEM_SIZE;
+  return (uintptr_t)bootmem[lrt_my_event_loc()].end;
 }
- 
+
 void lrt_mem_init() {
-  lrt_printf("lrt_mem_init called!\n");
-  //nop
 }

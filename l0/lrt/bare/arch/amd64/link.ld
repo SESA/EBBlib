@@ -26,56 +26,57 @@ ENTRY(_start)
 
 SECTIONS
 {
-	. = 0x00100000;	
-	kstart = .;
-		  
-	.init32 : 
-	{
-		/* the mb_header has to be in the first 8k
-		 * of the file so I put it here.
-		 */
-		*(.mb_header); 
-		*(.init.startup32);
-		*(.init.text32);
-		*(.init.data32);
-	}
-	.text ALIGN (4K) :
-	{
-		*(.text);
-		*(.gnu.linkonce.t*);
-	}
+        . = 0x00100000;
+        kstart = .;
 
-	.rodata ALIGN (4K) : 
-	{
-		start_ctors = .;
-		*(.ctor*)
-		end_ctors = .;
-		
-		*(.rodata*)
-		*(.gnu.linkonce.r*)
-	}
-	.data ALIGN (4K) : 
-	{
-		*(.data)
-		*(.gnu.linkonce.d*)
-	}
+        .init32 :
+        {
+                /* the mb_header has to be in the first 8k
+                 * of the file so I put it here.
+                 */
+                *(.mb_header);
+                *(.init.startup32);
+                *(.init.text32);
+                *(.init.smp);
+                _smp_end = .;
+                *(.init.data32);
+        }
+        .text ALIGN (4K) :
+        {
+                *(.text);
+                *(.gnu.linkonce.t*);
+        }
 
-	.bss : 
-	{
-		sbss = .;
-		*(COMMON)
-		*(.bss)
-		*(.gnu.linkonce.b*)
-		ebss = .;
-	}
+        .rodata ALIGN (4K) :
+        {
+                start_ctors = .;
+                *(.ctor*)
+                end_ctors = .;
 
-	/DISCARD/ :
-	{
-		/* *(.debug*); */
-		*(.comment);
-		*(.eh_frame);
-		*(.note*);
-	}
-	kend = .;
+                *(.rodata*)
+                *(.gnu.linkonce.r*)
+        }
+        .data ALIGN (4K) :
+        {
+                *(.data)
+                *(.gnu.linkonce.d*)
+        }
+
+        .bss :
+        {
+                sbss = .;
+                *(COMMON)
+                *(.bss)
+                *(.gnu.linkonce.b*)
+                ebss = .;
+        }
+
+        /DISCARD/ :
+        {
+                /* *(.debug*); */
+                *(.comment);
+                *(.eh_frame);
+                *(.note*);
+        }
+        kend = .;
 }
-

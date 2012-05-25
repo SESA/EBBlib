@@ -37,7 +37,7 @@ ethlib_nic_readpkt(void)
 }
 
 intptr_t
-ethlib_nic_init(char *dev, lrt_pic_src *sin, lrt_pic_src *out)
+ethlib_nic_init(char *dev, IRQ *sin, IRQ *out)
 {
   lrt_printf("%s: NYI", __func__);
   LRT_Assert(0);

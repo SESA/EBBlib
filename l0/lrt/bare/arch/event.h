@@ -19,16 +19,10 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+#ifndef __LRT_EVENT_H__
+#error "Should only be included through l0/lrt/event.h"
+#endif
 
-#include <config.h>
-
-#include <stdint.h>
-
-#include <l0/lrt/bare/arch/amd64/isr.h>
-#include <lrt/assert.h>
-#include <lrt/io.h>
-
-void isr_common(uint64_t int_no) {
-  lrt_printf("interrupt #%lld.\n", int_no);
-  LRT_Assert(0);
-}
+#ifdef ARCH_AMD64
+#include <l0/lrt/bare/arch/amd64/event.h>
+#endif

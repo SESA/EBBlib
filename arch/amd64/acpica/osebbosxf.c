@@ -350,8 +350,8 @@ AcpiOsGetLine (char *Buffer, UINT32 BufferLength, UINT32 *BytesRead)
 void *
 AcpiOsMapMemory (ACPI_PHYSICAL_ADDRESS where, ACPI_SIZE length)
 {
-  //make sure that it is in the lower 4g of memory
-  if (((uintptr_t)where) + ((uintptr_t)length) > 0xFFFFFFFF) {
+  //make sure that it is in the lower 1g of memory
+  if (((uintptr_t)where) + ((uintptr_t)length) > 0x3FFFFFFF) {
     return NULL;
   }
 

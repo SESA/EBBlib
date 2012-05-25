@@ -22,14 +22,15 @@
 
 #include <config.h>
 
+#include <stddef.h>
 #include <stdint.h>
 
 #include <lrt/startinfo.h>
 
-uintptr_t
+char *
 lrt_startinfo_addr()
 {
-  return 0;
+  return NULL;
 }
 
 intptr_t lrt_startinfo_size()

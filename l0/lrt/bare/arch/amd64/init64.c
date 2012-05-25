@@ -27,18 +27,15 @@
 #include <arch/amd64/apic.h>
 #include <arch/amd64/cpu.h>
 #include <arch/amd64/multiboot.h>
+#include <l0/lrt/event.h>
+#include <l0/lrt/mem.h>
 #include <l0/lrt/bare/stdio.h>
+#include <l0/lrt/bare/arch/amd64/acpi.h>
 #include <l0/lrt/bare/arch/amd64/lrt_start.h>
-#include <l0/lrt/bare/arch/amd64/pic.h>
 #include <l0/lrt/bare/arch/amd64/serial.h>
+#include <l0/lrt/bare/arch/amd64/smp.h>
 
 FILE com1;
-
-static inline void __attribute__ ((noreturn))
-panic (void) {
-  while(1)
-    ;
-}
 
 static inline void
 clear_bss(void)
@@ -50,34 +47,97 @@ clear_bss(void)
   }
 }
 
-void __attribute__ ((noreturn))
-init64(multiboot_info_t *mbi) { 
+multiboot_info_t *bootinfo;
 
+char *_smp_stack;
+
+static void
+init_smp(void)
+{
+  _smp_stack = lrt_mem_alloc(SMP_STACK_SIZE, 16, lrt_event_bsp_loc());
+  extern char _smp_start[];
+  extern char _smp_end[];
+
+  for (int i = 0; i < (_smp_end - _smp_start); i++) {
+    ((char *)SMP_START_ADDRESS)[i] = _smp_start[i];
+  }
+
+  int cores = lrt_num_event_loc();
+  for (int i = 0; i < cores; i++) {
+    if (i == lrt_event_bsp_loc()) {
+      continue;
+    }
+
+    while (!__sync_bool_compare_and_swap(&smp_lock, 0, 1))
+      ;
+
+    lapic_icr_low icr_low;
+    icr_low.raw = 0;
+    icr_low.delivery_mode = 0x5;
+    icr_low.level = 1;
+
+    lapic_icr_high icr_high;
+    icr_high.raw = 0;
+    icr_high.destination = i;
+
+    send_ipi(icr_low, icr_high);
+
+    uint64_t time = rdtsc();
+    while ((rdtsc() - time) < 1000000)
+      ;
+
+    icr_low.vector = ((uintptr_t)SMP_START_ADDRESS) >> 12;
+    icr_low.delivery_mode = 0x6;
+
+    send_ipi(icr_low, icr_high);
+  }
+}
+
+void __attribute__ ((noreturn))
+init64(multiboot_info_t *mbi) {
   /* Zero out these segment selectors so we dont have issues later */
   __asm__ volatile (
-		    "mov %w[zero], %%ds\n\t"
-		    "mov %w[zero], %%es\n\t"
-		    "mov %w[zero], %%ss\n\t"
-		    "mov %w[zero], %%gs\n\t"
-		    "mov %w[zero], %%fs\n\t"
-		    :
-		    :
-		    [zero] "r" (0x0)
-		    );
+                    "mov %w[zero], %%ds\n\t"
+                    "mov %w[zero], %%es\n\t"
+                    "mov %w[zero], %%ss\n\t"
+                    "mov %w[zero], %%gs\n\t"
+                    "mov %w[zero], %%fs\n\t"
+                    :
+                    :
+                    [zero] "r" (0x0)
+                    );
+
+  clear_bss();
+
+  bootinfo = mbi;
 
   //Initialize ctors
   extern char start_ctors[];
   extern char end_ctors[];
-  void (*ctor) (void) = (void (*) (void))start_ctors;
-  while ((char *)ctor < end_ctors) {
+  for (void (*ctor) (void) = (void (*) (void))start_ctors;
+       ctor < (void (*) (void))end_ctors;
+       ctor++) {
     ctor();
   }
 
   /* serial init */
   serial_init(COM1, &com1);
   stdout = &com1;
-  printf("Initializing the pic\n");
-  lrt_pic_init(lrt_start_isr);
+  printf("Serial initialized\n");
+
+  /* //get start args */
+  acpi_init();
+  int bsp = acpi_get_bsp();
+  lrt_event_set_bsp(bsp);
+  int cores = acpi_get_num_cores();
+  lrt_printf("num cores = %d\n", cores);
+  lrt_mem_preinit(cores);
+  lrt_event_preinit(cores);
+  lrt_trans_preinit(cores);
+
+  init_smp();
+
+  lrt_event_init(NULL); //unused parameter
 
   LRT_Assert(0);
 }

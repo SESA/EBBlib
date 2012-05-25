@@ -1,0 +1,20 @@
+create a new vm, point it to boot from iso...
+you are going to need to set up serial0, something like this in your vmx file:
+serial0.present = "TRUE"
+serial0.fileType = "file"
+serial0.fileName = "/Users/okrieg/SESA/build/Bare/vmw-serial-out"
+
+To debug, you will need to put following files in your vmx file:
+debugStub.listen.guest64 = "TRUE"
+debugStub.listen.guest32 = "TRUE"
+monitor.debugOnStartGuest32 = "TRUE" # Breaks into debug stub on first instruction (warning: in BIOS!) # This will halt the VM at the very first instruction at 0xFFFF0, you could set the next breakpoint to break *0x7c00 to break when the bootloader is loaded by the BIOS
+debugStub.hideBreakpoints = "TRUE" # Allows gdb breakpoints to work
+debugStub.listen.guest64.remote="TRUE"
+debugStub.listen.guest32.remote="TRUE"
+
+
+The VM will then halt in 32 bit mode.  You should run a debugger not pointed to any symbol table (i.e. a 32 bit one)
+
+target remote  172.16.33.1:8832
+on 64 bit debugger:
+target remote  172.16.33.1:8864
