@@ -51,7 +51,7 @@ multiboot_info_t *bootinfo;
 
 char *_smp_stack;
 
-static void __attribute__ ((unused))
+static void
 init_smp(void)
 {
   _smp_stack = lrt_mem_alloc(SMP_STACK_SIZE, 16, lrt_event_bsp_loc());
@@ -74,6 +74,7 @@ init_smp(void)
     lapic_icr_low icr_low;
     icr_low.raw = 0;
     icr_low.delivery_mode = 0x5;
+    icr_low.level = 1;
 
     lapic_icr_high icr_high;
     icr_high.raw = 0;

@@ -45,7 +45,7 @@ pd_2m_ent apic_pdir[PDIR_NUM_ENTS]
 __attribute__((aligned(PDIR_ALIGN), section(".init.data32")));
 
 //One invalid entry and a code segment entry
-segdesc init_gdt[2] __attribute__((aligned(8), section(".init.data32")));
+volatile segdesc init_gdt[2] __attribute__((aligned(8), section(".init.data32")));
 #define INIT32_CS (0x8)
 
 //TODO DS: Maybe this should do something?

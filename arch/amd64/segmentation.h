@@ -55,7 +55,7 @@ typedef struct {
 STATIC_ASSERT(sizeof(gdtr) == (2 + sizeof(uintptr_t)), "gdtr packing issue");
 
 static inline void
-load_gdtr(segdesc *base, uint16_t limit)
+load_gdtr(volatile segdesc *base, uint16_t limit)
 {
   gdtr gdtr;
   gdtr.limit = limit - 1; //limit is length - 1
