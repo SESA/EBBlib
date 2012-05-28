@@ -160,7 +160,6 @@ init_ioapic(ioapic *ioapic_addr)
   IOAPIC_BASE->IOREGSEL = IOAPIC_VERSION;
   ioapicver.val = IOAPIC_BASE->IOWIN;
   lrt_printf("ioapic version: %x\n", ioapicver.version);
-  LRT_Assert(ioapicver.version == 0x11);
 
   for (int i = 0; i < 24; i++) {
     ioapic_disable_interrupt(i);

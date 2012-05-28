@@ -99,8 +99,8 @@ lrt_event_preinit(int cores)
 
   enable_lapic();
 
-  /* ioapic *addr = acpi_get_ioapic_addr(); */
-  /* init_ioapic(addr); */
+  ioapic *addr = acpi_get_ioapic_addr();
+  init_ioapic(addr);
 }
 
 void __attribute__ ((noreturn))
