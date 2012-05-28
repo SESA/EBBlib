@@ -27,6 +27,8 @@
 
 #include <l0/lrt/event_loc.h>
 
+extern char *mem_start;
+
 extern uintptr_t lrt_mem_start(void);
 extern uintptr_t lrt_mem_end(void);
 extern void lrt_mem_preinit(int cores);

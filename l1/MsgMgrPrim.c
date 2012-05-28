@@ -51,7 +51,7 @@ static EventNo theMsgMgrEvent = 0;
 
 /* -- start routines & types to be implemented, put somewhere global*/
 typedef long LockType;
- 
+
 static void
 spinLock(LockType *lk)
 {
@@ -82,9 +82,9 @@ CObject(MsgMgrPrim) {
   CObjInterface(MsgMgrPrim) *ft;
   EventLoc eventLoc;
   LockType msgqueuelock;
-  MsgStore *msgqueue; 
+  MsgStore *msgqueue;
   LockType freelistlock;
-  MsgStore *freelist; 
+  MsgStore *freelist;
   // FIXME: abstract at event mgr
   MsgMgrPrimRef *reps;
   // reference to the single root
@@ -95,7 +95,7 @@ CObjInterface(MsgMgrPrim) {
   CObjImplements(MsgMgr);
   EBBRC (*handleEvent) (MsgMgrPrimRef _self);
 };
-  
+
 
 
 
@@ -111,8 +111,8 @@ MsgMgrPrim_enqueueMsg(MsgMgrPrimRef target, MsgStore *msg)
   target->msgqueue = msg;
   spinUnlock(&target->msgqueuelock);
   if (queueempty) {
-    COBJ_EBBCALL(theEventMgrPrimId, triggerEvent, theMsgMgrEvent, 
-		 EVENT_LOC_SINGLE, target->eventLoc);
+    COBJ_EBBCALL(theEventMgrPrimId, triggerEvent, theMsgMgrEvent,
+                 EVENT_LOC_SINGLE, target->eventLoc);
   }
   return EBBRC_OK;
 }
@@ -140,28 +140,28 @@ MsgMgrPrim_findTarget(MsgMgrPrimRef self, EventLoc loc, MsgMgrPrimRef *target)
   while (1) {
     rep = (EBBRep *)self->reps[loc];
     if (rep == NULL) {
-      for (node = self->theRootMM->ft->nextRep(self->theRootMM, 0, 
-					       &rep);
-	   node != NULL; 
-	   node = self->theRootMM->ft->nextRep(self->theRootMM, node, 
-					       &rep)) {
-	LRT_Assert(rep != NULL);
-	if (((MsgMgrPrimRef)rep)->eventLoc == loc) break;
+      for (node = self->theRootMM->ft->nextRep(self->theRootMM, 0,
+                                               &rep);
+           node != NULL;
+           node = self->theRootMM->ft->nextRep(self->theRootMM, node,
+                                               &rep)) {
+        LRT_Assert(rep != NULL);
+        if (((MsgMgrPrimRef)rep)->eventLoc == loc) break;
       }
       self->reps[loc] = (MsgMgrPrimRef)rep;
     }
     // FIXME: handle case that rep doesn't yet exist
     *target = (MsgMgrPrimRef)rep;
     if (rep != NULL) {
-      return EBBRC_OK; 
+      return EBBRC_OK;
     }
     if (!sent_event) {
       lrt_printf("MsgMgr: no rep on loc %d\n, kicking the bugger\n", loc);
-      COBJ_EBBCALL(theEventMgrPrimId, triggerEvent, theMsgMgrEvent, 
-		   EVENT_LOC_SINGLE, loc);
-      sent_event=1; 
+      COBJ_EBBCALL(theEventMgrPrimId, triggerEvent, theMsgMgrEvent,
+                   EVENT_LOC_SINGLE, loc);
+      sent_event=1;
     } else {
-      lrt_printf("x");      
+      lrt_printf("x");
     }
   }
   return EBBRC_OK;
@@ -171,11 +171,11 @@ static MsgStore *
 allocMsg(MsgMgrPrimRef self)
 {
   EBBRC rc;
-  MsgStore *msg;  
+  MsgStore *msg;
   spinLock(&self->freelistlock);
   msg = self->freelist;
   if (msg != NULL) {
-    self->freelist = msg->next; 
+    self->freelist = msg->next;
     spinUnlock(&self->freelistlock);
     msg->home = MyEventLoc();
     // lrt_printf("%s:%s found free message\n", __FILE__, __func__);
@@ -185,7 +185,7 @@ allocMsg(MsgMgrPrimRef self)
 
   // lrt_printf("%s:%s freelist empty, allocating new msg\n", __FILE__, __func__);
 
-  // need to allocate another message 
+  // need to allocate another message
   rc = EBBPrimMalloc(sizeof(*msg), &msg, EBB_MEM_DEFAULT);
   LRT_RCAssert(rc);
 
@@ -198,7 +198,7 @@ static void
 freeMsg(MsgMgrPrimRef self, MsgStore *msg)
 {
   EBBRC rc;
-  MsgMgrPrimRef target; 
+  MsgMgrPrimRef target;
 
   rc = MsgMgrPrim_findTarget(self, msg->home, &target);
   LRT_RCAssert(rc);
@@ -209,11 +209,11 @@ freeMsg(MsgMgrPrimRef self, MsgStore *msg)
   spinUnlock(&target->freelistlock);
 }
 
-static EBBRC 
+static EBBRC
 MsgMgrPrim_msg0(MsgMgrRef _self, EventLoc loc, MsgHandlerId id)
 {
   MsgMgrPrimRef self = (MsgMgrPrimRef)_self;
-  MsgStore *msg;  
+  MsgStore *msg;
   MsgMgrPrimRef target;
   EBBRC rc;
 
@@ -225,16 +225,16 @@ MsgMgrPrim_msg0(MsgMgrRef _self, EventLoc loc, MsgHandlerId id)
   msg = allocMsg(self);
   msg->id = id;
   msg->numargs = 0;
-  
+
   MsgMgrPrim_enqueueMsg(target, msg);
   return EBBRC_OK;
 }
 
-static EBBRC 
+static EBBRC
 MsgMgrPrim_msg1(MsgMgrRef _self, EventLoc loc, MsgHandlerId id, uintptr_t a1)
 {
   MsgMgrPrimRef self = (MsgMgrPrimRef)_self;
-  MsgStore *msg;  
+  MsgStore *msg;
   MsgMgrPrimRef target;
   EBBRC rc;
 
@@ -252,12 +252,12 @@ MsgMgrPrim_msg1(MsgMgrRef _self, EventLoc loc, MsgHandlerId id, uintptr_t a1)
   return EBBRC_OK;
 }
 
-static EBBRC 
-MsgMgrPrim_msg2(MsgMgrRef _self, EventLoc loc, MsgHandlerId id, uintptr_t a1, 
-		uintptr_t a2)
+static EBBRC
+MsgMgrPrim_msg2(MsgMgrRef _self, EventLoc loc, MsgHandlerId id, uintptr_t a1,
+                uintptr_t a2)
 {
   MsgMgrPrimRef self = (MsgMgrPrimRef)_self;
-  MsgStore *msg;  
+  MsgStore *msg;
   MsgMgrPrimRef target;
   EBBRC rc;
 
@@ -275,12 +275,12 @@ MsgMgrPrim_msg2(MsgMgrRef _self, EventLoc loc, MsgHandlerId id, uintptr_t a1,
   return EBBRC_OK;
 }
 
-static EBBRC 
-MsgMgrPrim_msg3(MsgMgrRef _self, EventLoc loc, MsgHandlerId id, 
-		uintptr_t a1, uintptr_t a2, uintptr_t a3)
+static EBBRC
+MsgMgrPrim_msg3(MsgMgrRef _self, EventLoc loc, MsgHandlerId id,
+                uintptr_t a1, uintptr_t a2, uintptr_t a3)
 {
   MsgMgrPrimRef self = (MsgMgrPrimRef)_self;
-  MsgStore *msg;  
+  MsgStore *msg;
   MsgMgrPrimRef target;
   EBBRC rc;
 
@@ -299,7 +299,7 @@ MsgMgrPrim_msg3(MsgMgrRef _self, EventLoc loc, MsgHandlerId id,
   return EBBRC_OK;
 };
 
-static EBBRC 
+static EBBRC
 MsgMgrPrim_handleEvent(MsgMgrPrimRef self)
 {
   MsgStore *msg;
@@ -327,7 +327,7 @@ MsgMgrPrim_handleEvent(MsgMgrPrimRef self)
   return EBBRC_OK;
 }
 
-//MsgMgr part of the interface 
+//MsgMgr part of the interface
 CObjInterface(MsgMgrPrim) MsgMgrPrim_ftable = {
   .MsgMgr_if = {
     .msg0 = MsgMgrPrim_msg0,
@@ -341,7 +341,7 @@ CObjInterface(MsgMgrPrim) MsgMgrPrim_ftable = {
 static inline void
 MsgMgrPrim_SetFT(MsgMgrPrimRef o)
 {
-  o->ft = &MsgMgrPrim_ftable; 
+  o->ft = &MsgMgrPrim_ftable;
 };
 
 
@@ -375,7 +375,7 @@ EBBRC
 MsgMgrPrim_Init(void)
 {
   if (__sync_bool_compare_and_swap(&theMsgMgrId, (MsgMgrId)0,
-				   (MsgMgrId)-1)) {
+                                   (MsgMgrId)-1)) {
     EBBRC rc;
     EBBId id;
 
@@ -383,17 +383,17 @@ MsgMgrPrim_Init(void)
     rc = CObjEBBRootMultiImpCreate(&rootRef, MsgMgrPrim_createRep);
     LRT_RCAssert(rc);
     rc = EBBAllocPrimId(&id);
-    LRT_RCAssert(rc); 
+    LRT_RCAssert(rc);
     rc = EBBBindPrimId(id, CObjEBBMissFunc, (EBBMissArg)rootRef);
-    LRT_RCAssert(rc); 
+    LRT_RCAssert(rc);
     rc = COBJ_EBBCALL(theEventMgrPrimId, allocEventNo, &theMsgMgrEvent);
-    LRT_RCAssert(rc); 
+    LRT_RCAssert(rc);
 
     LRT_Assert(id != NULL);
-    rc = COBJ_EBBCALL(theEventMgrPrimId, bindEvent, theMsgMgrEvent, id, 
-		      COBJ_FUNCNUM_FROM_TYPE(struct MsgMgrPrim_if, 
-					     handleEvent));
-    LRT_RCAssert(rc); 
+    rc = COBJ_EBBCALL(theEventMgrPrimId, bindEvent, theMsgMgrEvent, id,
+                      COBJ_FUNCNUM_FROM_TYPE(struct MsgMgrPrim_if,
+                                             handleEvent));
+    LRT_RCAssert(rc);
 
     theMsgMgrId = (MsgMgrId)id;
   } else {
@@ -401,4 +401,3 @@ MsgMgrPrim_Init(void)
   }
   return EBBRC_OK;
 }
-

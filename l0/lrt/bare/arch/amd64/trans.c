@@ -53,10 +53,10 @@ lrt_trans_preinit(int cores) {
   theGMem = lrt_mem_alloc(LRT_TRANS_TBLSIZE, LARGE_PAGE_SIZE, 0);
   pml4_ent *pml4 = get_pml4();
   pdpt_ent *trans_pdpt = lrt_mem_alloc(sizeof(pdpt_ent) * 512, PAGE_SIZE,
-                                       lrt_event_bsp_loc());
+                                       0);
   pd_2m_ent *trans_pdir = lrt_mem_alloc(sizeof(pd_2m_ent) * 1024,
                                         PAGE_SIZE,
-                                        lrt_event_bsp_loc());
+                                        0);
   for (int i = 0; i < 512; i++) {
     trans_pdpt[i].raw = 0;
     trans_pdir[i].raw = 0;
@@ -79,7 +79,7 @@ lrt_trans_preinit(int cores) {
     ((uint64_t)trans_pdpt) >> 12;
   lmem_table = lrt_mem_alloc(sizeof(lrt_trans_ltrans *) * cores,
                              sizeof(lrt_trans_ltrans *),
-                             lrt_event_bsp_loc());
+                             0);
 }
 
 void
