@@ -25,12 +25,13 @@
 #include <arch/amd64/acpi.h>
 #include <arch/amd64/apic.h>
 #include <arch/amd64/ioapic.h>
+#include <l0/lrt/event.h>
+#include <l0/lrt/mem.h>
 #include <l0/lrt/bare/arch/amd64/acpi.h>
 #include <lrt/io.h>
 
 static struct {
   int num_cores;
-  int bsp_id;
   void *io_apic_addr;
 } acpi_startup_info;
 
@@ -38,12 +39,6 @@ int
 acpi_get_num_cores()
 {
   return acpi_startup_info.num_cores;
-}
-
-int
-acpi_get_bsp()
-{
-  return acpi_startup_info.bsp_id;
 }
 
 ioapic *
@@ -87,11 +82,11 @@ acpi_init()
 
   if(rsdp->xsdtaddr) {
     xsdt *xsdt_ptr = (xsdt *)(uintptr_t)rsdp->xsdtaddr;
-    LRT_Assert(((uintptr_t)xsdt_ptr) <= 0x3FFFFFFF);
+    LRT_Assert(((uintptr_t)xsdt_ptr) <= 0xFFFFFFFF);
     uint32_t nument = (xsdt_ptr->header.length - sizeof(acpi_table_header)) / 8;
     for (int i = 0; i < nument; i++) {
       acpi_table_header *ptr = (acpi_table_header *)(uintptr_t)xsdt_ptr->desc_table[i];
-      LRT_Assert(((uintptr_t)ptr) <= 0x3FFFFFFF);
+      LRT_Assert(((uintptr_t)ptr) <= 0xFFFFFFFF);
       if (ptr->signature[0] == 'A' &&
           ptr->signature[1] == 'P' &&
           ptr->signature[2] == 'I' &&
@@ -101,12 +96,12 @@ acpi_init()
     }
   } else {
     rsdt *rsdt_ptr = (rsdt *)(uintptr_t)rsdp->rsdtaddr;
-    LRT_Assert(((uintptr_t)rsdt_ptr) <= 0x3FFFFFFF);
+    LRT_Assert(((uintptr_t)rsdt_ptr) <= 0xFFFFFFFF);
 
     uint32_t nument = (rsdt_ptr->header.length - sizeof(acpi_table_header)) / 4;
     for (int i = 0; i < nument; i++) {
       acpi_table_header *ptr = (acpi_table_header *)(uintptr_t)rsdt_ptr->desc_table[i];
-      LRT_Assert(((uintptr_t)ptr) <= 0x3FFFFFFF);
+      LRT_Assert(((uintptr_t)ptr) <= 0xFFFFFFFF);
       if (ptr->signature[0] == 'A' &&
           ptr->signature[1] == 'P' &&
           ptr->signature[2] == 'I' &&
@@ -119,7 +114,6 @@ acpi_init()
   LRT_Assert(madt_ptr);
 
   acpi_startup_info.num_cores = 0;
-  acpi_startup_info.bsp_id = 0;
   acpi_startup_info.io_apic_addr = 0;
 
   uint32_t size = madt_ptr->header.length - sizeof(madt);
@@ -133,11 +127,14 @@ acpi_init()
         lapic_structure *ls = (lapic_structure *)ptr;
         size -= ls->length;
         ptr += ls->length;
-        if (acpi_startup_info.num_cores == 0) {
-          //record apic id of boot processor
-          acpi_startup_info.bsp_id = ls->apic_id;
+        if (ls->flags & 1) {
+          if (acpi_startup_info.num_cores == 0) {
+            apic_id_table = (uint8_t *)mem_start;
+          }
+          *mem_start = ls->apic_id;
+          mem_start++;
+          acpi_startup_info.num_cores++;
         }
-        if(ls->flags&1) acpi_startup_info.num_cores++;
       }
       break;
     case IO_APIC_N:

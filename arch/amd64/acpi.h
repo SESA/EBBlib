@@ -64,7 +64,7 @@ typedef struct {
 typedef struct {
   acpi_table_header header;
   uint64_t desc_table[];
-} xsdt;
+} __attribute__((packed)) xsdt;
 
 enum {
   PROCESSOR_LOCAL_APIC_N = 0,

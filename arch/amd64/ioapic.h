@@ -101,7 +101,7 @@ static inline ioredirect
 ioapic_read_ioredirect(uint8_t interrupt)
 {
   LRT_Assert(interrupt <= 23);
-  
+
   //2 registers per interrupt
   uint32_t reg = IOAPIC_REDTBL_START + (interrupt * 2);
   ioredirect ret;
@@ -159,6 +159,7 @@ init_ioapic(ioapic *ioapic_addr)
   ioapicver ioapicver;
   IOAPIC_BASE->IOREGSEL = IOAPIC_VERSION;
   ioapicver.val = IOAPIC_BASE->IOWIN;
+  lrt_printf("ioapic version: %x\n", ioapicver.version);
   LRT_Assert(ioapicver.version == 0x11);
 
   for (int i = 0; i < 24; i++) {
