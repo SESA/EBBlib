@@ -84,7 +84,7 @@ static void
 trans_mark_core_used(lrt_trans_gtrans *gt, lrt_event_loc core)
 {
   uint64_t mask = (uint64_t)1 << core;
-  gt->corebv |= mask;
+  __sync_fetch_and_or (&gt->corebv, mask);
 }
 
 static int
