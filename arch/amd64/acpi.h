@@ -25,8 +25,46 @@
 
 #include <stdint.h>
 
-#include <arch/amd64/acpica/include/acpi.h>
 #include <lrt/assert.h>
+
+typedef struct {
+  char signature[8];
+  char checksum;
+  char oemid[6];
+  char revision;
+  uint32_t rsdtaddr;
+  uint32_t length;
+  uint64_t xsdtaddr;
+  char xchecksum;
+  char reserved[3];
+} __attribute__((packed)) rsdp;
+
+STATIC_ASSERT(sizeof(rsdp) == 36, "rsdp packing issue");
+
+typedef struct {
+  char signature[4];
+  uint32_t length;
+  char revision;
+  char checksum;
+  char oemid[6];
+  char oemtabid[8];
+  char oemrev[4];
+  char creatorid[4];
+  char creatorrev[4];
+} __attribute__((packed)) acpi_table_header;
+
+STATIC_ASSERT(sizeof(acpi_table_header) == 36,
+              "acpi_table_header packing issue");
+
+typedef struct {
+  acpi_table_header header;
+  uint32_t desc_table[];
+} rsdt;
+
+typedef struct {
+  acpi_table_header header;
+  uint64_t desc_table[];
+} __attribute__((packed)) xsdt;
 
 enum {
   PROCESSOR_LOCAL_APIC_N = 0,
@@ -43,7 +81,7 @@ enum {
   GIC_N = 11,
   GICD_N = 12
 };
-  
+
 
 // APIC Structure Types
 static const uint8_t PROCESSOR_LOCAL_APIC = PROCESSOR_LOCAL_APIC_N;
@@ -59,9 +97,9 @@ static const uint8_t PLATFORM_LOCAL_X2APIC = PLATFORM_LOCAL_X2APIC_N;
 static const uint8_t LOCAL_X2APIC_NMI = LOCAL_X2APIC_NMI_N;
 static const uint8_t GIC = GIC_N;
 static const uint8_t GICD = GICD_N;
-  
+
 typedef struct {
-  ACPI_TABLE_HEADER header;
+  acpi_table_header header;
   uint32_t local_interrupt_controller_address;
   uint32_t flags;
 } madt;

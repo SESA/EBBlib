@@ -50,14 +50,14 @@ typedef union {
 } lapic_version_register;
 
 STATIC_ASSERT(sizeof(lapic_version_register) == 4,
-	       "lapic_version_register packing issue");
+               "lapic_version_register packing issue");
 
 typedef union {
   uint32_t raw;
 } lapic_eoi_register;
 
 STATIC_ASSERT(sizeof(lapic_eoi_register) == 4,
-	       "lapic_eoi_register packing issue");
+               "lapic_eoi_register packing issue");
 
 typedef union {
   uint32_t raw;
@@ -65,7 +65,7 @@ typedef union {
     uint32_t vector :8;
     uint32_t delivery_mode :3;
     uint32_t destination_mode :1;
-    uint32_t delivery_status :1;    
+    uint32_t delivery_status :1;
     uint32_t reserved0 :1;
     uint32_t level :1;
     uint32_t trigger_mode :1;
@@ -180,11 +180,11 @@ enable_lapic(void)
   uint64_t lapic_base;
   uint32_t low, high;
   __asm__ volatile (
-	 "rdmsr"
-	 : "=a" (low), "=d" (high)
-	 : "c" (MSR_LAPIC_BASE)
-	 );
-  
+         "rdmsr"
+         : "=a" (low), "=d" (high)
+         : "c" (MSR_LAPIC_BASE)
+         );
+
   lapic_base = ((uint64_t)high << 32) | low;
 
   lapic_base |= MSR_LAPIC_BASE_GLOBAL_ENABLE;
@@ -193,10 +193,10 @@ enable_lapic(void)
   high = (lapic_base >> 32) & 0xFFFFFFFF;
 
   __asm__ volatile (
-	 "wrmsr"
-	 :
-	 : "a" (low), "d" (high), "c" (MSR_LAPIC_BASE)
-	 );
+         "wrmsr"
+         :
+         : "a" (low), "d" (high), "c" (MSR_LAPIC_BASE)
+         );
   uint32_t sivr = LAPIC_BASE->sivr;
   sivr |= 0x100;
   LAPIC_BASE->sivr = sivr;

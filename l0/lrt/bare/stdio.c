@@ -131,6 +131,9 @@ prints(const char *str, int width, int precision, unsigned char flags,
   }
   for(; precision != 0 && *str != '\0'; str++, precision--) {
     putc(*str, stream);
+    if (*str == '\n') {
+      putc('\r', stream);
+    }
     count++;
   }
   for(; width > 0; width--) {

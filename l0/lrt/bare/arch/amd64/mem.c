@@ -29,8 +29,6 @@
 #include <l0/lrt/bare/arch/amd64/init64.h>
 #include <lrt/io.h>
 
-extern char kend[];
-
 struct lrt_mem_desc {
   char *start;
   char *current;
@@ -38,11 +36,13 @@ struct lrt_mem_desc {
 };
 
 struct lrt_mem_desc *bootmem;
+extern char kend[];
+char *mem_start = kend;
 
 void
 lrt_mem_preinit(int cores) {
-  bootmem = (struct lrt_mem_desc *)kend;
-  char *ptr = kend + (sizeof(struct lrt_mem_desc) * cores);
+  bootmem = (struct lrt_mem_desc *)mem_start;
+  char *ptr = mem_start + (sizeof(struct lrt_mem_desc) * cores);
   uint64_t num_bytes = (((uint64_t)bootinfo->mem_upper) << 10) -
     ((uint64_t)ptr - 0x100000);
   for (int i = 0; i < cores; i++) {
