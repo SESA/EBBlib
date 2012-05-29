@@ -39,7 +39,7 @@ enum { LRT_MEM_PERPIC=LRT_MEM_PAGESIZE * LRT_MEM_PAGESPERPIC };
 uintptr_t 
 lrt_mem_start(void)
 {
-  return (uintptr_t)bootmem[lrt_my_event_loc()].start;
+  return (uintptr_t)bootmem[lrt_my_event_loc()].current;
 }
 
 uintptr_t 
@@ -61,6 +61,7 @@ lrt_mem_init_loc(lrt_event_loc el)
     assert(0);
   }
   bm->end = bm->start + LRT_MEM_PERPIC;
+  bm->current = bm->start;
   return 1;
 }
 
