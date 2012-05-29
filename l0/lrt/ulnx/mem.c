@@ -23,7 +23,7 @@
 #include <config.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include <l0/lrt/ulnx/mem.h>
+#include <l0/lrt/mem.h>
 
 #include <l0/lrt/event_loc.h>
 #include <sys/mman.h>
@@ -31,34 +31,31 @@
 #include <assert.h>
 #include <errno.h>
 
+struct lrt_mem_desc *bootmem;
+
 enum { LRT_MEM_PAGESIZE=4096, LRT_MEM_PAGESPERPIC=1024 };
 enum { LRT_MEM_PERPIC=LRT_MEM_PAGESIZE * LRT_MEM_PAGESPERPIC };
-
-struct BootMemDesc {
-  uintptr_t start;
-  uintptr_t end;
-} *bootMem; 
 
 uintptr_t 
 lrt_mem_start(void)
 {
-  return bootMem[lrt_my_event_loc()].start;
+  return (uintptr_t)bootmem[lrt_my_event_loc()].start;
 }
 
 uintptr_t 
 lrt_mem_end(void)
 {
-  return bootMem[lrt_my_event_loc()].end;
+  return (uintptr_t)bootmem[lrt_my_event_loc()].end;
 }
 
-intptr_t
-lrt_mem_init(void)
+static intptr_t
+lrt_mem_init_loc(lrt_event_loc el)
 {
-  struct BootMemDesc *bm = &(bootMem[lrt_my_event_loc()]);
-  bm->start = (intptr_t)mmap(NULL, LRT_MEM_PERPIC, 
-			     PROT_READ|PROT_WRITE|PROT_EXEC, 
-			     MAP_ANON|MAP_PRIVATE, -1, 0);     
-  if (bm->start == (intptr_t)MAP_FAILED) {
+  struct lrt_mem_desc *bm = &(bootmem[el]);
+  bm->start = mmap(NULL, LRT_MEM_PERPIC, 
+		   PROT_READ|PROT_WRITE|PROT_EXEC, 
+		   MAP_ANON|MAP_PRIVATE, -1, 0);     
+  if (bm->start == MAP_FAILED) {
     perror(__func__);
     printf("%d\n", errno);
     assert(0);
@@ -67,9 +64,22 @@ lrt_mem_init(void)
   return 1;
 }
 
-// FIXME
+void
+lrt_mem_init(void)
+{
+  if (lrt_my_event_loc() != 0) { /* initialize zero core in preinit */
+    lrt_mem_init_loc(lrt_my_event_loc());
+  }
+}
+
+// called once on first core to initialize the array of descriptors
 void 
 lrt_mem_preinit(int cores)
 {
-  bootMem = malloc(sizeof(struct BootMemDesc) * cores);
+  bootmem = malloc(sizeof(struct lrt_mem_desc) * cores);
+
+  // now allocate for core 0 the memory to be used, since need
+  // to allcoate memory for event_preinit, and don't know location by
+  // normal mechanism until then. 
+  lrt_mem_init_loc(0);
 }

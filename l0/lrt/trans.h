@@ -117,8 +117,10 @@ extern lrt_trans_rep lrt_trans_def_rep;
 #define LRT_TRANS_NUMIDS_PERPAGE \
   (LRT_TRANS_PAGESIZE / sizeof(lrt_trans_gtrans))
 
+#ifndef __cplusplus
 STATIC_ASSERT(sizeof(lrt_trans_gtrans) * LRT_TRANS_NUMIDS_PERPAGE ==
                LRT_TRANS_PAGESIZE, "translation table size mismatch!");
+#endif
 
 #ifdef __cplusplus
 }
