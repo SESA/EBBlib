@@ -29,6 +29,9 @@
 #include <l0/lrt/bare/arch/amd64/init64.h>
 #include <lrt/io.h>
 
+struct lrt_mem_desc *bootmem;
+
+
 extern char kend[];
 char *mem_start = kend;
 

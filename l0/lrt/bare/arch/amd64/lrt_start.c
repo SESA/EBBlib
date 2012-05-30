@@ -28,7 +28,7 @@
 #include <l0/l0_start.h>
 #include <l0/lrt/bare/stdio.h>
 #include <l0/lrt/bare/arch/amd64/lrt_start.h>
-#include <l0/lrt/bare/arch/amd64/mem.h>
+#include <l0/lrt/mem.h>
 #include <l0/lrt/trans.h>
 #include <lrt/assert.h>
 #include <lrt/io.h>
