@@ -41,6 +41,7 @@
 #include <l0/lrt/event.h>
 #include <l0/lrt/event_irq_def.h>
 #include <l0/lrt/ulnx/lrt_start.h>
+#include <l0/lrt/mem.h>
 
 //the global event table
 static struct lrt_event_descriptor lrt_event_table[LRT_EVENT_NUM_EVENTS];
@@ -215,7 +216,9 @@ void
 lrt_event_preinit(int cores)
 {
   num_cores = cores;
-  event_data = malloc(sizeof(*event_data) * num_cores);
+  // event_data = malloc(sizeof(*event_data) * num_cores), always on core 0 here
+  event_data = lrt_mem_alloc((sizeof(*event_data) * num_cores), 8, 0);
+
   //FIXME: check for errors
 #if __APPLE__
   pthread_key_create(&lrt_event_myloc_pthreadkey, NULL);

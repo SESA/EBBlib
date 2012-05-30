@@ -279,8 +279,8 @@ main(int argc, char **argv, char **environ)
   // may change number of cores 
   startinfo(argc, argv, environ, &start_args.start_info, &start_args.start_info_size);
 
-  lrt_event_preinit(start_args.cores);
   lrt_mem_preinit(start_args.cores);
+  lrt_event_preinit(start_args.cores);
   lrt_trans_preinit(start_args.cores);
   // calls event init on all cores, first event is lrt_start
   start_cores(start_args.cores);

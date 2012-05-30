@@ -1,6 +1,6 @@
-#ifndef L0_LRT_BARE_ARCH_AMD64_MEM_H
-#define L0_LRT_BARE_ARCH_AMD64_MEM_H
-
+#ifndef __LRT_MEM_H__
+#error "Should only be included through l0/lrt/mem.h"
+#endif
 /*
  * Copyright (C) 2011 by Project SESA, Boston University
  *
@@ -28,12 +28,3 @@
 #include <l0/lrt/event_loc.h>
 
 extern char *mem_start;
-
-extern uintptr_t lrt_mem_start(void);
-extern uintptr_t lrt_mem_end(void);
-extern void lrt_mem_preinit(int cores);
-extern void lrt_mem_init(void);
-extern void *lrt_mem_alloc(size_t size, size_t aligned,
-                           lrt_event_loc loc);
-
-#endif

@@ -84,7 +84,7 @@ static void
 trans_mark_core_used(lrt_trans_gtrans *gt, lrt_event_loc core)
 {
   uint64_t mask = (uint64_t)1 << core;
-  gt->corebv |= mask;
+  __sync_fetch_and_or (&gt->corebv, mask);
 }
 
 static int
@@ -158,10 +158,7 @@ lrt_trans_invalidate_caches(lrt_trans_id id)
 
   do{
     if (trans_test_core_used(gt, el)) {
-      lrt_trans_ltrans *lt = lrt_trans_id2rlt(el, id);
-      LRT_Assert(lt != NULL);
-
-      lrt_trans_init_ltrans(lt);
+      lrt_trans_invalidate_rltrans(el, id);
     }
     el = lrt_next_event_loc(el);
   } while (el != lrt_my_event_loc());

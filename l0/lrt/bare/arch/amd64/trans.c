@@ -130,11 +130,14 @@ lrt_trans_specific_init() {
                     );
 }
 
-
-// returns the pointer to a remote local translation entry for a object id
-lrt_trans_ltrans *lrt_trans_id2rlt(lrt_event_loc el, lrt_trans_id oid)
+void lrt_trans_invalidate_rltrans(lrt_event_loc el, lrt_trans_id oid)
 {
   lrt_trans_ltrans *lmem = lmem_table[el];
   ptrdiff_t index = oid - lrt_trans_idbase();
-  return lmem + index;
+  lrt_trans_ltrans *rlt = lmem + index; /* pointer to remote local entry */
+
+  lrt_trans_ltrans *lt = lrt_trans_id2lt(oid);
+  rlt->ref = &lt->rep;
+  rlt->rep = lrt_trans_def_rep;
+  
 }

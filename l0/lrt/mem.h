@@ -22,6 +22,26 @@
  * THE SOFTWARE.
  */
 
+#include <l0/lrt/event_loc.h>
+extern void *lrt_mem_alloc(size_t size, size_t aligned,
+                           lrt_event_loc loc);
+extern uintptr_t lrt_mem_start(void);
+extern uintptr_t lrt_mem_end(void);
+extern void lrt_mem_preinit(int cores);
+extern void lrt_mem_init(void);
+
+// note, this is internal state used only by mem.c, put it here
+// for sharing between the machine independant and machine specific mem
+// allocation routines, should probably move to a different .h file
+struct lrt_mem_desc {
+  char *start;
+  char *current;
+  char *end;
+};
+
+extern struct lrt_mem_desc *bootmem;
+
+
 #ifdef LRT_ULNX
 #include <l0/lrt/ulnx/mem.h>
 #else

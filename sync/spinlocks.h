@@ -19,44 +19,24 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+#ifndef __SYNC_SPINLOCKS_H__
+#define __SYNC_SPINLOCKS_H__
 
-#include <config.h>
-#include <stdint.h>
-#include <stdlib.h>
-#include <assert.h>
-#include <l0/lrt/trans.h>
+typedef long SpinLock;
 
-struct lrt_trans_mem_desc lrt_trans_mem;
-
-// get the base address of a remote local memory translation table
-static lrt_trans_ltrans *
-lrt_trans_lmemr(lrt_event_loc el)
+static inline void
+spinLock(SpinLock *lk)
 {
-  ptrdiff_t index = el * LRT_TRANS_TBLSIZE / sizeof(lrt_trans_ltrans);
-  return lrt_trans_mem.lmem + index;
+  uintptr_t rc = 0;
+  while (!rc) {
+    rc = __sync_bool_compare_and_swap(lk, 0, 1);
+  }
 }
 
-// invalidate remote entry
-void
-lrt_trans_invalidate_rltrans(lrt_event_loc el, lrt_trans_id oid)
+static inline void
+spinUnlock(SpinLock *lk)
 {
-  lrt_trans_ltrans *lmem = lrt_trans_lmemr(el);
-  ptrdiff_t index = oid - lrt_trans_idbase();
-  lrt_trans_ltrans *lt = lmem + index;
-  lt->ref = &lt->rep;
-  lt->rep = lrt_trans_def_rep;
+  __sync_bool_compare_and_swap(lk, 1, 0);
 }
 
-void
-lrt_trans_specific_init()
-{
-}
-
-void
-lrt_trans_preinit(int cores)
-{
-  lrt_trans_mem.gmem = malloc(LRT_TRANS_TBLSIZE);
-  assert(lrt_trans_mem.gmem);
-  lrt_trans_mem.lmem = malloc(LRT_TRANS_TBLSIZE * cores);
-  assert(lrt_trans_mem.lmem);
-}
+#endif

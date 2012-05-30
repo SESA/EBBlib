@@ -69,8 +69,8 @@ EBBRC si_get_args(struct startinfo *si)
       // environc is one greater than number of entries 
       // we malloc this many so that we have space for the null 
       // terminating entry
-      rc = EBBPrimMalloc(si->environc*sizeof(char *), 
-			 &(si->environ), EBB_MEM_DEFAULT);
+      rc = EBBPrimMalloc(si->environc*sizeof(char *), &(si->environ), 
+			 EBB_MEM_DEFAULT);
       LRT_RCAssert(rc);
       si->environc--;  // environc tracks number of non null entries
       edata = data;

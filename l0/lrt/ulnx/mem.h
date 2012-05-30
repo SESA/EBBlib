@@ -1,5 +1,6 @@
-#ifndef __LRT_ULNX_MEM_H__
-#define __LRT_ULNX_MEM_H__
+#ifndef __LRT_MEM_H__
+#error "Should only be included through l0/lrt/mem.h"
+#endif
 /*
  * Copyright (C) 2011 by Project SESA, Boston University
  *
@@ -21,16 +22,3 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-extern uintptr_t lrt_mem_start(void);
-extern uintptr_t lrt_mem_end(void);
-extern void lrt_mem_preinit(int cores);
-extern intptr_t  lrt_mem_init(void);
-#ifdef __cplusplus
-}
-#endif
-
-#endif
