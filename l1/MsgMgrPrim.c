@@ -38,6 +38,7 @@
 #include <l0/MemMgrPrim.h>
 #include <l1/MsgMgr.h>
 #include <l1/MsgMgrPrim.h>
+#include <sync/spinlocks.h>
 
 // globally known id of the message mgr
 MsgMgrId theMsgMgrId = 0;
@@ -47,25 +48,6 @@ static CObjEBBRootMultiImpRef rootRef = 0;
 
 // the event reserved for the message manager
 static EventNo theMsgMgrEvent = 0;
-
-
-/* -- start routines & types to be implemented, put somewhere global*/
-typedef long LockType;
-
-static void
-spinLock(LockType *lk)
-{
-  uintptr_t rc = 0;
-  while (!rc) {
-    rc = __sync_bool_compare_and_swap(lk, 0, 1);
-  }
-}
-
-static void
-spinUnlock(LockType *lk)
-{
-  __sync_bool_compare_and_swap(lk, 1, 0);
-}
 
 enum{MAXARGS = 3};
 /* -- end routines to be implemented */
@@ -81,9 +63,9 @@ typedef struct MsgStore_struc {
 CObject(MsgMgrPrim) {
   CObjInterface(MsgMgrPrim) *ft;
   EventLoc eventLoc;
-  LockType msgqueuelock;
+  SpinLock msgqueuelock;
   MsgStore *msgqueue;
-  LockType freelistlock;
+  SpinLock freelistlock;
   MsgStore *freelist;
   // FIXME: abstract at event mgr
   MsgMgrPrimRef *reps;
@@ -95,9 +77,6 @@ CObjInterface(MsgMgrPrim) {
   CObjImplements(MsgMgr);
   EBBRC (*handleEvent) (MsgMgrPrimRef _self);
 };
-
-
-
 
 static EBBRC
 MsgMgrPrim_enqueueMsg(MsgMgrPrimRef target, MsgStore *msg)
