@@ -91,8 +91,7 @@ static inline lrt_trans_gtrans *lrt_trans_id2gt(lrt_trans_id);
 static inline lrt_trans_id lrt_trans_gt2id(lrt_trans_gtrans *);
 static inline lrt_trans_ltrans *lrt_trans_gt2lt(lrt_trans_gtrans *);
 static inline lrt_trans_gtrans *lrt_trans_lt2gt(lrt_trans_ltrans *);
-extern lrt_trans_ltrans *lrt_trans_id2rlt(lrt_event_loc el,
-                                          lrt_trans_id objid);
+extern void lrt_trans_invalidate_rltrans(lrt_event_loc el, lrt_trans_id oid);
 extern void lrt_trans_init(void);
 extern void lrt_trans_cache_obj(lrt_trans_ltrans *, lrt_trans_rep_ref);
 extern lrt_trans_id lrt_trans_id_alloc(void);
@@ -117,8 +116,10 @@ extern lrt_trans_rep lrt_trans_def_rep;
 #define LRT_TRANS_NUMIDS_PERPAGE \
   (LRT_TRANS_PAGESIZE / sizeof(lrt_trans_gtrans))
 
+#ifndef __cplusplus
 STATIC_ASSERT(sizeof(lrt_trans_gtrans) * LRT_TRANS_NUMIDS_PERPAGE ==
                LRT_TRANS_PAGESIZE, "translation table size mismatch!");
+#endif
 
 #ifdef __cplusplus
 }

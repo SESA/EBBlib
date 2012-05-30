@@ -269,7 +269,8 @@ BindTst_start(AppRef _self)
 
   rc = EBBCALL(ServiceInfo.theId, op);
   if (!(passed == 1 && rc == EBBRC_NULL)) passed = 0;
-  lrt_printf("%s: Bind to L0Info.Inst: EBBCALL(ServiceIds.theId, op)=%" PRIdPTR "\n",
+  lrt_printf("%s: Bind to L0Info.Inst: "
+	     "EBBCALL(ServiceIds.theId, op)=%" PRIdPTR "\n",
 	     __func__, rc);
 
   barrier(&bar, &sense); 
@@ -301,8 +302,12 @@ BindTst_start(AppRef _self)
   lrt_printf("%s: Bind to s1Inst: EBBCALL(ServiceIds.theId, op)=%" PRIdPTR "\n",
 	     __func__, rc);
 
-  if (passed) lrt_printf("bindtst: PASSED\n");
-  else lrt_printf("bindtst: FAILED\n");
+  if (passed) {
+    lrt_printf("bindtst: PASSED\n");
+  } else {
+    lrt_printf("bindtst: FAILED\n");
+    lrt_exit(-1);
+  }
 
   barrier(&bar, &sense); 
 

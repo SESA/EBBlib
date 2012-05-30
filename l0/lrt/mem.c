@@ -19,57 +19,18 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-
 #include <config.h>
-#include <stdint.h>
-#include <stdlib.h>
-#include <l0/lrt/ulnx/mem.h>
+#include <l0/lrt/event.h>
+#include <l0/lrt/mem.h>
 
-#include <l0/lrt/event_loc.h>
-#include <sys/mman.h>
-#include <stdio.h>
-#include <assert.h>
-#include <errno.h>
-
-enum { LRT_MEM_PAGESIZE=4096, LRT_MEM_PAGESPERPIC=1024 };
-enum { LRT_MEM_PERPIC=LRT_MEM_PAGESIZE * LRT_MEM_PAGESPERPIC };
-
-struct BootMemDesc {
-  uintptr_t start;
-  uintptr_t end;
-} *bootMem; 
-
-uintptr_t 
-lrt_mem_start(void)
-{
-  return bootMem[lrt_my_event_loc()].start;
+void *
+lrt_mem_alloc(size_t size, size_t aligned, lrt_event_loc loc) {
+  struct lrt_mem_desc *desc = &bootmem[loc];
+  char *ptr = desc->current;
+  //align up
+  ptr = (char *)((((uintptr_t)ptr + aligned - 1) / aligned) * aligned);
+  LRT_Assert((ptr + size) < desc->end);
+  desc->current = ptr + size;
+  return ptr;
 }
 
-uintptr_t 
-lrt_mem_end(void)
-{
-  return bootMem[lrt_my_event_loc()].end;
-}
-
-intptr_t
-lrt_mem_init(void)
-{
-  struct BootMemDesc *bm = &(bootMem[lrt_my_event_loc()]);
-  bm->start = (intptr_t)mmap(NULL, LRT_MEM_PERPIC, 
-			     PROT_READ|PROT_WRITE|PROT_EXEC, 
-			     MAP_ANON|MAP_PRIVATE, -1, 0);     
-  if (bm->start == (intptr_t)MAP_FAILED) {
-    perror(__func__);
-    printf("%d\n", errno);
-    assert(0);
-  }
-  bm->end = bm->start + LRT_MEM_PERPIC;
-  return 1;
-}
-
-// FIXME
-void 
-lrt_mem_preinit(int cores)
-{
-  bootMem = malloc(sizeof(struct BootMemDesc) * cores);
-}
