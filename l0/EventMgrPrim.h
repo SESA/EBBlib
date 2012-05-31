@@ -40,11 +40,14 @@
  * document the plan.
  */
 
+#include <config.h>
+
 #include <l0/cobj/cobj.h>
 #include <l0/cobj/CObjEBB.h>
 #include <l0/lrt/event_irq.h>
 #include <l0/lrt/event_loc.h>
 #include <l0/lrt/event_num.h>
+#include <l0/EBBMgrPrim.h>
 
 #define EVENTFUNC(funcName) EBBRC (* funcName)(void * _self);
 typedef EVENTFUNC(GenericEventFunc);
