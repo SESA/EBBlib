@@ -34,6 +34,8 @@
 
 static int num_event_loc;
 
+
+
 lrt_event_loc
 lrt_num_event_loc()
 {
@@ -47,6 +49,57 @@ lrt_next_event_loc(lrt_event_loc l)
 }
 
 static struct lrt_event_descriptor lrt_event_table[LRT_EVENT_NUM_EVENTS];
+
+#ifdef SWINTERRUPTS
+struct corebv {
+  uint64_t vec[LRT_EVENT_NUM_EVENTS/64];
+};
+
+static struct corebv *pending; 
+
+static void
+set_bit_bv(struct corebv *bv, lrt_event_num num) 
+{
+  int word = num/64;
+  uint64_t mask = (uint64_t)1 << num%64;
+  __sync_fetch_and_or (&bv.vec[word], mask);
+}
+
+static int
+get_unset_bit_bv(struct corebv *bv) 
+{
+  int word, bit, num;
+  for (word = 0; word <LRT_EVENT_NUM_EVENTS/64 ; word++) {
+    if( bv.vec[word] ) break;
+  }
+  if (word >= LRT_EVENT_NUM_EVENTS) return -1;
+  
+  // FIXME: use gcc builtin routines for this
+  for (bit = 0; bit < 64; bit++) {
+    uint64_t mask = (uint64_t)1 << bit;
+    if (bv.vec[word] & mask) {
+      // found a set bit
+      uint64_t mask = ~((uint64_t)1 << bit);
+      __sync_fetch_and_and(&bv.vec[word], mask);
+    }
+  }
+  num = word * 64 + bit;
+  return num;
+};
+
+
+static void
+set_bit(lrt_event_loc loc, lrt_event_num num) 
+{
+  set_bit_bv(&pending[loc].vec, num);
+};
+
+static lrt_event_num
+get_unset_bit(lrt_event_loc loc) 
+{
+  return get_unset_bit_bv(&pending[loc].vec);
+};
+#endif
 
 static idtdesc *idt;
 
@@ -83,6 +136,9 @@ lrt_event_preinit(int cores)
 {
   num_event_loc = cores;
   idt = lrt_mem_alloc(sizeof(idtdesc) * 256, 8, 0);
+#ifdef SWINTERRUPTS
+  pending = lrt_mem_alloc(sizeof(struct corebv) * cores, 8, 0);
+#endif
   init_idt();
   LRT_Assert(has_lapic());
   disable_pic();
@@ -103,9 +159,24 @@ lrt_event_preinit(int cores)
   init_ioapic(addr);
 }
 
+static void 
+dispatch_event(lrt_event_num en)
+{
+  struct lrt_event_descriptor *desc = &lrt_event_table[en];
+  lrt_trans_id id = desc->id;
+  lrt_trans_func_num fnum = desc->fnum;
+
+  //this infrastructure should be pulled out of this file
+  lrt_trans_rep_ref ref = lrt_trans_id_dref(id);
+  ref->ft[fnum](ref);
+}  
+
+
+
 void __attribute__ ((noreturn))
 lrt_event_loop(void)
 {
+#ifndef SWINTERRUPTS
   //After we enable interrupts we just halt, an interrupt should wake
   //us up. Once we finish the interrupt, we halt again and repeat
 
@@ -113,6 +184,14 @@ lrt_event_loop(void)
   while (1) {
     __asm__ volatile("hlt");
   }
+#else
+  while (1) {
+    lrt_event_num en = get_unset_bit(my_event_loc());
+    if (en != -1) {
+      dispatch_event(en);
+    }
+  }
+#endif
 }
 
 volatile int smp_lock;
@@ -169,6 +248,7 @@ void
 lrt_event_trigger_event(lrt_event_num num, enum lrt_event_loc_desc desc,
                         lrt_event_loc loc)
 {
+#ifndef SWINTERRUPTS
   lapic_icr_low icr_low;
   icr_low.raw = 0;
   icr_low.vector = num + 32;
@@ -184,6 +264,9 @@ lrt_event_trigger_event(lrt_event_num num, enum lrt_event_loc_desc desc,
   }
 
   send_ipi(icr_low, icr_high);
+#else
+  set_bit(loc, num);
+#endif
 }
 
 void lrt_event_route_irq(struct IRQ_t *isrc, lrt_event_num num,
@@ -204,17 +287,12 @@ exception_common(uint8_t num) {
   LRT_Assert(0);
 }
 
+
 void
 event_common(uint8_t num) {
   send_eoi();
   uint8_t ev = num - 32; //first 32 interrupts are reserved
-  struct lrt_event_descriptor *desc = &lrt_event_table[ev];
-  lrt_trans_id id = desc->id;
-  lrt_trans_func_num fnum = desc->fnum;
-
-  //this infrastructure should be pulled out of this file
-  lrt_trans_rep_ref ref = lrt_trans_id_dref(id);
-  ref->ft[fnum](ref);
+  dispatch_event(ev);
 }
 
 extern void isr_0(void);
