@@ -145,7 +145,8 @@ lrt_event_loop(void)
       dispatch_event(en);
     } else {
       __asm__ volatile("sti"); //enable interrupts
-      __asm__ volatile("hlt"); /* ?assume interrupts automatically disabled */
+      __asm__ volatile("hlt"); 
+      __asm__ volatile("cli"); //disable interrupts
     }
   }
 #endif
