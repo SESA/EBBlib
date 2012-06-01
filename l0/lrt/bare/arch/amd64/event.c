@@ -140,10 +140,10 @@ lrt_event_loop(void)
   }
 #else
   while (1) {
-    lrt_event_num en = get_unset_bit(my_event_loc());
+    int en = get_unset_bit(lrt_my_event_loc());
     if (en != -1) {
       lrt_printf("dispatching event loc %d with num %d\n",
-		 lrt_my_event_loc(), en);
+                 lrt_my_event_loc(), en);
 
       dispatch_event(en);
     } else {
@@ -226,7 +226,7 @@ lrt_event_trigger_event(lrt_event_num num, enum lrt_event_loc_desc desc,
   send_ipi(icr_low, icr_high);
 #else
   lrt_printf("trigger event from loc %d to loc %d with num %d\n",
-	     lrt_my_event_loc(), loc, num);
+             lrt_my_event_loc(), loc, num);
   set_bit(loc, num);
   if ( loc != lrt_my_event_loc() ) {
     lapic_icr_low icr_low;

@@ -46,7 +46,7 @@ set_bit(lrt_event_loc loc, lrt_event_num num)
   set_bit_bv(&pending[loc], num);
 };
 
-static lrt_event_num
+static int
 get_unset_bit(lrt_event_loc loc) 
 {
   return get_unset_bit_bv(&pending[loc]);
