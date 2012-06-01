@@ -142,9 +142,6 @@ lrt_event_loop(void)
   while (1) {
     int en = get_unset_bit(lrt_my_event_loc());
     if (en != -1) {
-      lrt_printf("dispatching event loc %d with num %d\n",
-                 lrt_my_event_loc(), en);
-
       dispatch_event(en);
     } else {
       __asm__ volatile("sti"); //enable interrupts
@@ -225,8 +222,11 @@ lrt_event_trigger_event(lrt_event_num num, enum lrt_event_loc_desc desc,
 
   send_ipi(icr_low, icr_high);
 #else
+<<<<<<< HEAD
   lrt_printf("trigger event from loc %d to loc %d with num %d\n",
              lrt_my_event_loc(), loc, num);
+=======
+>>>>>>> 1cc245f... got rid of printf
   set_bit(loc, num);
   if ( loc != lrt_my_event_loc() ) {
     lapic_icr_low icr_low;
