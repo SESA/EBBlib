@@ -61,7 +61,7 @@ EventTiming_roundRobinEvent(EventTimingRef self)
   if (count == 32 * 1000) {
     t1 = rdtscp();
     lrt_printf("eventtiming: round robin total %ld per lp %ld\n",
-	       t1 - t0, (t1 - t0)/(32*1000));
+	       (long int)(t1 - t0), (long int)(t1 - t0)/(32*1000));
     lrt_exit(0);
   } else if (count == 0) {
     t0 = rdtscp();
@@ -79,7 +79,7 @@ EventTiming_loopLocalEvent(EventTimingRef self)
   if (count == 1000) {
     t1 = rdtscp();
     lrt_printf("eventtiming: local total %ld per lp %ld\n",
-	       t1 - t0, (t1 - t0)/(1000));
+	       (long int)(t1 - t0), (long int)((t1 - t0)/(1000)));
     count = -1;
     EBBRC rc = COBJ_EBBCALL(theEventMgrPrimId, bindEvent, ev, (EBBId)theAppId,
                             COBJ_FUNCNUM_FROM_TYPE(CObjInterface(EventTiming),
