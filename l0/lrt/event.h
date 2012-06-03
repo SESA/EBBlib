@@ -27,6 +27,10 @@
 #include <l0/lrt/event_loc.h>
 #include <l0/lrt/event_num.h>
 
+// event configuraiton flags, dynamic for timing
+extern int lrt_event_use_bitvector_local;
+extern int lrt_event_use_bitvector_remote;
+
 extern void *lrt_event_init(void *myloc);
 extern void lrt_event_preinit(int cores);
 extern void lrt_event_bind_event(lrt_event_num num, lrt_trans_id handler,

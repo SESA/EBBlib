@@ -28,6 +28,9 @@
 #include <lrt/exit.h>
 #include <lrt/io.h>
 
+// include this to get configuration flags
+#include <l0/lrt/event.h>
+
 static inline uint64_t
 rdtscp(void)
 {
@@ -55,6 +58,8 @@ uint64_t t0, t1;
 int count;
 EventNo ev;
 
+EBBRC runNextTest();
+
 static EBBRC
 EventTiming_roundRobinEvent(EventTimingRef self)
 {
@@ -62,7 +67,8 @@ EventTiming_roundRobinEvent(EventTimingRef self)
     t1 = rdtscp();
     lrt_printf("eventtiming: round robin total %ld per lp %ld\n",
 	       (long int)(t1 - t0), (long int)(t1 - t0)/(32*1000));
-    lrt_exit(0);
+    runNextTest();
+    return EBBRC_OK;
   } else if (count == 0) {
     t0 = rdtscp();
   }
@@ -73,6 +79,7 @@ EventTiming_roundRobinEvent(EventTimingRef self)
 
   return EBBRC_OK;
 }
+
 static EBBRC
 EventTiming_loopLocalEvent(EventTimingRef self)
 {
@@ -80,11 +87,8 @@ EventTiming_loopLocalEvent(EventTimingRef self)
     t1 = rdtscp();
     lrt_printf("eventtiming: local total %ld per lp %ld\n",
 	       (long int)(t1 - t0), (long int)((t1 - t0)/(1000)));
-    count = -1;
-    EBBRC rc = COBJ_EBBCALL(theEventMgrPrimId, bindEvent, ev, (EBBId)theAppId,
-                            COBJ_FUNCNUM_FROM_TYPE(CObjInterface(EventTiming),
-                                                   roundRobinEvent));
-    LRT_RCAssert(rc);
+    runNextTest();
+    return EBBRC_OK;
   } else if (count == 0) {
     t0 = rdtscp();
   }
@@ -95,6 +99,74 @@ EventTiming_loopLocalEvent(EventTimingRef self)
 
   return EBBRC_OK;
 }
+
+/*
+ * tests executed in context of event
+ * initiated by previous tests
+ */
+EBBRC
+runNextTest()
+{
+  static int testStage = 0;
+  count = 0;
+  EBBRC rc;
+  switch(testStage) {
+  case 0: 
+    testStage++;
+    rc = COBJ_EBBCALL(theEventMgrPrimId, bindEvent, ev, (EBBId)theAppId,
+		      COBJ_FUNCNUM_FROM_TYPE(CObjInterface(EventTiming), 
+					     loopLocalEvent));
+    LRT_RCAssert(rc);
+    
+    lrt_event_use_bitvector_local=0;
+    count = 0;
+    lrt_printf("eventtiming: running local event loop with BV disabled\n");
+    rc = COBJ_EBBCALL(theEventMgrPrimId, triggerEvent, ev,
+		      EVENT_LOC_SINGLE, MyEventLoc());
+    LRT_RCAssert(rc);
+    break;
+  case 1:
+    testStage++;
+    lrt_event_use_bitvector_local=1;
+    count = 0;
+    lrt_printf("eventtiming: running local event loop with BV enabled\n");
+    rc = COBJ_EBBCALL(theEventMgrPrimId, triggerEvent, ev,
+		      EVENT_LOC_SINGLE, MyEventLoc());
+    LRT_RCAssert(rc);
+    break;
+  case 2:
+    testStage++;
+    count = -1;
+    lrt_event_use_bitvector_remote=0;
+    lrt_printf("eventtiming: running remote event loop with BV disabled\n");
+    rc = COBJ_EBBCALL(theEventMgrPrimId, bindEvent, ev, (EBBId)theAppId,
+                            COBJ_FUNCNUM_FROM_TYPE(CObjInterface(EventTiming),
+                                                   roundRobinEvent));
+    LRT_RCAssert(rc);
+    rc = COBJ_EBBCALL(theEventMgrPrimId, triggerEvent, ev,
+		      EVENT_LOC_SINGLE, MyEventLoc());
+    LRT_RCAssert(rc);
+    break;
+  case 3:
+    testStage++;
+    count = -1;
+    lrt_event_use_bitvector_remote=1;
+    lrt_printf("eventtiming: running remote event loop with BV enabled\n");
+    rc = COBJ_EBBCALL(theEventMgrPrimId, bindEvent, ev, (EBBId)theAppId,
+                            COBJ_FUNCNUM_FROM_TYPE(CObjInterface(EventTiming),
+                                                   roundRobinEvent));
+    LRT_RCAssert(rc);
+    rc = COBJ_EBBCALL(theEventMgrPrimId, triggerEvent, ev,
+		      EVENT_LOC_SINGLE, MyEventLoc());
+    LRT_RCAssert(rc);
+    break;
+  case 4:
+    lrt_exit(0);
+    break;
+  }
+  return EBBRC_OK;
+}
+
 
 static EBBRC
 EventTiming_start(AppRef _self)
@@ -109,12 +181,7 @@ EventTiming_start(AppRef _self)
   EBBRC rc = COBJ_EBBCALL(theEventMgrPrimId, allocEventNo, &ev);
   LRT_RCAssert(rc);
 
-  rc = COBJ_EBBCALL(theEventMgrPrimId, bindEvent, ev, (EBBId)theAppId,
-                    COBJ_FUNCNUM_FROM_TYPE(CObjInterface(EventTiming), loopLocalEvent));
-  LRT_RCAssert(rc);
-
-  rc = COBJ_EBBCALL(theEventMgrPrimId, triggerEvent, ev,
-                    EVENT_LOC_SINGLE, MyEventLoc());
+  runNextTest();
 
   return EBBRC_OK;
 }

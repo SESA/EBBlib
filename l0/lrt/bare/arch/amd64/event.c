@@ -32,10 +32,13 @@
 #include <l0/lrt/bare/arch/amd64/lrt_start.h>
 #include <lrt/io.h>
 #include <lrt/string.h>
+#include <l0/lrt/event_bv.h>
 
 static int num_event_loc;
 
-
+// configuration flags:
+int lrt_event_use_bitvector_local=1;
+int lrt_event_use_bitvector_remote=0;
 
 lrt_event_loc
 lrt_num_event_loc()
@@ -50,9 +53,6 @@ lrt_next_event_loc(lrt_event_loc l)
 }
 
 static struct lrt_event_descriptor lrt_event_table[LRT_EVENT_NUM_EVENTS];
-
-#define SWINTERRUPTS
-#include <l0/lrt/event_bv.h>
 
 static idtdesc *idt;
 
@@ -89,10 +89,8 @@ lrt_event_preinit(int cores)
 {
   num_event_loc = cores;
   idt = lrt_mem_alloc(sizeof(idtdesc) * 256, 8, 0);
-#ifdef SWINTERRUPTS
-  pending = lrt_mem_alloc(sizeof(struct corebv) * cores, 8, 0);
-  bzero(pending, sizeof(struct corebv) * cores);
-#endif
+  lrt_event_bv = lrt_mem_alloc(sizeof(struct corebv) * cores, 8, 0);
+  bzero(lrt_event_bv, sizeof(struct corebv) * cores);
   init_idt();
   LRT_Assert(has_lapic());
   disable_pic();
@@ -130,7 +128,7 @@ dispatch_event(lrt_event_num en)
 void __attribute__ ((noreturn))
 lrt_event_loop(void)
 {
-#ifndef SWINTERRUPTS
+#if 0			/* ignoring SW bitvector */
   //After we enable interrupts we just halt, an interrupt should wake
   //us up. Once we finish the interrupt, we halt again and repeat
 
@@ -140,12 +138,12 @@ lrt_event_loop(void)
   }
 #else
   while (1) {
-    int en = get_unset_bit(lrt_my_event_loc());
+    int en = lrt_event_get_unset_bit(lrt_my_event_loc());
     if (en != -1) {
       dispatch_event(en);
     } else {
       __asm__ volatile("sti"); //enable interrupts
-      __asm__ volatile("hlt"); 
+      __asm__ volatile("hlt");
       __asm__ volatile("cli"); //disable interrupts
     }
   }
@@ -206,30 +204,16 @@ void
 lrt_event_trigger_event(lrt_event_num num, enum lrt_event_loc_desc desc,
                         lrt_event_loc loc)
 {
-#ifndef SWINTERRUPTS
-  lapic_icr_low icr_low;
-  icr_low.raw = 0;
-  icr_low.vector = num + 32;
-  icr_low.level = 1;
+  int islocal = 0;
+  if (loc == lrt_my_event_loc())
+    islocal = 1;
 
-  lapic_icr_high icr_high;
-  icr_high.raw = 0;
-  if (desc == LRT_EVENT_LOC_SINGLE) {
-    icr_low.destination_shorthand = 0;
-    icr_high.destination = lrt_event_loc2apicid(loc);
-  } else {
-    LRT_Assert(0);
+  if ( (islocal && lrt_event_use_bitvector_local) ||
+       (!islocal && lrt_event_use_bitvector_remote) ) {
+    lrt_event_set_bit(loc, num);
   }
 
-  send_ipi(icr_low, icr_high);
-#else
-<<<<<<< HEAD
-  lrt_printf("trigger event from loc %d to loc %d with num %d\n",
-             lrt_my_event_loc(), loc, num);
-=======
->>>>>>> 1cc245f... got rid of printf
-  set_bit(loc, num);
-  if ( loc != lrt_my_event_loc() ) {
+  if ((!islocal) || !lrt_event_use_bitvector_local) {
     lapic_icr_low icr_low;
     icr_low.raw = 0;
     icr_low.vector = num + 32;
@@ -246,7 +230,6 @@ lrt_event_trigger_event(lrt_event_num num, enum lrt_event_loc_desc desc,
 
     send_ipi(icr_low, icr_high);
   }
-#endif
 }
 
 void lrt_event_route_irq(struct IRQ_t *isrc, lrt_event_num num,

@@ -42,6 +42,8 @@
 #include <l0/lrt/event_irq_def.h>
 #include <l0/lrt/ulnx/lrt_start.h>
 #include <l0/lrt/mem.h>
+#include <l0/lrt/event_bv.h>
+#include <lrt/string.h>
 
 //the global event table
 static struct lrt_event_descriptor lrt_event_table[LRT_EVENT_NUM_EVENTS];
@@ -58,6 +60,22 @@ static int num_cores = 0;
 
 static const intptr_t PIPE_UDATA = -1;
 
+// configuration flags:
+int lrt_event_use_bitvector_local=1;
+int lrt_event_use_bitvector_remote=0;
+
+static void 
+dispatch_event(lrt_event_num en)
+{
+  struct lrt_event_descriptor *desc = &lrt_event_table[en];
+  lrt_trans_id id = desc->id;
+  lrt_trans_func_num fnum = desc->fnum;
+
+  //this infrastructure should be pulled out of this file
+  lrt_trans_rep_ref ref = lrt_trans_id_dref(id);
+  ref->ft[fnum](ref);
+}  
+
 static void __attribute__ ((noreturn))
 lrt_event_loop(void)
 {
@@ -65,6 +83,13 @@ lrt_event_loop(void)
   struct lrt_event_local_data *ldata = &event_data[lrt_my_event_loc()];
 
   while (1) {
+    int en = lrt_event_get_unset_bit(lrt_my_event_loc());
+    if (en != -1) {
+      dispatch_event(en);
+      continue;
+    }
+
+
 #if __APPLE__
     struct kevent kev;
     //This call blocks until an event occurred
@@ -114,14 +139,7 @@ lrt_event_loop(void)
       ev = (lrt_event_num)kev.data.u64;
 #endif
     }
-
-    struct lrt_event_descriptor *desc = &lrt_event_table[ev];
-    lrt_trans_id id = desc->id;
-    lrt_trans_func_num fnum = desc->fnum;
-
-    //this infrastructure should be pulled out of this file
-    lrt_trans_rep_ref ref = lrt_trans_id_dref(id);
-    ref->ft[fnum](ref);
+    dispatch_event(ev);
 
     //an optimization here would be to keep reading from the pipe or checking
     //other events before going back around the loop
@@ -218,6 +236,8 @@ lrt_event_preinit(int cores)
   num_cores = cores;
   // event_data = malloc(sizeof(*event_data) * num_cores), always on core 0 here
   event_data = lrt_mem_alloc((sizeof(*event_data) * num_cores), 8, 0);
+  lrt_event_bv = lrt_mem_alloc(sizeof(struct corebv) * cores, 8, 0);
+  bzero(lrt_event_bv, sizeof(struct corebv) * cores);
 
   //FIXME: check for errors
 #if __APPLE__
@@ -241,28 +261,36 @@ lrt_event_trigger_event(lrt_event_num num,
                         lrt_event_loc loc)
 {
   int pipefd;
+  int islocal = 0;
+  if (loc == lrt_my_event_loc())
+    islocal = 1;
 
-  //TODO: Do something better for a local event
+  if ( (islocal && lrt_event_use_bitvector_local) ||
+       (!islocal && lrt_event_use_bitvector_remote) ) {
+    lrt_event_set_bit(loc, num);
+  } 
 
-  if (desc == LRT_EVENT_LOC_SINGLE) {
-    //protects from a race on startup
-    do {
-      pipefd = *(volatile int *)&event_data[loc].pipefd_write;
-    } while (pipefd == 0);
-
-    ssize_t rc = write(pipefd, &num, sizeof(num));
-    LRT_Assert(rc == sizeof(num));
-    //FIXME: check errors
-  } else if (desc == LRT_EVENT_LOC_ALL) {
-    lrt_event_loc num_ev = lrt_num_event_loc();
-    for (lrt_event_loc i = 0; i < num_ev; i++) {
+  if ((!islocal) || !lrt_event_use_bitvector_local) {
+    if (desc == LRT_EVENT_LOC_SINGLE) {
       //protects from a race on startup
       do {
-        pipefd = *(volatile int *)&event_data[i].pipefd_write;
+	pipefd = *(volatile int *)&event_data[loc].pipefd_write;
       } while (pipefd == 0);
-
+      
       ssize_t rc = write(pipefd, &num, sizeof(num));
       LRT_Assert(rc == sizeof(num));
+      //FIXME: check errors
+    } else if (desc == LRT_EVENT_LOC_ALL) {
+      lrt_event_loc num_ev = lrt_num_event_loc();
+      for (lrt_event_loc i = 0; i < num_ev; i++) {
+	//protects from a race on startup
+	do {
+	  pipefd = *(volatile int *)&event_data[i].pipefd_write;
+	} while (pipefd == 0);
+	
+	ssize_t rc = write(pipefd, &num, sizeof(num));
+	LRT_Assert(rc == sizeof(num));
+      }
     }
   }
   //FIXME: check for errors
