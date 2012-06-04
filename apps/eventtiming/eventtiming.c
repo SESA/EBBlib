@@ -277,7 +277,6 @@ runNextTest()
     {
       //block for a while to let other cores halt
       uint64_t time = rdtscp();
-      lrt_printf("eventtiming: started\n");
       while ((rdtscp() - time) < 1000000)
 	;
     }
