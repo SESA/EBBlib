@@ -87,7 +87,11 @@ lrt_event_loop(void)
   struct lrt_event_local_data *ldata = &event_data[lrt_my_event_loc()];
 
   while (1) {
-    int en = lrt_event_get_unset_bit(lrt_my_event_loc());
+    int en = -1;
+
+    if (lrt_event_use_bitvector_local || lrt_event_use_bitvector_remote) 
+      en = lrt_event_get_unset_bit(lrt_my_event_loc());
+
     if (en != -1) {
       lrt_event_bv_dispatched_events++;
       dispatch_event(en);

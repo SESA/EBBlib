@@ -265,6 +265,7 @@ runNextTest()
     testStage++;
     count = -1;
     next = 0;
+    lrt_event_use_bitvector_local=0;
     lrt_event_use_bitvector_remote=0;
     lrt_printf("eventtiming: running remote event loop with BV disabled\n");
     rc = COBJ_EBBCALL(theEventMgrPrimId, bindEvent, ev, (EBBId)theAppId,
