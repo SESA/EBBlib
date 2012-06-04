@@ -76,6 +76,10 @@ printCounters() {
       
 
 EventLoc next;
+enum {RR_ALL, PING};
+int round_robin_type; // RR to all or PING to remote
+EventLoc ping_r;      /* remote core for ping test */
+
 
 static EBBRC
 EventTiming_roundRobinEvent(EventTimingRef self)
@@ -90,7 +94,6 @@ EventTiming_roundRobinEvent(EventTimingRef self)
     t0 = rdtscp();
   }
     
-
   int numcores = NumEventLoc();
   if (MyEventLoc() == 0) {
     if (count >= numcores*1000) {
@@ -102,9 +105,18 @@ EventTiming_roundRobinEvent(EventTimingRef self)
       runNextTest();
       return EBBRC_OK;
     }
-  }
+    if (round_robin_type == PING) {
+      next = ping_r;
+    }
+  } else {
+    // not on core 0, if ping test set next to remote core
+    if (round_robin_type == PING) {
+      next = 0;
+    } else {
+      next = NextEventLoc(next);
+    }
+  }      
 
-  next = NextEventLoc(next);
   count++;
   COBJ_EBBCALL(theEventMgrPrimId, triggerEvent, ev,
 	       EVENT_LOC_SINGLE, next);
@@ -265,6 +277,7 @@ runNextTest()
     testStage++;
     count = -1;
     next = 0;
+    round_robin_type = RR_ALL;
     lrt_event_use_bitvector_local=0;
     lrt_event_use_bitvector_remote=0;
     lrt_printf("eventtiming: running remote event loop with BV disabled\n");
@@ -284,10 +297,50 @@ runNextTest()
     break;
   case 4:
     testStage++;
-    count = 0;
+    count = -1;
     resetCounters();
+    round_robin_type = RR_ALL;
+    lrt_event_use_bitvector_local=1;
     lrt_event_use_bitvector_remote=1;
     lrt_printf("eventtiming: running remote event loop with BV enabled\n");
+    rc = COBJ_EBBCALL(theEventMgrPrimId, bindEvent, ev, (EBBId)theAppId,
+                            COBJ_FUNCNUM_FROM_TYPE(CObjInterface(EventTiming),
+                                                   roundRobinEvent));
+    LRT_RCAssert(rc);
+    rc = COBJ_EBBCALL(theEventMgrPrimId, triggerEvent, ev,
+		      EVENT_LOC_SINGLE, MyEventLoc());
+    LRT_RCAssert(rc);
+    break;
+  case 5:
+    testStage++;
+    count = -1;
+    resetCounters();
+    round_robin_type = PING;
+    ping_r = NextEventLoc(MyEventLoc());
+    lrt_event_use_bitvector_local=0;
+    lrt_event_use_bitvector_remote=0;
+    lrt_printf("eventtiming: running ping to core %ld BV disabled\n",
+	       (long int)ping_r);
+    rc = COBJ_EBBCALL(theEventMgrPrimId, bindEvent, ev, (EBBId)theAppId,
+                            COBJ_FUNCNUM_FROM_TYPE(CObjInterface(EventTiming),
+                                                   roundRobinEvent));
+    LRT_RCAssert(rc);
+    rc = COBJ_EBBCALL(theEventMgrPrimId, triggerEvent, ev,
+		      EVENT_LOC_SINGLE, MyEventLoc());
+    LRT_RCAssert(rc);
+    break;
+  case 6:
+    testStage++;
+    count = -1;
+    resetCounters();
+    ping_r = NextEventLoc(MyEventLoc());
+    for (int i=0; i<19; i++) 
+      ping_r = NextEventLoc(ping_r);
+    round_robin_type = PING;
+    lrt_event_use_bitvector_local=0;
+    lrt_event_use_bitvector_remote=0;
+    lrt_printf("eventtiming: running ping to core %ld BV disabled\n",
+	       (long int)ping_r);
     rc = COBJ_EBBCALL(theEventMgrPrimId, bindEvent, ev, (EBBId)theAppId,
                             COBJ_FUNCNUM_FROM_TYPE(CObjInterface(EventTiming),
                                                    roundRobinEvent));
