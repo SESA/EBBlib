@@ -63,11 +63,15 @@ static const intptr_t PIPE_UDATA = -1;
 // configuration flags:
 int lrt_event_use_bitvector_local=1;
 int lrt_event_use_bitvector_remote=0;
+// counters 
+int lrt_event_dispatched_events=0;
+int lrt_event_bv_dispatched_events=0;
 
 static void 
 dispatch_event(lrt_event_num en)
 {
   struct lrt_event_descriptor *desc = &lrt_event_table[en];
+  lrt_event_dispatched_events++;
   lrt_trans_id id = desc->id;
   lrt_trans_func_num fnum = desc->fnum;
 
@@ -85,6 +89,7 @@ lrt_event_loop(void)
   while (1) {
     int en = lrt_event_get_unset_bit(lrt_my_event_loc());
     if (en != -1) {
+      lrt_event_bv_dispatched_events++;
       dispatch_event(en);
       continue;
     }

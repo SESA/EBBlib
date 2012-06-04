@@ -30,6 +30,16 @@
 // event configuraiton flags, dynamic for timing
 extern int lrt_event_use_bitvector_local;
 extern int lrt_event_use_bitvector_remote;
+extern int lrt_event_collect_int_timing;
+
+// counters
+extern int lrt_event_dispatched_events;
+extern int lrt_event_bv_dispatched_events;
+
+
+// temporary timing variables
+uint64_t tint_disp;
+uint64_t tint_rec;
 
 extern void *lrt_event_init(void *myloc);
 extern void lrt_event_preinit(int cores);

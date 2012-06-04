@@ -27,7 +27,8 @@
 #include <l1/App.h>
 #include <lrt/exit.h>
 #include <lrt/io.h>
-
+#include <l0/cobj/CObjEBBRootShared.h>
+#include <l0/cobj/CObjEBBUtils.h>
 // include this to get configuration flags
 #include <l0/lrt/event.h>
 
@@ -54,29 +55,59 @@ CObjInterface(EventTiming) {
   EBBRC (*roundRobinEvent) (EventTimingRef self);
 };
 
-uint64_t t0, t1;
+uint64_t t0, t1, t2;
 int count;
 EventNo ev;
 
 EBBRC runNextTest();
 
+static void
+resetCounters() {
+  lrt_event_dispatched_events = 0;
+  lrt_event_bv_dispatched_events = 0;
+}
+
+static void
+printCounters() {
+  lrt_printf("\t dispatched %ld dispatched bv %ld\n",
+	     (long int)(lrt_event_dispatched_events), 
+	     (long int)(lrt_event_bv_dispatched_events));
+}
+      
+
+EventLoc next;
+
 static EBBRC
 EventTiming_roundRobinEvent(EventTimingRef self)
 {
-  if (count == 32 * 1000) {
-    t1 = rdtscp();
-    lrt_printf("eventtiming: round robin total %ld per lp %ld\n",
-	       (long int)(t1 - t0), (long int)(t1 - t0)/(32*1000));
-    runNextTest();
+  if (next != MyEventLoc()) {
+    // duplicate event
     return EBBRC_OK;
-  } else if (count == 0) {
+  }
+
+  if (count == -1) {
+    resetCounters();
     t0 = rdtscp();
   }
+    
+
+  int numcores = NumEventLoc();
+  if (MyEventLoc() == 0) {
+    if (count >= numcores*1000) {
+      t1 = rdtscp();
+      lrt_printf("\t count %d\n", count);
+      lrt_printf("\t round robin total %ld per lp %ld\n",
+		 (long int)(t1 - t0), (long int)(t1 - t0)/(count));
+      printCounters();
+      runNextTest();
+      return EBBRC_OK;
+    }
+  }
+
+  next = NextEventLoc(next);
   count++;
-
   COBJ_EBBCALL(theEventMgrPrimId, triggerEvent, ev,
-               EVENT_LOC_SINGLE, NextEventLoc(MyEventLoc()));
-
+	       EVENT_LOC_SINGLE, next);
   return EBBRC_OK;
 }
 
@@ -85,8 +116,9 @@ EventTiming_loopLocalEvent(EventTimingRef self)
 {
   if (count == 1000) {
     t1 = rdtscp();
-    lrt_printf("eventtiming: local total %ld per lp %ld\n",
+    lrt_printf("\t local total %ld per lp %ld\n",
 	       (long int)(t1 - t0), (long int)((t1 - t0)/(1000)));
+    printCounters();
     runNextTest();
     return EBBRC_OK;
   } else if (count == 0) {
@@ -100,6 +132,92 @@ EventTiming_loopLocalEvent(EventTimingRef self)
   return EBBRC_OK;
 }
 
+COBJ_EBBType(TestObj) {
+  EBBRC (*nullCall) (TestObjRef self);
+};
+
+CObject(TestObjImp)
+{
+  COBJ_EBBFuncTbl(TestObj);
+};
+
+static EBBRC
+TestObjImp_nullCall(TestObjRef _self)
+{
+  return EBBRC_OK;
+}
+
+CObjInterface(TestObj) TestObjImp_ftable = {
+  .nullCall = TestObjImp_nullCall
+};
+
+void
+TestObjImpSetFT(TestObjImpRef o)
+{
+  o->ft = &(TestObjImp_ftable);
+}
+
+TestObjId toid;
+
+EBBRC
+testObjImpCreate()
+{
+  TestObjImpRef repRef;
+  CObjEBBRootSharedRef rootRef;
+  EBBRC rc;
+
+  rc = EBBPrimMalloc(sizeof(TestObjImp), &repRef, EBB_MEM_DEFAULT);
+  LRT_RCAssert(rc);
+  TestObjImpSetFT(repRef);
+
+  rc = CObjEBBRootSharedCreate(&rootRef, (EBBRepRef)repRef);
+  LRT_RCAssert(rc);
+
+  rc = EBBAllocPrimId((EBBId *)&toid);
+  LRT_RCAssert(rc);
+
+  rc = EBBBindPrimId((EBBId)toid, CObjEBBMissFunc, (EBBMissArg)rootRef);
+  LRT_RCAssert(rc);
+
+  return EBBRC_OK;
+}
+
+
+EBBRC
+testEBBCall()
+{
+  int i;
+  EBBRC rc;
+  
+  rc = testObjImpCreate();
+  LRT_RCAssert(rc);
+
+  t0 = rdtscp();
+  COBJ_EBBCALL(toid, nullCall);
+  t1 = rdtscp();
+  for(i=0;i<1000;i++) {
+    COBJ_EBBCALL(toid, nullCall);
+  }
+  t2 = rdtscp();
+  lrt_printf("\t first EBB call %ld subsequent avg %ld\n",
+	     (long int)(t1 - t0), (long int)(t2 - t1)/(1000));
+  return EBBRC_OK;
+}
+
+EBBRC
+testTimerOverhead()
+{
+  int i;
+  t0 = rdtscp();
+  for(i=0;i<10000;i++) {
+    t1= rdtscp();
+  }
+  t2 = rdtscp();
+  lrt_printf("\t avt time to read timer %ld\n",
+	     (long int)(t2 - t0)/(10000));
+  return EBBRC_OK;
+}
+
 /*
  * tests executed in context of event
  * initiated by previous tests
@@ -110,8 +228,17 @@ runNextTest()
   static int testStage = 0;
   count = 0;
   EBBRC rc;
+  resetCounters();
   switch(testStage) {
   case 0: 
+    // tests that run to completion
+    testStage++;
+    lrt_printf("eventtiming: base overheads\n");
+    testEBBCall();
+    testTimerOverhead();
+    // falls into tests that create events
+    // and call runNextTest
+  case 1: 
     testStage++;
     rc = COBJ_EBBCALL(theEventMgrPrimId, bindEvent, ev, (EBBId)theAppId,
 		      COBJ_FUNCNUM_FROM_TYPE(CObjInterface(EventTiming), 
@@ -125,7 +252,7 @@ runNextTest()
 		      EVENT_LOC_SINGLE, MyEventLoc());
     LRT_RCAssert(rc);
     break;
-  case 1:
+  case 2:
     testStage++;
     lrt_event_use_bitvector_local=1;
     count = 0;
@@ -134,9 +261,10 @@ runNextTest()
 		      EVENT_LOC_SINGLE, MyEventLoc());
     LRT_RCAssert(rc);
     break;
-  case 2:
+  case 3:
     testStage++;
     count = -1;
+    next = 0;
     lrt_event_use_bitvector_remote=0;
     lrt_printf("eventtiming: running remote event loop with BV disabled\n");
     rc = COBJ_EBBCALL(theEventMgrPrimId, bindEvent, ev, (EBBId)theAppId,
@@ -145,11 +273,19 @@ runNextTest()
     LRT_RCAssert(rc);
     rc = COBJ_EBBCALL(theEventMgrPrimId, triggerEvent, ev,
 		      EVENT_LOC_SINGLE, MyEventLoc());
+    {
+      //block for a while to let other cores halt
+      uint64_t time = rdtscp();
+      lrt_printf("eventtiming: started\n");
+      while ((rdtscp() - time) < 1000000)
+	;
+    }
     LRT_RCAssert(rc);
     break;
-  case 3:
+  case 4:
     testStage++;
-    count = -1;
+    count = 0;
+    resetCounters();
     lrt_event_use_bitvector_remote=1;
     lrt_printf("eventtiming: running remote event loop with BV enabled\n");
     rc = COBJ_EBBCALL(theEventMgrPrimId, bindEvent, ev, (EBBId)theAppId,
@@ -160,7 +296,7 @@ runNextTest()
 		      EVENT_LOC_SINGLE, MyEventLoc());
     LRT_RCAssert(rc);
     break;
-  case 4:
+  default:
     lrt_exit(0);
     break;
   }
