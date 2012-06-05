@@ -96,6 +96,7 @@ EBBRC
 EventMgrPrim_triggerEvent(EventMgrPrimRef _self, EventNo eventNo,
                           enum EventLocDesc desc, EventLoc el)
 {
+  LRT_Assert(el < lrt_num_event_loc());
   lrt_event_trigger_event(eventNo, desc, el);
   return EBBRC_OK;
 }

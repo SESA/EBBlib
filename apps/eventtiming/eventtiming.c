@@ -32,6 +32,8 @@
 // include this to get configuration flags
 #include <l0/lrt/event.h>
 
+int verbose=0;
+
 static inline uint64_t
 rdtscp(void)
 {
@@ -85,6 +87,9 @@ EventLoc next;			/* next core to wake up */
 EventLoc ping_r;		/* remote core for ping test */
 enum {LOCAL, RR_ALL, PING} event_loop_type;
 
+// stuff used everywhere
+int numcores;
+
 // variables used in loopEvent
 int count;
 int iteration;
@@ -127,17 +132,30 @@ EventTiming_loopEvent(EventTimingRef self)
     if (min_avg > cavg) min_avg = cavg;
 
     if (iteration == max_iteration) { // done it all
-      lrt_printf("\t"
-		 " tot_count %ld "
-		 " total %ld \n"
-		 "\t"
-		 " avg %ld "
-		 " max_avg %ld "
-		 " min_avg %ld \n",
-		 (long int)tot_count, (long int)total, 
-		 (long int)(total/tot_count), (long int)max_avg, 
-		 (long int)min_avg );
-      printCounters();
+      if (verbose) {
+	lrt_printf("eventtiming: ran ping to core %ld BV disabled\n",
+		   (long int)ping_r);
+	lrt_printf("\t"
+		   " tot_count %ld "
+		   " total %ld \n"
+		   "\t"
+		   " avg %ld "
+		   " max_avg %ld "
+		   " min_avg %ld \n",
+		   (long int)tot_count, (long int)total, 
+		   (long int)(total/tot_count), (long int)max_avg, 
+		   (long int)min_avg );
+	printCounters();
+      } else {
+	// denser printing
+	lrt_printf("\t ping to core %ld "
+		   " avg %ld "
+		   " max_avg %ld "
+		   " min_avg %ld \n",
+		   (long int)ping_r, 
+		   (long int)(total/tot_count), (long int)max_avg, 
+		   (long int)min_avg );
+      }
       runNextTest();
       return EBBRC_OK;
     }
@@ -317,16 +335,36 @@ testTimerOverhead()
  * tests executed in context of event
  * initiated by previous tests
  */
+static EBBRC 
+runPingTest(EventLoc core)
+{
+  EBBRC rc;
+  if (core >= numcores) {
+    runNextTest();
+    return EBBRC_OK;
+  }
+  event_loop_type = PING;
+  ping_r = core;
+  lrt_event_use_bitvector_local=0;
+  lrt_event_use_bitvector_remote=0;
+  rc = COBJ_EBBCALL(theEventMgrPrimId, triggerEvent, ev, EVENT_LOC_SINGLE, 0);
+  LRT_RCAssert(rc);
+  return EBBRC_OK;
+}
+
 EBBRC
 runNextTest()
 {
-  static int testStage = 0;
+  static int nextStage = 0;
+  int curStage;
   EBBRC rc;
   count = -1;
   iteration = -1;
   next = 0;
   resetCounters();
-  switch(testStage) {
+  curStage = nextStage;
+  nextStage++;
+  switch(curStage) {
   case 0: 
     // tests that run to completion
     lrt_printf("eventtiming: base overheads\n");
@@ -336,8 +374,8 @@ runNextTest()
     testTimerOverhead();
     // falls into tests that create events
     // and call runNextTest
+    nextStage++;
   case 1: 
-    testStage++;
     event_loop_type = LOCAL;
     lrt_event_use_bitvector_local=0;
     lrt_printf("eventtiming: running local event loop with BV disabled\n");
@@ -352,30 +390,51 @@ runNextTest()
     LRT_RCAssert(rc);
     break;
   case 3:
-    event_loop_type = PING;
-    ping_r = NextEventLoc(0);
-    lrt_event_use_bitvector_local=0;
-    lrt_event_use_bitvector_remote=0;
-    lrt_printf("eventtiming: running ping to core %ld BV disabled\n",
-	       (long int)ping_r);
-    rc = COBJ_EBBCALL(theEventMgrPrimId, triggerEvent, ev, EVENT_LOC_SINGLE, 0);
-    LRT_RCAssert(rc);
+    lrt_printf("--------------- ping tests --------------\n");
+    verbose = 0;
+    runPingTest(curStage-2);
     break;
   case 4:
-    next = 0;
-    event_loop_type = PING;
-    ping_r = NextEventLoc(0);
-    for (int i=0; i<19; i++) 
-      ping_r = NextEventLoc(ping_r);
-    event_loop_type = PING;
-    lrt_event_use_bitvector_local=0;
-    lrt_event_use_bitvector_remote=0;
-    lrt_printf("eventtiming: running ping to core %ld BV disabled\n",
-	       (long int)ping_r);
-    rc = COBJ_EBBCALL(theEventMgrPrimId, triggerEvent, ev, EVENT_LOC_SINGLE, 0);
-    LRT_RCAssert(rc);
-    break;
   case 5:
+  case 6:
+  case 7:
+  case 8:
+  case 9:
+  case 10:
+  case 11:
+  case 12:
+  case 13:
+  case 14:
+  case 15:
+  case 16:
+  case 17:
+  case 18:
+  case 19:
+  case 20:
+  case 21:
+  case 22:
+  case 23:
+  case 24:
+  case 25:
+  case 26:
+  case 27:
+  case 28:
+  case 29:
+  case 30:
+  case 31:
+  case 32:
+  case 33:
+  case 34:
+  case 35:
+  case 36:
+  case 37:
+  case 38:
+  case 39:
+    runPingTest(curStage-2);
+    break;
+
+  case 40:
+    verbose = 1;		/* get loud again */
     event_loop_type = RR_ALL;
     lrt_event_use_bitvector_local=0;
     lrt_event_use_bitvector_remote=0;
@@ -383,7 +442,7 @@ runNextTest()
     rc = COBJ_EBBCALL(theEventMgrPrimId, triggerEvent, ev, EVENT_LOC_SINGLE, 0);
     LRT_RCAssert(rc);
     break;
-  case 6:
+  case 41:
     event_loop_type = RR_ALL;
     lrt_event_use_bitvector_local=1;
     lrt_event_use_bitvector_remote=1;
@@ -392,10 +451,10 @@ runNextTest()
     LRT_RCAssert(rc);
     break;
   default:
+    lrt_printf("exiting with test number %d\n", curStage);
     lrt_exit(0);
     break;
   }
-  testStage++;
   return EBBRC_OK;
 }
 
@@ -405,6 +464,9 @@ EventTiming_start(AppRef _self)
 {
   //block for a while to let other cores halt
   uint64_t time = rdtscp();
+  numcores = NumEventLoc();
+  verbose = 1;
+
   lrt_printf("eventtiming: started\n");
   while ((rdtscp() - time) < 1000000) ;
   EBBRC rc = COBJ_EBBCALL(theEventMgrPrimId, allocEventNo, &ev);
