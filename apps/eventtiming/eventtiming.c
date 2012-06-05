@@ -277,7 +277,8 @@ EBBRC
 testTimerOverhead()
 {
   int i, j;
-  static uint64_t t0, t1, t3;
+  static uint64_t t0, t1;
+  static uint64_t t3 __attribute__((unused));
   static uint64_t max_avg, min_avg, total;
   
   for(i=0;i<max_iteration;i++) {
