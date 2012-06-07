@@ -417,6 +417,12 @@ EBBRC
 runNextTest()
 {
   static int nextStage = 0;
+#ifdef LRT_EVENT_COLLECT_INT_TIMING
+  if (nextStage < 42) {
+    nextStage = 42;
+  }
+#endif
+
   int curStage;
   EBBRC rc;
   count = -1;
