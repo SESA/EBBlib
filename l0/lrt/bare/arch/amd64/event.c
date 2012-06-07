@@ -39,9 +39,12 @@ static int num_event_loc;
 // configuration flags:
 int lrt_event_use_bitvector_local=1;
 int lrt_event_use_bitvector_remote=0;
+int lrt_event_collect_int_timing=0;
+
 // counters 
 int lrt_event_dispatched_events=0;
 int lrt_event_bv_dispatched_events=0;
+uint64_t tint0, tint1, tint2, tint3;
 
 lrt_event_loc
 lrt_num_event_loc()
@@ -150,6 +153,10 @@ lrt_event_loop(void)
       lrt_event_bv_dispatched_events++;
       dispatch_event(en);
     } else {
+#ifdef LRT_EVENT_COLLECT_INT_TIMING
+      if (lrt_event_collect_int_timing)
+	tint2 = rdtscp();
+#endif
       __asm__ volatile("sti"); //enable interrupts
       __asm__ volatile("hlt");
       __asm__ volatile("cli"); //disable interrupts
@@ -221,6 +228,11 @@ lrt_event_trigger_event(lrt_event_num num, enum lrt_event_loc_desc desc,
     lrt_event_set_bit(loc, num);
   }
 
+#ifdef LRT_EVENT_COLLECT_INT_TIMING
+  if (lrt_event_collect_int_timing)
+    tint1 = rdtscp();
+#endif
+
   if ((!islocal) || !lrt_event_use_bitvector_local) {
     lapic_icr_low icr_low;
     icr_low.raw = 0;
@@ -261,6 +273,10 @@ exception_common(uint8_t num) {
 
 void
 event_common(uint8_t num) {
+#ifdef LRT_EVENT_COLLECT_INT_TIMING
+  if (lrt_event_collect_int_timing)
+    tint3 = rdtscp();
+#endif
   send_eoi();
   uint8_t ev = num - 32; //first 32 interrupts are reserved
   dispatch_event(ev);

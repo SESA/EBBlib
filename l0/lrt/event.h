@@ -31,11 +31,13 @@
 extern int lrt_event_use_bitvector_local;
 extern int lrt_event_use_bitvector_remote;
 extern int lrt_event_collect_int_timing;
+//#define LRT_EVENT_COLLECT_INT_TIMING
 
 // counters
 extern int lrt_event_dispatched_events;
 extern int lrt_event_bv_dispatched_events;
 
+extern uint64_t tint0, tint1, tint2, tint3;
 
 // temporary timing variables
 uint64_t tint_disp;
