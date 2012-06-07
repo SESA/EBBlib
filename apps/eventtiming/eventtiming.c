@@ -135,9 +135,16 @@ EventTiming_loopEvent(EventTimingRef self)
 #ifdef LRT_EVENT_COLLECT_INT_TIMING
     if (lrt_event_collect_int_timing) {
       uint64_t d;
-      LRT_Assert(tint1>tint0);
-      LRT_Assert(tint2>tint1);
-      LRT_Assert(tint3>tint2);
+      if ((tint1<tint0)||(tint2<tint1)||(tint3<tint2)) { 
+	lrt_printf("1 - %ld - %ld - %ld - %ld\n", 
+		   (unsigned long)tint0, 
+		   (unsigned long)tint1, 
+		   (unsigned long)tint2, 
+		   (unsigned long)tint3);
+      }
+      LRT_Assert(tint1>=tint0);
+      LRT_Assert(tint2>=tint1);
+      LRT_Assert(tint3>=tint2);
       d = tint1 - tint0;
       if (d < min1) min1 = d;
       if (d > max1) max1 = d;
@@ -507,7 +514,7 @@ runNextTest()
   case 42:
 #ifdef LRT_EVENT_COLLECT_INT_TIMING
     event_loop_type = LOCAL_INT;
-    lrt_event_use_bitvector_local=0;
+    lrt_event_use_bitvector_local=1;
     lrt_event_use_bitvector_remote=0;
     lrt_printf("eventtiming: running local fine grained timing test\n");
     rc = COBJ_EBBCALL(theEventMgrPrimId, triggerEvent, ev, EVENT_LOC_SINGLE, 0);

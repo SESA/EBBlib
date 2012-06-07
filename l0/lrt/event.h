@@ -30,8 +30,11 @@
 // event configuraiton flags, dynamic for timing
 extern int lrt_event_use_bitvector_local;
 extern int lrt_event_use_bitvector_remote;
+// only on and64 bare metal for now
+#define LRT_EVENT_COLLECT_INT_TIMING
+#ifdef LRT_EVENT_COLLECT_INT_TIMING
 extern int lrt_event_collect_int_timing;
-//#define LRT_EVENT_COLLECT_INT_TIMING
+#endif
 
 // counters
 extern int lrt_event_dispatched_events;

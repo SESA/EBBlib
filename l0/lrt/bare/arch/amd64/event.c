@@ -74,6 +74,19 @@ idt_map_vec(uint8_t vec, void *addr) {
   idt[vec].p = 1; //present
 }
 
+static inline uint64_t
+rdtscp(void)
+{
+  uint32_t lo, hi;
+  asm volatile("rdtscp"
+               : "=a" (lo),
+                 "=d" (hi)
+               :
+               :
+               "ecx");
+  return (uint64_t)hi << 32 | lo;
+}
+
 static void *isrtbl[];
 
 static inline void
@@ -131,38 +144,48 @@ dispatch_event(lrt_event_num en)
 }
 
 
+static void 
+trigger_local_event(lrt_event_num num)
+{
+  lapic_icr_low icr_low;
+  icr_low.raw = 0;
+  icr_low.vector = num + 32;
+  icr_low.level = 1;
+  
+  lapic_icr_high icr_high;
+  icr_high.raw = 0;
+  icr_low.destination_shorthand = 0;
+  icr_high.destination = lrt_event_loc2apicid(lrt_my_event_loc());
+  
+  send_ipi(icr_low, icr_high);
+}
+
 
 void __attribute__ ((noreturn))
 lrt_event_loop(void)
 {
-#if 0			/* ignoring SW bitvector */
-  //After we enable interrupts we just halt, an interrupt should wake
-  //us up. Once we finish the interrupt, we halt again and repeat
-
-  __asm__ volatile("sti"); //enable interrupts
-  while (1) {
-    __asm__ volatile("hlt");
-  }
-#else
   while (1) {
     int en = -1;
     if (lrt_event_use_bitvector_local || lrt_event_use_bitvector_remote) 
       en = lrt_event_get_unset_bit(lrt_my_event_loc());
 
     if (en != -1) {
+#ifndef LRT_EVENT_COLLECT_INT_TIMING
       lrt_event_bv_dispatched_events++;
       dispatch_event(en);
-    } else {
-#ifdef LRT_EVENT_COLLECT_INT_TIMING
-      if (lrt_event_collect_int_timing)
-	tint2 = rdtscp();
-#endif
+#else 
+      tint1 = rdtscp();
+      trigger_local_event(en);
+      tint2 = rdtscp();
+      __asm__ volatile("sti"); //enable interrupts
+      __asm__ volatile("cli"); //disable interrupts
+#endif      
+    } else{
       __asm__ volatile("sti"); //enable interrupts
       __asm__ volatile("hlt");
       __asm__ volatile("cli"); //disable interrupts
     }
   }
-#endif
 }
 
 volatile int smp_lock;
@@ -227,11 +250,6 @@ lrt_event_trigger_event(lrt_event_num num, enum lrt_event_loc_desc desc,
        (!islocal && lrt_event_use_bitvector_remote) ) {
     lrt_event_set_bit(loc, num);
   }
-
-#ifdef LRT_EVENT_COLLECT_INT_TIMING
-  if (lrt_event_collect_int_timing)
-    tint1 = rdtscp();
-#endif
 
   if ((!islocal) || !lrt_event_use_bitvector_local) {
     lapic_icr_low icr_low;
