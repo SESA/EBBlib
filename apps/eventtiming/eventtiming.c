@@ -110,9 +110,6 @@ EventTiming_loopEvent(EventTimingRef self)
     bogus_events++;
     return EBBRC_OK;
   }
-
-
-
   if (count == -1) {
     if (iteration == -1) {
       // start of the entire experiment
@@ -121,14 +118,28 @@ EventTiming_loopEvent(EventTimingRef self)
       min_avg = UINT64_MAX;
       count = 0;
       iteration = 0;
+      // set any initial conditions based on experiment
+      LRT_Assert(MyEventLoc() == 0);
+      switch(event_loop_type) {
+      case LOCAL_INT:
 #ifdef LRT_EVENT_COLLECT_INT_TIMING
-      if (event_loop_type == LOCAL_INT) {
 	min1 = min2 = min3 = UINT64_MAX;
 	max1 = max2 = max3 = 0;
 	avg1 = avg2 = avg3 = 0;
+	lrt_printf("eventtiming: running local fine grained timing test\n");
+	lrt_event_use_bitvector_local=1;
+	lrt_event_use_bitvector_remote=0;
 	lrt_event_collect_int_timing = 1;
-      }
+	next = 0;
 #endif
+	break;
+      case LOCAL:
+	break;
+      case PING:
+	break;
+      case RR_ALL:
+	break;
+      }
     } 
     t0 = rdtscp();
   } else {
@@ -520,9 +531,6 @@ runNextTest()
   case 42:
 #ifdef LRT_EVENT_COLLECT_INT_TIMING
     event_loop_type = LOCAL_INT;
-    lrt_event_use_bitvector_local=1;
-    lrt_event_use_bitvector_remote=0;
-    lrt_printf("eventtiming: running local fine grained timing test\n");
     rc = COBJ_EBBCALL(theEventMgrPrimId, triggerEvent, ev, EVENT_LOC_SINGLE, 0);
     LRT_RCAssert(rc);
     break;

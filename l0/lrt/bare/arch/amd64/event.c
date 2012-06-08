@@ -144,6 +144,7 @@ dispatch_event(lrt_event_num en)
 }
 
 
+#ifdef LRT_EVENT_COLLECT_INT_TIMING
 static void 
 trigger_local_event(lrt_event_num num)
 {
@@ -159,32 +160,38 @@ trigger_local_event(lrt_event_num num)
   
   send_ipi(icr_low, icr_high);
 }
-
+#endif
 
 void __attribute__ ((noreturn))
 lrt_event_loop(void)
 {
   while (1) {
     int en = -1;
-    if (lrt_event_use_bitvector_local || lrt_event_use_bitvector_remote) 
+    if (lrt_event_use_bitvector_local || lrt_event_use_bitvector_remote) {
       en = lrt_event_get_unset_bit(lrt_my_event_loc());
+    }
 
     if (en != -1) {
 #ifndef LRT_EVENT_COLLECT_INT_TIMING
       lrt_event_bv_dispatched_events++;
       dispatch_event(en);
+      continue;
 #else 
       tint1 = rdtscp();
       trigger_local_event(en);
       tint2 = rdtscp();
-      __asm__ volatile("sti"); //enable interrupts
-      __asm__ volatile("cli"); //disable interrupts
-#endif      
-    } else{
-      __asm__ volatile("sti"); //enable interrupts
-      __asm__ volatile("hlt");
-      __asm__ volatile("cli"); //disable interrupts
     }
+#endif      
+    // enable interrupts, halt and then disable
+    // Note that because we don't preserve register on an event, we
+    // have to clobber them here or else the compiler will put stuff
+    // into clobered registers
+    __asm__ volatile("sti\n\t"
+		     "hlt\n\t"
+		     "cli"
+		     ::
+                     : "rax", "rcx", "rdx", "rsi",
+                     "rdi", "r8", "r9", "r10", "r11"); 
   }
 }
 
@@ -243,8 +250,9 @@ lrt_event_trigger_event(lrt_event_num num, enum lrt_event_loc_desc desc,
                         lrt_event_loc loc)
 {
   int islocal = 0;
-  if (loc == lrt_my_event_loc())
+  if (loc == lrt_my_event_loc()) {
     islocal = 1;
+  }
 
   if ( (islocal && lrt_event_use_bitvector_local) ||
        (!islocal && lrt_event_use_bitvector_remote) ) {
@@ -292,8 +300,9 @@ exception_common(uint8_t num) {
 void
 event_common(uint8_t num) {
 #ifdef LRT_EVENT_COLLECT_INT_TIMING
-  if (lrt_event_collect_int_timing)
+  if (lrt_event_collect_int_timing) {
     tint3 = rdtscp();
+  }
 #endif
   send_eoi();
   uint8_t ev = num - 32; //first 32 interrupts are reserved
