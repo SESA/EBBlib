@@ -37,13 +37,14 @@
 static int num_event_loc;
 
 // configuration flags:
-int lrt_event_use_bitvector_local=1;
-int lrt_event_use_bitvector_remote=0;
-int lrt_event_collect_int_timing=0;
+int lrt_event_use_bitvector_local __attribute__ ((aligned(256))) = 0;
+int lrt_event_use_bitvector_remote __attribute__ ((aligned(256))) = 0;
+int lrt_event_collect_int_timing __attribute__ ((aligned(256))) = 0;
 
 // counters 
-int lrt_event_dispatched_events=0;
-int lrt_event_bv_dispatched_events=0;
+int lrt_event_dispatched_events __attribute__ ((aligned(256))) =0 ;
+int lrt_event_bv_dispatched_events __attribute__ ((aligned(256))) =0;
+int lrt_event_loop_count __attribute__ ((aligned(256))) =0;
 uint64_t tint0, tint1, tint2, tint3;
 
 lrt_event_loc
@@ -180,18 +181,32 @@ lrt_event_loop(void)
       tint1 = rdtscp();
       trigger_local_event(en);
       tint2 = rdtscp();
-    }
 #endif      
+    }
     // enable interrupts, halt and then disable
     // Note that because we don't preserve register on an event, we
     // have to clobber them here or else the compiler will put stuff
     // into clobered registers
+    
+    if (lrt_my_event_loc() == 0) {
+      lrt_event_loop_count++;
+    }
+
+#ifdef LRT_EVENT_NOP_SPIN
+    __asm__ volatile("sti\n\t"
+		     "nop\n\t"
+		     "cli"
+		     ::
+		     : "rax", "rcx", "rdx", "rsi",
+		       "rdi", "r8", "r9", "r10", "r11"); 
+#else
     __asm__ volatile("sti\n\t"
 		     "hlt\n\t"
 		     "cli"
 		     ::
                      : "rax", "rcx", "rdx", "rsi",
                      "rdi", "r8", "r9", "r10", "r11"); 
+#endif
   }
 }
 

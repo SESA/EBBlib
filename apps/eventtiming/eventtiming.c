@@ -69,6 +69,7 @@ static void
 resetCounters() {
   lrt_event_dispatched_events = 0;
   lrt_event_bv_dispatched_events = 0;
+  lrt_event_loop_count=0;
   bogus_events = 0;
 }
 
@@ -77,6 +78,9 @@ printCounters() {
   lrt_printf("\t dispatched %ld dispatched bv %ld\n",
 	     (long int)(lrt_event_dispatched_events), 
 	     (long int)(lrt_event_bv_dispatched_events));
+  lrt_printf("\t time through event loop %ld\n",
+	     (long int)lrt_event_loop_count);
+
   if (bogus_events) {
     lrt_printf("\t got %d bogus events\n", bogus_events);
   }

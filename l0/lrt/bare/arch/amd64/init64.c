@@ -51,7 +51,7 @@ multiboot_info_t *bootinfo;
 
 char *_smp_stack;
 
-static void
+static void __attribute__((unused))
 init_smp(void)
 {
   _smp_stack = lrt_mem_alloc(SMP_STACK_SIZE, 16, 0);
