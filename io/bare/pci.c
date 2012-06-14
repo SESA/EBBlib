@@ -79,21 +79,49 @@ pci_config_write8 (uint8_t bus, uint8_t slot, uint16_t func, uint16_t offset,
 }
 
 enum {
-  VENDOR_INTEL = 0x8086,
-  VENDOR_VMWARE = 0x15ad,
-  VENDOR_LSI = 0x1000
+  PCI_VENDOR_INTEL = 0x8086,
+  PCI_VENDOR_VMWARE = 0x15ad,
+  PCI_VENDOR_LSI = 0x1000
 };
+
+enum {
+  PCI_INTEL_DEVID_HBRIDGE = 0x7190,
+  PCI_INTEL_DEVID_PCIBRIDGE = 0x7191,
+  PCI_INTEL_DEVID_ISABRIDGE = 0x7110, 
+  PCI_INTEL_DEVID_ETHERNT = 0x100f
+};
+
+// credit to vm_device_version.h from vmware's 
+enum {
+  PCI_VMW_DEVID_SVGA2 = 0x0405,
+  PCI_VMW_DEVID_SVGA = 0x0710,
+  PCI_VMW_DEVID_NET = 0x0720,
+  PCI_VMW_DEVID_SCSI = 0x0730,
+  PCI_VMW_DEVID_VMCI = 0x0740,
+  PCI_VMW_DEVID_CHIPSET = 0x1976,
+  PCI_VMW_DEVID_82545EM = 0x0750, /* single port */
+  PCI_VMW_DEVID_82546EB = 0x0760, /* dual port   */
+  PCI_VMW_DEVID_EHCI = 0x0770,
+  PCI_VMW_DEVID_1394 = 0x0780,
+  PCI_VMW_DEVID_BRIDGE = 0x0790,
+  PCI_VMW_DEVID_ROOTPORT = 0x07A0,
+  PCI_VMW_DEVID_VMXNET3 = 0x07B0,
+  PCI_VMW_DEVID_VMXWIFI = 0x07B8,
+  PCI_VMW_DEVID_PVSCSI = 0x07C0
+};
+  
+  
 
 char *
 vendor_name(int num)
 {
   switch(num) {
-  case VENDOR_INTEL:
+  case PCI_VENDOR_INTEL:
     return "Intel";
     break;
-  case VENDOR_VMWARE:
+  case PCI_VENDOR_VMWARE:
     return "VMware";
-  case VENDOR_LSI:
+  case PCI_VENDOR_LSI:
     return "LSI";
   default:
     return "Unknown";
@@ -104,34 +132,56 @@ char *
 device_name(int vendor, int dev)
 {
   switch(vendor){
-  case VENDOR_INTEL:
+  case PCI_VENDOR_INTEL:
     switch(dev) {
-    case 0x7190:
+    case PCI_INTEL_DEVID_HBRIDGE:
       return "440BX/ZX AGPset Host Bridge";
-    case 0x7191:
+    case PCI_INTEL_DEVID_PCIBRIDGE:
       return "440BX/ZX AGPset PCI-to-PCI bridge";
-    case 0x7110:
+    case PCI_INTEL_DEVID_ISABRIDGE:
       return "PIIX4/4E/4M ISA Bridge";
-    case 0x100f:
+    case PCI_INTEL_DEVID_ETHERNT:
       return "Gigabit Ethernet Controller (copper)";
     default:
       return "Unknown";
     }
     break;
-  case VENDOR_VMWARE:
+  case PCI_VENDOR_VMWARE:
     switch(dev) {
-    case 0x405:
-      return "NVIDIA";
-    case 0x770:
-      return "Standard Enhanced PCI to USB Host Controller";
-    case 0x7B0:
-      return "VMXNet 3";
-    case 0x720:
-      return "VMXNet";
+    case PCI_VMW_DEVID_SVGA2:
+      return "SVGA2";
+    case PCI_VMW_DEVID_SVGA:
+      return "SVGA";
+    case PCI_VMW_DEVID_NET:
+      return "NET";
+    case PCI_VMW_DEVID_SCSI:
+      return "SCSI";
+    case PCI_VMW_DEVID_VMCI:
+      return "VMCI";
+    case PCI_VMW_DEVID_CHIPSET:
+      return "CHIPSET";
+    case PCI_VMW_DEVID_82545EM:
+      return "82545EM";
+    case PCI_VMW_DEVID_82546EB:
+      return "82546EB";
+    case PCI_VMW_DEVID_EHCI:
+      return "EHCI";
+    case PCI_VMW_DEVID_1394:
+      return "1394";
+    case PCI_VMW_DEVID_BRIDGE:
+      return "BRIDGE";
+    case PCI_VMW_DEVID_ROOTPORT:
+      return "ROOTPORT";
+    case PCI_VMW_DEVID_VMXNET3:
+      return "VMXNET3";
+    case PCI_VMW_DEVID_VMXWIFI:
+      return "VMXWIFI";
+    case PCI_VMW_DEVID_PVSCSI:
+      return "PVSCSI";
     default:
       return "Unknown";
     }
-  case VENDOR_LSI:
+  case PCI_VENDOR_LSI:
     switch(dev) {
     case 0x30:
       return "PCI-X SCSI Controller";
@@ -144,9 +194,94 @@ device_name(int vendor, int dev)
   }
 }
 
-static void enumerateDevices(int bus) {
+static void
+parse_status(uint16_t status) 
+{
+  unsigned tmp;
+  lrt_printf("\t\t\tstatus is %x\n", status);
+  if (status & 1<<4) {
+    lrt_printf("\t\t\t - has capability list\n");
+  }
+  if (status & 1<<7) {
+    lrt_printf("\t\t\t - fast back to back capable\n");
+  }
+  if (status & 1<<8) {
+    lrt_printf("\t\t\t - parity error\n");
+  }
+  if (status & 1<<15) {
+    lrt_printf("\t\t\t - detected parity error\n");
+  }
+  tmp = ((status>>9) & 0x3);
+  switch(tmp) {
+  case 0:
+    lrt_printf("\t\t\t - timing fast\n");
+    break;
+  case 1:
+    lrt_printf("\t\t\t - timing medium\n");
+    break;
+  case 2:
+    lrt_printf("\t\t\t - timing slow\n");
+    break;
+  }
+  
+}
+
+static void 
+print_vendor_dev(uint16_t vendor, uint16_t device)
+{
+  lrt_printf("\n\t\tVendor: (%x)%s, "
+	     "\n\t\tDevice: (%x)%s\n",
+	     vendor, vendor_name(vendor), 
+	     device, device_name(vendor, device)
+	     );
+}
+
+static void
+print_capability_list(uint8_t bus, uint8_t slot)
+{
+  uint8_t ptr;
+  uint8_t id;
+  uint8_t nxt;
+  ptr = (pci_config_read8(bus, slot, 0, 0x34) & ~0x3);
+  while(ptr) {
+    id = pci_config_read8(bus, slot, 0, ptr);
+    nxt = (pci_config_read8(bus, slot, 0, ptr+1) & ~0x3);
+    lrt_printf("\t\t\t - cap id %x, nxt %x :", id, nxt);
+    switch(id) {
+    case 1:
+      lrt_printf(" - PCI power management\n");
+      break;
+    case 2:
+      lrt_printf(" - AGP\n");
+      break;
+    case 3:
+      lrt_printf(" - VPD\n");
+      break;
+    case 4:
+      lrt_printf(" - slot identifiation\n");
+      break;
+    case 5:
+      lrt_printf(" - MSI capable\n");
+      break;
+    case 6:
+      lrt_printf(" - hot swap\n");
+      break;
+    case 0x11:
+      lrt_printf(" - MSI-X capable\n");
+      break;
+    default:
+      lrt_printf(" - ?????\n");
+    }
+    ptr = nxt;
+  }
+}
+
+static void 
+enumerateDevices(int bus) 
+{
   uint16_t vendor;
   uint16_t device;
+  uint16_t status;
   uint8_t header;
   uint8_t dev_class;
   uint8_t subclass;
@@ -157,28 +292,28 @@ static void enumerateDevices(int bus) {
  
   for (slot = 0; slot < 32; slot++) {
     vendor = pci_config_read16(bus,slot,0,0);
+    device = pci_config_read16(bus,slot,0,0x2);
     if (vendor == 0xFFFF)
       continue;
-    device = pci_config_read16(bus,slot,0,2);
-    if(vendor == 0x8086 && device == 0x100f) {
-      // e1000_bus = bus;
-      //e1000_slot = i;
-      // e1000_func = 0;
-    }
+    status = pci_config_read16(bus,slot,0,0x6);
     header = pci_config_read8(bus,slot,0,0xe);
     dev_class = pci_config_read8(bus,slot,0,11);
     subclass = pci_config_read8(bus,slot,0,10);
     progif = pci_config_read8(bus,slot,0,9);
     lrt_printf("\tBus %d Slot %d header %x: ", bus, slot, header);
-    switch( header ) {
+    if (header & 1<<7) {
+      // its a multi-function device
+      lrt_printf("(*MFD*) ");
+    }
+    switch( (header & 0x3F) ) {
     case 0: // standard device layout
-      lrt_printf("\n\t\tVendor: (%x)%s, "
-		 "\n\t\tDevice: (%x)%s\n",
-		 vendor, vendor_name(vendor), 
-		 device, device_name(vendor, device)
-		 );
+      print_vendor_dev(vendor, device);
       lrt_printf("\t\tClass code: %x, Subclass: %x, Prog IF: %x\n",
 		 dev_class, subclass, progif);
+      parse_status(status);
+      if (status & (1<<4)) {
+	print_capability_list(bus, slot);
+      }
       break;
     case 0x1: 
       {
