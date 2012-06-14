@@ -1,5 +1,7 @@
+#ifndef __PCI_H__
+#define __PCI_H__
 /*
- * Copyright (C) 2011 by Project SESA, Boston University
+ * Copyright (C) 2012 by Project SESA, Boston University
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -19,27 +21,6 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-
-#include <config.h>
-
-#include <stdint.h>
-
-#include <lrt/assert.h>
-#include <lrt/io.h>
-#include <net/lrt/ethlib.h>
-
-intptr_t
-ethlib_nic_readpkt(void)
-{
-  lrt_printf("%s: NYI", __func__);
-  LRT_Assert(0);
-  return 0;
-}
-
-intptr_t
-ethlib_nic_init(char *dev, IRQ *sin, IRQ *out)
-{
-  lrt_printf("%s: NYI", __func__);
-  LRT_Assert(0);
-  return 0;
-}
+extern void enumerateDevices(int bus);
+extern void pci_init();
+#endif

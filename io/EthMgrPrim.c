@@ -36,11 +36,11 @@
 #include <l0/cobj/CObjEBBRoot.h>
 #include <l0/cobj/CObjEBBRootShared.h>
 
-#include <net/EthTypeMgr.h>
-#include <net/EthMgr.h>
-#include <net/EthMgrPrim.h>
+#include <io/EthTypeMgr.h>
+#include <io/EthMgr.h>
+#include <io/EthMgrPrim.h>
 
-#include <net/lrt/ethlib.h>
+#include <io/lrt/ethlib.h>
 #include <strings.h>
 #include <l0/lrt/event_irq_def.h>
 

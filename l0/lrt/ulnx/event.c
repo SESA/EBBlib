@@ -54,6 +54,11 @@ struct lrt_event_local_data {
   int pipefd_write; //For synthesized events from potentially other locations
 };
 
+// counters; FIXME currently only update on hardware
+int lrt_event_dispatched_events __attribute__ ((aligned(256))) =0 ;
+int lrt_event_bv_dispatched_events __attribute__ ((aligned(256))) =0;
+int lrt_event_loop_count __attribute__ ((aligned(256))) =0;
+
 //To be allocated at preinit, the array of local event data
 static struct lrt_event_local_data *event_data;
 static int num_cores = 0;
@@ -64,8 +69,6 @@ static const intptr_t PIPE_UDATA = -1;
 int lrt_event_use_bitvector_local=1;
 int lrt_event_use_bitvector_remote=0;
 // counters 
-int lrt_event_dispatched_events=0;
-int lrt_event_bv_dispatched_events=0;
 
 static void 
 dispatch_event(lrt_event_num en)

@@ -1,0 +1,1 @@
+io_bare_sources=io/bare/pci.c io/bare/pci.h

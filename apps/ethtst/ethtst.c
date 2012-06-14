@@ -38,11 +38,14 @@
 #include <l0/EventMgrPrimImp.h>
 #include <l0/MemMgr.h>
 #include <l0/MemMgrPrim.h>
-#include <net/EthTypeMgr.h>
-#include <net/EthMgr.h>
-#include <net/EthMgrPrim.h>
+#include <io/EthTypeMgr.h>
+#include <io/EthMgr.h>
+#include <io/EthMgrPrim.h>
 #include <l1/App.h>
 #include <l1/startinfo.h>
+#ifndef LRT_ULNX
+#include <io/bare/pci.h>
+#endif
 
 EthMgrId theEthMgr;
 
@@ -53,6 +56,7 @@ CObject(EthTst) {
 EBBRC 
 EthTst_start(AppRef _self)
 {
+#ifdef LRT_ULNX
   EBBRC rc;
   struct startinfo si;
 
@@ -70,6 +74,9 @@ EthTst_start(AppRef _self)
   LRT_RCAssert(rc);
 
   lrt_printf("%s: END\n", __func__);
+#else
+  pci_init();
+#endif
   return EBBRC_OK;
 }
 
@@ -77,4 +84,8 @@ CObjInterface(App) EthTst_ftable = {
   .start = EthTst_start
 };
 
+#ifdef LRT_ULNX
 APP(EthTst, APP_START_ALL);
+#else
+APP(EthTst, APP_START_ONE);
+#endif
