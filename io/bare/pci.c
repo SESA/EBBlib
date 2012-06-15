@@ -81,14 +81,22 @@ pci_config_write8 (uint8_t bus, uint8_t slot, uint16_t func, uint16_t offset,
 enum {
   PCI_VENDOR_INTEL = 0x8086,
   PCI_VENDOR_VMWARE = 0x15ad,
-  PCI_VENDOR_LSI = 0x1000
+  PCI_VENDOR_LSI = 0x1000,
+  PCI_VENDOR_NVIDIA = 0x10de,
+  PCI_VENDOR_AMD1 = 0x1002,
+  PCI_VENDOR_AMD2 = 0x1022
+};
+
+enum {
+  PCI_AMD_DEVID_SATACTLR = 0x4390
 };
 
 enum {
   PCI_INTEL_DEVID_HBRIDGE = 0x7190,
   PCI_INTEL_DEVID_PCIBRIDGE = 0x7191,
   PCI_INTEL_DEVID_ISABRIDGE = 0x7110, 
-  PCI_INTEL_DEVID_ETHERNT = 0x100f
+  PCI_INTEL_DEVID_ETHERNT = 0x100f,
+  PCI_INTEL_DEVID_GBADPT = 0x10c9
 };
 
 // credit to vm_device_version.h from vmware's 
@@ -142,6 +150,8 @@ device_name(int vendor, int dev)
       return "PIIX4/4E/4M ISA Bridge";
     case PCI_INTEL_DEVID_ETHERNT:
       return "Gigabit Ethernet Controller (copper)";
+    case PCI_INTEL_DEVID_GBADPT:
+      return "82576 Gigabit ET Dual Port Server Adapter";
     default:
       return "Unknown";
     }
@@ -226,6 +236,20 @@ parse_status(uint16_t status)
   
 }
 
+static void
+parse_msix_capability(uint8_t bus, uint8_t slot, uint8_t ptr)
+{
+  uint32_t taboffset, pbaoffset, bar;
+  taboffset = pci_config_read32 (bus, slot, 0, ptr+4);
+  pbaoffset = pci_config_read32 (bus, slot, 0, ptr+8);
+  // if bottom bit of bar is 0, then its memory mapped the tables
+  // if bit 1 is 0, then its a 32 bit address
+  bar = pci_config_read32( bus, slot, 0, 0x10);
+  lrt_printf("\t\t\t msix taboffset %x, pbaoffset %x bar %x\n", 
+	     taboffset, pbaoffset, bar);
+
+}
+
 static void 
 print_vendor_dev(uint16_t vendor, uint16_t device)
 {
@@ -268,6 +292,7 @@ print_capability_list(uint8_t bus, uint8_t slot)
       break;
     case 0x11:
       lrt_printf(" - MSI-X capable\n");
+      parse_msix_capability(bus, slot, ptr);
       break;
     default:
       lrt_printf(" - ?????\n");
