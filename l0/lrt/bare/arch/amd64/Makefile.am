@@ -18,7 +18,8 @@ l0_lrt_bare_arch_amd64_sources = \
 	l0/lrt/bare/arch/amd64/smp.S \
 	l0/lrt/bare/arch/amd64/start.S \
 	l0/lrt/bare/arch/amd64/trans.c \
-	l0/lrt/bare/arch/amd64/trans.h
+	l0/lrt/bare/arch/amd64/trans.h \
+	l0/lrt/bare/arch/amd64/EventMgrPrimImp.c 
 
 if LRT_BARE
 if x86_64

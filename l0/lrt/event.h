@@ -51,8 +51,6 @@ uint64_t tint_rec;
 
 extern void *lrt_event_init(void *myloc);
 extern void lrt_event_preinit(int cores);
-extern void lrt_event_bind_event(lrt_event_num num, lrt_trans_id handler,
-                                 lrt_trans_func_num fnum);
 extern void lrt_event_trigger_event(lrt_event_num num,
                                     enum lrt_event_loc_desc desc,
                                     lrt_event_loc loc);

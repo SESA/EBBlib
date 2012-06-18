@@ -45,9 +45,6 @@
 #include <l0/lrt/event_bv.h>
 #include <lrt/string.h>
 
-//the global event table
-static struct lrt_event_descriptor lrt_event_table[LRT_EVENT_NUM_EVENTS];
-
 struct lrt_event_local_data {
   int fd; //either epollfd or kqueuefd
   int pipefd_read; //No other event locations should read this!
@@ -70,18 +67,6 @@ int lrt_event_use_bitvector_local=1;
 int lrt_event_use_bitvector_remote=0;
 // counters 
 
-static void 
-dispatch_event(lrt_event_num en)
-{
-  struct lrt_event_descriptor *desc = &lrt_event_table[en];
-  lrt_event_dispatched_events++;
-  lrt_trans_id id = desc->id;
-  lrt_trans_func_num fnum = desc->fnum;
-
-  //this infrastructure should be pulled out of this file
-  lrt_trans_rep_ref ref = lrt_trans_id_dref(id);
-  ref->ft[fnum](ref);
-}  
 
 static void __attribute__ ((noreturn))
 lrt_event_loop(void)
@@ -260,12 +245,6 @@ lrt_event_preinit(int cores)
   //FIXME: initialize event table
 }
 
-void
-lrt_event_bind_event(lrt_event_num num, lrt_trans_id handler, lrt_trans_func_num fnum)
-{
-  lrt_event_table[num].id = handler;
-  lrt_event_table[num].fnum = fnum;
-}
 
 void
 lrt_event_trigger_event(lrt_event_num num,

@@ -82,9 +82,12 @@ COBJ_EBBType(EventMgrPrim) {
 
   EBBRC (*triggerEvent) (EventMgrPrimRef _self, EventNo eventNo,
                          enum EventLocDesc desc, EventLoc el);
+
+
+  // this function is called by lrt code to dispatch an interrupt
+  EBBRC (*dispatchEvent) (EventMgrPrimRef _self, EventNo eventNo);
 };
 
 // the ID of the one and only event manager
 extern EventMgrPrimId theEventMgrPrimId;
-
 #endif
