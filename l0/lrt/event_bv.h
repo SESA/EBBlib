@@ -64,13 +64,13 @@ lrt_event_get_unset_bit_bv(struct corebv *bv)
 };
 
 
-static void
+static inline void
 lrt_event_set_bit(lrt_event_loc loc, lrt_event_num num) 
 {
   lrt_event_set_bit_bv(&lrt_event_bv[loc], num);
 };
 
-static int
+static inline int
 lrt_event_get_unset_bit(lrt_event_loc loc) 
 {
   return lrt_event_get_unset_bit_bv(&lrt_event_bv[loc]);

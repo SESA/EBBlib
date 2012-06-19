@@ -33,6 +33,7 @@
 #include <lrt/io.h>
 #include <lrt/string.h>
 #include <l0/lrt/event_bv.h>
+#include <l0/EventMgrPrim.h>
 
 static int num_event_loc;
 
