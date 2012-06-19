@@ -85,7 +85,7 @@ CObjInterface(App) EthTst_ftable = {
 };
 
 #ifdef LRT_ULNX
-APP(EthTst, APP_START_ALL);
+APP_START_ALL(EthTst);
 #else
-APP(EthTst, APP_START_ONE);
+APP_START_ONE(EthTst);
 #endif

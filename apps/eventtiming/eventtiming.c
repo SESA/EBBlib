@@ -558,4 +558,4 @@ CObjInterface(EventTiming) EventTiming_ftable = {
   .loopEvent = EventTiming_loopEvent,
 };
 
-APP(EventTiming, APP_START_ONE);
+APP_START_ONE(EventTiming);

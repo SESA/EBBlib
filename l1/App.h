@@ -58,10 +58,40 @@ enum {
 
 extern const int app_start_model;
 
-#define APP(REPTYPE,SM)					       \
-  const int app_start_model = SM;		       \
-  APP_BASE(REPTYPE);					       
+extern void EBB_init_default(void);
+extern void create_app_obj_default(void);
+
 
 extern EBBRC app_start(void);
+
+#define APP_PROLOG				\
+  EBBRC						\
+  app_start(void)				\
+  {						\
+  EBBRC rc = EBBRC_OK;
+
+#define APP_EPILOG				\
+  return rc;					\
+  }
+
+#define APP_BODY \
+  EBB_init_default();					\
+  create_app_obj_default();				\
+  return COBJ_EBBCALL(theAppId, start);		
+
+#define APP_START_ONE(REPTYPE)			\
+  APP_PROLOG					\
+  if (MyEventLoc() == 0) {			\
+    APP_BODY					\
+      }						\
+  APP_EPILOG					\
+  APP_BASE(REPTYPE)
+
+#define APP_START_ALL(REPTYPE)			\
+  APP_PROLOG					\
+  APP_BODY					\
+  APP_EPILOG					\
+  APP_BASE(REPTYPE)
+
 
 #endif
