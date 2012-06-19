@@ -20,9 +20,12 @@
  * THE SOFTWARE.
  */
 
+#include <config.h>
+
 #include <stdbool.h>
 #include <stdint.h>
 
+#include <arch/cpu.h>
 #include <l0/EventMgrPrim.h>
 #include <l1/App.h>
 #include <lrt/exit.h>
@@ -33,19 +36,6 @@
 #include <l0/lrt/event.h>
 
 int verbose=0;
-
-static inline uint64_t
-rdtscp(void)
-{
-  uint32_t lo, hi;
-  asm volatile("rdtscp"
-               : "=a" (lo),
-                 "=d" (hi)
-               :
-               :
-               "ecx");
-  return (uint64_t)hi << 32 | lo;
-}
 
 CObject(EventTiming) {
   CObjInterface(EventTiming) *ft;
@@ -67,20 +57,11 @@ EBBRC runNextTest();
 int bogus_events=0;
 static void
 resetCounters() {
-  lrt_event_dispatched_events = 0;
-  lrt_event_bv_dispatched_events = 0;
-  lrt_event_loop_count=0;
   bogus_events = 0;
 }
 
 static void
 printCounters() {
-  lrt_printf("\t dispatched %ld dispatched bv %ld\n",
-	     (long int)(lrt_event_dispatched_events), 
-	     (long int)(lrt_event_bv_dispatched_events));
-  lrt_printf("\t time through event loop %ld\n",
-	     (long int)lrt_event_loop_count);
-
   if (bogus_events) {
     lrt_printf("\t got %d bogus events\n", bogus_events);
   }
@@ -421,8 +402,6 @@ runPingTest(EventLoc core)
   }
   event_loop_type = PING;
   ping_r = core;
-  lrt_event_use_bitvector_local=0;
-  lrt_event_use_bitvector_remote=0;
   rc = COBJ_EBBCALL(theEventMgrPrimId, triggerEvent, ev, EVENT_LOC_SINGLE, 0);
   LRT_RCAssert(rc);
   return EBBRC_OK;
@@ -459,14 +438,14 @@ runNextTest()
     nextStage++;
   case 1: 
     event_loop_type = LOCAL;
-    lrt_event_use_bitvector_local=0;
+    // lrt_event_use_bitvector_local=0;
     lrt_printf("eventtiming: running local event loop with BV disabled\n");
     rc = COBJ_EBBCALL(theEventMgrPrimId, triggerEvent, ev, EVENT_LOC_SINGLE, 0);
     LRT_RCAssert(rc);
     break;
   case 2:
     event_loop_type = LOCAL;
-    lrt_event_use_bitvector_local=1;
+    //lrt_event_use_bitvector_local=1;
     lrt_printf("eventtiming: running local event loop with BV enabled\n");
     rc = COBJ_EBBCALL(theEventMgrPrimId, triggerEvent, ev, EVENT_LOC_SINGLE, 0);
     LRT_RCAssert(rc);
@@ -518,16 +497,16 @@ runNextTest()
   case 40:
     verbose = 1;		/* get loud again */
     event_loop_type = RR_ALL;
-    lrt_event_use_bitvector_local=0;
-    lrt_event_use_bitvector_remote=0;
+    //lrt_event_use_bitvector_local=0;
+    //lrt_event_use_bitvector_remote=0;
     lrt_printf("eventtiming: running remote event loop with BV disabled\n");
     rc = COBJ_EBBCALL(theEventMgrPrimId, triggerEvent, ev, EVENT_LOC_SINGLE, 0);
     LRT_RCAssert(rc);
     break;
   case 41:
     event_loop_type = RR_ALL;
-    lrt_event_use_bitvector_local=1;
-    lrt_event_use_bitvector_remote=1;
+    //lrt_event_use_bitvector_local=1;
+    //lrt_event_use_bitvector_remote=1;
     lrt_printf("eventtiming: running remote event loop with BV enabled\n");
     rc = COBJ_EBBCALL(theEventMgrPrimId, triggerEvent, ev, EVENT_LOC_SINGLE, 0);
     LRT_RCAssert(rc);

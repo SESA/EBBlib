@@ -26,6 +26,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#define CACHE_LINE_ALIGNMENT 64
+
 /* MSRS */
 static const uint32_t MSR_LAPIC_BASE = 0x1b;
 static const uint32_t MSR_EFER = 0xc0000080;
@@ -253,6 +255,23 @@ rdtsc(void) {
 
   asm volatile ("rdtsc"
                 : "=a" (low), "=d" (high));
+  return (uint64_t)high << 32 | low;
+}
+
+static inline uint64_t
+rdtscp(void) {
+  uint32_t low, high;
+  //serialize
+  asm volatile (
+                "xorl %%eax, %%eax\n\t"
+                "cpuid"
+                :
+                :
+                : "%rax", "%rbx", "%rcx", "%rdx");
+
+  asm volatile ("rdtscp"
+                : "=a" (low), "=d" (high)
+		: : "ecx");
   return (uint64_t)high << 32 | low;
 }
 #endif

@@ -46,6 +46,10 @@ static uint8_t alloc_table[LRT_EVENT_NUM_EVENTS / 8];
 
 CObject(EventMgrPrimImp){
   CObjInterface(EventMgrPrim) *ft;
+
+  // for now, make this share descriptor tables, may replicate
+  // later 
+  struct lrt_event_descriptor *lrt_event_table_ptr;
 };
 
 EventMgrPrimId theEventMgrPrimId=0;
@@ -80,7 +84,9 @@ EBBRC
 EventMgrPrim_bindEvent(EventMgrPrimRef _self, EventNo eventNo,
           EBBId handler, EBBFuncNum fn)
 {
-  lrt_event_bind_event(eventNo, handler, fn);
+  EventMgrPrimImpRef self = (EventMgrPrimImpRef)_self;
+  self->lrt_event_table_ptr[eventNo].id = handler;
+  self->lrt_event_table_ptr[eventNo].fnum = fn;
   return EBBRC_OK;
 }
 
@@ -88,7 +94,7 @@ EBBRC
 EventMgrPrim_routeIRQ(EventMgrPrimRef _self, IRQ *isrc, EventNo eventNo,
                       enum EventLocDesc desc, EventLoc el)
 {
-  lrt_event_route_irq(isrc, eventNo, desc, el);
+  LRT_Assert(0);
   return EBBRC_OK;
 }
 
@@ -101,12 +107,40 @@ EventMgrPrim_triggerEvent(EventMgrPrimRef _self, EventNo eventNo,
   return EBBRC_OK;
 }
 
+static EBBRC
+EventMgrPrim_dispatchEvent(EventMgrPrimRef _self, EventNo eventNo)
+{
+  EventMgrPrimImpRef self = (EventMgrPrimImpRef)_self;
+  struct lrt_event_descriptor *desc = &self->lrt_event_table_ptr[eventNo];
+  lrt_trans_id id = desc->id;
+  lrt_trans_func_num fnum = desc->fnum;
+
+  //this infrastructure should be pulled out of this file
+  lrt_trans_rep_ref ref = lrt_trans_id_dref(id);
+  ref->ft[fnum](ref);
+  return EBBRC_OK;
+}  
+
+static EBBRC
+EventMgrPrim_enableInterrupts(EventMgrPrimRef _self)
+{
+  asm volatile ("sti\n\t"
+		"hlt\n\t"
+		"cli"
+		::
+		: "rax", "rcx", "rdx", "rsi",
+		  "rdi", "r8", "r9", "r10", "r11"); 
+  return EBBRC_OK;
+}
+
 CObjInterface(EventMgrPrim) EventMgrPrimImp_ftable = {
   .allocEventNo = EventMgrPrim_allocEventNo,
   .freeEventNo = EventMgrPrim_freeEventNo,
   .bindEvent = EventMgrPrim_bindEvent,
   .routeIRQ = EventMgrPrim_routeIRQ,
-  .triggerEvent = EventMgrPrim_triggerEvent
+  .triggerEvent = EventMgrPrim_triggerEvent,
+  .enableInterrupts = EventMgrPrim_enableInterrupts,
+  .dispatchEvent = EventMgrPrim_dispatchEvent
 };
 
 static void
@@ -119,9 +153,25 @@ static EBBRep *
 EventMgrPrimImp_createRep(CObjEBBRootMultiRef root)
 {
   EventMgrPrimImpRef repRef;
+  EBBRC rc;
+  rc = EBBPrimMalloc(sizeof(EventMgrPrimImp), &repRef, EBB_MEM_DEFAULT);
+  LRT_RCAssert(rc);
 
-  LRT_RCAssert(EBBPrimMalloc(sizeof(EventMgrPrimImp), &repRef, EBB_MEM_DEFAULT));
   EventMgrPrimSetFT(repRef);
+
+  // note we get here with the root object locked, and we are assuming tht
+  // in searching for/allocating the event_table.  When we parallelize 
+  // rep creation this will fail
+  EBBRep *rep;
+  root->ft->nextRep(root, 0, &rep); 
+  if (rep != NULL) {
+    repRef->lrt_event_table_ptr = ((EventMgrPrimImpRef)rep)->lrt_event_table_ptr;
+  } else {
+    // allocate the table; reminder this is locked at root
+    rc = EBBPrimMalloc(sizeof(struct lrt_event_descriptor)*LRT_EVENT_NUM_EVENTS, 
+		       &repRef->lrt_event_table_ptr, EBB_MEM_DEFAULT);
+  } 
+
   return (EBBRep *)repRef;
 }
 

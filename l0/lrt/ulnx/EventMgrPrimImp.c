@@ -109,10 +109,23 @@ EventMgrPrim_triggerEvent(EventMgrPrimRef _self, EventNo eventNo,
 }
 
 static EBBRC
-EventMgrPrim_dispatchEvent_int(EventMgrPrimImpRef _self, EventNo eventNo)
+EventMgrPrim_dispatchEvent(EventMgrPrimRef _self, EventNo eventNo)
+{
+  LRT_Assert(0);		/* shouldn't be called */
+  return EBBRC_OK;
+}  
+
+static EBBRC
+EventMgrPrim_enableInterrupts(EventMgrPrimRef _self)
 {
   EventMgrPrimImpRef self = (EventMgrPrimImpRef)_self;
-  struct lrt_event_descriptor *desc = &self->lrt_event_table_ptr[eventNo];
+  int rc;
+
+  lrt_event_halt();
+  rc = lrt_event_get_event_nonblock();
+  LRT_Assert(rc >= 0);
+
+  struct lrt_event_descriptor *desc = &self->lrt_event_table_ptr[rc];
   lrt_trans_id id = desc->id;
   lrt_trans_func_num fnum = desc->fnum;
 
@@ -120,14 +133,7 @@ EventMgrPrim_dispatchEvent_int(EventMgrPrimImpRef _self, EventNo eventNo)
   lrt_trans_rep_ref ref = lrt_trans_id_dref(id);
   ref->ft[fnum](ref);
   return EBBRC_OK;
-}  
-
-static EBBRC
-EventMgrPrim_dispatchEvent_ext(EventMgrPrimRef _self, EventNo eventNo)
-{
-  int
-    eventmgr loop
-
+}
 
 CObjInterface(EventMgrPrim) EventMgrPrimImp_ftable = {
   .allocEventNo = EventMgrPrim_allocEventNo,
@@ -135,6 +141,7 @@ CObjInterface(EventMgrPrim) EventMgrPrimImp_ftable = {
   .bindEvent = EventMgrPrim_bindEvent,
   .routeIRQ = EventMgrPrim_routeIRQ,
   .triggerEvent = EventMgrPrim_triggerEvent,
+  .enableInterrupts = EventMgrPrim_enableInterrupts,
   .dispatchEvent = EventMgrPrim_dispatchEvent
 };
 

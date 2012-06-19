@@ -1,5 +1,7 @@
+#ifndef __CPU_H__
+#define __CPU_H__
 /*
- * Copyright (C) 2011 by Project SESA, Boston University
+ * Copyright (C) 2012 by Project SESA, Boston University
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -19,18 +21,10 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#ifndef __LRT_EVENT_H__
-#error "Should only be included through l0/lrt/event.h"
+#ifdef ARCH_AMD64
+#include <arch/amd64/cpu.h>
 #endif
 
-struct lrt_event_descriptor {
-  lrt_trans_id id;
-  lrt_trans_func_num fnum;
-};
+#define _ALIGN_CACHE_ __attribute__ ((aligned(CACHE_LINE_ALIGNMENT)))
 
-int lrt_event_get_event_nonblock(void); 
-void lrt_event_halt(void);
-
-#define LRT_EVENT_NUM_EVENTS (256)
-STATIC_ASSERT((1 << (sizeof(lrt_event_num) * 8)) >= LRT_EVENT_NUM_EVENTS,
-              "lrt_event_num cannot hold the range of events!");
+#endif

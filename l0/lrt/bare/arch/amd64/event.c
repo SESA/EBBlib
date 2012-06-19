@@ -36,17 +36,6 @@
 
 static int num_event_loc;
 
-// configuration flags:
-int lrt_event_use_bitvector_local __attribute__ ((aligned(256))) = 0;
-int lrt_event_use_bitvector_remote __attribute__ ((aligned(256))) = 0;
-int lrt_event_collect_int_timing __attribute__ ((aligned(256))) = 0;
-
-// counters 
-int lrt_event_dispatched_events __attribute__ ((aligned(256))) =0 ;
-int lrt_event_bv_dispatched_events __attribute__ ((aligned(256))) =0;
-int lrt_event_loop_count __attribute__ ((aligned(256))) =0;
-uint64_t tint0, tint1, tint2, tint3;
-
 lrt_event_loc
 lrt_num_event_loc()
 {
@@ -58,8 +47,6 @@ lrt_next_event_loc(lrt_event_loc l)
 {
   return (l + 1) % lrt_num_event_loc();
 }
-
-static struct lrt_event_descriptor lrt_event_table[LRT_EVENT_NUM_EVENTS];
 
 static idtdesc *idt;
 
@@ -73,19 +60,6 @@ idt_map_vec(uint8_t vec, void *addr) {
   idt[vec].ist = 0; //no stack switch
   idt[vec].type = 0xe;
   idt[vec].p = 1; //present
-}
-
-static inline uint64_t
-rdtscp(void)
-{
-  uint32_t lo, hi;
-  asm volatile("rdtscp"
-               : "=a" (lo),
-                 "=d" (hi)
-               :
-               :
-               "ecx");
-  return (uint64_t)hi << 32 | lo;
 }
 
 static void *isrtbl[];
@@ -131,82 +105,18 @@ lrt_event_preinit(int cores)
   init_ioapic(addr);
 }
 
-static void
-dispatch_event(lrt_event_num en)
-{
-  struct lrt_event_descriptor *desc = &lrt_event_table[en];
-  lrt_event_dispatched_events++;
-  lrt_trans_id id = desc->id;
-  lrt_trans_func_num fnum = desc->fnum;
-
-  //this infrastructure should be pulled out of this file
-  lrt_trans_rep_ref ref = lrt_trans_id_dref(id);
-  ref->ft[fnum](ref);
-}
-
-
-#ifdef LRT_EVENT_COLLECT_INT_TIMING
-static void 
-trigger_local_event(lrt_event_num num)
-{
-  lapic_icr_low icr_low;
-  icr_low.raw = 0;
-  icr_low.vector = num + 32;
-  icr_low.level = 1;
-  
-  lapic_icr_high icr_high;
-  icr_high.raw = 0;
-  icr_low.destination_shorthand = 0;
-  icr_high.destination = lrt_event_loc2apicid(lrt_my_event_loc());
-  
-  send_ipi(icr_low, icr_high);
-}
-#endif
-
 void __attribute__ ((noreturn))
 lrt_event_loop(void)
 {
-  while (1) {
-    int en = -1;
-    if (lrt_event_use_bitvector_local || lrt_event_use_bitvector_remote) {
-      en = lrt_event_get_unset_bit(lrt_my_event_loc());
-    }
+  asm volatile ("sti\n\t"
+		"hlt\n\t"
+		"cli"
+		::
+		: "rax", "rcx", "rdx", "rsi",
+		  "rdi", "r8", "r9", "r10", "r11"); 
 
-    if (en != -1) {
-#ifndef LRT_EVENT_COLLECT_INT_TIMING
-      lrt_event_bv_dispatched_events++;
-      dispatch_event(en);
-      continue;
-#else 
-      tint1 = rdtscp();
-      trigger_local_event(en);
-      tint2 = rdtscp();
-#endif      
-    }
-    // enable interrupts, halt and then disable
-    // Note that because we don't preserve register on an event, we
-    // have to clobber them here or else the compiler will put stuff
-    // into clobered registers
-    
-    if (lrt_my_event_loc() == 0) {
-      lrt_event_loop_count++;
-    }
-
-#ifdef LRT_EVENT_NOP_SPIN
-    __asm__ volatile("sti\n\t"
-		     "nop\n\t"
-		     "cli"
-		     ::
-		     : "rax", "rcx", "rdx", "rsi",
-		       "rdi", "r8", "r9", "r10", "r11"); 
-#else
-    __asm__ volatile("sti\n\t"
-		     "hlt\n\t"
-		     "cli"
-		     ::
-                     : "rax", "rcx", "rdx", "rsi",
-                     "rdi", "r8", "r9", "r10", "r11"); 
-#endif
+  while(1) {
+    COBJ_EBBCALL(theEventMgrPrimId, enableInterrupts);
   }
 }
 
@@ -253,44 +163,24 @@ lrt_event_init(void *unused)
 }
 
 void
-lrt_event_bind_event(lrt_event_num num, lrt_trans_id handler,
-                     lrt_trans_func_num fnum)
-{
-  lrt_event_table[num].id = handler;
-  lrt_event_table[num].fnum = fnum;
-}
-
-void
 lrt_event_trigger_event(lrt_event_num num, enum lrt_event_loc_desc desc,
                         lrt_event_loc loc)
 {
-  int islocal = 0;
-  if (loc == lrt_my_event_loc()) {
-    islocal = 1;
+  lapic_icr_low icr_low;
+  icr_low.raw = 0;
+  icr_low.vector = num + 32;
+  icr_low.level = 1;
+  
+  lapic_icr_high icr_high;
+  icr_high.raw = 0;
+  if (desc == LRT_EVENT_LOC_SINGLE) {
+    icr_low.destination_shorthand = 0;
+    icr_high.destination = lrt_event_loc2apicid(loc);
+  } else {
+    LRT_Assert(0);
   }
-
-  if ( (islocal && lrt_event_use_bitvector_local) ||
-       (!islocal && lrt_event_use_bitvector_remote) ) {
-    lrt_event_set_bit(loc, num);
-  }
-
-  if ((!islocal) || !lrt_event_use_bitvector_local) {
-    lapic_icr_low icr_low;
-    icr_low.raw = 0;
-    icr_low.vector = num + 32;
-    icr_low.level = 1;
-
-    lapic_icr_high icr_high;
-    icr_high.raw = 0;
-    if (desc == LRT_EVENT_LOC_SINGLE) {
-      icr_low.destination_shorthand = 0;
-      icr_high.destination = lrt_event_loc2apicid(loc);
-    } else {
-      LRT_Assert(0);
-    }
-
-    send_ipi(icr_low, icr_high);
-  }
+  
+  send_ipi(icr_low, icr_high);
 }
 
 void lrt_event_route_irq(struct IRQ_t *isrc, lrt_event_num num,
@@ -300,7 +190,8 @@ void lrt_event_route_irq(struct IRQ_t *isrc, lrt_event_num num,
 }
 
 void
-exception_common(uint8_t num) {
+exception_common(uint8_t num)
+{
   uintptr_t *stack;
   asm volatile ("mov %%rsp, %[stack]"
                 : [stack] "=r" (stack));
@@ -311,17 +202,12 @@ exception_common(uint8_t num) {
   LRT_Assert(0);
 }
 
-
 void
-event_common(uint8_t num) {
-#ifdef LRT_EVENT_COLLECT_INT_TIMING
-  if (lrt_event_collect_int_timing) {
-    tint3 = rdtscp();
-  }
-#endif
+event_common(uint8_t num)
+{
   send_eoi();
   uint8_t ev = num - 32; //first 32 interrupts are reserved
-  dispatch_event(ev);
+  COBJ_EBBCALL(theEventMgrPrimId, dispatchEvent, ev);
 }
 
 extern void isr_0(void);

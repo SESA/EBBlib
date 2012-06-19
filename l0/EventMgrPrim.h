@@ -84,6 +84,9 @@ COBJ_EBBType(EventMgrPrim) {
                          enum EventLocDesc desc, EventLoc el);
 
 
+  // this function is called by lrt code to enable interrupts (possibly blocking)
+  EBBRC (*enableInterrupts) (EventMgrPrimRef _self);
+
   // this function is called by lrt code to dispatch an interrupt
   EBBRC (*dispatchEvent) (EventMgrPrimRef _self, EventNo eventNo);
 };

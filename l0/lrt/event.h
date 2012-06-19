@@ -27,28 +27,6 @@
 #include <l0/lrt/event_loc.h>
 #include <l0/lrt/event_num.h>
 
-// event configuraiton flags, dynamic for timing
-extern int lrt_event_use_bitvector_local;
-extern int lrt_event_use_bitvector_remote;
-// only on and64 bare metal for now
-//#define LRT_EVENT_COLLECT_INT_TIMING
-#define LRT_EVENT_NOP_SPIN
-#ifdef LRT_EVENT_COLLECT_INT_TIMING
-extern int lrt_event_collect_int_timing;
-#endif
-
-// counters
-extern int lrt_event_dispatched_events;
-extern int lrt_event_bv_dispatched_events;
-extern int lrt_event_loop_count;
-
-
-extern uint64_t tint0, tint1, tint2, tint3;
-
-// temporary timing variables
-uint64_t tint_disp;
-uint64_t tint_rec;
-
 extern void *lrt_event_init(void *myloc);
 extern void lrt_event_preinit(int cores);
 extern void lrt_event_trigger_event(lrt_event_num num,
