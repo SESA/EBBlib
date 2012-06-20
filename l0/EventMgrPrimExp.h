@@ -1,5 +1,7 @@
+#ifndef __EBB_EVENT_MGR_PRIM_EXP_H__
+#define __EBB_EVENT_MGR_PRIM_EXP_H__
 /*
- * Copyright (C) 2012 by Project SESA, Boston University
+ * Copyright (C) 2011 by Project SESA, Boston University
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -19,10 +21,18 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#ifndef __LRT_EVENT_NUM_H__
-#error "should be included from l0/lrt/event_num.h"
+
+#include <l0/EventMgrPrim.h>
+
+COBJ_EBBType(EventMgrPrimExp) {
+  CObjImplements(EventMgrPrim);
+  EBBRC (*enableBitvectorLocal) (EventMgrPrimExpRef self);
+  EBBRC (*disableBitvectorLocal) (EventMgrPrimExpRef self);
+  EBBRC (*enableBitvectorRemote) (EventMgrPrimExpRef self);
+  EBBRC (*disableBitvectorRemote) (EventMgrPrimExpRef self);
+  EBBRC (*enableBlock) (EventMgrPrimExpRef self);
+  EBBRC (*enablePoll) (EventMgrPrimExpRef self);
+};
+
+extern EBBRC EventMgrPrimExpInit(void);
 #endif
-
-#include <stdint.h>
-
-typedef uint8_t lrt_event_num;

@@ -35,7 +35,7 @@
 #include <l0/cobj/CObjEBBRootMulti.h>
 #include <l0/cobj/CObjEBBRootMultiImp.h>
 #include <l0/EventMgrPrim.h>
-#include <l0/EventMgrPrimImp.h>
+#include <l0/EventMgrPrimExp.h>
 #include <l0/MemMgr.h>
 #include <l0/MemMgrPrim.h>
 #include <l0/lrt/event.h>
@@ -44,9 +44,8 @@ STATIC_ASSERT(LRT_EVENT_NUM_EVENTS % 8 == 0,
               "num allocatable events isn't divisible by 8");
 static uint8_t alloc_table[LRT_EVENT_NUM_EVENTS / 8];
 
-CObject(EventMgrPrimImp){
-  CObjInterface(EventMgrPrim) *ft;
-
+CObject(EventMgrPrimExpImp){
+  CObjInterface(EventMgrPrimExp) *ft;
   // for now, make this share descriptor tables, may replicate
   // later
   struct lrt_event_descriptor *lrt_event_table_ptr;
@@ -83,7 +82,7 @@ static EBBRC
 EventMgrPrim_bindEvent(EventMgrPrimRef _self, EventNo eventNo,
                        EBBId handler, EBBFuncNum fn)
 {
-  EventMgrPrimImpRef self = (EventMgrPrimImpRef)_self;
+  EventMgrPrimExpImpRef self = (EventMgrPrimExpImpRef)_self;
   self->lrt_event_table_ptr[eventNo].id = handler;
   self->lrt_event_table_ptr[eventNo].fnum = fn;
   return EBBRC_OK;
@@ -116,7 +115,7 @@ EventMgrPrim_dispatchEvent(EventMgrPrimRef _self, EventNo eventNo)
 static EBBRC
 EventMgrPrim_enableInterrupts(EventMgrPrimRef _self)
 {
-  EventMgrPrimImpRef self = (EventMgrPrimImpRef)_self;
+  EventMgrPrimExpImpRef self = (EventMgrPrimExpImpRef)_self;
   int rc;
 
   lrt_event_halt();
@@ -133,28 +132,72 @@ EventMgrPrim_enableInterrupts(EventMgrPrimRef _self)
   return EBBRC_OK;
 }
 
-CObjInterface(EventMgrPrim) EventMgrPrimImp_ftable = {
-  .allocEventNo = EventMgrPrim_allocEventNo,
-  .freeEventNo = EventMgrPrim_freeEventNo,
-  .bindEvent = EventMgrPrim_bindEvent,
-  .routeIRQ = EventMgrPrim_routeIRQ,
-  .triggerEvent = EventMgrPrim_triggerEvent,
-  .enableInterrupts = EventMgrPrim_enableInterrupts,
-  .dispatchEvent = EventMgrPrim_dispatchEvent
+static EBBRC
+EventMgrPrim_enableBitvectorLocal(EventMgrPrimExpRef self)
+{
+  return EBBRC_OK;
+}
+
+static EBBRC
+EventMgrPrim_disableBitvectorLocal(EventMgrPrimExpRef self)
+{
+  return EBBRC_OK;
+}
+
+static EBBRC
+EventMgrPrim_enableBitvectorRemote(EventMgrPrimExpRef self)
+{
+  return EBBRC_OK;
+}
+
+static EBBRC
+EventMgrPrim_disableBitvectorRemote(EventMgrPrimExpRef self)
+{
+  return EBBRC_OK;
+}
+
+static EBBRC
+EventMgrPrim_enableBlock(EventMgrPrimExpRef self)
+{
+  return EBBRC_OK;
+}
+
+static EBBRC
+EventMgrPrim_enablePoll(EventMgrPrimExpRef self)
+{
+  return EBBRC_OK;
+}
+
+CObjInterface(EventMgrPrimExp) EventMgrPrimExpImp_ftable = {
+  {
+    .allocEventNo = EventMgrPrim_allocEventNo,
+    .freeEventNo = EventMgrPrim_freeEventNo,
+    .bindEvent = EventMgrPrim_bindEvent,
+    .routeIRQ = EventMgrPrim_routeIRQ,
+    .triggerEvent = EventMgrPrim_triggerEvent,
+    .enableInterrupts = EventMgrPrim_enableInterrupts,
+    .dispatchEvent = EventMgrPrim_dispatchEvent
+  },
+  .enableBitvectorLocal = EventMgrPrim_enableBitvectorLocal,
+  .disableBitvectorLocal = EventMgrPrim_disableBitvectorLocal,
+  .enableBitvectorRemote = EventMgrPrim_enableBitvectorRemote,
+  .disableBitvectorRemote = EventMgrPrim_disableBitvectorRemote,
+  .enableBlock = EventMgrPrim_enableBlock,
+  .enablePoll = EventMgrPrim_enablePoll,
 };
 
 static void
-EventMgrPrimSetFT(EventMgrPrimImpRef o)
+EventMgrPrimSetFT(EventMgrPrimExpImpRef o)
 {
-  o->ft = &EventMgrPrimImp_ftable;
+  o->ft = &EventMgrPrimExpImp_ftable;
 }
 
 static EBBRep *
 EventMgrPrimImp_createRep(CObjEBBRootMultiRef root)
 {
-  EventMgrPrimImpRef repRef;
+  EventMgrPrimExpImpRef repRef;
   EBBRC rc;
-  rc = EBBPrimMalloc(sizeof(EventMgrPrimImp), &repRef, EBB_MEM_DEFAULT);
+  rc = EBBPrimMalloc(sizeof(EventMgrPrimExpImp), &repRef, EBB_MEM_DEFAULT);
   LRT_RCAssert(rc);
 
   EventMgrPrimSetFT(repRef);
@@ -165,7 +208,7 @@ EventMgrPrimImp_createRep(CObjEBBRootMultiRef root)
   EBBRep *rep;
   root->ft->nextRep(root, 0, &rep);
   if (rep != NULL) {
-    repRef->lrt_event_table_ptr = ((EventMgrPrimImpRef)rep)->lrt_event_table_ptr;
+    repRef->lrt_event_table_ptr = ((EventMgrPrimExpImpRef)rep)->lrt_event_table_ptr;
   } else {
     // allocate the table; reminder this is locked at root
     rc = EBBPrimMalloc(sizeof(struct lrt_event_descriptor)*LRT_EVENT_NUM_EVENTS,
@@ -175,7 +218,7 @@ EventMgrPrimImp_createRep(CObjEBBRootMultiRef root)
 }
 
 EBBRC
-EventMgrPrimImpInit(void)
+EventMgrPrimExpInit(void)
 {
   EBBRC rc;
   static CObjEBBRootMultiImpRef rootRef;

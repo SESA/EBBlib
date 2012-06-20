@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 by Project SESA, Boston University
+ * Copyright (C) 2011 by Project SESA, Boston University
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -19,10 +19,27 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#ifndef __LRT_EVENT_NUM_H__
-#error "should be included from l0/lrt/event_num.h"
-#endif
 
-#include <stdint.h>
+/*
+ * The Event Manager (EM) is one of the primordial objects.  The EM
+ * will be a fully distributed objects.  Clients can register with the
+ * EM objects to handle specific events.  That will cause a customized
+ * routine to be generated on each core, that will register itself
+ * with the PIC (programable interrupt controller) on that core.
+ * There is a one-to-one correspondence between event numbers and
+ * interrupts.  This will allow a dispatch from an interrupt to an EBB
+ * to be highly efficient, and conversly all interrupts to be handled
+ * on EBBs.  The interrupt routine will buy the EM's rep's stack, and
+ * then invoke the handler previously registered for that event with
+ * interrupts disabled.
+ *
+ * The current implementation is very simple, a shared table of
+ * handlers, no dynamically generated code yet. ... but wanted to
+ * document the plan.
+ */
 
-typedef uint8_t lrt_event_num;
+#include <config.h>
+
+#include <l0/EventMgrPrim.h>
+
+EventMgrPrimId theEventMgrPrimId=0;

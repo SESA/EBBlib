@@ -26,7 +26,7 @@
 #include <stdint.h>
 
 #include <arch/cpu.h>
-#include <l0/EventMgrPrim.h>
+#include <l0/EventMgrPrimExp.h>
 #include <l1/App.h>
 #include <lrt/exit.h>
 #include <lrt/io.h>
@@ -36,6 +36,7 @@
 #include <l0/lrt/event.h>
 
 int verbose=0;
+static uint64_t (*timingfunc)(void);
 
 CObject(EventTiming) {
   CObjInterface(EventTiming) *ft;
@@ -108,35 +109,35 @@ EventTiming_loopEvent(EventTimingRef self)
       switch(event_loop_type) {
       case LOCAL_INT:
 #ifdef LRT_EVENT_COLLECT_INT_TIMING
-	min1 = min2 = min3 = UINT64_MAX;
-	max1 = max2 = max3 = 0;
-	avg1 = avg2 = avg3 = 0;
-	lrt_printf("eventtiming: running local fine grained timing test\n");
-	lrt_event_use_bitvector_local=1;
-	lrt_event_use_bitvector_remote=0;
-	lrt_event_collect_int_timing = 1;
-	next = 0;
+        min1 = min2 = min3 = UINT64_MAX;
+        max1 = max2 = max3 = 0;
+        avg1 = avg2 = avg3 = 0;
+        lrt_printf("eventtiming: running local fine grained timing test\n");
+        lrt_event_use_bitvector_local=1;
+        lrt_event_use_bitvector_remote=0;
+        lrt_event_collect_int_timing = 1;
+        next = 0;
 #endif
-	break;
+        break;
       case LOCAL:
-	break;
+        break;
       case PING:
-	break;
+        break;
       case RR_ALL:
-	break;
+        break;
       }
-    } 
-    t0 = rdtscp();
+    }
+    t0 = timingfunc();
   } else {
 #ifdef LRT_EVENT_COLLECT_INT_TIMING
     if (lrt_event_collect_int_timing) {
       uint64_t d;
-      if ((tint1<tint0)||(tint2<tint1)||(tint3<tint2)) { 
-	lrt_printf("1 - %ld - %ld - %ld - %ld\n", 
-		   (unsigned long)tint0, 
-		   (unsigned long)tint1, 
-		   (unsigned long)tint2, 
-		   (unsigned long)tint3);
+      if ((tint1<tint0)||(tint2<tint1)||(tint3<tint2)) {
+        lrt_printf("1 - %ld - %ld - %ld - %ld\n",
+                   (unsigned long)tint0,
+                   (unsigned long)tint1,
+                   (unsigned long)tint2,
+                   (unsigned long)tint3);
       }
       LRT_Assert(tint1>=tint0);
       LRT_Assert(tint2>=tint1);
@@ -156,23 +157,23 @@ EventTiming_loopEvent(EventTimingRef self)
     }
 #endif
   }
-    
+
   if (count == max_count) {	/* done an iteration */
 #ifdef LRT_EVENT_COLLECT_INT_TIMING
   if (lrt_event_collect_int_timing) {
-    lrt_printf("\texp 1 min = %ld, max = %ld, avg = %ld\n", 
-	       (long int)min1, (long int)max1, (long int)avg1/max_count);
-    lrt_printf("\texp 2 min = %ld, max = %ld, avg = %ld\n", 
-	       (long int)min2, (long int)max2, (long int)(avg2/max_count));
-    lrt_printf("\texp 3 min = %ld, max = %ld, avg = %ld\n", 
-	       (long int)min3, (long int)max3, (long int)avg3/max_count);
+    lrt_printf("\texp 1 min = %ld, max = %ld, avg = %ld\n",
+               (long int)min1, (long int)max1, (long int)avg1/max_count);
+    lrt_printf("\texp 2 min = %ld, max = %ld, avg = %ld\n",
+               (long int)min2, (long int)max2, (long int)(avg2/max_count));
+    lrt_printf("\texp 3 min = %ld, max = %ld, avg = %ld\n",
+               (long int)min3, (long int)max3, (long int)avg3/max_count);
     lrt_exit(0);
   }
 #endif
     uint64_t ctot, cavg;
-    t1 = rdtscp();
+    t1 = timingfunc();
     LRT_Assert(t1>t0);
-    
+
     ctot = t1-t0;
     cavg = ctot/count;
 
@@ -184,28 +185,28 @@ EventTiming_loopEvent(EventTimingRef self)
 
     if (iteration == max_iteration) { // done it all
       if (verbose) {
-	lrt_printf("eventtiming: ran ping to core %ld BV disabled\n",
-		   (long int)ping_r);
-	lrt_printf("\t"
-		   " tot_count %ld "
-		   " total %ld \n"
-		   "\t"
-		   " avg %ld "
-		   " max_avg %ld "
-		   " min_avg %ld \n",
-		   (long int)tot_count, (long int)total, 
-		   (long int)(total/tot_count), (long int)max_avg, 
-		   (long int)min_avg );
-	printCounters();
+        lrt_printf("eventtiming: ran ping to core %ld BV disabled\n",
+                   (long int)ping_r);
+        lrt_printf("\t"
+                   " tot_count %ld "
+                   " total %ld \n"
+                   "\t"
+                   " avg %ld "
+                   " max_avg %ld "
+                   " min_avg %ld \n",
+                   (long int)tot_count, (long int)total,
+                   (long int)(total/tot_count), (long int)max_avg,
+                   (long int)min_avg );
+        printCounters();
       } else {
-	// denser printing
-	lrt_printf("\t ping to core %ld "
-		   " avg %ld "
-		   " max_avg %ld "
-		   " min_avg %ld \n",
-		   (long int)ping_r, 
-		   (long int)(total/tot_count), (long int)max_avg, 
-		   (long int)min_avg );
+        // denser printing
+        lrt_printf("\t ping to core %ld "
+                   " avg %ld "
+                   " max_avg %ld "
+                   " min_avg %ld \n",
+                   (long int)ping_r,
+                   (long int)(total/tot_count), (long int)max_avg,
+                   (long int)min_avg );
       }
       runNextTest();
       return EBBRC_OK;
@@ -239,11 +240,11 @@ EventTiming_loopEvent(EventTimingRef self)
   count++;
 #ifdef LRT_EVENT_COLLECT_INT_TIMING
   if (lrt_event_collect_int_timing) {
-    tint0 = rdtscp();
+    tint0 = timingfunc();
   }
 #endif
   COBJ_EBBCALL(theEventMgrPrimId, triggerEvent, ev,
-	       EVENT_LOC_SINGLE, next);
+               EVENT_LOC_SINGLE, next);
   return EBBRC_OK;
 }
 
@@ -305,23 +306,23 @@ testEBBCall()
   EBBRC rc;
   static uint64_t t0, t1;
   static uint64_t max_avg, min_avg, total;
-  
+
   rc = testObjImpCreate();
   LRT_RCAssert(rc);
 
-  t0 = rdtscp();
+  t0 = timingfunc();
   COBJ_EBBCALL(toid, nullCall);
-  t1 = rdtscp();
-  
+  t1 = timingfunc();
+
   lrt_printf("\t first EBB call %ld\n", (long int)(t1 - t0));
 
   for(i=0;i<max_iteration;i++) {
     uint64_t ctot, cavg;
-    t0 = rdtscp();
+    t0 = timingfunc();
     for(j=0;j<max_count;j++) {
       COBJ_EBBCALL(toid, nullCall);
     }
-    t1 = rdtscp();
+    t1 = timingfunc();
     ctot = t1-t0;
     cavg = ctot/max_count;
     if (i == 0) {
@@ -335,16 +336,16 @@ testEBBCall()
   }
   uint64_t tot_count = max_iteration * max_count;
   lrt_printf("\t"
-	     " tot_count %ld "
-	     " total %ld \n"
-	     "\t"
-	     " avg %ld "
-	     " max_avg %ld "
-	     " min_avg %ld \n",
-	     (long int)tot_count, (long int)total, 
-	     (long int)(total/tot_count), (long int)max_avg, 
-	     (long int)min_avg );
-  
+             " tot_count %ld "
+             " total %ld \n"
+             "\t"
+             " avg %ld "
+             " max_avg %ld "
+             " min_avg %ld \n",
+             (long int)tot_count, (long int)total,
+             (long int)(total/tot_count), (long int)max_avg,
+             (long int)min_avg );
+
   return EBBRC_OK;
 }
 
@@ -355,14 +356,14 @@ testTimerOverhead()
   static uint64_t t0, t1;
   static uint64_t t3 __attribute__((unused));
   static uint64_t max_avg, min_avg, total;
-  
+
   for(i=0;i<max_iteration;i++) {
     uint64_t ctot, cavg;
-    t0 = rdtscp();
+    t0 = timingfunc();
     for(j=0;j<max_count;j++) {
-      t3 = rdtscp();
+      t3 = timingfunc();
     }
-    t1 = rdtscp();
+    t1 = timingfunc();
     ctot = t1-t0;
     cavg = ctot/max_count;
     if (i == 0) {
@@ -376,15 +377,15 @@ testTimerOverhead()
   }
   uint64_t tot_count = max_iteration * max_count;
   lrt_printf("\t"
-	     " tot_count %ld "
-	     " total %ld \n"
-	     "\t"
-	     " avg %ld "
-	     " max_avg %ld "
-	     " min_avg %ld \n",
-	     (long int)tot_count, (long int)total, 
-	     (long int)(total/tot_count), (long int)max_avg, 
-	     (long int)min_avg );
+             " tot_count %ld "
+             " total %ld \n"
+             "\t"
+             " avg %ld "
+             " max_avg %ld "
+             " min_avg %ld \n",
+             (long int)tot_count, (long int)total,
+             (long int)(total/tot_count), (long int)max_avg,
+             (long int)min_avg );
   return EBBRC_OK;
 }
 
@@ -392,7 +393,7 @@ testTimerOverhead()
  * tests executed in context of event
  * initiated by previous tests
  */
-static EBBRC 
+static EBBRC
 runPingTest(EventLoc core)
 {
   EBBRC rc;
@@ -426,7 +427,7 @@ runNextTest()
   curStage = nextStage;
   nextStage++;
   switch(curStage) {
-  case 0: 
+  case 0:
     // tests that run to completion
     lrt_printf("eventtiming: base overheads\n");
     lrt_printf("    EBB CALL OVERHEAD:\n");
@@ -436,16 +437,16 @@ runNextTest()
     // falls into tests that create events
     // and call runNextTest
     nextStage++;
-  case 1: 
+  case 1:
     event_loop_type = LOCAL;
-    // lrt_event_use_bitvector_local=0;
+    rc = COBJ_EBBCALL((EventMgrPrimExpId)theEventMgrPrimId, disableBitvectorLocal);
     lrt_printf("eventtiming: running local event loop with BV disabled\n");
     rc = COBJ_EBBCALL(theEventMgrPrimId, triggerEvent, ev, EVENT_LOC_SINGLE, 0);
     LRT_RCAssert(rc);
     break;
   case 2:
     event_loop_type = LOCAL;
-    //lrt_event_use_bitvector_local=1;
+    rc = COBJ_EBBCALL((EventMgrPrimExpId)theEventMgrPrimId, enableBitvectorLocal);
     lrt_printf("eventtiming: running local event loop with BV enabled\n");
     rc = COBJ_EBBCALL(theEventMgrPrimId, triggerEvent, ev, EVENT_LOC_SINGLE, 0);
     LRT_RCAssert(rc);
@@ -497,16 +498,17 @@ runNextTest()
   case 40:
     verbose = 1;		/* get loud again */
     event_loop_type = RR_ALL;
-    //lrt_event_use_bitvector_local=0;
-    //lrt_event_use_bitvector_remote=0;
+
+    rc = COBJ_EBBCALL((EventMgrPrimExpId)theEventMgrPrimId, disableBitvectorLocal);
+    rc = COBJ_EBBCALL((EventMgrPrimExpId)theEventMgrPrimId, disableBitvectorRemote);
     lrt_printf("eventtiming: running remote event loop with BV disabled\n");
     rc = COBJ_EBBCALL(theEventMgrPrimId, triggerEvent, ev, EVENT_LOC_SINGLE, 0);
     LRT_RCAssert(rc);
     break;
   case 41:
     event_loop_type = RR_ALL;
-    //lrt_event_use_bitvector_local=1;
-    //lrt_event_use_bitvector_remote=1;
+    rc = COBJ_EBBCALL((EventMgrPrimExpId)theEventMgrPrimId, enableBitvectorLocal);
+    rc = COBJ_EBBCALL((EventMgrPrimExpId)theEventMgrPrimId, enableBitvectorRemote);
     lrt_printf("eventtiming: running remote event loop with BV enabled\n");
     rc = COBJ_EBBCALL(theEventMgrPrimId, triggerEvent, ev, EVENT_LOC_SINGLE, 0);
     LRT_RCAssert(rc);
@@ -526,23 +528,27 @@ runNextTest()
   return EBBRC_OK;
 }
 
-
 static EBBRC
 EventTiming_start(AppRef _self)
 {
+  if (has_rdtscp()) {
+    timingfunc = rdtscp;
+  } else {
+    timingfunc = rdtsc;
+  }
   //block for a while to let other cores halt
-  uint64_t time = rdtscp();
+  uint64_t time = timingfunc();
   numcores = NumEventLoc();
   verbose = 1;
 
   lrt_printf("eventtiming: started\n");
-  while ((rdtscp() - time) < 1000000) ;
+  while ((timingfunc() - time) < 1000000) ;
   EBBRC rc = COBJ_EBBCALL(theEventMgrPrimId, allocEventNo, &ev);
   LRT_RCAssert(rc);
 
   rc = COBJ_EBBCALL(theEventMgrPrimId, bindEvent, ev, (EBBId)theAppId,
-		    COBJ_FUNCNUM_FROM_TYPE(CObjInterface(EventTiming),
-					   loopEvent));
+                    COBJ_FUNCNUM_FROM_TYPE(CObjInterface(EventTiming),
+                                           loopEvent));
   LRT_RCAssert(rc);
 
   runNextTest();
@@ -558,4 +564,24 @@ CObjInterface(EventTiming) EventTiming_ftable = {
   .loopEvent = EventTiming_loopEvent,
 };
 
-APP_START_ONE(EventTiming);
+EBBRC
+app_start()
+{
+  EBBRC rc = EBBRC_OK;
+  if (MyEventLoc() == 0) {
+    EBBRC rc = EBBRC_OK;
+
+    rc = EBBMemMgrPrimInit();
+    LRT_RCAssert(rc);
+
+    rc = EBBMgrPrimInit();
+    LRT_RCAssert(rc);
+
+    rc = EventMgrPrimExpInit();
+    LRT_RCAssert(rc);
+    create_app_obj_default();
+    return COBJ_EBBCALL(theAppId, start);
+  }
+  return rc;
+}
+APP_BASE(EventTiming)

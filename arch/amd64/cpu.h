@@ -56,6 +56,7 @@ static const uint32_t CPUID_EDX_HAS_LAPIC = 1 << 9;
 
 /* CPUID EXTENDED FEATURE FLAGS */
 static const uint32_t CPUID_EXT_HAS_1GPAGES = 1 << 26;
+static const uint32_t CPUID_EXT_HAS_RDTSCP = 1 << 27;
 static const uint32_t CPUID_EXT_HAS_LONGMODE = 1 << 29;
 
 /* CR0 FLAGS */
@@ -150,13 +151,25 @@ has_1gpages(void)
   }
 
 
-  //check for long mode
-
   uint32_t features, dummy;
 
   cpuid(CPUID_EXT_FEATURES, &dummy, &dummy, &dummy, &features);
 
   return (features & CPUID_EXT_HAS_1GPAGES);
+}
+
+static inline bool
+has_rdtscp(void)
+{
+  if (!has_ext_features()) {
+    return false;
+  }
+
+  uint32_t features, dummy;
+
+  cpuid(CPUID_EXT_FEATURES, &dummy, &dummy, &dummy, &features);
+
+  return (features & CPUID_EXT_HAS_RDTSCP);
 }
 
 static inline bool
@@ -261,17 +274,9 @@ rdtsc(void) {
 static inline uint64_t
 rdtscp(void) {
   uint32_t low, high;
-  //serialize
-  asm volatile (
-                "xorl %%eax, %%eax\n\t"
-                "cpuid"
-                :
-                :
-                : "%rax", "%rbx", "%rcx", "%rdx");
-
-  asm volatile ("rdtscp"
+   asm volatile ("rdtscp"
                 : "=a" (low), "=d" (high)
-		: : "ecx");
+                : : "ecx");
   return (uint64_t)high << 32 | low;
 }
 #endif
