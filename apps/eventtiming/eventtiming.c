@@ -85,12 +85,6 @@ EventTiming_loopEvent(EventTimingRef self)
 {
   static uint64_t t0, t1;
   static uint64_t max_avg, min_avg, total, tot_count;
-#ifdef LRT_EVENT_COLLECT_INT_TIMING
-  // for low level monitoring fine grained timers
-  static uint64_t min1, min2, min3;
-  static uint64_t max1, max2, max3;
-  static uint64_t avg1, avg2, avg3;
-#endif
 
   if (next != MyEventLoc()) {
     bogus_events++;
@@ -108,16 +102,6 @@ EventTiming_loopEvent(EventTimingRef self)
       LRT_Assert(MyEventLoc() == 0);
       switch(event_loop_type) {
       case LOCAL_INT:
-#ifdef LRT_EVENT_COLLECT_INT_TIMING
-        min1 = min2 = min3 = UINT64_MAX;
-        max1 = max2 = max3 = 0;
-        avg1 = avg2 = avg3 = 0;
-        lrt_printf("eventtiming: running local fine grained timing test\n");
-        lrt_event_use_bitvector_local=1;
-        lrt_event_use_bitvector_remote=0;
-        lrt_event_collect_int_timing = 1;
-        next = 0;
-#endif
         break;
       case LOCAL:
         break;
@@ -128,48 +112,9 @@ EventTiming_loopEvent(EventTimingRef self)
       }
     }
     t0 = timingfunc();
-  } else {
-#ifdef LRT_EVENT_COLLECT_INT_TIMING
-    if (lrt_event_collect_int_timing) {
-      uint64_t d;
-      if ((tint1<tint0)||(tint2<tint1)||(tint3<tint2)) {
-        lrt_printf("1 - %ld - %ld - %ld - %ld\n",
-                   (unsigned long)tint0,
-                   (unsigned long)tint1,
-                   (unsigned long)tint2,
-                   (unsigned long)tint3);
-      }
-      LRT_Assert(tint1>=tint0);
-      LRT_Assert(tint2>=tint1);
-      LRT_Assert(tint3>=tint2);
-      d = tint1 - tint0;
-      if (d < min1) min1 = d;
-      if (d > max1) max1 = d;
-      avg1 += d;
-      d = tint2 - tint1;
-      if (d < min2) min2 = d;
-      if (d > max2) max2 = d;
-      avg2 += d;
-      d = tint3 - tint2;
-      if (d < min3) min3 = d;
-      if (d > max3) max3 = d;
-      avg3 += d;
-    }
-#endif
   }
 
   if (count == max_count) {	/* done an iteration */
-#ifdef LRT_EVENT_COLLECT_INT_TIMING
-  if (lrt_event_collect_int_timing) {
-    lrt_printf("\texp 1 min = %ld, max = %ld, avg = %ld\n",
-               (long int)min1, (long int)max1, (long int)avg1/max_count);
-    lrt_printf("\texp 2 min = %ld, max = %ld, avg = %ld\n",
-               (long int)min2, (long int)max2, (long int)(avg2/max_count));
-    lrt_printf("\texp 3 min = %ld, max = %ld, avg = %ld\n",
-               (long int)min3, (long int)max3, (long int)avg3/max_count);
-    lrt_exit(0);
-  }
-#endif
     uint64_t ctot, cavg;
     t1 = timingfunc();
     LRT_Assert(t1>t0);
@@ -185,8 +130,9 @@ EventTiming_loopEvent(EventTimingRef self)
 
     if (iteration == max_iteration) { // done it all
       if (verbose) {
-        lrt_printf("eventtiming: ran ping to core %ld BV disabled\n",
-                   (long int)ping_r);
+	if (event_loop_type == PING) 
+	  lrt_printf("eventtiming: ran ping to core %ld BV disabled\n",
+		     (long int)ping_r);
         lrt_printf("\t"
                    " tot_count %ld "
                    " total %ld \n"
@@ -238,11 +184,6 @@ EventTiming_loopEvent(EventTimingRef self)
   }
 
   count++;
-#ifdef LRT_EVENT_COLLECT_INT_TIMING
-  if (lrt_event_collect_int_timing) {
-    tint0 = timingfunc();
-  }
-#endif
   COBJ_EBBCALL(theEventMgrPrimId, triggerEvent, ev,
                EVENT_LOC_SINGLE, next);
   return EBBRC_OK;
@@ -412,12 +353,6 @@ EBBRC
 runNextTest()
 {
   static int nextStage = 0;
-#ifdef LRT_EVENT_COLLECT_INT_TIMING
-  if (nextStage < 42) {
-    nextStage = 42;
-  }
-#endif
-
   int curStage;
   EBBRC rc;
   count = -1;
@@ -439,20 +374,24 @@ runNextTest()
     nextStage++;
   case 1:
     event_loop_type = LOCAL;
-    rc = COBJ_EBBCALL((EventMgrPrimExpId)theEventMgrPrimId, disableBitvectorLocal);
+    rc = COBJ_EBBCALL((EventMgrPrimExpId)theEventMgrPrimId, 
+		      disableBitvectorLocal);
     lrt_printf("eventtiming: running local event loop with BV disabled\n");
     rc = COBJ_EBBCALL(theEventMgrPrimId, triggerEvent, ev, EVENT_LOC_SINGLE, 0);
     LRT_RCAssert(rc);
     break;
   case 2:
     event_loop_type = LOCAL;
-    rc = COBJ_EBBCALL((EventMgrPrimExpId)theEventMgrPrimId, enableBitvectorLocal);
+    rc = COBJ_EBBCALL((EventMgrPrimExpId)theEventMgrPrimId, 
+		      enableBitvectorLocal);
     lrt_printf("eventtiming: running local event loop with BV enabled\n");
     rc = COBJ_EBBCALL(theEventMgrPrimId, triggerEvent, ev, EVENT_LOC_SINGLE, 0);
     LRT_RCAssert(rc);
     break;
   case 3:
     lrt_printf("--------------- ping tests --------------\n");
+    rc = COBJ_EBBCALL((EventMgrPrimExpId)theEventMgrPrimId, 
+		      disableBitvectorLocal);
     verbose = 0;
     runPingTest(curStage-2);
     break;
@@ -494,32 +433,24 @@ runNextTest()
   case 39:
     runPingTest(curStage-2);
     break;
-
   case 40:
     verbose = 1;		/* get loud again */
     event_loop_type = RR_ALL;
-
-    rc = COBJ_EBBCALL((EventMgrPrimExpId)theEventMgrPrimId, disableBitvectorLocal);
-    rc = COBJ_EBBCALL((EventMgrPrimExpId)theEventMgrPrimId, disableBitvectorRemote);
+    rc = COBJ_EBBCALL((EventMgrPrimExpId)theEventMgrPrimId, 
+		      disableBitvectorLocal);
     lrt_printf("eventtiming: running remote event loop with BV disabled\n");
     rc = COBJ_EBBCALL(theEventMgrPrimId, triggerEvent, ev, EVENT_LOC_SINGLE, 0);
     LRT_RCAssert(rc);
     break;
   case 41:
     event_loop_type = RR_ALL;
-    rc = COBJ_EBBCALL((EventMgrPrimExpId)theEventMgrPrimId, enableBitvectorLocal);
-    rc = COBJ_EBBCALL((EventMgrPrimExpId)theEventMgrPrimId, enableBitvectorRemote);
+    // FIXME: make this remote bv we enable
+    rc = COBJ_EBBCALL((EventMgrPrimExpId)theEventMgrPrimId, 
+		      enableBitvectorLocal);
     lrt_printf("eventtiming: running remote event loop with BV enabled\n");
     rc = COBJ_EBBCALL(theEventMgrPrimId, triggerEvent, ev, EVENT_LOC_SINGLE, 0);
     LRT_RCAssert(rc);
     break;
-  case 42:
-#ifdef LRT_EVENT_COLLECT_INT_TIMING
-    event_loop_type = LOCAL_INT;
-    rc = COBJ_EBBCALL(theEventMgrPrimId, triggerEvent, ev, EVENT_LOC_SINGLE, 0);
-    LRT_RCAssert(rc);
-    break;
-#endif
   default:
     lrt_printf("exiting with test number %d\n", curStage);
     lrt_exit(0);
@@ -564,6 +495,11 @@ CObjInterface(EventTiming) EventTiming_ftable = {
   .loopEvent = EventTiming_loopEvent,
 };
 
+/*
+ * this application differs from others in that it
+ * has its own app_start, since it wants to start up a 
+ * different EventMgr from the default
+ */
 EBBRC
 app_start()
 {

@@ -52,10 +52,8 @@ CObject(EventMgrPrimImp){
   struct lrt_event_descriptor *lrt_event_table_ptr;
 };
 
-EventMgrPrimId theEventMgrPrimId=0;
-
 static EBBRC
-EventMgrPrim_allocEventNo(EventMgrPrimRef _self, EventNo *eventNoPtr)
+EventMgrPrimImp_allocEventNo(EventMgrPrimRef _self, EventNo *eventNoPtr)
 {
   int i;
   //we start from the beginning and just find the first
@@ -73,15 +71,15 @@ EventMgrPrim_allocEventNo(EventMgrPrimRef _self, EventNo *eventNoPtr)
   return EBBRC_OK;
 }
 
-EBBRC
-EventMgrPrim_freeEventNo(EventMgrPrimRef _self, EventNo eventNo)
+static EBBRC
+EventMgrPrimImp_freeEventNo(EventMgrPrimRef _self, EventNo eventNo)
 {
   __sync_fetch_and_and(&alloc_table[eventNo / 8], ~(1 << (eventNo % 8)));
   return EBBRC_OK;
 }
 
-EBBRC
-EventMgrPrim_bindEvent(EventMgrPrimRef _self, EventNo eventNo,
+static EBBRC
+EventMgrPrimImp_bindEvent(EventMgrPrimRef _self, EventNo eventNo,
           EBBId handler, EBBFuncNum fn)
 {
   EventMgrPrimImpRef self = (EventMgrPrimImpRef)_self;
@@ -90,16 +88,16 @@ EventMgrPrim_bindEvent(EventMgrPrimRef _self, EventNo eventNo,
   return EBBRC_OK;
 }
 
-EBBRC
-EventMgrPrim_routeIRQ(EventMgrPrimRef _self, IRQ *isrc, EventNo eventNo,
+static EBBRC
+EventMgrPrimImp_routeIRQ(EventMgrPrimRef _self, IRQ *isrc, EventNo eventNo,
                       enum EventLocDesc desc, EventLoc el)
 {
   LRT_Assert(0);
   return EBBRC_OK;
 }
 
-EBBRC
-EventMgrPrim_triggerEvent(EventMgrPrimRef _self, EventNo eventNo,
+static EBBRC
+EventMgrPrimImp_triggerEvent(EventMgrPrimRef _self, EventNo eventNo,
                           enum EventLocDesc desc, EventLoc el)
 {
   LRT_Assert(el < lrt_num_event_loc());
@@ -108,7 +106,7 @@ EventMgrPrim_triggerEvent(EventMgrPrimRef _self, EventNo eventNo,
 }
 
 static EBBRC
-EventMgrPrim_dispatchEvent(EventMgrPrimRef _self, EventNo eventNo)
+EventMgrPrimImp_dispatchEvent(EventMgrPrimRef _self, EventNo eventNo)
 {
   EventMgrPrimImpRef self = (EventMgrPrimImpRef)_self;
   struct lrt_event_descriptor *desc = &self->lrt_event_table_ptr[eventNo];
@@ -122,7 +120,7 @@ EventMgrPrim_dispatchEvent(EventMgrPrimRef _self, EventNo eventNo)
 }  
 
 static EBBRC
-EventMgrPrim_enableInterrupts(EventMgrPrimRef _self)
+EventMgrPrimImp_enableInterrupts(EventMgrPrimRef _self)
 {
   asm volatile ("sti\n\t"
 		"hlt\n\t"
@@ -134,13 +132,13 @@ EventMgrPrim_enableInterrupts(EventMgrPrimRef _self)
 }
 
 CObjInterface(EventMgrPrim) EventMgrPrimImp_ftable = {
-  .allocEventNo = EventMgrPrim_allocEventNo,
-  .freeEventNo = EventMgrPrim_freeEventNo,
-  .bindEvent = EventMgrPrim_bindEvent,
-  .routeIRQ = EventMgrPrim_routeIRQ,
-  .triggerEvent = EventMgrPrim_triggerEvent,
-  .enableInterrupts = EventMgrPrim_enableInterrupts,
-  .dispatchEvent = EventMgrPrim_dispatchEvent
+  .allocEventNo = EventMgrPrimImp_allocEventNo,
+  .freeEventNo = EventMgrPrimImp_freeEventNo,
+  .bindEvent = EventMgrPrimImp_bindEvent,
+  .routeIRQ = EventMgrPrimImp_routeIRQ,
+  .triggerEvent = EventMgrPrimImp_triggerEvent,
+  .enableInterrupts = EventMgrPrimImp_enableInterrupts,
+  .dispatchEvent = EventMgrPrimImp_dispatchEvent
 };
 
 static void

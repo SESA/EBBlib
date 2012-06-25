@@ -32,7 +32,6 @@
 #include <l0/lrt/bare/arch/amd64/lrt_start.h>
 #include <lrt/io.h>
 #include <lrt/string.h>
-#include <l0/lrt/event_bv.h>
 #include <l0/EventMgrPrim.h>
 
 static int num_event_loc;
@@ -84,8 +83,6 @@ lrt_event_preinit(int cores)
 {
   num_event_loc = cores;
   idt = lrt_mem_alloc(sizeof(idtdesc) * 256, 8, 0);
-  lrt_event_bv = lrt_mem_alloc(sizeof(struct corebv) * cores, 8, 0);
-  bzero(lrt_event_bv, sizeof(struct corebv) * cores);
   init_idt();
   LRT_Assert(has_lapic());
   disable_pic();

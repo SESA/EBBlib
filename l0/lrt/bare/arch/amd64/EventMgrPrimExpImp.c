@@ -42,12 +42,12 @@
 #include <sync/bitvector.h>
 #include <lrt/string.h>
 
-// define a set of routines to manipulate a bitvector
-DEF_BITVEC(event, LRT_EVENT_NUM_EVENTS);
-
 STATIC_ASSERT(LRT_EVENT_NUM_EVENTS % 8 == 0,
               "num allocatable events isn't divisible by 8");
 static uint8_t alloc_table[LRT_EVENT_NUM_EVENTS / 8];
+
+// define a set of routines to manipulate a bitvector
+DEF_BITVEC(event, LRT_EVENT_NUM_EVENTS);
 
 CObject(EventMgrPrimExpImp){
   CObjInterface(EventMgrPrimExp) *ft;
@@ -56,12 +56,12 @@ CObject(EventMgrPrimExpImp){
   struct event_bvs corebv;
 
   // for now, make this share descriptor tables, may replicate
-  // later
+  // later 
   struct lrt_event_descriptor *lrt_event_table_ptr;
 };
 
 static EBBRC
-EventMgrPrim_allocEventNo(EventMgrPrimRef _self, EventNo *eventNoPtr)
+EventMgrPrimExpImp_allocEventNo(EventMgrPrimRef _self, EventNo *eventNoPtr)
 {
   int i;
   //we start from the beginning and just find the first
@@ -80,16 +80,15 @@ EventMgrPrim_allocEventNo(EventMgrPrimRef _self, EventNo *eventNoPtr)
 }
 
 static EBBRC
-EventMgrPrim_freeEventNo(EventMgrPrimRef _self, EventNo eventNo)
+EventMgrPrimExpImp_freeEventNo(EventMgrPrimRef _self, EventNo eventNo)
 {
   __sync_fetch_and_and(&alloc_table[eventNo / 8], ~(1 << (eventNo % 8)));
   return EBBRC_OK;
 }
 
-// no locking, if you bind while event in flight you are an idiot
 static EBBRC
-EventMgrPrim_bindEvent(EventMgrPrimRef _self, EventNo eventNo,
-                       EBBId handler, EBBFuncNum fn)
+EventMgrPrimExpImp_bindEvent(EventMgrPrimRef _self, EventNo eventNo,
+          EBBId handler, EBBFuncNum fn)
 {
   EventMgrPrimExpImpRef self = (EventMgrPrimExpImpRef)_self;
   self->lrt_event_table_ptr[eventNo].id = handler;
@@ -98,24 +97,16 @@ EventMgrPrim_bindEvent(EventMgrPrimRef _self, EventNo eventNo,
 }
 
 static EBBRC
-EventMgrPrim_routeIRQ(EventMgrPrimRef _self, IRQ *isrc, EventNo eventNo,
+EventMgrPrimExpImp_routeIRQ(EventMgrPrimRef _self, IRQ *isrc, EventNo eventNo,
                       enum EventLocDesc desc, EventLoc el)
 {
-  lrt_event_route_irq(isrc, eventNo, desc, el);
-  return EBBRC_OK;
-}
-
-
-static EBBRC
-EventMgrPrim_dispatchEvent(EventMgrPrimRef _self, EventNo eventNo)
-{
-  LRT_Assert(0);		/* shouldn't be called */
+  LRT_Assert(0);
   return EBBRC_OK;
 }
 
 static EBBRC
-EventMgrPrim_triggerEvent_nobv(EventMgrPrimRef _self, EventNo eventNo,
-			       enum EventLocDesc desc, EventLoc el)
+EventMgrPrimExpImp_triggerEvent_nobv(EventMgrPrimRef _self, EventNo eventNo,
+				     enum EventLocDesc desc, EventLoc el)
 {
   LRT_Assert(el < lrt_num_event_loc());
   lrt_event_trigger_event(eventNo, desc, el);
@@ -123,16 +114,10 @@ EventMgrPrim_triggerEvent_nobv(EventMgrPrimRef _self, EventNo eventNo,
 }
 
 static EBBRC
-EventMgrPrim_enableInterrupts_nobv(EventMgrPrimRef _self)
+EventMgrPrimExpImp_dispatchEvent(EventMgrPrimRef _self, EventNo eventNo)
 {
   EventMgrPrimExpImpRef self = (EventMgrPrimExpImpRef)_self;
-  int rc;
-
-  lrt_event_halt();
-  rc = lrt_event_get_event_nonblock();
-  LRT_Assert(rc >= 0);
-
-  struct lrt_event_descriptor *desc = &self->lrt_event_table_ptr[rc];
+  struct lrt_event_descriptor *desc = &self->lrt_event_table_ptr[eventNo];
   lrt_trans_id id = desc->id;
   lrt_trans_func_num fnum = desc->fnum;
 
@@ -140,31 +125,36 @@ EventMgrPrim_enableInterrupts_nobv(EventMgrPrimRef _self)
   lrt_trans_rep_ref ref = lrt_trans_id_dref(id);
   ref->ft[fnum](ref);
   return EBBRC_OK;
+}  
+
+static EBBRC
+EventMgrPrimExpImp_enableInterrupts_nobv(EventMgrPrimRef _self)
+{
+  asm volatile ("sti\n\t"
+		"hlt\n\t"
+		"cli"
+		::
+		: "rax", "rcx", "rdx", "rsi",
+		  "rdi", "r8", "r9", "r10", "r11"); 
+  return EBBRC_OK;
 }
 
 static EBBRC
-EventMgrPrim_enableInterrupts_withlbv(EventMgrPrimRef _self)
+EventMgrPrimExpImp_enableInterrupts_withlbv(EventMgrPrimRef _self)
 {
   // first check local bitvector, then block at low level
   EventMgrPrimExpImpRef self = (EventMgrPrimExpImpRef)_self;
   int el = event_get_unset_bit_bv(&self->corebv);
-  if (el == -1) {
-    // block on remote, no bits set
-    return EventMgrPrim_enableInterrupts_nobv(_self);
+  if (el != -1) {
+    return EventMgrPrimExpImp_dispatchEvent(_self, el);
+  } else {    
+    // okay, really enable interrupts
+    return EventMgrPrimExpImp_enableInterrupts_nobv(_self);
   }
-  
-  struct lrt_event_descriptor *desc = &self->lrt_event_table_ptr[el];
-  lrt_trans_id id = desc->id;
-  lrt_trans_func_num fnum = desc->fnum;
-
-  //this infrastructure should be pulled out of this file
-  lrt_trans_rep_ref ref = lrt_trans_id_dref(id);
-  ref->ft[fnum](ref);
-  return EBBRC_OK;
 }
 
 static EBBRC
-EventMgrPrim_triggerEvent_withlbv(EventMgrPrimRef _self, EventNo eventNo,
+EventMgrPrimExpImp_triggerEvent_withlbv(EventMgrPrimRef _self, EventNo eventNo,
 				  enum EventLocDesc desc, EventLoc el)
 {
   EventMgrPrimExpImpRef self = (EventMgrPrimExpImpRef)_self;
@@ -176,37 +166,38 @@ EventMgrPrim_triggerEvent_withlbv(EventMgrPrimRef _self, EventNo eventNo,
   } 
 
   // okay, its a remote bit, do the standard operation
-  return EventMgrPrim_triggerEvent_nobv(_self, eventNo, desc, el);
+  return EventMgrPrimExpImp_triggerEvent_nobv(_self, eventNo, desc, el);
 }
 
-static EBBRC EventMgrPrim_enableBitvectorLocal(EventMgrPrimExpRef self);
-static EBBRC EventMgrPrim_disableBitvector(EventMgrPrimExpRef self);
+
+static EBBRC EventMgrPrimExpImp_enableBitvectorLocal(EventMgrPrimExpRef self);
+static EBBRC EventMgrPrimExpImp_disableBitvector(EventMgrPrimExpRef self);
 
 CObjInterface(EventMgrPrimExp) EventMgrPrimExpImp_ftable_nobv = {
   {
-    .allocEventNo = EventMgrPrim_allocEventNo,
-    .freeEventNo = EventMgrPrim_freeEventNo,
-    .bindEvent = EventMgrPrim_bindEvent,
-    .routeIRQ = EventMgrPrim_routeIRQ,
-    .triggerEvent = EventMgrPrim_triggerEvent_nobv,
-    .enableInterrupts = EventMgrPrim_enableInterrupts_nobv,
-    .dispatchEvent = EventMgrPrim_dispatchEvent
+    .allocEventNo = EventMgrPrimExpImp_allocEventNo,
+    .freeEventNo = EventMgrPrimExpImp_freeEventNo,
+    .bindEvent = EventMgrPrimExpImp_bindEvent,
+    .routeIRQ = EventMgrPrimExpImp_routeIRQ,
+    .triggerEvent = EventMgrPrimExpImp_triggerEvent_nobv,
+    .enableInterrupts = EventMgrPrimExpImp_enableInterrupts_nobv,
+    .dispatchEvent = EventMgrPrimExpImp_dispatchEvent
   },
-  .enableBitvectorLocal = EventMgrPrim_enableBitvectorLocal,
-  .disableBitvectorLocal = EventMgrPrim_disableBitvector,
+  .enableBitvectorLocal = EventMgrPrimExpImp_enableBitvectorLocal,
+  .disableBitvectorLocal = EventMgrPrimExpImp_disableBitvector,
 };
 
 static EBBRC
-EventMgrPrim_enableBitvectorLocal(EventMgrPrimExpRef self)
+EventMgrPrimExpImp_enableBitvectorLocal(EventMgrPrimExpRef self)
 {
-  self->ft->EventMgrPrim_if.triggerEvent = EventMgrPrim_triggerEvent_withlbv;
+  self->ft->EventMgrPrim_if.triggerEvent = EventMgrPrimExpImp_triggerEvent_withlbv;
   self->ft->EventMgrPrim_if.enableInterrupts = 
-    EventMgrPrim_enableInterrupts_withlbv;
+    EventMgrPrimExpImp_enableInterrupts_withlbv;
   return EBBRC_OK;
 }
 
 static EBBRC
-EventMgrPrim_disableBitvector(EventMgrPrimExpRef self)
+EventMgrPrimExpImp_disableBitvector(EventMgrPrimExpRef self)
 {
   self->ft = &EventMgrPrimExpImp_ftable_nobv;
   return EBBRC_OK;
@@ -219,31 +210,31 @@ EventMgrPrimSetFT(EventMgrPrimExpImpRef o)
 }
 
 static EBBRep *
-EventMgrPrimImp_createRep(CObjEBBRootMultiRef root)
+EventMgrPrimExpImp_createRep(CObjEBBRootMultiRef root)
 {
   EventMgrPrimExpImpRef repRef;
   EBBRC rc;
   rc = EBBPrimMalloc(sizeof(EventMgrPrimExpImp), &repRef, EBB_MEM_DEFAULT);
   LRT_RCAssert(rc);
 
-  // FIXME: put in bitvenctor
-  bzero(&repRef->corebv, sizeof(repRef->corebv));
-  
   EventMgrPrimSetFT(repRef);
 
+  // FIXME: put in bitvenctor
+  bzero(&repRef->corebv, sizeof(repRef->corebv));
+
   // note we get here with the root object locked, and we are assuming tht
-  // in searching for/allocating the event_table.  When we parallelize
+  // in searching for/allocating the event_table.  When we parallelize 
   // rep creation this will fail
   EBBRep *rep;
-  root->ft->nextRep(root, 0, &rep);
+  root->ft->nextRep(root, 0, &rep); 
   if (rep != NULL) {
-    repRef->lrt_event_table_ptr = 
-      ((EventMgrPrimExpImpRef)rep)->lrt_event_table_ptr;
+    repRef->lrt_event_table_ptr = ((EventMgrPrimExpImpRef)rep)->lrt_event_table_ptr;
   } else {
     // allocate the table; reminder this is locked at root
-    rc = EBBPrimMalloc(sizeof(struct lrt_event_descriptor)*LRT_EVENT_NUM_EVENTS,
-                       &repRef->lrt_event_table_ptr, EBB_MEM_DEFAULT);
-  }
+    rc = EBBPrimMalloc(sizeof(struct lrt_event_descriptor)*LRT_EVENT_NUM_EVENTS, 
+		       &repRef->lrt_event_table_ptr, EBB_MEM_DEFAULT);
+  } 
+
   return (EBBRep *)repRef;
 }
 
@@ -256,7 +247,7 @@ EventMgrPrimExpInit(void)
   if (__sync_bool_compare_and_swap(&theEventMgrPrimId, (EventMgrPrimId)0,
                                    (EventMgrPrimId)-1)) {
     EBBId id;
-     rc = CObjEBBRootMultiImpCreate(&rootRef, EventMgrPrimImp_createRep);
+     rc = CObjEBBRootMultiImpCreate(&rootRef, EventMgrPrimExpImp_createRep);
     LRT_RCAssert(rc);
     rc = EBBAllocPrimId(&id);
     LRT_RCAssert(rc);

@@ -1,7 +1,7 @@
 #ifndef __EBB_EVENT_MGR_PRIM_EXP_H__
 #define __EBB_EVENT_MGR_PRIM_EXP_H__
 /*
- * Copyright (C) 2011 by Project SESA, Boston University
+ * Copyright (C) 2012 by Project SESA, Boston University
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -28,10 +28,14 @@ COBJ_EBBType(EventMgrPrimExp) {
   CObjImplements(EventMgrPrim);
   EBBRC (*enableBitvectorLocal) (EventMgrPrimExpRef self);
   EBBRC (*disableBitvectorLocal) (EventMgrPrimExpRef self);
+  // other operations to add eventually, to get working need
+  // to find other cores bitvector
+#if 0  
   EBBRC (*enableBitvectorRemote) (EventMgrPrimExpRef self);
   EBBRC (*disableBitvectorRemote) (EventMgrPrimExpRef self);
   EBBRC (*enableBlock) (EventMgrPrimExpRef self);
   EBBRC (*enablePoll) (EventMgrPrimExpRef self);
+#endif
 };
 
 extern EBBRC EventMgrPrimExpInit(void);
