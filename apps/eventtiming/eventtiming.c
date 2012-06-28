@@ -130,9 +130,10 @@ EventTiming_loopEvent(EventTimingRef self)
 
     if (iteration == max_iteration) { // done it all
       if (verbose) {
-	if (event_loop_type == PING) 
+	if (event_loop_type == PING) {
 	  lrt_printf("eventtiming: ran ping to core %ld BV disabled\n",
 		     (long int)ping_r);
+	}
         lrt_printf("\t"
                    " tot_count %ld "
                    " total %ld \n"
@@ -153,6 +154,7 @@ EventTiming_loopEvent(EventTimingRef self)
                    (long int)ping_r,
                    (long int)(total/tot_count), (long int)max_avg,
                    (long int)min_avg );
+        printCounters();
       }
       runNextTest();
       return EBBRC_OK;
@@ -374,8 +376,7 @@ runNextTest()
     nextStage++;
   case 1:
     event_loop_type = LOCAL;
-    rc = COBJ_EBBCALL((EventMgrPrimExpId)theEventMgrPrimId, 
-		      disableBitvectorLocal);
+    rc = COBJ_EBBCALL((EventMgrPrimExpId)theEventMgrPrimId, disableBitvector);
     lrt_printf("eventtiming: running local event loop with BV disabled\n");
     rc = COBJ_EBBCALL(theEventMgrPrimId, triggerEvent, ev, EVENT_LOC_SINGLE, 0);
     LRT_RCAssert(rc);
@@ -391,7 +392,7 @@ runNextTest()
   case 3:
     lrt_printf("--------------- ping tests --------------\n");
     rc = COBJ_EBBCALL((EventMgrPrimExpId)theEventMgrPrimId, 
-		      disableBitvectorLocal);
+		      disableBitvector);
     verbose = 0;
     runPingTest(curStage-2);
     break;
@@ -437,16 +438,15 @@ runNextTest()
     verbose = 1;		/* get loud again */
     event_loop_type = RR_ALL;
     rc = COBJ_EBBCALL((EventMgrPrimExpId)theEventMgrPrimId, 
-		      disableBitvectorLocal);
+		      disableBitvector);
     lrt_printf("eventtiming: running remote event loop with BV disabled\n");
     rc = COBJ_EBBCALL(theEventMgrPrimId, triggerEvent, ev, EVENT_LOC_SINGLE, 0);
     LRT_RCAssert(rc);
     break;
   case 41:
     event_loop_type = RR_ALL;
-    // FIXME: make this remote bv we enable
     rc = COBJ_EBBCALL((EventMgrPrimExpId)theEventMgrPrimId, 
-		      enableBitvectorLocal);
+		      enableBitvectorAll);
     lrt_printf("eventtiming: running remote event loop with BV enabled\n");
     rc = COBJ_EBBCALL(theEventMgrPrimId, triggerEvent, ev, EVENT_LOC_SINGLE, 0);
     LRT_RCAssert(rc);
