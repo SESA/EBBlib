@@ -26,16 +26,16 @@
 
 COBJ_EBBType(EventMgrPrimExp) {
   CObjImplements(EventMgrPrim);
+  // use bit vector just for local operations
   EBBRC (*enableBitvectorLocal) (EventMgrPrimExpRef self);
-  EBBRC (*disableBitvectorLocal) (EventMgrPrimExpRef self);
-  // other operations to add eventually, to get working need
-  // to find other cores bitvector
-#if 0  
-  EBBRC (*enableBitvectorRemote) (EventMgrPrimExpRef self);
-  EBBRC (*disableBitvectorRemote) (EventMgrPrimExpRef self);
-  EBBRC (*enableBlock) (EventMgrPrimExpRef self);
+  // use for both remote and local events
+  EBBRC (*enableBitvectorAll) (EventMgrPrimExpRef self);
+  // no bitvector for local or remote
+  EBBRC (*disableBitvector) (EventMgrPrimExpRef self);
+  // polls for events, rather than blocking
   EBBRC (*enablePoll) (EventMgrPrimExpRef self);
-#endif
+  // just blocks
+  EBBRC (*disablePoll) (EventMgrPrimExpRef self);
 };
 
 extern EBBRC EventMgrPrimExpInit(void);
