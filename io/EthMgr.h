@@ -39,4 +39,6 @@ COBJ_EBBType(EthMgr) {
   EVENTFUNC(inEvent);
 };
 
+extern EBBRC EthMgrCreate(EthMgrId *id);
+
 #endif  // __ETH_MGR_H__

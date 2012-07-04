@@ -22,6 +22,5 @@
  * THE SOFTWARE.
  */
 
-extern EBBRC EthMgrPrimCreate(EthMgrId *id, char *nic);
 
 #endif  // __ETH_MGR_PRIM_H__

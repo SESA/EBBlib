@@ -40,7 +40,6 @@
 #include <l0/MemMgrPrim.h>
 #include <io/EthTypeMgr.h>
 #include <io/EthMgr.h>
-#include <io/EthMgrPrim.h>
 #include <l1/App.h>
 #include <l1/startinfo.h>
 #ifndef LRT_ULNX
@@ -53,30 +52,13 @@ CObject(EthTst) {
   CObjInterface(App) *ft;
 };
 
+
 EBBRC 
 EthTst_start(AppRef _self)
 {
-#ifdef LRT_ULNX
   EBBRC rc;
-  struct startinfo si;
+  rc = EthMgrCreate(&theEthMgr);
 
-  si_get_args(&si);
-
-  if (si.argc <= 1) {
-    lrt_printf("usage: ethtst nic\n");
-    lrt_printf("  e.g. ethtst lo0, or ethtst eth1\n");
-    LRT_RCAssert(-1);
-  }
-
-  lrt_printf("%s: START with device %s\n", __func__, si.argv[1]);
-  //FIXME: check argument, pass in as first argument to run
-  rc = EthMgrPrimCreate(&theEthMgr, si.argv[1]);
-  LRT_RCAssert(rc);
-
-  lrt_printf("%s: END\n", __func__);
-#else
-  pci_init();
-#endif
   return EBBRC_OK;
 }
 
@@ -84,8 +66,4 @@ CObjInterface(App) EthTst_ftable = {
   .start = EthTst_start
 };
 
-#ifdef LRT_ULNX
-APP_START_ALL(EthTst);
-#else
 APP_START_ONE(EthTst);
-#endif
