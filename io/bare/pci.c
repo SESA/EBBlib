@@ -387,8 +387,8 @@ enable_bus_master(uint8_t bus, uint8_t slot, uint8_t func)
   pci_config_write16(bus,slot,func,0x4,command);
 }
 
-static void
-initialize_e1000e(uint8_t bus, uint8_t slot)
+void
+e1000e_init(uint8_t bus, uint8_t slot)
 {
   lrt_printf("---- initializing e1000e\n");
   uint32_t bar;
@@ -471,8 +471,12 @@ print_capability_list(uint8_t bus, uint8_t slot)
   }
 }
 
-static void 
-enumerateDevices(int bus) 
+#define VPRINT if(verbose) lrt_printf
+
+
+static EBBRC
+pci_get_info_bus(int bus, int targ_vend, int targ_devid, struct pci_info *info, 
+		 int verbose) 
 {
   uint16_t vendor;
   uint16_t device;
@@ -482,57 +486,71 @@ enumerateDevices(int bus)
   uint8_t subclass;
   uint8_t  progif;
   int slot;
+  EBBRC rc;
 
-  lrt_printf("Enumerating bus %d\n", bus);
+  VPRINT("Enumerating bus %d\n", bus);
  
   for (slot = 0; slot < 32; slot++) {
     vendor = pci_config_read16(bus,slot,0,0);
     device = pci_config_read16(bus,slot,0,0x2);
     if (vendor == 0xFFFF)
       continue;
+    if ((vendor == targ_vend) && (device == targ_devid)) {
+      // found it
+      info->bus = bus;
+      info->slot = slot;
+      return EBBRC_OK;
+    }
+
     status = pci_config_read16(bus,slot,0,0x6);
     header = pci_config_read8(bus,slot,0,0xe);
     dev_class = pci_config_read8(bus,slot,0,11);
     subclass = pci_config_read8(bus,slot,0,10);
     progif = pci_config_read8(bus,slot,0,9);
-    lrt_printf("\tBus %d Slot %d header %x: ", bus, slot, header);
+    VPRINT("\tBus %d Slot %d header %x: ", bus, slot, header);
     if (header & 1<<7) {
       // its a multi-function device
-      lrt_printf("(*MFD*) ");
+      VPRINT("(*MFD*) ");
     }
     switch( (header & 0x3F) ) {
     case 0: // standard device layout
-      print_vendor_dev(vendor, device);
-      lrt_printf("\t\tClass code: %x, Subclass: %x, Prog IF: %x\n",
-		 dev_class, subclass, progif);
-      parse_status(status);
-      if (status & (1<<4)) {
-	print_capability_list(bus, slot);
+      if (verbose) {
+	print_vendor_dev(vendor, device);
+	VPRINT("\t\tClass code: %x, Subclass: %x, Prog IF: %x\n",
+	       dev_class, subclass, progif);
+	parse_status(status);
+	if (status & (1<<4)) {
+	  print_capability_list(bus, slot);
+	}
       }
-      if ((vendor == PCI_VENDOR_INTEL) && 
-	  (device == PCI_INTEL_DEVID_E1000E)) {
-	initialize_e1000e(bus, slot);
-      };
       break;
     case 0x1: 
       {
 	uint8_t sbus = pci_config_read8(bus,slot,0,25);
-	lrt_printf(" - PCI bridge, subbus is %d\n", sbus);
-	enumerateDevices(sbus);
-	lrt_printf("Back to bus %d\n", bus);
+	VPRINT(" - PCI bridge, subbus is %d\n", sbus);
+	rc = pci_get_info_bus(sbus, targ_vend,  targ_devid, info, verbose);
+	if (rc == EBBRC_OK) return rc;
+	VPRINT("still searchhing, back to bus %d\n", bus);
       }
       break;
     case 0x2: 
-      lrt_printf(" -  Card Bus bridge\n");
+      VPRINT(" -  Card Bus bridge\n");
       break;
     default:
-      lrt_printf("- Unknown header\n");
+      VPRINT("- Unknown header\n");
     }
   }
+  return EBBRC_NOTFOUND;
 }
 
 void
 pci_print_all()
 {
-  enumerateDevices(0);
+  pci_get_info_bus(0, PCI_VENDOR_BOGUS, 0, NULL, 1);
+}
+
+EBBRC 
+pci_get_info(int vendor, int devid, struct pci_info *info)
+{
+  return pci_get_info_bus(0, vendor, devid, info, 0);
 }

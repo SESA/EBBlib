@@ -26,9 +26,6 @@
 #include <io/EthMgr.h>
 #include <l1/App.h>
 #include <l1/startinfo.h>
-#ifndef LRT_ULNX
-#include <io/bare/pci.h>
-#endif
 
 EthMgrId theEthMgr;
 

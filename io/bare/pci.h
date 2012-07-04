@@ -24,6 +24,7 @@
 
 // vendors we know about
 enum {
+  PCI_VENDOR_BOGUS = 1,
   PCI_VENDOR_INTEL = 0x8086,
   PCI_VENDOR_VMWARE = 0x15ad,
   PCI_VENDOR_LSI = 0x1000,
@@ -74,4 +75,7 @@ struct pci_info {
 
 extern void pci_print_all();	/* prints on console everything we can find */
 extern EBBRC pci_get_info(int vendor, int devid, struct pci_info *info);
+
+// move this out to driver
+extern void e1000e_init(uint8_t bus, uint8_t slot);
 #endif

@@ -37,13 +37,14 @@
 EBBRC
 EthMgrCreate(EthMgrId *id) 
 {
-  //struct pci_info pi;
+  struct pci_info pi;
   EBBRC rc=0;
   pci_print_all();
 
-  //rc = pci_get_info(PCI_VENDOR_INTEL, PCI_INTEL_DEVID_E1000E, &pi);
-  
-  LRT_RCAssert(rc);
+  rc = pci_get_info(PCI_VENDOR_INTEL, PCI_INTEL_DEVID_E1000E, &pi);
+  LRT_RCAssert(rc);		/* later check EBBRC_NOTFOUND */
+  lrt_printf("found device, intializing\n");
+  e1000e_init(pi.bus, pi.slot);
   return rc;
 }
 #endif
