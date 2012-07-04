@@ -23,22 +23,6 @@
 #include <config.h>
 #include <stdint.h>
 
-#include <l0/lrt/types.h>
-#include <l0/cobj/cobj.h>
-#include <lrt/io.h>
-#include <l0/lrt/trans.h>
-#include <lrt/assert.h>
-#include <l0/cobj/CObjEBB.h>
-#include <l0/EBBMgrPrim.h>
-#include <l0/cobj/CObjEBBUtils.h>
-#include <l0/cobj/CObjEBBRoot.h>
-#include <l0/cobj/CObjEBBRootMulti.h>
-#include <l0/cobj/CObjEBBRootMultiImp.h>
-#include <l0/EventMgrPrim.h>
-#include <l0/EventMgrPrimImp.h>
-#include <l0/MemMgr.h>
-#include <l0/MemMgrPrim.h>
-#include <io/EthTypeMgr.h>
 #include <io/EthMgr.h>
 #include <l1/App.h>
 #include <l1/startinfo.h>
@@ -59,7 +43,7 @@ EthTst_start(AppRef _self)
   EBBRC rc;
   rc = EthMgrCreate(&theEthMgr);
 
-  return EBBRC_OK;
+  return rc;
 }
 
 CObjInterface(App) EthTst_ftable = {

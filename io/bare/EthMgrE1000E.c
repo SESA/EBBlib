@@ -1,5 +1,3 @@
-#ifndef __ETH_MGR_H__
-#define __ETH_MGR_H__
 /*
  * Copyright (C) 2011 by Project SESA, Boston University
  *
@@ -21,26 +19,31 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#include <l0/EventMgrPrim.h>
-#include <io/EthTypeMgr.h>
 
-enum {ETHERNET_ADDR_LEN = 6};
+#include <config.h>
+#include <l0/EBBMgrPrim.h>
+#include <lrt/io.h>
+#include <io/bare/pci.h>
+#include <io/EthMgr.h>
+#include <io/bare/pci.h>
 
-struct EthernetHeader {
-  uint8_t  dest[ETHERNET_ADDR_LEN];
-  uint8_t  src[ETHERNET_ADDR_LEN];
-  uint16_t type;
-};
+#ifndef LRT_ULNX
+/*
+ * For now, doing something brain damged, telling 
+ * pci bus to give us info about the one nic we know
+ * about.  We should probably move this outside of this
+ * file and ask for a list of all NICs...
+ */
+EBBRC
+EthMgrCreate(EthMgrId *id) 
+{
+  //struct pci_info pi;
+  EBBRC rc=0;
+  pci_print_all();
 
-COBJ_EBBType(EthMgr) {
-  EBBRC (*init)  (void *_self);
-  EBBRC (*bind)  (void *_self, uint16_t type, EthTypeMgrId id);
-  // FIXME: JA: not really sure we should have the event funcs in the
-  // EthMgr type versus a derived type such as EthMgrPrim that actually
-  // needs and uses them.  
-  EVENTFUNC(inEvent);
-};
-
-extern EBBRC EthMgrCreate(EthMgrId *id);
-
-#endif  // __ETH_MGR_H__
+  //rc = pci_get_info(PCI_VENDOR_INTEL, PCI_INTEL_DEVID_E1000E, &pi);
+  
+  LRT_RCAssert(rc);
+  return rc;
+}
+#endif

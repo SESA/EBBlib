@@ -23,6 +23,8 @@
 #include <config.h>
 #include <lrt/io.h>
 #include <arch/amd64/sysio.h>
+#include <l0/EBBMgrPrim.h>
+#include <io/bare/pci.h>
 
 #define PCI_CONFIG_ADDRESS 0xCF8
 #define PCI_CONFIG_DATA 0xCFC
@@ -78,49 +80,6 @@ pci_config_write8 (uint8_t bus, uint8_t slot, uint16_t func, uint16_t offset,
   sysOut32(PCI_CONFIG_DATA + (offset & 3), val);
 }
 
-enum {
-  PCI_VENDOR_INTEL = 0x8086,
-  PCI_VENDOR_VMWARE = 0x15ad,
-  PCI_VENDOR_LSI = 0x1000,
-  PCI_VENDOR_NVIDIA = 0x10de,
-  PCI_VENDOR_AMD1 = 0x1002,
-  PCI_VENDOR_AMD2 = 0x1022
-};
-
-enum {
-  PCI_AMD_DEVID_SATACTLR = 0x4390
-};
-
-enum {
-  PCI_INTEL_DEVID_HBRIDGE = 0x7190,
-  PCI_INTEL_DEVID_PCIBRIDGE = 0x7191,
-  PCI_INTEL_DEVID_ISABRIDGE = 0x7110, 
-  PCI_INTEL_DEVID_ETHERNT = 0x100f,
-  PCI_INTEL_DEVID_GBADPT = 0x10c9,
-  PCI_INTEL_DEVID_ETHERNT2 = 0x10d3
-};
-
-// credit to vm_device_version.h from vmware's 
-enum {
-  PCI_VMW_DEVID_SVGA2 = 0x0405,
-  PCI_VMW_DEVID_SVGA = 0x0710,
-  PCI_VMW_DEVID_NET = 0x0720,
-  PCI_VMW_DEVID_SCSI = 0x0730,
-  PCI_VMW_DEVID_VMCI = 0x0740,
-  PCI_VMW_DEVID_CHIPSET = 0x1976,
-  PCI_VMW_DEVID_82545EM = 0x0750, /* single port */
-  PCI_VMW_DEVID_82546EB = 0x0760, /* dual port   */
-  PCI_VMW_DEVID_EHCI = 0x0770,
-  PCI_VMW_DEVID_1394 = 0x0780,
-  PCI_VMW_DEVID_BRIDGE = 0x0790,
-  PCI_VMW_DEVID_ROOTPORT = 0x07A0,
-  PCI_VMW_DEVID_VMXNET3 = 0x07B0,
-  PCI_VMW_DEVID_VMXWIFI = 0x07B8,
-  PCI_VMW_DEVID_PVSCSI = 0x07C0
-};
-  
-  
-
 char *
 vendor_name(int num)
 {
@@ -151,7 +110,7 @@ device_name(int vendor, int dev)
       return "PIIX4/4E/4M ISA Bridge";
     case PCI_INTEL_DEVID_ETHERNT:
       return "Gigabit Ethernet Controller (copper)";
-    case PCI_INTEL_DEVID_ETHERNT2:
+    case PCI_INTEL_DEVID_E1000E:
       return "Intel® 82574L Gigabit Ethernet Controller	";
     case PCI_INTEL_DEVID_GBADPT:
       return "82576 Gigabit ET Dual Port Server Adapter";
@@ -550,7 +509,8 @@ enumerateDevices(int bus)
       if (status & (1<<4)) {
 	print_capability_list(bus, slot);
       }
-      if ((vendor == PCI_VENDOR_INTEL) && (device == PCI_INTEL_DEVID_ETHERNT2)) {
+      if ((vendor == PCI_VENDOR_INTEL) && 
+	  (device == PCI_INTEL_DEVID_E1000E)) {
 	initialize_e1000e(bus, slot);
       };
       break;
@@ -569,30 +529,10 @@ enumerateDevices(int bus)
       lrt_printf("- Unknown header\n");
     }
   }
-
 }
 
-void pci_init() 
+void
+pci_print_all()
 {
   enumerateDevices(0);
-#if 0
-  int i;
-  uint32_t bar;
-  uint16_t command;
-  lrt_printf("Command: %x, Status: %x\n",
-	 pci_config_read16(e1000_bus,e1000_slot,e1000_func,4), 
-	 pci_config_read16(e1000_bus,e1000_slot,e1000_func,6));
-  for(i = 0; i < 6; i++) {
-    bar = pci_config_read32(e1000_bus,e1000_slot,e1000_func,16+4*i);
-    printf("bar %d: 0x%x\n", i, bar);
-  }
-
-  command = pci_config_read16(e1000_bus,e1000_slot,e1000_func,0x4);
-  command |= 0x4;
-  pciConfigWrite16(e1000_bus,e1000_slot,e1000_func,0x4,command);
-  command = pci_config_read16(e1000_bus,e1000_slot,e1000_func,0x4);
-  lrt_printf("command = %X\n",command);
-
-  e1000_init();
-#endif
 }
