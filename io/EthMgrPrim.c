@@ -28,12 +28,10 @@
 #include <l0/cobj/CObjEBB.h>
 #include <lrt/assert.h>
 #include <l0/EBBMgrPrim.h>
-#include <l0/MemMgr.h>
 #include <l0/MemMgrPrim.h>
 #include <l0/EventMgrPrim.h>
 #include <l0/EventMgrPrimImp.h>
 #include <l0/cobj/CObjEBBUtils.h>
-#include <l0/cobj/CObjEBBRoot.h>
 #include <l0/cobj/CObjEBBRootShared.h>
 
 #include <io/EthTypeMgr.h>
