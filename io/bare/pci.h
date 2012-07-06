@@ -65,14 +65,16 @@ enum {
   PCI_VMW_DEVID_PVSCSI = 0x07C0
 };
   
-  
 // information that will describe device to pci buss,
 // should be opaque
 struct pci_info {
   uint8_t bus;
   uint8_t slot;
+  uint16_t func;
 };
 
+extern uint32_t pci_config_read32(struct pci_info *pi, uint16_t offset);
+extern void pci_enable_bus_master(struct pci_info *pi);
 extern void pci_print_all();	/* prints on console everything we can find */
 extern EBBRC pci_get_info(int vendor, int devid, struct pci_info *info);
 

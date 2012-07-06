@@ -29,13 +29,20 @@
 #define PCI_CONFIG_ADDRESS 0xCF8
 #define PCI_CONFIG_DATA 0xCFC
 
-uint32_t 
-pci_config_read32 (uint8_t bus, uint8_t slot, uint16_t func, uint16_t offset) 
+static uint32_t 
+_pci_config_read32 (uint8_t bus, uint8_t slot, uint16_t func, uint16_t offset) 
 {
   sysOut32(PCI_CONFIG_ADDRESS, 0x80000000 | (bus << 16) | (slot << 11) | 
 	   (func << 8) | offset);
   return sysIn32(PCI_CONFIG_DATA);
 }
+
+uint32_t 
+pci_config_read32(struct pci_info *pi, uint16_t offset)
+{
+  return _pci_config_read32(pi->bus, pi->slot, pi->func, offset);
+}
+
 
 uint16_t 
 pci_config_read16 (uint8_t bus, uint8_t slot, uint16_t func, uint16_t offset) 
@@ -202,222 +209,25 @@ static void
 parse_msix_capability(uint8_t bus, uint8_t slot, uint8_t ptr)
 {
   uint32_t taboffset, pbaoffset, bar;
-  taboffset = pci_config_read32 (bus, slot, 0, ptr+4);
-  pbaoffset = pci_config_read32 (bus, slot, 0, ptr+8);
+  taboffset = _pci_config_read32 (bus, slot, 0, ptr+4);
+  pbaoffset = _pci_config_read32 (bus, slot, 0, ptr+8);
   // if bottom bit of bar is 0, then its memory mapped the tables
   // if bit 1 is 0, then its a 32 bit address
-  bar = pci_config_read32( bus, slot, 0, 0x10);
+  bar = _pci_config_read32( bus, slot, 0, 0x10);
   lrt_printf("\t\t\t msix taboffset %x, pbaoffset %x bar %x\n", 
 	     taboffset, pbaoffset, bar);
 
 }
 
-/*
- * these are the registeres in the memory mapped space of the E1000 (or
- * really e1000e) for various control registers
- */
-#define E1KE_CTRL 0x0		/* device control register (RW) */
-#define E1KE_STATUS 0x08	/* status register */
-#define E1KE_CTRL_EXT 0x018   /* extended device control register (RW) */
-#define E1KE_IMC 0xd8		/* interrupt mask clear (WO) */
-#define E1KE_ICR 0xc0		/* interrupt cause read (RW) */
-#define E1KE_GCR 0x5b00       /* 3GIO control register (RW) */
-#define E1KE_TXDCTL 0x03828	/* transmit descriptor control (RW) */
-#define E1KE_TCTL 0x0400	/* transmit control (RW) */
-
-#define E1KE_TDBAL(N) (0x3800+N*0x100)
-#define E1KE_TDBAH(N) (0x3804+N*0x100)
-#define E1KE_TDLEN(N) (0x3808+N*0x100)
-#define E1KE_TDH(N) (0x3810+N*0x100)
-#define E1KE_TDT(N) (0x3818+N*0x100)
-
-// BIT definitons in CTRL register 
-#define E1KE_CTRL_RST_BIT 26  /* reset */
-#define E1KE_CTRL_SLU_BIT 6   /* set link up */
-
-// BIT definitons in CTRL_EXT register 
-#define E1KE_CTRL_EXT_RST 16 /* reset for extended control */
-
-// BIT definitions in transmit descriptor control
-#define E1KE_TXDCTL_PTHRESH 0 	/* bits 0-5 */
-#define E1KE_TXDCTL_GRAN 24		/* bit 24  */
-
-// bit defintions for transmit control register
-#define E1KE_TCTL_EN 1	/* enable */
-#define E1KE_TCTL_COLD 12	/* bits 12-21, collision distance */
-#define E1KE_TCTL_CT 4	/* bits 4-11 collision threashold */
-#define E1KE_TCTL_PSP 3  	/* pad short packets */
-
-// note, this is probably all broken on big endian machines
-struct e1ke_tx_desc {
-  uint64_t *buf_add;
-  union {
-    uint64_t val;
-    struct {
-      uint16_t len;
-      uint8_t cso;
-      union {
-	uint8_t cmd;
-	struct {
-	  uint8_t eop:1;
-	  uint8_t ifcs:1;
-	  uint8_t ic:1;
-	  uint8_t rs:1;
-	  uint8_t rsvc:1;
-	  uint8_t dext:1;
-	  uint8_t vle:1;
-	  uint8_t ide:1;
-	};
-      };
-      union {
-	uint8_t status:4;
-	struct {
-	  uint8_t dd:1;
-	  uint8_t rsvs:3;
-	};
-      };
-      uint8_t extcmd:4;
-      uint8_t css;
-      uint16_t vlan;
-    };
-  };
-}__attribute__((packed));
-      
-
-// ring of control informaiton for transmission
-struct e1ke_tx_desc tx_ring[8] __attribute__ ((aligned(16)));
-
-static uint32_t 
-rd_reg(uint32_t bar, uint32_t offset)
-{
-  volatile uint32_t *ptr = (uint32_t *)(uintptr_t)(bar + offset);
-  return *ptr;
-}
-
-static void
-wt_reg(uint32_t bar, uint32_t offset, uint32_t val)
-{
-  volatile uint32_t *ptr = (uint32_t *)(uintptr_t)(bar + offset);
-  *ptr = val;
-}
-
-static inline void
-e1000e_disable_all_interrupts(uint32_t bar) 
-{
-  wt_reg(bar, E1KE_IMC, 0xffffffff);
-}
-
-static inline void
-e1000e_reset_device(uint32_t bar) 
-{
-  uint32_t tmp = rd_reg(bar, E1KE_CTRL);
-  tmp |= 1<<E1KE_CTRL_RST_BIT;
-  wt_reg(bar, E1KE_CTRL, tmp);
-  
-  tmp = rd_reg(bar, E1KE_GCR);
-  tmp |= 1<<22;
-  wt_reg(bar, E1KE_GCR, tmp);
-}
-
-static inline void
-e1000e_clear_all_interrupts(uint32_t bar)
-{
-  rd_reg(bar, E1KE_ICR);
-}
-
-int
-e1ke_write(uint32_t bar, void *buf, unsigned len) 
-{
-  unsigned i;
-  volatile struct e1ke_tx_desc *tx_desc;
-
-  if (len > 1514) {
-    lrt_printf("Packet too long\n");
-    return -1;
-  }
-  
-  i = rd_reg(bar, E1KE_TDT(0));
-  // read head BOZO to make sure not overriding crap
-
-  tx_desc = &tx_ring[i];
-  tx_desc->buf_add = buf;
-
-  tx_desc->val = 0;
-  tx_desc->len = len;
-  tx_desc->cso = 0;
-  tx_desc->ifcs = 1;
-  tx_desc->rs = 1;
-  tx_desc->eop = 1;
-
-  /*FIXME change 8 to macro for number in ring */
-  wt_reg(bar, E1KE_TDT(0), ((i+1)%8 ) );
-
-  lrt_printf("we changed the tail\n");
-  //block until we get confirmation that it was sent out
-  while (!tx_ring[i].dd);
-  lrt_printf("we think the write got out\n");
-  return len;
-}
-
-static void
-e1000e_setup_transmit(uint32_t bar)
-{
-  uint32_t val;
-  val = (1 << E1KE_TXDCTL_PTHRESH) | (1 << E1KE_TXDCTL_GRAN);
-  wt_reg(bar, E1KE_TXDCTL, val);
-
-  val = (0xF<<E1KE_TCTL_CT) | (0x3f <<E1KE_TCTL_COLD) | 
-    (1<<E1KE_TCTL_PSP) | (1 <<E1KE_TCTL_EN);
-  wt_reg(bar, E1KE_TCTL, val);
-
-  wt_reg(bar, E1KE_TDBAL(0), ((uintptr_t)&tx_ring[0]) & 0xFFFFFFFF);
-  wt_reg(bar, E1KE_TDBAH(0), ((uintptr_t)&tx_ring[0]) >> 32);
-  wt_reg(bar, E1KE_TDLEN(0), sizeof(tx_ring));
-
-  
-}
-
-static void
-enable_bus_master(uint8_t bus, uint8_t slot, uint8_t func)
+// tell pci this device can be a bus master
+void
+pci_enable_bus_master(struct pci_info *pi)
 {
   uint16_t command;
 
-  command = pci_config_read16(bus,slot,func,0x4);
+  command = pci_config_read16(pi->bus,pi->slot,pi->func,0x4);
   command |= 0x4;
-  pci_config_write16(bus,slot,func,0x4,command);
-}
-
-void
-e1000e_init(uint8_t bus, uint8_t slot)
-{
-  lrt_printf("---- initializing e1000e\n");
-  uint32_t bar;
-  bar = pci_config_read32( bus, slot, 0, 0x10);
-  enable_bus_master(bus, slot, 0);
-
-  uint32_t tmp = rd_reg(bar, E1KE_CTRL);
-  lrt_printf("control register is %x\n", tmp);
-  tmp = rd_reg(bar, E1KE_STATUS);
-  lrt_printf("status register is %x\n", tmp);
-
-  e1000e_disable_all_interrupts(bar);
-  e1000e_reset_device(bar);
-  e1000e_disable_all_interrupts(bar);
-  e1000e_clear_all_interrupts(bar);
-
-  tmp = rd_reg(bar, E1KE_CTRL);
-  tmp |= 1<<E1KE_CTRL_SLU_BIT;
-  wt_reg(bar, E1KE_CTRL, tmp);
-
-  e1000e_setup_transmit(bar);
-
-  tmp = rd_reg(bar, E1KE_CTRL);
-  lrt_printf("control register is %x\n", tmp);
-  tmp = rd_reg(bar, E1KE_STATUS);
-  lrt_printf("status register is %x\n", tmp);
-
-  lrt_printf("---- done initializing e1000e\n");
-  e1ke_write(bar, "dan is a bozo", 14); 
+  pci_config_write16(pi->bus,pi->slot,pi->func,0x4,command);
 }
 
 static void 
@@ -499,6 +309,7 @@ pci_get_info_bus(int bus, int targ_vend, int targ_devid, struct pci_info *info,
       // found it
       info->bus = bus;
       info->slot = slot;
+      info->func = 0;
       return EBBRC_OK;
     }
 
