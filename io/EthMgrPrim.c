@@ -28,19 +28,17 @@
 #include <l0/cobj/CObjEBB.h>
 #include <lrt/assert.h>
 #include <l0/EBBMgrPrim.h>
-#include <l0/MemMgr.h>
 #include <l0/MemMgrPrim.h>
 #include <l0/EventMgrPrim.h>
 #include <l0/EventMgrPrimImp.h>
 #include <l0/cobj/CObjEBBUtils.h>
-#include <l0/cobj/CObjEBBRoot.h>
 #include <l0/cobj/CObjEBBRootShared.h>
 
-#include <net/EthTypeMgr.h>
-#include <net/EthMgr.h>
-#include <net/EthMgrPrim.h>
+#include <io/EthTypeMgr.h>
+#include <io/EthMgr.h>
+#include <io/EthMgrPrim.h>
 
-#include <net/lrt/ethlib.h>
+#include <io/lrt/ethlib.h>
 #include <strings.h>
 #include <l0/lrt/event_irq_def.h>
 
@@ -135,3 +133,32 @@ EthMgrPrimCreate(EthMgrId *id, char *nic)
   }
   return EBBRC_OK;
 }
+
+#ifdef LRT_ULNX
+#include <l1/startinfo.h>
+
+EBBRC
+EthMgrCreate(EthMgrId *id) 
+{
+  EBBRC rc;
+  struct startinfo si;
+
+  si_get_args(&si);
+
+  // FIXME: parse the arguments, e.g. --dev eth0 rather than assuming 
+  // specific format
+  if (si.argc <= 1) {
+    lrt_printf("usage: %s nic\n", si.argv[0]);
+    lrt_printf("  e.g. %s lo0, or %s eth1\n", si.argv[0], si.argv[0]);
+    LRT_RCAssert(-1);
+  }
+
+  lrt_printf("%s: START with device %s\n", __func__, si.argv[1]);
+  //FIXME: check argument, pass in as first argument to run
+  rc = EthMgrPrimCreate(id, si.argv[1]);
+  LRT_RCAssert(rc);
+
+  lrt_printf("%s: END\n", __func__);
+  return EBBRC_OK;
+}
+#endif

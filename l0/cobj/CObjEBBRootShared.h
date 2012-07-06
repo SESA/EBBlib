@@ -22,6 +22,8 @@
  * THE SOFTWARE.
  */
 
+#include <l0/cobj/CObjEBBRoot.h>
+
 CObject(CObjEBBRootShared) 
 {
   CObjInterface(CObjEBBRootShared) *ft;

@@ -1,8 +1,7 @@
-#ifndef L0_L0_START_H
-#define L0_L0_START_H
-
+#ifndef __EBB_EVENT_MGR_PRIM_EXP_H__
+#define __EBB_EVENT_MGR_PRIM_EXP_H__
 /*
- * Copyright (C) 2011 by Project SESA, Boston University
+ * Copyright (C) 2012 by Project SESA, Boston University
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,8 +22,21 @@
  * THE SOFTWARE.
  */
 
-#include <stdint.h>
+#include <l0/EventMgrPrim.h>
 
-void l0_start(uintptr_t startinfo);
+COBJ_EBBType(EventMgrPrimExp) {
+  CObjImplements(EventMgrPrim);
+  // use bit vector just for local operations
+  EBBRC (*enableBitvectorLocal) (EventMgrPrimExpRef self);
+  // use for both remote and local events
+  EBBRC (*enableBitvectorAll) (EventMgrPrimExpRef self);
+  // no bitvector for local or remote
+  EBBRC (*disableBitvector) (EventMgrPrimExpRef self);
+  // polls for events, rather than blocking
+  EBBRC (*enablePoll) (EventMgrPrimExpRef self);
+  // just blocks
+  EBBRC (*disablePoll) (EventMgrPrimExpRef self);
+};
 
+extern EBBRC EventMgrPrimExpInit(void);
 #endif

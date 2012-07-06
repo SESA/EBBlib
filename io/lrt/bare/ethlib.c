@@ -19,18 +19,27 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#ifndef __LRT_EVENT_H__
-#error "Should only be included through l0/lrt/event.h"
-#endif
 
-struct lrt_event_descriptor {
-  lrt_trans_id id;
-  lrt_trans_func_num fnum;
-};
+#include <config.h>
 
-int lrt_event_get_event_nonblock(void); 
-void lrt_event_halt(void);
+#include <stdint.h>
 
-#define LRT_EVENT_NUM_EVENTS (256)
-STATIC_ASSERT((1 << (sizeof(lrt_event_num) * 8)) >= LRT_EVENT_NUM_EVENTS,
-              "lrt_event_num cannot hold the range of events!");
+#include <lrt/assert.h>
+#include <lrt/io.h>
+#include <io/lrt/ethlib.h>
+
+intptr_t
+ethlib_nic_readpkt(void)
+{
+  lrt_printf("%s: NYI", __func__);
+  LRT_Assert(0);
+  return 0;
+}
+
+intptr_t
+ethlib_nic_init(char *dev, IRQ *sin, IRQ *out)
+{
+  lrt_printf("%s: NYI", __func__);
+  LRT_Assert(0);
+  return 0;
+}

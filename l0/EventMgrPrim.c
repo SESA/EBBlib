@@ -1,5 +1,3 @@
-#ifndef __ETH_MGR_PRIM_H__
-#define __ETH_MGR_PRIM_H__
 /*
  * Copyright (C) 2011 by Project SESA, Boston University
  *
@@ -22,6 +20,26 @@
  * THE SOFTWARE.
  */
 
-extern EBBRC EthMgrPrimCreate(EthMgrId *id, char *nic);
+/*
+ * The Event Manager (EM) is one of the primordial objects.  The EM
+ * will be a fully distributed objects.  Clients can register with the
+ * EM objects to handle specific events.  That will cause a customized
+ * routine to be generated on each core, that will register itself
+ * with the PIC (programable interrupt controller) on that core.
+ * There is a one-to-one correspondence between event numbers and
+ * interrupts.  This will allow a dispatch from an interrupt to an EBB
+ * to be highly efficient, and conversly all interrupts to be handled
+ * on EBBs.  The interrupt routine will buy the EM's rep's stack, and
+ * then invoke the handler previously registered for that event with
+ * interrupts disabled.
+ *
+ * The current implementation is very simple, a shared table of
+ * handlers, no dynamically generated code yet. ... but wanted to
+ * document the plan.
+ */
 
-#endif  // __ETH_MGR_PRIM_H__
+#include <config.h>
+
+#include <l0/EventMgrPrim.h>
+
+EventMgrPrimId theEventMgrPrimId=0;

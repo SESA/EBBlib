@@ -31,6 +31,7 @@
 #include <string.h>
 #include <assert.h>
 #include <pthread.h>
+#include <l1/App.h>
 
 #if __APPLE__
 #include <mach/thread_policy.h>
@@ -40,7 +41,6 @@
 #include <sys/sysctl.h>
 #endif
 
-#include <l0/l0_start.h>
 #include <l0/lrt/mem.h>
 #include <l0/lrt/trans.h>
 #include <l0/lrt/event.h>
@@ -79,7 +79,7 @@ void lrt_start(void)
   // event initialization done before we got here
   lrt_mem_init();
   lrt_trans_init();
-  l0_start(lrt_startinfo());
+  app_start( );
 }
 
 __attribute__ ((unused)) static void

@@ -1,5 +1,8 @@
+#ifndef ARCH_AMD64_PMC_H
+#define ARCH_AMD64_PMC_H
+
 /*
- * Copyright (C) 2011 by Project SESA, Boston University
+ * Copyright (C) 2012 by Project SESA, Boston University
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -19,18 +22,36 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#ifndef __LRT_EVENT_H__
-#error "Should only be included through l0/lrt/event.h"
+
+#include <stdint.h>
+
+#include <lrt/assert.h>
+
+typedef struct {
+  union {
+    uint64_t val;
+    struct {
+      uint64_t eventselect_7_0 :8;
+      uint64_t unitmask :8;
+      uint64_t osusermode :2;
+      uint64_t edge :1;
+      uint64_t reserved3 :1;
+      uint64_t enint :1;
+      uint64_t reserved2 :1;
+      uint64_t en :1;
+      uint64_t inv :1;
+      uint64_t cntmask :8;
+      uint64_t eventselect_11_8 :4;
+      uint64_t reserved1 :4;
+      uint64_t hostguestonly :2;
+      uint64_t reserved0 :22;
+    } __attribute__((packed));
+  };
+} perf_event_select;
+
+STATIC_ASSERT(sizeof(perf_event_select) == 8,
+              "perf_event_select packing issue");
+
+static const uint64_t PMC_CLOCKS_NOT_HALTED = 0x76;
+
 #endif
-
-struct lrt_event_descriptor {
-  lrt_trans_id id;
-  lrt_trans_func_num fnum;
-};
-
-int lrt_event_get_event_nonblock(void); 
-void lrt_event_halt(void);
-
-#define LRT_EVENT_NUM_EVENTS (256)
-STATIC_ASSERT((1 << (sizeof(lrt_event_num) * 8)) >= LRT_EVENT_NUM_EVENTS,
-              "lrt_event_num cannot hold the range of events!");

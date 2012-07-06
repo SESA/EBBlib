@@ -21,6 +21,8 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+#include <l0/EventMgrPrim.h>
+#include <io/EthTypeMgr.h>
 
 enum {ETHERNET_ADDR_LEN = 6};
 
@@ -38,5 +40,7 @@ COBJ_EBBType(EthMgr) {
   // needs and uses them.  
   EVENTFUNC(inEvent);
 };
+
+extern EBBRC EthMgrCreate(EthMgrId *id);
 
 #endif  // __ETH_MGR_H__

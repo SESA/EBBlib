@@ -340,7 +340,8 @@ MsgMgrPrim_createRep(CObjEBBRootMultiRef rootRef)
   repRef->msgqueue = 0;
   repRef->freelistlock = 0;
   repRef->freelist = 0;
-  rc = EBBPrimMalloc(sizeof(repRef->reps)*lrt_num_event_loc(), &repRef->reps, EBB_MEM_DEFAULT);
+  rc = EBBPrimMalloc(sizeof(repRef->reps)*lrt_num_event_loc(), &repRef->reps, 
+		     EBB_MEM_DEFAULT);
   LRT_RCAssert(rc);
   for (i=0; i<lrt_num_event_loc() ; i++ ) {
     repRef->reps[i] = NULL;

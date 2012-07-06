@@ -26,6 +26,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#define CACHE_LINE_ALIGNMENT 64
+
 /* MSRS */
 static const uint32_t MSR_LAPIC_BASE = 0x1b;
 static const uint32_t MSR_EFER = 0xc0000080;
@@ -54,6 +56,7 @@ static const uint32_t CPUID_EDX_HAS_LAPIC = 1 << 9;
 
 /* CPUID EXTENDED FEATURE FLAGS */
 static const uint32_t CPUID_EXT_HAS_1GPAGES = 1 << 26;
+static const uint32_t CPUID_EXT_HAS_RDTSCP = 1 << 27;
 static const uint32_t CPUID_EXT_HAS_LONGMODE = 1 << 29;
 
 /* CR0 FLAGS */
@@ -148,13 +151,25 @@ has_1gpages(void)
   }
 
 
-  //check for long mode
-
   uint32_t features, dummy;
 
   cpuid(CPUID_EXT_FEATURES, &dummy, &dummy, &dummy, &features);
 
   return (features & CPUID_EXT_HAS_1GPAGES);
+}
+
+static inline bool
+has_rdtscp(void)
+{
+  if (!has_ext_features()) {
+    return false;
+  }
+
+  uint32_t features, dummy;
+
+  cpuid(CPUID_EXT_FEATURES, &dummy, &dummy, &dummy, &features);
+
+  return (features & CPUID_EXT_HAS_RDTSCP);
 }
 
 static inline bool
@@ -253,6 +268,15 @@ rdtsc(void) {
 
   asm volatile ("rdtsc"
                 : "=a" (low), "=d" (high));
+  return (uint64_t)high << 32 | low;
+}
+
+static inline uint64_t
+rdtscp(void) {
+  uint32_t low, high;
+   asm volatile ("rdtscp"
+                : "=a" (low), "=d" (high)
+                : : "ecx");
   return (uint64_t)high << 32 | low;
 }
 #endif

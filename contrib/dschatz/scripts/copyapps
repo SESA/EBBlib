@@ -1,0 +1,8 @@
+#!/bin/bash
+sudo cp apps/bindtst/bindtst /boot/ebbos/bindtst
+sudo cp apps/eventtiming/eventtiming /boot/ebbos/eventtiming
+sudo cp apps/helloworld/helloworld /boot/ebbos/helloworld
+sudo cp apps/helloworld_parallel/helloworld_parallel /boot/ebbos/helloworld_parallel
+sudo cp apps/helloworldcpp/helloworldcpp /boot/ebbos/helloworldcpp
+sudo cp apps/msgtst/msgtst /boot/ebbos/msgtst
+sudo cp apps/primalloctst/primalloctst /boot/ebbos/primalloctst

@@ -40,11 +40,14 @@
  * document the plan.
  */
 
+#include <config.h>
+
 #include <l0/cobj/cobj.h>
 #include <l0/cobj/CObjEBB.h>
 #include <l0/lrt/event_irq.h>
 #include <l0/lrt/event_loc.h>
 #include <l0/lrt/event_num.h>
+#include <l0/EBBMgrPrim.h>
 
 #define EVENTFUNC(funcName) EBBRC (* funcName)(void * _self);
 typedef EVENTFUNC(GenericEventFunc);
@@ -79,9 +82,15 @@ COBJ_EBBType(EventMgrPrim) {
 
   EBBRC (*triggerEvent) (EventMgrPrimRef _self, EventNo eventNo,
                          enum EventLocDesc desc, EventLoc el);
+
+
+  // this function is called by lrt code to enable interrupts (possibly blocking)
+  EBBRC (*enableInterrupts) (EventMgrPrimRef _self);
+
+  // this function is called by lrt code to dispatch an interrupt
+  EBBRC (*dispatchEvent) (EventMgrPrimRef _self, EventNo eventNo);
 };
 
 // the ID of the one and only event manager
 extern EventMgrPrimId theEventMgrPrimId;
-
 #endif

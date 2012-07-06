@@ -31,6 +31,8 @@
 #include <l0/lrt/bare/arch/amd64/acpi.h>
 #include <l0/lrt/bare/arch/amd64/lrt_start.h>
 #include <lrt/io.h>
+#include <lrt/string.h>
+#include <l0/EventMgrPrim.h>
 
 static int num_event_loc;
 
@@ -45,8 +47,6 @@ lrt_next_event_loc(lrt_event_loc l)
 {
   return (l + 1) % lrt_num_event_loc();
 }
-
-static struct lrt_event_descriptor lrt_event_table[LRT_EVENT_NUM_EVENTS];
 
 static idtdesc *idt;
 
@@ -106,12 +106,15 @@ lrt_event_preinit(int cores)
 void __attribute__ ((noreturn))
 lrt_event_loop(void)
 {
-  //After we enable interrupts we just halt, an interrupt should wake
-  //us up. Once we finish the interrupt, we halt again and repeat
+  asm volatile ("sti\n\t"
+		"hlt\n\t"
+		"cli"
+		::
+		: "rax", "rcx", "rdx", "rsi",
+		  "rdi", "r8", "r9", "r10", "r11"); 
 
-  __asm__ volatile("sti"); //enable interrupts
-  while (1) {
-    __asm__ volatile("hlt");
+  while(1) {
+    COBJ_EBBCALL(theEventMgrPrimId, enableInterrupts);
   }
 }
 
@@ -158,14 +161,6 @@ lrt_event_init(void *unused)
 }
 
 void
-lrt_event_bind_event(lrt_event_num num, lrt_trans_id handler,
-                     lrt_trans_func_num fnum)
-{
-  lrt_event_table[num].id = handler;
-  lrt_event_table[num].fnum = fnum;
-}
-
-void
 lrt_event_trigger_event(lrt_event_num num, enum lrt_event_loc_desc desc,
                         lrt_event_loc loc)
 {
@@ -173,7 +168,7 @@ lrt_event_trigger_event(lrt_event_num num, enum lrt_event_loc_desc desc,
   icr_low.raw = 0;
   icr_low.vector = num + 32;
   icr_low.level = 1;
-
+  
   lapic_icr_high icr_high;
   icr_high.raw = 0;
   if (desc == LRT_EVENT_LOC_SINGLE) {
@@ -182,7 +177,7 @@ lrt_event_trigger_event(lrt_event_num num, enum lrt_event_loc_desc desc,
   } else {
     LRT_Assert(0);
   }
-
+  
   send_ipi(icr_low, icr_high);
 }
 
@@ -193,7 +188,8 @@ void lrt_event_route_irq(struct IRQ_t *isrc, lrt_event_num num,
 }
 
 void
-exception_common(uint8_t num) {
+exception_common(uint8_t num)
+{
   uintptr_t *stack;
   asm volatile ("mov %%rsp, %[stack]"
                 : [stack] "=r" (stack));
@@ -205,16 +201,11 @@ exception_common(uint8_t num) {
 }
 
 void
-event_common(uint8_t num) {
+event_common(uint8_t num)
+{
   send_eoi();
   uint8_t ev = num - 32; //first 32 interrupts are reserved
-  struct lrt_event_descriptor *desc = &lrt_event_table[ev];
-  lrt_trans_id id = desc->id;
-  lrt_trans_func_num fnum = desc->fnum;
-
-  //this infrastructure should be pulled out of this file
-  lrt_trans_rep_ref ref = lrt_trans_id_dref(id);
-  ref->ft[fnum](ref);
+  COBJ_EBBCALL(theEventMgrPrimId, dispatchEvent, ev);
 }
 
 extern void isr_0(void);

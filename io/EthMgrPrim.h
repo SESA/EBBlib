@@ -1,3 +1,5 @@
+#ifndef __ETH_MGR_PRIM_H__
+#define __ETH_MGR_PRIM_H__
 /*
  * Copyright (C) 2011 by Project SESA, Boston University
  *
@@ -20,26 +22,5 @@
  * THE SOFTWARE.
  */
 
-#include <config.h>
 
-#include <stdint.h>
-
-#include <lrt/assert.h>
-#include <lrt/io.h>
-#include <net/lrt/ethlib.h>
-
-intptr_t
-ethlib_nic_readpkt(void)
-{
-  lrt_printf("%s: NYI", __func__);
-  LRT_Assert(0);
-  return 0;
-}
-
-intptr_t
-ethlib_nic_init(char *dev, IRQ *sin, IRQ *out)
-{
-  lrt_printf("%s: NYI", __func__);
-  LRT_Assert(0);
-  return 0;
-}
+#endif  // __ETH_MGR_PRIM_H__
