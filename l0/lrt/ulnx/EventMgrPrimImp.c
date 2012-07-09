@@ -187,7 +187,7 @@ EventMgrPrimImpInit(void)
     LRT_RCAssert(rc);
     rc = EBBAllocPrimId(&id);
     LRT_RCAssert(rc);
-    rc = EBBBindPrimId(id, CObjEBBMissFunc, (EBBMissArg)rootRef);
+    rc = EBBBindPrimId(id, CObjEBBMissFunc, (EBBArg)rootRef);
     LRT_RCAssert(rc);
     theEventMgrPrimId = (EventMgrPrimId)id;
   } else {

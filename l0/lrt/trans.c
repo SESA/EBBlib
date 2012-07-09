@@ -104,9 +104,17 @@ lrt_trans_cache_obj(lrt_trans_ltrans *lt, lrt_trans_rep_ref ref) {
 
 static void
 lrt_trans_set_gtrans(lrt_trans_gtrans *gt, lrt_trans_miss_func mf,
-                     lrt_trans_miss_arg arg) {
+                     lrt_trans_arg arg) {
   gt->mf = mf;
   gt->arg = arg;
+}
+
+static void
+lrt_trans_get_gtrans(lrt_trans_gtrans *gt, lrt_trans_miss_func *mf,
+                     lrt_trans_arg *arg)
+{
+  *mf = gt->mf;
+  *arg = gt->arg;
 }
 
 static void
@@ -165,16 +173,38 @@ lrt_trans_invalidate_caches(lrt_trans_id id)
 }
 
 void
-lrt_trans_id_bind(lrt_trans_id id, lrt_trans_miss_func mf,
-                  lrt_trans_miss_arg arg)
+lrt_trans_id_bind(lrt_trans_id id, lrt_trans_miss_func *mf,
+                  lrt_trans_arg *arg)
 {
   lrt_trans_gtrans *gt = lrt_trans_id2gt(id);
-  lrt_trans_set_gtrans(gt, mf, arg);
+  lrt_trans_miss_func t0 = *mf;
+  lrt_trans_arg t1 = *arg;
+  lrt_trans_get_gtrans(gt, mf, arg);
+  lrt_trans_set_gtrans(gt, t0, t1);
 
   // invalidate all the local translation caches
   lrt_trans_invalidate_caches(id);
 }
 
+lrt_trans_arg
+lrt_trans_get_arg(lrt_trans_id id)
+{
+  lrt_trans_gtrans *gt = lrt_trans_id2gt(id);
+  return gt->arg;
+}
+
+uintptr_t
+lrt_trans_get_val(lrt_trans_id id) {
+  lrt_trans_gtrans *gt = lrt_trans_id2gt(id);
+  return gt->v5;
+}
+
+void
+lrt_trans_set_val(lrt_trans_id id, uintptr_t val)
+{
+  lrt_trans_gtrans *gt = lrt_trans_id2gt(id);
+  gt->v5 = val;
+}
 extern void lrt_trans_specific_init();
 
 void

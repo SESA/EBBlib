@@ -235,7 +235,7 @@ testObjImpCreate()
   rc = EBBAllocPrimId((EBBId *)&toid);
   LRT_RCAssert(rc);
 
-  rc = EBBBindPrimId((EBBId)toid, CObjEBBMissFunc, (EBBMissArg)rootRef);
+  rc = EBBBindPrimId((EBBId)toid, CObjEBBMissFunc, (EBBArg)rootRef);
   LRT_RCAssert(rc);
 
   return EBBRC_OK;

@@ -33,7 +33,9 @@ EBBAllocPrimIdBoot(EBBId *id) {
 }
 
 EBBRC
-EBBBindPrimIdBoot(EBBId id, EBBMissFunc mf, EBBMissArg arg) {
-  lrt_trans_id_bind(id, mf, arg);
+EBBBindPrimIdBoot(EBBId id, EBBMissFunc mf, EBBArg arg) {
+  EBBMissFunc mftemp = mf;
+  EBBArg argtemp = arg;
+  lrt_trans_id_bind(id, &mftemp, &argtemp);
   return EBBRC_OK;
 }

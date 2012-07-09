@@ -76,10 +76,10 @@ lrt_event_get_event_nonblock(void)
   rc = kevent(ldata->fd, NULL, 0, &kev, 1, &timeout);
   if (rc == 0) return -1;
   LRT_Assert(rc > 0);
-  
+
 #elif __linux__
   struct epoll_event kev;
-  
+
   do {
     rc = epoll_wait(ldata->fd, &kev, 1, 0);
   } while(rc == -1 && errno == EINTR);
@@ -101,14 +101,14 @@ lrt_event_get_event_nonblock(void)
 #endif
       ) {
     //We received at least a byte on the pipe
-    
+
     //This is technically a blocking read, but I don't believe it
     //matters because we only woke up because the pipe was ready
     //to read and we are the only reader
     ssize_t rc = read(ldata->pipefd_read, &ev, sizeof(ev));
     LRT_Assert(rc == sizeof(ev));
     //FIXME: check for errors
-    
+
   } else {
     //IRQ occurred
 #if __APPLE__
@@ -120,7 +120,7 @@ lrt_event_get_event_nonblock(void)
   return ev;
 }
 
-void 
+void
 lrt_event_halt(void)
 {
   //get my local event data
@@ -135,7 +135,7 @@ lrt_event_halt(void)
   //FIXME: check for errors
 #elif __linux__
   struct epoll_event kev;
-  
+
   //This call blocks until an event occurred
   int rc;
   do {
@@ -275,7 +275,7 @@ lrt_event_trigger_event(lrt_event_num num,
     do {
       pipefd = *(volatile int *)&event_data[loc].pipefd_write;
     } while (pipefd == 0);
-    
+
     ssize_t rc = write(pipefd, &num, sizeof(num));
     LRT_Assert(rc == sizeof(num));
     //FIXME: check errors
@@ -284,9 +284,9 @@ lrt_event_trigger_event(lrt_event_num num,
     for (lrt_event_loc i = 0; i < num_ev; i++) {
       //protects from a race on startup
       do {
-	pipefd = *(volatile int *)&event_data[i].pipefd_write;
+        pipefd = *(volatile int *)&event_data[i].pipefd_write;
       } while (pipefd == 0);
-      
+
       ssize_t rc = write(pipefd, &num, sizeof(num));
       LRT_Assert(rc == sizeof(num));
     }

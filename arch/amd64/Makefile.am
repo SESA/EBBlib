@@ -1,6 +1,8 @@
 arch_amd64_sources = \
 	arch/amd64/acpi.h \
 	arch/amd64/apic.h \
+	arch/amd64/args.h \
+	arch/amd64/args.S \
 	arch/amd64/asm.h \
 	arch/amd64/cpu.h \
 	arch/amd64/fpr.h \
@@ -12,4 +14,4 @@ arch_amd64_sources = \
 	arch/amd64/pit.h \
 	arch/amd64/rtc.h \
 	arch/amd64/segmentation.h \
-	arch/amd64/sysio.h 
+	arch/amd64/sysio.h

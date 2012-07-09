@@ -27,7 +27,7 @@ protected:
   virtual ~CPlusEBBRoot(){};
   virtual EBBRC handleMiss(CPlusEBB **obj, EBBLTrans *lt, EBBFuncNum fnum)=0;
   static EBBRC CPlusEBBMissFunc(EBBRep **_self, EBBLTrans *lt, EBBFuncNum fnum,
-                                EBBMissArg arg);
+                                EBBArg arg);
 public:
   static EBBRC EBBBind(EBBId id, CPlusEBBRoot *root);
 };
