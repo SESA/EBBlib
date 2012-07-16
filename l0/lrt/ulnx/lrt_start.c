@@ -41,6 +41,7 @@
 #include <sys/sysctl.h>
 #endif
 
+#include <l0/lrt/event.h>
 #include <l0/lrt/mem.h>
 #include <l0/lrt/trans.h>
 #include <l0/lrt/event.h>
@@ -88,10 +89,10 @@ dumpstartargs(void)
   uintptr_t s;
   int argc, i;
   char *data = (char *)start_args.start_info;
-  
+
   fprintf(stderr, "%s: start_args.start_info_size=%" PRIdPTR "\n",
-	  __func__,
-	  start_args.start_info_size);
+          __func__,
+          start_args.start_info_size);
 
   if (start_args.start_info_size) {
     assert(start_args.start_info_size >= sizeof(int));
@@ -131,8 +132,8 @@ parse_ebbos_arg(int i, char **argv, int *s)
 }
 
 void
-startinfo(int argc, char **argv, char **environ, 
-	  uintptr_t *addr, intptr_t *size) 
+startinfo(int argc, char **argv, char **environ,
+          uintptr_t *addr, intptr_t *size)
 {
   const char *ebbos_arg = "-ebbos";
   char *data, *cur;
@@ -141,7 +142,7 @@ startinfo(int argc, char **argv, char **environ,
 
   s = sizeof(int); // add bytes for argc
   for (i=0; i<argc; i++) {
-    s += strlen(argv[i]); 
+    s += strlen(argv[i]);
     s++; // add one for null
   }
 
@@ -167,7 +168,7 @@ startinfo(int argc, char **argv, char **environ,
       int osargs;		/* arguments processed */
       osargs = parse_ebbos_arg(i, argv, &s);
       for (j=0; j<osargs; j++) {
-	s -= strlen(argv[i+j]) + 1;
+        s -= strlen(argv[i+j]) + 1;
       }
       i += osargs - 1;
       *argcl -= osargs;
@@ -220,13 +221,13 @@ start_cores(int cores)
   int i;
 
   // check cores
-  // start up another core, with the 
+  // start up another core, with the
   fprintf(stdout, "EBBOS:%s: starting cores %d\n", __func__, cores);
-  pthread_attr_t attr; 
-  
+  pthread_attr_t attr;
+
   pthread_attr_init(&attr);
   pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
-  
+
   for (i=0; i<start_args.cores; i++) {
     pthread_t tid; /* we don't actually need the thread id I think anywhere */
 #ifdef __APPLE__
@@ -237,15 +238,15 @@ start_cores(int cores)
     };
     //Create the thread suspended so we can get the tid
     if (pthread_create_suspended_np(&tid, &attr, lrt_event_init,
-				    (void *)(uintptr_t)i) == -1) {
+                                    (void *)(uintptr_t)i) == -1) {
       perror("pthread_create_suspended_np");
       return;
     }
     //now set its affinity to the unique value
     kern_return_t err = thread_policy_set(pthread_mach_thread_np(tid),
-					  THREAD_AFFINITY_POLICY,
-					  (thread_policy_t)&aff,
-					  THREAD_AFFINITY_POLICY_COUNT);
+                                          THREAD_AFFINITY_POLICY,
+                                          (thread_policy_t)&aff,
+                                          THREAD_AFFINITY_POLICY_COUNT);
     LRT_Assert(err == KERN_SUCCESS);
     //now start the thread
     err = thread_resume(pthread_mach_thread_np(tid));
@@ -256,27 +257,27 @@ start_cores(int cores)
     // pin to a core, round robined over the physical cores
     CPU_SET(i%start_args.physcores, &cpus);
     pthread_attr_setaffinity_np(&attr, sizeof(cpu_set_t), &cpus);
-    if (pthread_create(&tid, &attr, lrt_event_init, 
-		       (void *)(uintptr_t)i) != 0) {
+    if (pthread_create(&tid, &attr, lrt_event_init,
+                       (void *)(uintptr_t)i) != 0) {
       perror("pthread_create");
       return;
     }
 #endif
   }
   // for now, wait until child exits; eventually
-  // put in synchronizatoin here that will do something good when 
+  // put in synchronizatoin here that will do something good when
   // core exits
-  pause();		   
+  pause();
 }
 
 int
-main(int argc, char **argv, char **environ) 
+main(int argc, char **argv, char **environ)
 {
   start_args.physcores = start_args.cores = num_phys_cores();
   start_args.start_info = 0;
   start_args.start_info_size = 0;
-  
-  // may change number of cores 
+
+  // may change number of cores
   startinfo(argc, argv, environ, &start_args.start_info, &start_args.start_info_size);
 
   lrt_mem_preinit(start_args.cores);
@@ -284,7 +285,7 @@ main(int argc, char **argv, char **environ)
   lrt_trans_preinit(start_args.cores);
   // calls event init on all cores, first event is lrt_start
   start_cores(start_args.cores);
-  
+
   //  dumpstartargs();
   return -1;
 }

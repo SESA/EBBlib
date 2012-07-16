@@ -66,7 +66,7 @@ BindId (EBBMgrPrimRef _self, EBBId id, EBBMissFunc *mf,
   if (!force) {
     if (oldbf) {
       EBBArg oldarg = lrt_trans_get_arg(id);
-      oldbf(&mftemp, &bftemp, &argtemp, oldarg);
+      oldbf(&id, &mftemp, &bftemp, &argtemp, oldarg);
     }
   }
   lrt_trans_id_bind(id, mf, arg);

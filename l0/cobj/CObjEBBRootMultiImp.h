@@ -34,9 +34,13 @@ CObject(CObjEBBRootMultiImp) {
   CreateRepFunc createRep;
   RepListNode *head;
   uintptr_t lock;
+  uintptr_t key;
 };
 
 extern EBBRC CObjEBBRootMultiImpStaticInit(CObjEBBRootMultiImpRef o, CreateRepFunc func);
 extern EBBRC CObjEBBRootMultiImpCreate(CObjEBBRootMultiImpRef *o, CreateRepFunc func);
 
+typedef void (*DestroyRepFunc) (EBBRepRef ref);
+extern void CObjEBBRootMultiImpDestroy(CObjEBBRootMultiImpRef o,
+                                        DestroyRepFunc func);
 #endif

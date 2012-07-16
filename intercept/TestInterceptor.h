@@ -1,7 +1,8 @@
-#ifndef __COBJ_EBB_ROOT_SHARED_H__
-#define __COBJ_EBB_ROOT_SHARED_H__
+#ifndef INTERCEPT_TEST_INTERCEPTOR_H
+#define INTERCEPT_TEST_INTERCEPTOR_H
+
 /*
- * Copyright (C) 2011 by Project SESA, Boston University
+ * Copyright (C) 2012 by Project SESA, Boston University
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,25 +23,8 @@
  * THE SOFTWARE.
  */
 
-#include <l0/cobj/CObjEBBRoot.h>
+#include <l0/EBBMgrPrim.h>
 
-CObject(CObjEBBRootShared)
-{
-  CObjInterface(CObjEBBRootShared) *ft;
-};
-
-CObjInterface(CObjEBBRootShared)
-{
-  CObjImplements(CObjEBBRoot);
-  EBBRepRef (*getRep)(CObjEBBRootSharedRef _self);
-  void (*init)(CObjEBBRootSharedRef _self, EBBRep *rep);
-};
-
-extern void CObjEBBRootSharedSetFT(CObjEBBRootSharedRef);
-
-extern EBBRC CObjEBBRootSharedCreate(CObjEBBRootSharedRef *rootRef,
-                                     EBBRepRef repRef);
-
-extern EBBRC CObjEBBRootSharedDestroy(CObjEBBRootSharedRef rootRef);
+extern EBBRC TestInterceptorCreate(InterceptorId *id, const char *str);
 
 #endif

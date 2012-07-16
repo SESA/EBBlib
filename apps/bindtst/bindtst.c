@@ -101,6 +101,22 @@ COBJ_EBBType(Service) {
 
 struct {
   ServiceId theId;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 } ServiceInfo = { NULLID };
 
 CObject(SrvImp0)

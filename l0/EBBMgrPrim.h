@@ -53,8 +53,8 @@ STATIC_ASSERT(__builtin_types_compatible_p(EBBMissFunc, lrt_trans_miss_func),
               "EBBMissFunc and lrt_trans_miss_func are not compatible types");
 #endif
 
-typedef void (*EBBBindFunc) (EBBMissFunc *mf, void *bf, EBBArg *arg,
-                             EBBArg oldarg);
+typedef void (*EBBBindFunc) (EBBId *id, EBBMissFunc *mf, void *bf,
+                             EBBArg *arg, EBBArg oldarg);
 
 static inline void
 EBBCacheObj(EBBLTrans *lt, EBBRepRef ref) {

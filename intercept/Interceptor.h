@@ -1,7 +1,8 @@
-#ifndef __COBJ_EBB_ROOT_SHARED_H__
-#define __COBJ_EBB_ROOT_SHARED_H__
+#ifndef INTERCEPT_INTERCEPTOR_H
+#define INTERCEPT_INTERCEPTOR_H
+
 /*
- * Copyright (C) 2011 by Project SESA, Boston University
+ * Copyright (C) 2012 by Project SESA, Boston University
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,25 +23,28 @@
  * THE SOFTWARE.
  */
 
-#include <l0/cobj/CObjEBBRoot.h>
+#include <config.h>
 
-CObject(CObjEBBRootShared)
-{
-  CObjInterface(CObjEBBRootShared) *ft;
+#include <arch/args.h>
+#include <l0/EBBMgrPrim.h>
+
+union func_ret {
+  EBBFunc func;
+  EBBRC ret;
 };
 
-CObjInterface(CObjEBBRootShared)
-{
-  CObjImplements(CObjEBBRoot);
-  EBBRepRef (*getRep)(CObjEBBRootSharedRef _self);
-  void (*init)(CObjEBBRootSharedRef _self, EBBRep *rep);
+COBJ_EBBType(Interceptor) {
+  EBBRC (*PreCall) (InterceptorRef self, struct args *args,
+                    EBBFuncNum fnum, union func_ret *fr);
+  EBBRC (*PostCall) (InterceptorRef self, EBBRC rc);
 };
 
-extern void CObjEBBRootSharedSetFT(CObjEBBRootSharedRef);
+COBJ_EBBType(InterceptorController) {
+  EBBRC (*start) (InterceptorControllerRef self, EBBId target_id,
+                  InterceptorId interceptor_id);
+  EBBRC (*stop) (InterceptorControllerRef self);
+  EBBRC (*destroy) (InterceptorControllerRef self);
+};
 
-extern EBBRC CObjEBBRootSharedCreate(CObjEBBRootSharedRef *rootRef,
-                                     EBBRepRef repRef);
-
-extern EBBRC CObjEBBRootSharedDestroy(CObjEBBRootSharedRef rootRef);
-
+extern EBBRC InterceptorControllerImp_Create(InterceptorControllerId id);
 #endif

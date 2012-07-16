@@ -48,11 +48,14 @@
 struct lrt_event_local_data {
   int fd; //either epollfd or kqueuefd
   int pipefd_read; //No other event locations should read this!
-  int pipefd_write; //For synthesized events from potentially other locations
+  int pipefd_write; //For synthesized events from potentially other
+                    //locations
+  uintptr_t *altstack;
 } _ALIGN_CACHE_ ;
 
 //To be allocated at preinit, the array of local event data
 static struct lrt_event_local_data *event_data;
+static uintptr_t **alt_stacks;
 static int num_cores = 0;
 
 static const intptr_t PIPE_UDATA = -1;
@@ -229,6 +232,9 @@ lrt_event_init(void *myloc)
   // we call the start routine to initialize
   // mem and trans before falling into the loop
   lrt_start();
+
+  ldata->altstack = lrt_mem_alloc(4096, 16, lrt_my_event_loc());
+
   lrt_event_loop();
 }
 
@@ -252,6 +258,12 @@ lrt_event_preinit(int cores)
   num_cores = cores;
   // event_data = malloc(sizeof(*event_data) * num_cores), always on core 0 here
   event_data = lrt_mem_alloc((sizeof(*event_data) * num_cores), 8, 0);
+
+  alt_stacks = lrt_mem_alloc((sizeof(uintptr_t *) * num_cores),
+                             sizeof(uintptr_t *), 0);
+  for (int i = 0; i < num_cores; i++) {
+    alt_stacks[i] = lrt_mem_alloc(4096, 16, 0);
+  }
 
   //FIXME: check for errors
 #if __APPLE__
@@ -410,4 +422,20 @@ lrt_event_route_irq(struct IRQ_t *isrc, lrt_event_num num,
   isrc->desc = desc;
   isrc->loc = loc;
   isrc->num = num;
+}
+
+void
+lrt_event_altstack_push(uintptr_t data)
+{
+  uintptr_t **altstack = &alt_stacks[lrt_my_event_loc()];
+  **altstack = data;
+  (*altstack)++;
+}
+
+uintptr_t
+lrt_event_altstack_pop()
+{
+  uintptr_t **altstack = &alt_stacks[lrt_my_event_loc()];
+  (*altstack)--;
+  return **altstack;
 }
