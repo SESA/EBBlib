@@ -193,6 +193,34 @@ lrt_trans_get_arg(lrt_trans_id id)
   return gt->arg;
 }
 
+void
+lrt_trans_wrlock(lrt_trans_id id)
+{
+  lrt_trans_gtrans *gt = lrt_trans_id2gt(id);
+  rwlock_wrlock(&gt->rwlock);
+}
+
+void
+lrt_trans_wrunlock(lrt_trans_id id)
+{
+  lrt_trans_gtrans *gt = lrt_trans_id2gt(id);
+  rwlock_wrunlock(&gt->rwlock);
+}
+
+void
+lrt_trans_rdlock(lrt_trans_id id)
+{
+  lrt_trans_gtrans *gt = lrt_trans_id2gt(id);
+  rwlock_rdlock(&gt->rwlock);
+}
+
+void
+lrt_trans_rdunlock(lrt_trans_id id)
+{
+  lrt_trans_gtrans *gt = lrt_trans_id2gt(id);
+  rwlock_rdunlock(&gt->rwlock);
+}
+
 uintptr_t
 lrt_trans_get_val(lrt_trans_id id) {
   lrt_trans_gtrans *gt = lrt_trans_id2gt(id);

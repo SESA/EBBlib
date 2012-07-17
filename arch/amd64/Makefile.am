@@ -2,7 +2,6 @@ arch_amd64_sources = \
 	arch/amd64/acpi.h \
 	arch/amd64/apic.h \
 	arch/amd64/args.h \
-	arch/amd64/args.S \
 	arch/amd64/asm.h \
 	arch/amd64/cpu.h \
 	arch/amd64/fpr.h \

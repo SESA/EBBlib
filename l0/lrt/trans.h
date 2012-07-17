@@ -30,6 +30,7 @@ extern "C" {
 
 #include <l0/lrt/event_loc.h>
 #include <lrt/assert.h>
+#include <sync/rwlock.h>
 
 typedef intptr_t lrt_trans_rc;
 #define LRT_TRANS_RC_SUCCESS(rc) (rc >= 0)
@@ -87,6 +88,7 @@ struct lrt_trans_s {
   };
   union {
     uintptr_t v6;
+    rwlock rwlock;
   };
   union {
     uintptr_t v7;
@@ -111,6 +113,10 @@ extern void lrt_trans_id_free(lrt_trans_id id);
 extern void lrt_trans_id_bind(lrt_trans_id id, lrt_trans_miss_func *mf,
                               lrt_trans_arg *arg);
 extern lrt_trans_arg lrt_trans_get_arg(lrt_trans_id id);
+extern void lrt_trans_wrlock(lrt_trans_id id);
+extern void lrt_trans_wrunlock(lrt_trans_id id);
+extern void lrt_trans_rdlock(lrt_trans_id id);
+extern void lrt_trans_rdunlock(lrt_trans_id id);
 extern uintptr_t lrt_trans_get_val(lrt_trans_id id);
 extern void lrt_trans_set_val(lrt_trans_id id, uintptr_t val);
 static inline lrt_trans_rep_ref

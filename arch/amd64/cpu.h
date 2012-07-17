@@ -66,6 +66,12 @@ static const uint64_t CR0_PG = 1 << 31;
 static const uint64_t CR4_PAE = 1 << 5;
 
 
+static inline void
+cpu_relax()
+{
+  asm volatile("pause");
+}
+
 /* CPUID FUNCTIONS */
 
 static inline bool

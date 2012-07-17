@@ -62,6 +62,8 @@ BindId (EBBMgrPrimRef _self, EBBId id, EBBMissFunc *mf,
   EBBBindFunc bftemp = *bf;
   EBBArg argtemp = *arg;
 
+  EBBId origId = id;
+  lrt_trans_rdlock(origId);
   EBBBindFunc oldbf = (EBBBindFunc)lrt_trans_get_val(id);
   if (!force) {
     if (oldbf) {
@@ -69,9 +71,12 @@ BindId (EBBMgrPrimRef _self, EBBId id, EBBMissFunc *mf,
       oldbf(&id, &mftemp, &bftemp, &argtemp, oldarg);
     }
   }
+  lrt_trans_rdunlock(origId);
+  lrt_trans_wrlock(origId);
   lrt_trans_id_bind(id, mf, arg);
   *bf = oldbf;
   lrt_trans_set_val(id, (uintptr_t)bftemp);
+  lrt_trans_wrunlock(origId);
   return EBBRC_OK;
 }
 
