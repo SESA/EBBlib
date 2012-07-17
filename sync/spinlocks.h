@@ -22,7 +22,7 @@
 #ifndef __SYNC_SPINLOCKS_H__
 #define __SYNC_SPINLOCKS_H__
 
-typedef long SpinLock;
+typedef uint32_t SpinLock;
 
 static inline void
 spinLock(SpinLock *lk)

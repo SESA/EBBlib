@@ -24,6 +24,7 @@
 
 #include <l0/cobj/CObjEBB.h>
 #include <l0/cobj/CObjEBBRootMulti.h>
+#include <l0/EventMgrPrim.h>
 #include <l0/MemMgrPrim.h>
 
 COBJ_EBBType(App) {
@@ -40,16 +41,16 @@ extern AppId theAppId;
 
 extern EBBRep * App_createRep(CObjEBBRootMultiRef _self);
 
-#define APP_BASE(REPTYPE)				       \
-EBBRep * App_createRep(CObjEBBRootMultiRef _self)	       \
-{				                               \
-  REPTYPE * repRef;					       \
+#define APP_BASE(REPTYPE)                                      \
+EBBRep * App_createRep(CObjEBBRootMultiRef _self)              \
+{                                                              \
+  REPTYPE * repRef;                                            \
   EBBPrimMalloc(sizeof(REPTYPE), &repRef, EBB_MEM_DEFAULT);    \
-  repRef->ft = &REPTYPE ## _ftable;			       \
-  return (EBBRep *)repRef;				       \
-}                                                     
+  repRef->ft = &REPTYPE ## _ftable;                            \
+  return (EBBRep *)repRef;                                     \
+}
 
-// defines if the application wants the start event on all 
+// defines if the application wants the start event on all
 // cores or just one core
 enum {
   APP_START_ONE,
@@ -58,10 +59,40 @@ enum {
 
 extern const int app_start_model;
 
-#define APP(REPTYPE,SM)					       \
-  const int app_start_model = SM;		       \
-  APP_BASE(REPTYPE);					       
+extern void EBB_init_default(void);
+extern void create_app_obj_default(void);
+
 
 extern EBBRC app_start(void);
+
+#define APP_PROLOG				\
+  EBBRC						\
+  app_start(void)				\
+  {						\
+  EBBRC rc = EBBRC_OK;
+
+#define APP_EPILOG				\
+  return rc;					\
+  }
+
+#define APP_BODY \
+  EBB_init_default();					\
+  create_app_obj_default();				\
+  return COBJ_EBBCALL(theAppId, start);
+
+#define APP_START_ONE(REPTYPE)			\
+  APP_PROLOG					\
+  if (MyEventLoc() == 0) {			\
+    APP_BODY					\
+      }						\
+  APP_EPILOG					\
+  APP_BASE(REPTYPE)
+
+#define APP_START_ALL(REPTYPE)			\
+  APP_PROLOG					\
+  APP_BODY					\
+  APP_EPILOG					\
+  APP_BASE(REPTYPE)
+
 
 #endif

@@ -25,13 +25,13 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#include <l0/l0_start.h>
 #include <l0/lrt/bare/stdio.h>
 #include <l0/lrt/bare/arch/amd64/lrt_start.h>
 #include <l0/lrt/mem.h>
 #include <l0/lrt/trans.h>
 #include <lrt/assert.h>
 #include <lrt/io.h>
+#include <l1/App.h>
 
 //We get here after some very early initialization occurs:
 // 1. grub boots us into start.S, we put ourselves on a small boot
@@ -50,7 +50,7 @@ lrt_start(void)
   lrt_mem_init();
   lrt_trans_init();
 
-  l0_start(0);
+  app_start( );
 }
 
 uintptr_t

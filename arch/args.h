@@ -1,3 +1,5 @@
+#ifndef ARCH_ARGS_H
+#define ARCH_ARGS_H
 /*
  * Copyright (C) 2011 by Project SESA, Boston University
  *
@@ -19,27 +21,8 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+#ifdef ARCH_AMD64
+#include <arch/amd64/args.h>
+#endif
 
-#include <config.h>
-
-#include <stdint.h>
-
-#include <lrt/assert.h>
-#include <lrt/io.h>
-#include <net/lrt/ethlib.h>
-
-intptr_t
-ethlib_nic_readpkt(void)
-{
-  lrt_printf("%s: NYI", __func__);
-  LRT_Assert(0);
-  return 0;
-}
-
-intptr_t
-ethlib_nic_init(char *dev, IRQ *sin, IRQ *out)
-{
-  lrt_printf("%s: NYI", __func__);
-  LRT_Assert(0);
-  return 0;
-}
+#endif

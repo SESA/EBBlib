@@ -306,5 +306,5 @@ CObjInterface(App) ConsTst_ftable = {
   .start = ConsTst_start
 };
 
-APP(ConsTst, APP_START_ONE);
+APP_START_ONE(ConsTst);
 

@@ -22,12 +22,12 @@
  * THE SOFTWARE.
  */
 
-extern EBBRC CObjEBBMissFunc(EBBRep **, EBBLTrans *, EBBFuncNum, EBBMissArg);
+extern EBBRC CObjEBBMissFunc(EBBRep **, EBBLTrans *, EBBFuncNum, EBBArg);
 
 static inline EBBRC
 CObjEBBBind(EBBId id, void *root)
 {
-  return EBBBindPrimId(id, CObjEBBMissFunc, (EBBMissArg) root);
+  return EBBBindPrimId(id, CObjEBBMissFunc, (EBBArg) root);
 }
 
 extern EBBRC CObjEBBBindBoot(EBBId id, void *root);

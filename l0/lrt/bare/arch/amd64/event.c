@@ -31,9 +31,10 @@
 #include <l0/lrt/bare/arch/amd64/acpi.h>
 #include <l0/lrt/bare/arch/amd64/lrt_start.h>
 #include <lrt/io.h>
+#include <lrt/string.h>
+#include <l0/EventMgrPrim.h>
 
 static int num_event_loc;
-
 lrt_event_loc
 lrt_num_event_loc()
 {
@@ -45,8 +46,6 @@ lrt_next_event_loc(lrt_event_loc l)
 {
   return (l + 1) % lrt_num_event_loc();
 }
-
-static struct lrt_event_descriptor lrt_event_table[LRT_EVENT_NUM_EVENTS];
 
 static idtdesc *idt;
 
@@ -78,6 +77,8 @@ uint8_t lrt_event_loc2apicid(lrt_event_loc loc) {
   return apic_id_table[loc];
 }
 
+static uintptr_t **altstacks;
+
 void
 lrt_event_preinit(int cores)
 {
@@ -101,17 +102,22 @@ lrt_event_preinit(int cores)
 
   ioapic *addr = acpi_get_ioapic_addr();
   init_ioapic(addr);
+
+  altstacks = lrt_mem_alloc(sizeof(char *) * cores, 8, 0);
 }
 
 void __attribute__ ((noreturn))
 lrt_event_loop(void)
 {
-  //After we enable interrupts we just halt, an interrupt should wake
-  //us up. Once we finish the interrupt, we halt again and repeat
+  asm volatile ("sti\n\t"
+                "hlt\n\t"
+                "cli"
+                ::
+                : "rax", "rcx", "rdx", "rsi",
+                  "rdi", "r8", "r9", "r10", "r11");
 
-  __asm__ volatile("sti"); //enable interrupts
-  while (1) {
-    __asm__ volatile("hlt");
+  while(1) {
+    COBJ_EBBCALL(theEventMgrPrimId, enableInterrupts);
   }
 }
 
@@ -144,7 +150,10 @@ lrt_event_init(void *unused)
 #define STACK_SIZE (1 << 14)
   char *myStack = lrt_mem_alloc(STACK_SIZE, 16, lrt_my_event_loc());
 
-    asm volatile (
+  altstacks[lrt_my_event_loc()] =
+    lrt_mem_alloc(4096, 16, lrt_my_event_loc());
+
+  asm volatile (
                 "mov %[stack], %%rsp\n\t"
                 "mfence\n\t"
                 "movl %[val], %[smp_lock]\n\t"
@@ -155,14 +164,6 @@ lrt_event_init(void *unused)
                   [smp_lock] "m" (smp_lock)
                 );
   lrt_event_loop();
-}
-
-void
-lrt_event_bind_event(lrt_event_num num, lrt_trans_id handler,
-                     lrt_trans_func_num fnum)
-{
-  lrt_event_table[num].id = handler;
-  lrt_event_table[num].fnum = fnum;
 }
 
 void
@@ -193,7 +194,8 @@ void lrt_event_route_irq(struct IRQ_t *isrc, lrt_event_num num,
 }
 
 void
-exception_common(uint8_t num) {
+exception_common(uint8_t num)
+{
   uintptr_t *stack;
   asm volatile ("mov %%rsp, %[stack]"
                 : [stack] "=r" (stack));
@@ -205,16 +207,27 @@ exception_common(uint8_t num) {
 }
 
 void
-event_common(uint8_t num) {
+event_common(uint8_t num)
+{
   send_eoi();
   uint8_t ev = num - 32; //first 32 interrupts are reserved
-  struct lrt_event_descriptor *desc = &lrt_event_table[ev];
-  lrt_trans_id id = desc->id;
-  lrt_trans_func_num fnum = desc->fnum;
+  COBJ_EBBCALL(theEventMgrPrimId, dispatchEvent, ev);
+}
 
-  //this infrastructure should be pulled out of this file
-  lrt_trans_rep_ref ref = lrt_trans_id_dref(id);
-  ref->ft[fnum](ref);
+void
+lrt_event_altstack_push(uintptr_t data)
+{
+  uintptr_t **altstack = &altstacks[lrt_my_event_loc()];
+  **altstack = data;
+  (*altstack)++;
+}
+
+uintptr_t
+lrt_event_altstack_pop()
+{
+  uintptr_t **altstack = &altstacks[lrt_my_event_loc()];
+  (*altstack)--;
+  return **altstack;
 }
 
 extern void isr_0(void);

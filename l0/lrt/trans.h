@@ -30,6 +30,7 @@ extern "C" {
 
 #include <l0/lrt/event_loc.h>
 #include <lrt/assert.h>
+#include <sync/rwlock.h>
 
 typedef intptr_t lrt_trans_rc;
 #define LRT_TRANS_RC_SUCCESS(rc) (rc >= 0)
@@ -40,7 +41,7 @@ typedef struct lrt_trans_rep_s {
   lrt_trans_func *ft;
 } lrt_trans_rep;
 typedef uint8_t lrt_trans_func_num;
-typedef uintptr_t lrt_trans_miss_arg;
+typedef uintptr_t lrt_trans_arg;
 
 struct lrt_trans_s;
 typedef struct lrt_trans_s lrt_trans_ltrans;
@@ -53,7 +54,7 @@ typedef lrt_trans_ltrans *lrt_trans_id;
 typedef lrt_trans_rc (*lrt_trans_miss_func) (lrt_trans_rep_ref *,
                                              lrt_trans_ltrans *,
                                              lrt_trans_func_num,
-                                             lrt_trans_miss_arg);
+                                             lrt_trans_arg);
 
 enum lrt_trans_id_alloc_status {
   LRT_TRANS_ID_FREE = 0,
@@ -69,7 +70,7 @@ struct lrt_trans_s {
   union {
     uintptr_t v2;
     lrt_trans_rep rep; //as a local entry (by default)
-    lrt_trans_miss_arg arg; //as a global entry
+    lrt_trans_arg arg; //as a global entry
   };
   union {
     uintptr_t v3;
@@ -81,6 +82,19 @@ struct lrt_trans_s {
                      //translation table, note, object may have been
                      //accessed in larger set of nodes and translated
                      //id may be on stack in other nodes
+  };
+  union {
+    uintptr_t v5;
+  };
+  union {
+    uintptr_t v6;
+    rwlock rwlock;
+  };
+  union {
+    uintptr_t v7;
+  };
+  union {
+    uintptr_t v8;
   };
 };
 
@@ -96,8 +110,15 @@ extern void lrt_trans_init(void);
 extern void lrt_trans_cache_obj(lrt_trans_ltrans *, lrt_trans_rep_ref);
 extern lrt_trans_id lrt_trans_id_alloc(void);
 extern void lrt_trans_id_free(lrt_trans_id id);
-extern void lrt_trans_id_bind(lrt_trans_id id, lrt_trans_miss_func mf,
-			      lrt_trans_miss_arg arg); 
+extern void lrt_trans_id_bind(lrt_trans_id id, lrt_trans_miss_func *mf,
+                              lrt_trans_arg *arg);
+extern lrt_trans_arg lrt_trans_get_arg(lrt_trans_id id);
+extern void lrt_trans_wrlock(lrt_trans_id id);
+extern void lrt_trans_wrunlock(lrt_trans_id id);
+extern void lrt_trans_rdlock(lrt_trans_id id);
+extern void lrt_trans_rdunlock(lrt_trans_id id);
+extern uintptr_t lrt_trans_get_val(lrt_trans_id id);
+extern void lrt_trans_set_val(lrt_trans_id id, uintptr_t val);
 static inline lrt_trans_rep_ref
 lrt_trans_id_dref(lrt_trans_id id) {
   lrt_trans_ltrans *lt;

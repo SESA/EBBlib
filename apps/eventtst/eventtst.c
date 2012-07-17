@@ -267,4 +267,4 @@ CObjInterface(EventTst) EventTst_ftable = {
   .irqLocalTestEvent = EventTst_irqLocalTestEvent
 };
 
-APP(EventTst, APP_START_ONE);
+APP_START_ONE(EventTst);

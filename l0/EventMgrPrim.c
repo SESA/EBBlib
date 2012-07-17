@@ -1,5 +1,3 @@
-#ifndef __ETH_MGR_H__
-#define __ETH_MGR_H__
 /*
  * Copyright (C) 2011 by Project SESA, Boston University
  *
@@ -22,21 +20,26 @@
  * THE SOFTWARE.
  */
 
-enum {ETHERNET_ADDR_LEN = 6};
+/*
+ * The Event Manager (EM) is one of the primordial objects.  The EM
+ * will be a fully distributed objects.  Clients can register with the
+ * EM objects to handle specific events.  That will cause a customized
+ * routine to be generated on each core, that will register itself
+ * with the PIC (programable interrupt controller) on that core.
+ * There is a one-to-one correspondence between event numbers and
+ * interrupts.  This will allow a dispatch from an interrupt to an EBB
+ * to be highly efficient, and conversly all interrupts to be handled
+ * on EBBs.  The interrupt routine will buy the EM's rep's stack, and
+ * then invoke the handler previously registered for that event with
+ * interrupts disabled.
+ *
+ * The current implementation is very simple, a shared table of
+ * handlers, no dynamically generated code yet. ... but wanted to
+ * document the plan.
+ */
 
-struct EthernetHeader {
-  uint8_t  dest[ETHERNET_ADDR_LEN];
-  uint8_t  src[ETHERNET_ADDR_LEN];
-  uint16_t type;
-};
+#include <config.h>
 
-COBJ_EBBType(EthMgr) {
-  EBBRC (*init)  (void *_self);
-  EBBRC (*bind)  (void *_self, uint16_t type, EthTypeMgrId id);
-  // FIXME: JA: not really sure we should have the event funcs in the
-  // EthMgr type versus a derived type such as EthMgrPrim that actually
-  // needs and uses them.  
-  EVENTFUNC(inEvent);
-};
+#include <l0/EventMgrPrim.h>
 
-#endif  // __ETH_MGR_H__
+EventMgrPrimId theEventMgrPrimId=0;

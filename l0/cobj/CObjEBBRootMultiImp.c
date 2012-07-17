@@ -151,11 +151,27 @@ CObjEBBRootMulti_nextRep(CObjEBBRootMultiRef _self, RepListNode *curr,
   return ret;
 }
 
+static void
+CObjEBBRootMulti_setKey(CObjEBBRootMultiRef _self, uintptr_t key)
+{
+  CObjEBBRootMultiImpRef self = (CObjEBBRootMultiImpRef)_self;
+  self->key = key;
+}
+
+static uintptr_t
+CObjEBBRootMulti_getKey(CObjEBBRootMultiRef _self)
+{
+  CObjEBBRootMultiImpRef self = (CObjEBBRootMultiImpRef)_self;
+  return self->key;
+}
+
 static
 CObjInterface(CObjEBBRootMulti) CObjEBBRootMulti_ftable = {
   { .handleMiss = CObjEBBRootMulti_handleMiss },
   .addRepOn = CObjEBBRootMulti_addRepOn,
-  .nextRep = CObjEBBRootMulti_nextRep
+  .nextRep = CObjEBBRootMulti_nextRep,
+  .setKey = CObjEBBRootMulti_setKey,
+  .getKey = CObjEBBRootMulti_getKey
 };
 
 static inline void
@@ -171,6 +187,7 @@ CObjEBBRootMultiImpInit(CObjEBBRootMultiImpRef o, CreateRepFunc func)
   o->createRep = func;
   o->head = NULL;
   o->lock = 0;
+  o->key = 0;
 }
 
 EBBRC
@@ -187,4 +204,18 @@ CObjEBBRootMultiImpCreate(CObjEBBRootMultiImpRef *o, CreateRepFunc func)
   rc = EBBPrimMalloc(sizeof(CObjEBBRootMultiImp), o, EBB_MEM_GLOBAL);
   if (EBBRC_SUCCESS(rc)) CObjEBBRootMultiImpInit(*o, func);
   return rc;
+}
+
+void
+CObjEBBRootMultiImpDestroy(CObjEBBRootMultiImpRef self, DestroyRepFunc func)
+{
+  RepListNode *node;
+  EBBRepRef rep = NULL;
+  for (node = self->ft->nextRep((CObjEBBRootMultiRef)self, 0, &rep);
+       node;
+       node = self->ft->nextRep((CObjEBBRootMultiRef)self, node, &rep)) {
+    func(rep);
+  }
+  EBBRC rc = EBBPrimFree(sizeof(CObjEBBRootMultiImp), self);
+  LRT_RCAssert(rc);
 }

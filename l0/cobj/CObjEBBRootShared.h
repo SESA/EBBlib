@@ -22,7 +22,9 @@
  * THE SOFTWARE.
  */
 
-CObject(CObjEBBRootShared) 
+#include <l0/cobj/CObjEBBRoot.h>
+
+CObject(CObjEBBRootShared)
 {
   CObjInterface(CObjEBBRootShared) *ft;
 };
@@ -30,12 +32,15 @@ CObject(CObjEBBRootShared)
 CObjInterface(CObjEBBRootShared)
 {
   CObjImplements(CObjEBBRoot);
+  EBBRepRef (*getRep)(CObjEBBRootSharedRef _self);
   void (*init)(CObjEBBRootSharedRef _self, EBBRep *rep);
 };
 
 extern void CObjEBBRootSharedSetFT(CObjEBBRootSharedRef);
 
 extern EBBRC CObjEBBRootSharedCreate(CObjEBBRootSharedRef *rootRef,
-				     EBBRepRef repRef);
+                                     EBBRepRef repRef);
+
+extern EBBRC CObjEBBRootSharedDestroy(CObjEBBRootSharedRef rootRef);
 
 #endif

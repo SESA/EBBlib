@@ -340,7 +340,8 @@ MsgMgrPrim_createRep(CObjEBBRootMultiRef rootRef)
   repRef->msgqueue = 0;
   repRef->freelistlock = 0;
   repRef->freelist = 0;
-  rc = EBBPrimMalloc(sizeof(repRef->reps)*lrt_num_event_loc(), &repRef->reps, EBB_MEM_DEFAULT);
+  rc = EBBPrimMalloc(sizeof(repRef->reps)*lrt_num_event_loc(), &repRef->reps, 
+		     EBB_MEM_DEFAULT);
   LRT_RCAssert(rc);
   for (i=0; i<lrt_num_event_loc() ; i++ ) {
     repRef->reps[i] = NULL;
@@ -363,7 +364,7 @@ MsgMgrPrim_Init(void)
     LRT_RCAssert(rc);
     rc = EBBAllocPrimId(&id);
     LRT_RCAssert(rc);
-    rc = EBBBindPrimId(id, CObjEBBMissFunc, (EBBMissArg)rootRef);
+    rc = EBBBindPrimId(id, CObjEBBMissFunc, (EBBArg)rootRef);
     LRT_RCAssert(rc);
     rc = COBJ_EBBCALL(theEventMgrPrimId, allocEventNo, &theMsgMgrEvent);
     LRT_RCAssert(rc);

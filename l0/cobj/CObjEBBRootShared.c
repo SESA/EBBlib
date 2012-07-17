@@ -56,8 +56,16 @@ CObjEBBRootSharedImp_init(CObjEBBRootSharedRef _self, EBBRep *rep)
   self->theRep = rep;
 }
 
+EBBRepRef
+CObjEBBRootSharedImp_getRep(CObjEBBRootSharedRef _self)
+{
+  CObjEBBRootSharedImpRef self = (CObjEBBRootSharedImpRef)_self;
+  return self->theRep;
+}
+
 CObjInterface(CObjEBBRootShared) CObjEBBRootSharedImp_ftable = {
   { CObjEBBRootSharedImp_handleMiss },
+  CObjEBBRootSharedImp_getRep,
   CObjEBBRootSharedImp_init
 };
 
@@ -79,4 +87,10 @@ CObjEBBRootSharedCreate(CObjEBBRootSharedRef *rootRef,
     (*rootRef)->ft->init(*rootRef, repRef);
   }
   return rc;
+}
+
+EBBRC
+CObjEBBRootSharedDestroy(CObjEBBRootSharedRef rootRef)
+{
+  return EBBPrimFree(sizeof(CObjEBBRootSharedImp), rootRef);
 }
