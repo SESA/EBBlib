@@ -35,7 +35,6 @@
 #include <l0/EventMgrPrim.h>
 
 static int num_event_loc;
-
 lrt_event_loc
 lrt_num_event_loc()
 {
@@ -78,6 +77,8 @@ uint8_t lrt_event_loc2apicid(lrt_event_loc loc) {
   return apic_id_table[loc];
 }
 
+static uintptr_t **altstacks;
+
 void
 lrt_event_preinit(int cores)
 {
@@ -101,17 +102,19 @@ lrt_event_preinit(int cores)
 
   ioapic *addr = acpi_get_ioapic_addr();
   init_ioapic(addr);
+
+  altstacks = lrt_mem_alloc(sizeof(char *) * cores, 8, 0);
 }
 
 void __attribute__ ((noreturn))
 lrt_event_loop(void)
 {
   asm volatile ("sti\n\t"
-		"hlt\n\t"
-		"cli"
-		::
-		: "rax", "rcx", "rdx", "rsi",
-		  "rdi", "r8", "r9", "r10", "r11"); 
+                "hlt\n\t"
+                "cli"
+                ::
+                : "rax", "rcx", "rdx", "rsi",
+                  "rdi", "r8", "r9", "r10", "r11");
 
   while(1) {
     COBJ_EBBCALL(theEventMgrPrimId, enableInterrupts);
@@ -147,7 +150,10 @@ lrt_event_init(void *unused)
 #define STACK_SIZE (1 << 14)
   char *myStack = lrt_mem_alloc(STACK_SIZE, 16, lrt_my_event_loc());
 
-    asm volatile (
+  altstacks[lrt_my_event_loc()] =
+    lrt_mem_alloc(4096, 16, lrt_my_event_loc());
+
+  asm volatile (
                 "mov %[stack], %%rsp\n\t"
                 "mfence\n\t"
                 "movl %[val], %[smp_lock]\n\t"
@@ -168,7 +174,7 @@ lrt_event_trigger_event(lrt_event_num num, enum lrt_event_loc_desc desc,
   icr_low.raw = 0;
   icr_low.vector = num + 32;
   icr_low.level = 1;
-  
+
   lapic_icr_high icr_high;
   icr_high.raw = 0;
   if (desc == LRT_EVENT_LOC_SINGLE) {
@@ -177,7 +183,7 @@ lrt_event_trigger_event(lrt_event_num num, enum lrt_event_loc_desc desc,
   } else {
     LRT_Assert(0);
   }
-  
+
   send_ipi(icr_low, icr_high);
 }
 
@@ -206,6 +212,22 @@ event_common(uint8_t num)
   send_eoi();
   uint8_t ev = num - 32; //first 32 interrupts are reserved
   COBJ_EBBCALL(theEventMgrPrimId, dispatchEvent, ev);
+}
+
+void
+lrt_event_altstack_push(uintptr_t data)
+{
+  uintptr_t **altstack = &altstacks[lrt_my_event_loc()];
+  **altstack = data;
+  (*altstack)++;
+}
+
+uintptr_t
+lrt_event_altstack_pop()
+{
+  uintptr_t **altstack = &altstacks[lrt_my_event_loc()];
+  (*altstack)--;
+  return **altstack;
 }
 
 extern void isr_0(void);

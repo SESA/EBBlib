@@ -59,14 +59,14 @@ CObject(EventMgrPrimExpImp){
   EventMgrPrimExpImpRef *reps;
 
   // for now, make this share descriptor tables, may replicate
-  // later 
+  // later
   struct lrt_event_descriptor *lrt_event_table_ptr;
   // the root for this object
   CObjEBBRootMultiRef theRoot;
   EventLoc eventLoc;
 };
 
-static inline EventMgrPrimExpImpRef 
+static inline EventMgrPrimExpImpRef
 findTarget(EventMgrPrimExpImpRef self, EventLoc loc)
 {
   RepListNode *node;
@@ -138,7 +138,7 @@ EventMgrPrimExpImp_routeIRQ(EventMgrPrimRef _self, IRQ *isrc, EventNo eventNo,
 
 static EBBRC
 EventMgrPrimExpImp_triggerEvent_nobv(EventMgrPrimRef _self, EventNo eventNo,
-				     enum EventLocDesc desc, EventLoc el)
+                                     enum EventLocDesc desc, EventLoc el)
 {
   LRT_Assert(el < lrt_num_event_loc());
   lrt_event_trigger_event(eventNo, desc, el);
@@ -157,17 +157,17 @@ EventMgrPrimExpImp_dispatchEvent(EventMgrPrimRef _self, EventNo eventNo)
   lrt_trans_rep_ref ref = lrt_trans_id_dref(id);
   ref->ft[fnum](ref);
   return EBBRC_OK;
-}  
+}
 
 static EBBRC
 EventMgrPrimExpImp_enableInterrupts_nobv(EventMgrPrimRef _self)
 {
   asm volatile ("sti\n\t"
-		"hlt\n\t"
-		"cli"
-		::
-		: "rax", "rcx", "rdx", "rsi",
-		  "rdi", "r8", "r9", "r10", "r11"); 
+                "hlt\n\t"
+                "cli"
+                ::
+                : "rax", "rcx", "rdx", "rsi",
+                  "rdi", "r8", "r9", "r10", "r11");
   return EBBRC_OK;
 }
 
@@ -179,7 +179,7 @@ EventMgrPrimExpImp_enableInterrupts_withbv(EventMgrPrimRef _self)
   int el = event_get_unset_bit_bv(&self->corebv);
   if (el != -1) {
     return EventMgrPrimExpImp_dispatchEvent(_self, el);
-  } else {    
+  } else {
     // okay, really enable interrupts
     return EventMgrPrimExpImp_enableInterrupts_nobv(_self);
   }
@@ -187,7 +187,7 @@ EventMgrPrimExpImp_enableInterrupts_withbv(EventMgrPrimRef _self)
 
 static EBBRC
 EventMgrPrimExpImp_triggerEvent_withlbv(EventMgrPrimRef _self, EventNo eventNo,
-				  enum EventLocDesc desc, EventLoc el)
+                                  enum EventLocDesc desc, EventLoc el)
 {
   EventMgrPrimExpImpRef self = (EventMgrPrimExpImpRef)_self;
   LRT_Assert(el < lrt_num_event_loc());
@@ -195,7 +195,7 @@ EventMgrPrimExpImp_triggerEvent_withlbv(EventMgrPrimRef _self, EventNo eventNo,
   if (el == lrt_my_event_loc()) {
     event_set_bit_bv(&self->corebv, eventNo) ;
     return EBBRC_OK;
-  } 
+  }
 
   // okay, its a remote bit, do the standard operation
   return EventMgrPrimExpImp_triggerEvent_nobv(_self, eventNo, desc, el);
@@ -203,7 +203,7 @@ EventMgrPrimExpImp_triggerEvent_withlbv(EventMgrPrimRef _self, EventNo eventNo,
 
 static EBBRC
 EventMgrPrimExpImp_triggerEvent_withabv(EventMgrPrimRef _self, EventNo eventNo,
-					enum EventLocDesc desc, EventLoc el)
+                                        enum EventLocDesc desc, EventLoc el)
 {
   int local = 1;
 
@@ -214,7 +214,7 @@ EventMgrPrimExpImp_triggerEvent_withabv(EventMgrPrimRef _self, EventNo eventNo,
   if (el != lrt_my_event_loc()) {
     rep = findTarget(rep, el);
     local = 0;
-  } 
+  }
 
   event_set_bit_bv(&rep->corebv, eventNo) ;
 
@@ -253,9 +253,9 @@ CObjInterface(EventMgrPrimExp) EventMgrPrimExpImp_ftable_nobv = {
 static EBBRC
 EventMgrPrimExpImp_enableBitvectorLocal(EventMgrPrimExpRef self)
 {
-  self->ft->EventMgrPrim_if.triggerEvent = 
+  self->ft->EventMgrPrim_if.triggerEvent =
     EventMgrPrimExpImp_triggerEvent_withlbv;
-  self->ft->EventMgrPrim_if.enableInterrupts = 
+  self->ft->EventMgrPrim_if.enableInterrupts =
     EventMgrPrimExpImp_enableInterrupts_withbv;
   return EBBRC_OK;
 }
@@ -263,9 +263,9 @@ EventMgrPrimExpImp_enableBitvectorLocal(EventMgrPrimExpRef self)
 static EBBRC
 EventMgrPrimExpImp_enableBitvectorAll(EventMgrPrimExpRef self)
 {
-  self->ft->EventMgrPrim_if.triggerEvent = 
+  self->ft->EventMgrPrim_if.triggerEvent =
     EventMgrPrimExpImp_triggerEvent_withabv;
-  self->ft->EventMgrPrim_if.enableInterrupts = 
+  self->ft->EventMgrPrim_if.enableInterrupts =
     EventMgrPrimExpImp_enableInterrupts_withbv;
   return EBBRC_OK;
 }
@@ -280,9 +280,9 @@ EventMgrPrimExpImp_enablePoll(EventMgrPrimExpRef self)
 static EBBRC
 EventMgrPrimExpImp_disableBitvector(EventMgrPrimExpRef self)
 {
-  self->ft->EventMgrPrim_if.triggerEvent = 
+  self->ft->EventMgrPrim_if.triggerEvent =
     EventMgrPrimExpImp_triggerEvent_nobv;
-  self->ft->EventMgrPrim_if.enableInterrupts = 
+  self->ft->EventMgrPrim_if.enableInterrupts =
     EventMgrPrimExpImp_enableInterrupts_nobv;
   return EBBRC_OK;
 }
@@ -316,21 +316,21 @@ EventMgrPrimExpImp_createRep(CObjEBBRootMultiRef root)
   bzero(&repRef->corebv, sizeof(repRef->corebv));
 
   // allocate memory for array of reps
-  rc = EBBPrimMalloc(sizeof(repRef->reps)*lrt_num_event_loc(), &repRef->reps, 
-		     EBB_MEM_DEFAULT);
+  rc = EBBPrimMalloc(sizeof(repRef->reps)*lrt_num_event_loc(), &repRef->reps,
+                     EBB_MEM_DEFAULT);
 
   // note we get here with the root object locked, and we are assuming tht
-  // in searching for/allocating the event_table.  When we parallelize 
+  // in searching for/allocating the event_table.  When we parallelize
   // rep creation this will fail
   EBBRep *rep;
-  root->ft->nextRep(root, 0, &rep); 
+  root->ft->nextRep(root, 0, &rep);
   if (rep != NULL) {
     repRef->lrt_event_table_ptr = ((EventMgrPrimExpImpRef)rep)->lrt_event_table_ptr;
   } else {
     // allocate the table; reminder this is locked at root
-    rc = EBBPrimMalloc(sizeof(struct lrt_event_descriptor)*LRT_EVENT_NUM_EVENTS, 
-		       &repRef->lrt_event_table_ptr, EBB_MEM_DEFAULT);
-  } 
+    rc = EBBPrimMalloc(sizeof(struct lrt_event_descriptor)*LRT_EVENT_NUM_EVENTS,
+                       &repRef->lrt_event_table_ptr, EBB_MEM_DEFAULT);
+  }
 
   return (EBBRep *)repRef;
 }
@@ -348,7 +348,7 @@ EventMgrPrimExpInit(void)
     LRT_RCAssert(rc);
     rc = EBBAllocPrimId(&id);
     LRT_RCAssert(rc);
-    rc = EBBBindPrimId(id, CObjEBBMissFunc, (EBBMissArg)rootRef);
+    rc = EBBBindPrimId(id, CObjEBBMissFunc, (EBBArg)rootRef);
     LRT_RCAssert(rc);
     theEventMgrPrimId = (EventMgrPrimId)id;
   } else {

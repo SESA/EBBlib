@@ -48,7 +48,7 @@ CObject(EventMgrPrimImp){
   CObjInterface(EventMgrPrim) *ft;
 
   // for now, make this share descriptor tables, may replicate
-  // later 
+  // later
   struct lrt_event_descriptor *lrt_event_table_ptr;
 };
 
@@ -117,17 +117,17 @@ EventMgrPrimImp_dispatchEvent(EventMgrPrimRef _self, EventNo eventNo)
   lrt_trans_rep_ref ref = lrt_trans_id_dref(id);
   ref->ft[fnum](ref);
   return EBBRC_OK;
-}  
+}
 
 static EBBRC
 EventMgrPrimImp_enableInterrupts(EventMgrPrimRef _self)
 {
   asm volatile ("sti\n\t"
-		"hlt\n\t"
-		"cli"
-		::
-		: "rax", "rcx", "rdx", "rsi",
-		  "rdi", "r8", "r9", "r10", "r11"); 
+                "hlt\n\t"
+                "cli"
+                ::
+                : "rax", "rcx", "rdx", "rsi",
+                  "rdi", "r8", "r9", "r10", "r11");
   return EBBRC_OK;
 }
 
@@ -158,17 +158,17 @@ EventMgrPrimImp_createRep(CObjEBBRootMultiRef root)
   EventMgrPrimSetFT(repRef);
 
   // note we get here with the root object locked, and we are assuming tht
-  // in searching for/allocating the event_table.  When we parallelize 
+  // in searching for/allocating the event_table.  When we parallelize
   // rep creation this will fail
   EBBRep *rep;
-  root->ft->nextRep(root, 0, &rep); 
+  root->ft->nextRep(root, 0, &rep);
   if (rep != NULL) {
     repRef->lrt_event_table_ptr = ((EventMgrPrimImpRef)rep)->lrt_event_table_ptr;
   } else {
     // allocate the table; reminder this is locked at root
-    rc = EBBPrimMalloc(sizeof(struct lrt_event_descriptor)*LRT_EVENT_NUM_EVENTS, 
-		       &repRef->lrt_event_table_ptr, EBB_MEM_DEFAULT);
-  } 
+    rc = EBBPrimMalloc(sizeof(struct lrt_event_descriptor)*LRT_EVENT_NUM_EVENTS,
+                       &repRef->lrt_event_table_ptr, EBB_MEM_DEFAULT);
+  }
 
   return (EBBRep *)repRef;
 }
@@ -186,7 +186,7 @@ EventMgrPrimImpInit(void)
     LRT_RCAssert(rc);
     rc = EBBAllocPrimId(&id);
     LRT_RCAssert(rc);
-    rc = EBBBindPrimId(id, CObjEBBMissFunc, (EBBMissArg)rootRef);
+    rc = EBBBindPrimId(id, CObjEBBMissFunc, (EBBArg)rootRef);
     LRT_RCAssert(rc);
     theEventMgrPrimId = (EventMgrPrimId)id;
   } else {
