@@ -27,6 +27,8 @@
 
 #include <arch/cpu.h>
 
+#define ACCESS_ONCE(x) (*(volatile typeof(x) *)&(x))
+
 typedef union rwlock
 {
   unsigned val;
@@ -59,14 +61,15 @@ rwlock_wrlock(rwlock *l)
   uint8_t val = temp.users;
 
   //wait until the write queue has our ticket number
-  while (l->write != val)
+  while (ACCESS_ONCE(l->write) != val)
     cpu_relax();
 }
 
 static inline void
 rwlock_wrunlock(rwlock *l)
 {
-  rwlock temp = *l;
+  rwlock temp;
+  temp.val = ACCESS_ONCE(l->val);
 
   __sync_synchronize();
 
@@ -92,7 +95,7 @@ rwlock_rdlock(rwlock *l)
   uint8_t val = temp.users;
 
   //Wait until the read queue has our ticket number
-  while (l->read != val)
+  while (ACCESS_ONCE(l->read) != val)
     cpu_relax();
 
   //We have the read lock, let the next user through if they are a reader

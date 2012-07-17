@@ -246,6 +246,8 @@ BindTst_start(AppRef _self)
   rc = EBBCALL((ServiceId)L0Info.NULLId, op);
   LRT_Assert(rc == EBBRC_NULL);
 
+  lrt_printf("core: %d\n", MyEventLoc());
+
   if (master) {
     rc = SrvImp0Create(&s0Inst);
     LRT_RCAssert(rc);
