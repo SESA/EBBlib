@@ -22,7 +22,6 @@
 
 #include <config.h>
 
-#include <l0/l0_start.h>
 #include <l0/lrt/bare/arch/ppc32/mem.h>
 #include <l0/lrt/bare/arch/ppc32/pic.h>
 #include <l0/lrt/bare/arch/ppc32/trans.h>
@@ -41,5 +40,5 @@ lrt_start(void)
 
   lrt_printf("lrt initialized\n");
 
-  l0_start(0); 
+  app_start(); 
 }

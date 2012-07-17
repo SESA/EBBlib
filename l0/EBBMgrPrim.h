@@ -41,17 +41,21 @@ typedef lrt_trans_func EBBFunc;
 typedef lrt_trans_rep EBBRep;
 typedef lrt_trans_rep_ref EBBRepRef;
 typedef lrt_trans_func_num EBBFuncNum;
-typedef lrt_trans_miss_arg EBBMissArg;
+typedef lrt_trans_arg EBBArg;
 typedef lrt_trans_ltrans EBBLTrans;
 typedef lrt_trans_id EBBId;
 typedef EBBRC (*EBBMissFunc) (EBBRepRef *,
                               EBBLTrans *,
                               EBBFuncNum,
-                              EBBMissArg);
+                              EBBArg);
 #ifndef __cplusplus
 STATIC_ASSERT(__builtin_types_compatible_p(EBBMissFunc, lrt_trans_miss_func),
               "EBBMissFunc and lrt_trans_miss_func are not compatible types");
 #endif
+
+typedef void (*EBBBindFunc) (EBBId *id, EBBMissFunc *mf, void *bf,
+                             EBBArg *arg, EBBArg oldarg);
+
 static inline void
 EBBCacheObj(EBBLTrans *lt, EBBRepRef ref) {
   lrt_trans_cache_obj(lt, ref);
@@ -62,8 +66,8 @@ EBBCacheObj(EBBLTrans *lt, EBBRepRef ref) {
 COBJ_EBBType(EBBMgrPrim) {
   EBBRC (*AllocId) (EBBMgrPrimRef _self, EBBId *id);
   EBBRC (*FreeId) (EBBMgrPrimRef _self, EBBId id);
-  EBBRC (*BindId) (EBBMgrPrimRef _self, EBBId id, EBBMissFunc mf,
-                   EBBMissArg arg);
+  EBBRC (*BindId) (EBBMgrPrimRef _self, EBBId id, EBBMissFunc *mf,
+                   EBBBindFunc *bf, EBBArg *arg, int force);
   // note, this will just result in a bind of the id to null
   EBBRC (*UnBindId) (EBBMgrPrimRef _self, EBBId id);
 };
@@ -79,9 +83,12 @@ EBBAllocPrimId(EBBId *id)
 }
 
 static inline EBBRC
-EBBBindPrimId(EBBId id, EBBMissFunc mf, EBBMissArg arg)
+EBBBindPrimId(EBBId id, EBBMissFunc mf, EBBArg arg)
 {
-  return COBJ_EBBCALL(theEBBMgrPrimId, BindId, id, mf, arg);
+  EBBMissFunc mftemp = mf;
+  EBBBindFunc bftemp = NULL;
+  EBBArg argtemp = arg;
+  return COBJ_EBBCALL(theEBBMgrPrimId, BindId, id, &mftemp, &bftemp, &argtemp, 0);
 }
 
 extern EBBRC EBBDestroyPrimId(EBBId id);

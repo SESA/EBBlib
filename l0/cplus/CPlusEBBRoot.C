@@ -8,12 +8,12 @@
 
 /* static */ EBBRC
 CPlusEBBRoot::CPlusEBBMissFunc(EBBRep **rep, EBBLTrans *lt, EBBFuncNum fnum,
-                               EBBMissArg arg)
+                               EBBArg arg)
 {
   return ((CPlusEBBRoot *)arg)->handleMiss((CPlusEBB **)rep, lt, fnum);
 }
 
 /* static */ EBBRC
 CPlusEBBRoot::EBBBind(EBBId id, CPlusEBBRoot *root) {
-  return EBBBindPrimId(id, CPlusEBBMissFunc, (EBBMissArg) root);
+  return EBBBindPrimId(id, CPlusEBBMissFunc, (EBBArg) root);
 };

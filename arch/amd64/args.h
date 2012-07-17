@@ -1,5 +1,3 @@
-#ifndef __ETH_MGR_PRIM_H__
-#define __ETH_MGR_PRIM_H__
 /*
  * Copyright (C) 2011 by Project SESA, Boston University
  *
@@ -21,7 +19,22 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+#ifndef ARCH_ARGS_H
+#error "Should only be included through arch/args.h"
+#endif
 
-extern EBBRC EthMgrPrimCreate(EthMgrId *id, char *nic);
+#include <stdint.h>
 
-#endif  // __ETH_MGR_PRIM_H__
+struct args {
+  uint64_t rdi;
+  uint64_t rsi;
+  uint64_t rdx;
+  uint64_t rcx;
+  uint64_t r8;
+  uint64_t r9;
+  uint64_t r10;
+  uint64_t rax;
+  uint64_t fx[64];
+  uint64_t ret;
+  uint64_t stack_args[0];
+};

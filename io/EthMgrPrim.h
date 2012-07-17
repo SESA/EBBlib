@@ -1,6 +1,5 @@
-#ifndef L0_L0_START_H
-#define L0_L0_START_H
-
+#ifndef __ETH_MGR_PRIM_H__
+#define __ETH_MGR_PRIM_H__
 /*
  * Copyright (C) 2011 by Project SESA, Boston University
  *
@@ -23,8 +22,5 @@
  * THE SOFTWARE.
  */
 
-#include <stdint.h>
 
-void l0_start(uintptr_t startinfo);
-
-#endif
+#endif  // __ETH_MGR_PRIM_H__

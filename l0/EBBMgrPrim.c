@@ -56,8 +56,27 @@ FreeId (EBBMgrPrimRef _self, EBBId id) {
 }
 
 static EBBRC
-BindId (EBBMgrPrimRef _self, EBBId id, EBBMissFunc mf, EBBMissArg arg) {
+BindId (EBBMgrPrimRef _self, EBBId id, EBBMissFunc *mf,
+        EBBBindFunc *bf, EBBArg *arg, int force) {
+  EBBMissFunc mftemp = *mf;
+  EBBBindFunc bftemp = *bf;
+  EBBArg argtemp = *arg;
+
+  EBBId origId = id;
+  lrt_trans_rdlock(origId);
+  EBBBindFunc oldbf = (EBBBindFunc)lrt_trans_get_val(id);
+  if (!force) {
+    if (oldbf) {
+      EBBArg oldarg = lrt_trans_get_arg(id);
+      oldbf(&id, &mftemp, &bftemp, &argtemp, oldarg);
+    }
+  }
+  lrt_trans_rdunlock(origId);
+  lrt_trans_wrlock(origId);
   lrt_trans_id_bind(id, mf, arg);
+  *bf = oldbf;
+  lrt_trans_set_val(id, (uintptr_t)bftemp);
+  lrt_trans_wrunlock(origId);
   return EBBRC_OK;
 }
 
@@ -96,7 +115,7 @@ EBBMgrPrimInit()
     LRT_RCAssert(rc);
     rc = EBBAllocPrimIdBoot(&id);
     LRT_RCAssert(rc);
-    rc = EBBBindPrimIdBoot(id, CObjEBBMissFunc, (EBBMissArg)rootRef);
+    rc = EBBBindPrimIdBoot(id, CObjEBBMissFunc, (EBBArg)rootRef);
     LRT_RCAssert(rc);
     theEBBMgrPrimId = (EBBMgrPrimId)id;
   } else {

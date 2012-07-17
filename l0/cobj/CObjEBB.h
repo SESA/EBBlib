@@ -24,11 +24,11 @@
 
 #include <l0/cobj/cobj.h>
 
-#define COBJ_EBBCALL(id, method, ...) \
-  (EBBId_DREF(id)->ft->method(EBBId_DREF(id), ##__VA_ARGS__))
-
-#define COBJ_EBBCALL_FUNCNUM(Type, id, funcNum, ...)	\
-  ( ((Type)COBJ_FUNC(EBBId_DREF(id), funcNum))(EBBId_DREF(id), ##__VA_ARGS__) )
+#define COBJ_EBBCALL(id, method, ...)                           \
+  ({                                                            \
+    typeof(*id) ref = EBBId_DREF(id);                           \
+    ref->ft->method(ref, ##__VA_ARGS__);                        \
+  })
 
 // Introduces a new CObject Ebb type -> generates all associated cobject types
 #define COBJ_EBBType(TYPE)			\

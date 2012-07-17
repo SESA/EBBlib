@@ -82,5 +82,5 @@ CObjInterface(App) PrimAllocTst_ftable = {
   .start = PrimAllocTst_start
 };
 
-APP(PrimAllocTst, APP_START_ONE);
+APP_START_ONE(PrimAllocTst);
 

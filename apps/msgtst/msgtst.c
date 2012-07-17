@@ -176,4 +176,4 @@ CObjInterface(App) MsgTst_ftable = {
   .start = MsgTst_start
 };
 
-APP(MsgTst, APP_START_ONE);
+APP_START_ONE(MsgTst);

@@ -35,8 +35,10 @@ CObjInterface(CObjEBBRootMulti)
 {
   CObjImplements(CObjEBBRoot);
   void (*addRepOn)(CObjEBBRootMultiRef _self, uintptr_t el, EBBRep *rep);
-  RepListNode *(*nextRep) (CObjEBBRootMultiRef _self, 
-			   RepListNode *curr, EBBRep **rep);
+  RepListNode *(*nextRep) (CObjEBBRootMultiRef _self,
+                           RepListNode *curr, EBBRep **rep);
+  void (*setKey)(CObjEBBRootMultiRef _self, uintptr_t key);
+  uintptr_t (*getKey)(CObjEBBRootMultiRef _self);
 };
 
 #endif

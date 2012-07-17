@@ -79,4 +79,4 @@ CObjInterface(App) HelloWorld_Parallel_ftable = {
   .start = HelloWorld_Parallel_start
 };
 
-APP(HelloWorld_Parallel, APP_START_ALL);
+APP_START_ALL(HelloWorld_Parallel);

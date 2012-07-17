@@ -1,1 +1,1 @@
-io_lrt_bare_sources = io/lrt/bare/LRTConsole.c
+io_lrt_bare_sources = io/lrt/bare/LRTConsole.c io/lrt/bare/ethlib.c

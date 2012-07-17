@@ -28,7 +28,7 @@
 #include <l0/cobj/CObjEBBRoot.h>
 
 EBBRC
-CObjEBBMissFunc(EBBRep **_self, EBBLTrans *lt, EBBFuncNum fnum, EBBMissArg arg)
+CObjEBBMissFunc(EBBRep **_self, EBBLTrans *lt, EBBFuncNum fnum, EBBArg arg)
 {
   CObjEBBRootRef rootRef = (CObjEBBRootRef)arg;
   return rootRef->ft->handleMiss(rootRef, _self, lt, fnum);
@@ -37,5 +37,5 @@ CObjEBBMissFunc(EBBRep **_self, EBBLTrans *lt, EBBFuncNum fnum, EBBMissArg arg)
 EBBRC
 CObjEBBBindBoot(EBBId id, void *root)
 {
-  return EBBBindPrimIdBoot(id, CObjEBBMissFunc, (EBBMissArg) root);
+  return EBBBindPrimIdBoot(id, CObjEBBMissFunc, (EBBArg) root);
 }

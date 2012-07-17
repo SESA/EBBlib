@@ -1,0 +1,12 @@
+for console window:
+    ssh sesa@128.197.10.121
+    sudo minicom
+ssh kd-sesa
+  sudo reboot 
+
+128.197.10.161
+login ADMIN
+pass sesa s/0/1
+reset
+
+cat ../../EBBlib/contrib/dschatz/scripts/copyapps 

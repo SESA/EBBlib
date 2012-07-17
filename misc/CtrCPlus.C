@@ -76,7 +76,7 @@ void
 CtrCPlus::operator delete(void * p, size_t size)
 {
   // NYI
-  LRT_RCAssert(0);
+  LRT_Assert(0);
 }
 
 

@@ -30,13 +30,34 @@
 #include <l0/cobj/CObjEBBRootMulti.h>
 #include <l0/cobj/CObjEBBRootMultiImp.h>
 #include <l0/EBBMgrPrim.h>
-#include <l0/EventMgrPrim.h>
+#include <l0/EventMgrPrimImp.h>
 #include <l0/cobj/CObjEBBUtils.h>
 #include <l1/App.h>
 
 AppId theAppId=0;
 
-EBBRC app_start(void)
+void
+EBB_init_default( )
+{
+  EBBRC rc;
+
+  rc = EBBMemMgrPrimInit();
+  LRT_RCAssert(rc);
+
+  rc = EBBMgrPrimInit();
+  LRT_RCAssert(rc);
+
+  // At this point EBBMgr and Ebb Calls should be working
+  //  NOMORE USE OF TRANS OR BOOT INTERFACES TO THESE THINGS
+  //  AND MOST CODE SHOULD BE ON Ebb's
+
+  rc = EventMgrPrimImpInit();
+  LRT_RCAssert(rc);
+}
+
+
+void
+create_app_obj_default(void)
 {
   EBBRC rc;
   if (__sync_bool_compare_and_swap(&theAppId, (AppId)0,
@@ -54,11 +75,6 @@ EBBRC app_start(void)
   } else {
     while ((*(volatile uintptr_t *)&theAppId)==-1);
   }
+}    
 
-  // WE ARE NOW DONE WITH L1 INITIALIZATION : 
-  //    We now  hand-over the start up msg to the appliation
-  //    From this point on everything should be messages/events that are handled
-  //    by appliation level Ebb's
 
-  return COBJ_EBBCALL(theAppId, start);
-}
