@@ -10,6 +10,12 @@
 #include <arch/powerpc/450/cpu.h>
 #endif
 
+static inline void 
+cpu_relax(void)
+{
+        
+}
+
 static inline msr
 get_msr(void)
 {

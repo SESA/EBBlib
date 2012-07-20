@@ -32,9 +32,9 @@ void *lrt_trans_default_func(lrt_trans_rep_ref *_self, lrt_trans_func_num fnum) 
   //word to get the LTrans
   lrt_trans_ltrans *self = (lrt_trans_ltrans *)(*_self-1);
   lrt_trans_gtrans *gt = lrt_trans_lt2gt(self);
-  rwlock_rdlock(&gt->rwlock);
+  rwlock_rdlock(&gt->lock);
   lrt_trans_rc ret = gt->mf(_self, self, fnum, gt->arg);
-  rwlock_rdunlock(&gt->rwlock);
+  rwlock_rdunlock(&gt->lock);
   if(LRT_TRANS_RC_SUCCESS(ret)) {
     //return the function we wanted to call originally
     return (*_self)->ft[fnum];

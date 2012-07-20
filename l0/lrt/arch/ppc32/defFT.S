@@ -58,9 +58,9 @@ OnSuccess:
 #define	DEFAULT_FUNC(OP)	\
 	.section ".text"; \
 	.align 2; \
-	.globl EBBDefFunc_ ## OP; \
-	.type EBBDefFunc_ ## OP ##, @function; \
-EBBDefFunc_ ## OP ##: ;\
+	.globl lrt_trans_def_func_ ## OP; \
+	.type lrt_trans_def_func_ ## OP ##, @function; \
+lrt_trans_def_func_ ## OP ##: ;\
 		li r11, OP	; \
 		b defaultFuncCommon ; 
 

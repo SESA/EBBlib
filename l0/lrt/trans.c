@@ -197,28 +197,28 @@ void
 lrt_trans_wrlock(lrt_trans_id id)
 {
   lrt_trans_gtrans *gt = lrt_trans_id2gt(id);
-  rwlock_wrlock(&gt->rwlock);
+  rwlock_wrlock(&gt->lock);
 }
 
 void
 lrt_trans_wrunlock(lrt_trans_id id)
 {
   lrt_trans_gtrans *gt = lrt_trans_id2gt(id);
-  rwlock_wrunlock(&gt->rwlock);
+  rwlock_wrunlock(&gt->lock);
 }
 
 void
 lrt_trans_rdlock(lrt_trans_id id)
 {
   lrt_trans_gtrans *gt = lrt_trans_id2gt(id);
-  rwlock_rdlock(&gt->rwlock);
+  rwlock_rdlock(&gt->lock);
 }
 
 void
 lrt_trans_rdunlock(lrt_trans_id id)
 {
   lrt_trans_gtrans *gt = lrt_trans_id2gt(id);
-  rwlock_rdunlock(&gt->rwlock);
+  rwlock_rdunlock(&gt->lock);
 }
 
 uintptr_t
@@ -241,7 +241,7 @@ lrt_trans_init(void)
   lrt_trans_specific_init();
   LRT_Assert(sysTransValidate());
   // maximum bits in corebv in EBBTransStruct
-  LRT_Assert(lrt_num_event_loc() <= 64);
+  LRT_Assert(lrt_num_event_loc() <= 32);
 
   bzero(lrt_trans_my_gmem(), lrt_trans_my_gmem_size());
   lrt_trans_init_ltable();

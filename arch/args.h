@@ -25,4 +25,8 @@
 #include <arch/amd64/args.h>
 #endif
 
+#ifdef ARCH_PPC
+#include <arch/powerpc/args.h>
+#endif
+
 #endif
