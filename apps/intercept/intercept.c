@@ -25,7 +25,7 @@
 #include <intercept/Interceptor.h>
 #include <intercept/TestInterceptor.h>
 #include <arch/args.h>
-#include <arch/amd64/cpu.h>
+#include <arch/cpu.h>
 #include <l0/EventMgrPrim.h>
 #include <l0/cobj/CObjEBBRootShared.h>
 #include <l0/cobj/CObjEBBUtils.h>
@@ -110,8 +110,8 @@ Intercept_start(AppRef _self)
   rc = COBJ_EBBCALL(controllerId0, start, (EBBId)target, id0);
   LRT_RCAssert(rc);
 
-  uint64_t time = rdtsc();
-  while ((rdtsc() - time) < 1000000)
+  uint64_t time = read_timestamp();
+  while ((read_timestamp() - time) < 1000000)
     ;
 
   rc = COBJ_EBBCALL(controllerId0, stop);
@@ -120,8 +120,8 @@ Intercept_start(AppRef _self)
   rc = COBJ_EBBCALL(controllerId0, start, (EBBId)target, id0);
   LRT_RCAssert(rc);
 
-  time = rdtsc();
-  while ((rdtsc() - time) < 1000000)
+  time = read_timestamp();
+  while ((read_timestamp() - time) < 1000000)
     ;
 
   InterceptorId id1;
@@ -137,15 +137,15 @@ Intercept_start(AppRef _self)
   rc = COBJ_EBBCALL(controllerId1, start, (EBBId)target, id1);
   LRT_RCAssert(rc);
 
-  time = rdtsc();
-  while ((rdtsc() - time) < 1000000)
+  time = read_timestamp();
+  while ((read_timestamp() - time) < 1000000)
     ;
 
   rc = COBJ_EBBCALL(controllerId0, stop);
   LRT_RCAssert(rc);
 
-  time = rdtsc();
-  while ((rdtsc() - time) < 1000000)
+  time = read_timestamp();
+  while ((read_timestamp() - time) < 1000000)
     ;
 
   /* rc = COBJ_EBBCALL(controllerId0, destroy); */
@@ -157,8 +157,8 @@ Intercept_start(AppRef _self)
   /* rc = COBJ_EBBCALL(controllerId1, destroy); */
   /* LRT_RCAssert(rc); */
 
-  time = rdtsc();
-  while ((rdtsc() - time) < 1000000)
+  time = read_timestamp();
+  while ((read_timestamp() - time) < 1000000)
     ;
 
   lrt_exit(0);

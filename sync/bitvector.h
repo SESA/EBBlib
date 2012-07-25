@@ -22,15 +22,16 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+#include<arch/cpu.h>
 
 /*
  * Bitvector as macro for arbitrary number of bits.  Uses atomic operations
  * to set and unset bits; to use for a fred bitvector with 512 bits, say:
  * say DEF_BITVEC(fred, 512). Will aign up to a WORDSIZE bit word. 
 */
-#define WORDSIZE_BITS 32
-#define BV_WORDS(BITS) ((BITS / WORDSIZE_BITS)+1)	
 
+#define WORDSIZE_BITS (sizeof(uintptr_t) * 8)
+#define BV_WORDS(BITS) ((BITS / WORDSIZE_BITS)+1)	
 
 #define DEF_BITVEC(NAME,BITS)					\
 struct NAME ## _bvs {						\
