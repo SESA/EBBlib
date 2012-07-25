@@ -33,7 +33,7 @@ defaultFuncCommon:
 	lwz r0, 0x4(r1)               //restore link register
 	mtlr r0
 	cmpi 0, 1, r3, 0                   //check return value
-	bne   OnSuccess
+	bgt   OnSuccess
 	blr
 OnSuccess:
 	mtctr r3  //load ctr to branch to later

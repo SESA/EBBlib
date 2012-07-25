@@ -39,7 +39,7 @@ void *lrt_trans_default_func(lrt_trans_rep_ref *_self, lrt_trans_func_num fnum) 
     //return the function we wanted to call originally
     return (*_self)->ft[fnum];
   }
-  return (void *)ret; //return the error code
+  return (void *)ret;
 }
 
 #define LRT_TRANS_MAX_FUNCS 256

@@ -79,6 +79,25 @@ Intercept_start(AppRef _self)
   LRT_RCAssert(rc);
   //Target initialized
 
+  InterceptorId id0;
+  rc = TestInterceptorCreate(&id0, "Interceptor 0");
+  LRT_RCAssert(rc);
+
+  InterceptorControllerId controllerId0;
+  rc = EBBAllocPrimId((EBBId *)&controllerId0);
+  LRT_RCAssert(rc);
+
+  InterceptorControllerImp_Create(controllerId0);
+  LRT_RCAssert(rc);
+
+  rc = COBJ_EBBCALL(controllerId0, start, (EBBId)target, id0);
+  LRT_RCAssert(rc);
+
+  COBJ_EBBCALL(target, func);
+
+  rc = COBJ_EBBCALL(controllerId0, stop);
+  LRT_RCAssert(rc);
+
   rc = COBJ_EBBCALL(theEventMgrPrimId, allocEventNo, &evnum);
   LRT_RCAssert(rc);
 
@@ -95,18 +114,6 @@ Intercept_start(AppRef _self)
   }
 
   //Ok now all cores are invoking the target repeatedly
-
-  InterceptorId id0;
-  rc = TestInterceptorCreate(&id0, "Interceptor 0");
-  LRT_RCAssert(rc);
-
-  InterceptorControllerId controllerId0;
-  rc = EBBAllocPrimId((EBBId *)&controllerId0);
-  LRT_RCAssert(rc);
-
-  InterceptorControllerImp_Create(controllerId0);
-  LRT_RCAssert(rc);
-
   rc = COBJ_EBBCALL(controllerId0, start, (EBBId)target, id0);
   LRT_RCAssert(rc);
 

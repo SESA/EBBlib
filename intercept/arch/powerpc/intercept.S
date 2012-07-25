@@ -27,39 +27,39 @@
         .globl interceptProxyFuncCommon
         .type  interceptProxyFuncCommon,@function
 interceptProxyFuncCommon:
+	stwu	r1, -(4 + 8*8 + 8*4 + 4 + 8)(r1)
         /* take the cpu arguments and move them onto the stack.*/
         /* link register */
         mflr r0
-        stw r0, 4(r1)
+        stw r0, (4 + 8*8 + 8*4 + 4 + 8 + 4)(r1)
         /* condition register */
         mfcr r0
-        stwu r0,-4(r1) 
+        stw r0,(8*8 + 8*4 + 4 + 8)(r1) 
         /* float point registers */
-        stfdu f8, -8(r1)
-        stfdu f7, -8(r1)
-        stfdu f6, -8(r1)
-        stfdu f5, -8(r1)
-        stfdu f4, -8(r1)
-        stfdu f3, -8(r1)
-        stfdu f2, -8(r1)
-        stfdu f1, -8(r1)
+        stfd f8, (7*8 + 8*4 + 4 + 8)(r1)
+        stfd f7, (6*8 + 8*4 + 4 + 8)(r1)
+        stfd f6, (5*8 + 8*4 + 4 + 8)(r1)
+        stfd f5, (4*8 + 8*4 + 4 + 8)(r1)
+        stfd f4, (3*8 + 8*4 + 4 + 8)(r1)
+        stfd f3, (2*8 + 8*4 + 4 + 8)(r1)
+        stfd f2, (1*8 + 8*4 + 4 + 8)(r1)
+        stfd f1, (8*4 + 4 + 8)(r1)
         /* integer registers */
-        stwu r10, -4(r1)
-        stwu r9, -4(r1)
-        stwu r8, -4(r1)
-        stwu r7, -4(r1)
-        stwu r6, -4(r1)
-        stwu r5, -4(r1)
-        stwu r4, -4(r1)
-        stwu r3, -4(r1)
+        stw r10, (7*4 + 4 + 8)(r1)
+        stw r9, (6*4 + 4 + 8)(r1)
+        stw r8, (5*4 + 4 + 8)(r1)
+        stw r7, (4*4 + 4 + 8)(r1)
+        stw r6, (3*4 + 4 + 8)(r1)
+        stw r5, (2*4 + 4 + 8)(r1)
+        stw r4, (1*4 + 4 + 8)(r1)
+        stw r3, (4 + 8)(r1)
         /* load parameters and call intercept_precall */
         /* move args struct into first parameter argument */
-        mr r1, r3 
+        la r3, (4+8)(r1) 
         /* move fnum into secound parameter argument */
-        mr r11, r4
+        mr r4, r11
         /* move stack pointer to make space for third parameter */
-        la r1,-4(r1)
-        mr r1, r5
+        la r5, (8)(r1)
         bl intercept_precall
         /* if precall returns EBBRC_OK, than goto that returned location
            else return value of third parameter argument
@@ -67,49 +67,50 @@ interceptProxyFuncCommon:
         cmpi 2, 0, r3, 0
         bne .Lfail 
         /* reload link register */
-        lwz r3, (4 + 4*8 + 8*8 + 4)(r1)
+        lwz r3, (4 + 8*8 + 4*8 + 8 + 4 + 4)(r1)
         bl lrt_event_altstack_push
 
         /* restore registers from args */
-        lwz r0, 0(r1)  
+        lwz r0, 8(r1)  
         /* move function address into count register */
         mtctr r0
         /* reload interger registers */
-        lwzu r3, 4(r1)
-        lwzu r4, 4(r1)
-        lwzu r5, 4(r1)
-        lwzu r6, 4(r1)
-        lwzu r7, 4(r1)
-        lwzu r8, 4(r1)
-        lwzu r9, 4(r1)
-        lwzu r10, 4(r1)
+        lwz r3, (4+8)(r1)
+        lwz r4, (1*4 + 4 + 8)(r1)
+        lwz r5, (2*4 + 4 + 8)(r1)
+        lwz r6, (3*4 + 4 + 8)(r1)
+        lwz r7, (4*4 + 4 + 8)(r1)
+        lwz r8, (5*4 + 4 + 8)(r1)
+        lwz r9, (6*4 + 4 + 8)(r1)
+        lwz r10, (7*4 + 4 + 8)(r1)
         /* reload float point registers */
-        lfdu f1, 4(r1)
-        lfdu f2, 8(r1)
-        lfdu f3, 8(r1)
-        lfdu f4, 8(r1)
-        lfdu f5, 8(r1)
-        lfdu f6, 8(r1)
-        lfdu f7, 8(r1)
-        lfdu f8, 8(r1)
+        lfd f1, (8*4 + 4 + 8)(r1)
+        lfd f2, (1*8 + 8*4 + 4 + 8)(r1)
+        lfd f3, (2*8 + 8*4 + 4 + 8)(r1)
+        lfd f4, (3*8 + 8*4 + 4 + 8)(r1)
+        lfd f5, (4*8 + 8*4 + 4 + 8)(r1)
+        lfd f6, (5*8 + 8*4 + 4 + 8)(r1)
+        lfd f7, (6*8 + 8*4 + 4 + 8)(r1)
+        lfd f8, (7*8 + 8*4 + 4 + 8)(r1)
         /* reload condition register */ 
-        lwzu r0, 8(r1)
+        lwz r0, (8*8 + 8*4 + 4 + 8)(r1)
         mtcr r0
 
-        la r1, 4(r1)
+	lwz r1, 0(r1)
         bctrl
 
-        stwu  r3, -4(r1)
+	stwu r1, -16(r1)
+	stw r3, 8(r1)
         bl lrt_event_altstack_pop
         mtlr r3
-        lwz r3, 0(r1)
-        la r1, 4(r1)
+        lwz r3, 8(r1)
+        lwz r1, 0(r1)
         b intercept_postcall
 
 .Lfail:
-        lwz r3, 0(r1)
-        la  r1, (4 + 4*8 + 8*8 + 4)(r1)
-        lwz r0, 0(r1)
+        lwz r3, 8(r1)
+	lwz r1, 0(r1)
+        lwz r0, 4(r1)
         mtlr r0
         blr
 
