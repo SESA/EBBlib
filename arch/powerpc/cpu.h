@@ -115,6 +115,19 @@ typedef union {
   };
 } ccr2;
 
+
+static inline uint64_t 
+read_timestamp(void)
+{
+  uint32_t tbu0, tbu1, tbl;
+  do{
+    tbu0= get_spr(SPRN_TBU);
+    tbl= get_spr(SPRN_TBL);
+    tbu1= get_spr(SPRN_TBU);
+  }while(tbu0 != tbu1);
+  return (uint64_t)tbu0 << 32 | tbl;
+}
+  
 STATIC_ASSERT(sizeof(ccr2) == 4, "ccr2 struct packing issue");
 
 #endif
