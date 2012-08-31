@@ -20,6 +20,43 @@
  * THE SOFTWARE.
  */
 
+
+This is the first simple ethernet device driver for the E1000E NIC from Intel.
+See:
+  http://www.intel.com/content/www/us/en/ethernet-controllers/82574l-gbe-controller-datasheet.html
+
+/* ******************************************************************
+  Goal of this first ethernet driver:
+  ----------------------------------
+  1. get basic networking going
+  2. solidify the interface to the driver
+  3. experiment with event model, wiring up ethernet
+
+We are not at this point fully exploiting the device, e.g., offload,
+scatter/gather, demux of incomming packets... that will be later.
+
+For reception, a regisered hander is invoked with the buffer
+(list). The buffers are freed automatically after the event has
+completed.
+Rational:
+o Naturally couples the data with the event.
+o For now, we assume on read that most of the time buffer alignment,
+  size or something else not optimal, so anything retained for a long
+  time will probably be copied anyhow.
+o If its retained for a long time, the cost of copying may not be
+  important. This, of course, may be re-evaluated as get perforance
+  data. In that context, we  can eventually return an argument to say
+  don't free the buffer.
+
+For writes, we will support initially a simple model, where the driver
+copies the data into an internal buffer, and returns.  In the long
+term, we should expore a model like fbufs, where the buffer is
+immutable, with multiple reference counts, on last reference count
+freed.  This will allow the same buffer to be repeatedly written to
+the network with scatter gather to avoid copies.
+
+****************************************************************** */
+
 #include <config.h>
 #include <inttypes.h>
 #include <l0/EBBMgrPrim.h>
