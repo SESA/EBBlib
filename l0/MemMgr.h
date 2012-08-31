@@ -34,7 +34,8 @@ CObject(EBBMemMgr) {
 };
 
 CObjInterface(EBBMemMgr) {
-  EBBRC (*alloc) (EBBMemMgrRef _self, uintptr_t size, void **mem, EBB_MEM_POOL pool);
+  EBBRC (*alloc) (EBBMemMgrRef _self, uintptr_t size, void **mem, 
+		  EBB_MEM_POOL pool);
   EBBRC (*free) (EBBMemMgrRef _self, uintptr_t size, void *mem);
 };
 

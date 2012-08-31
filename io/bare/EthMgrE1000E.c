@@ -21,11 +21,12 @@
  */
 
 
-This is the first simple ethernet device driver for the E1000E NIC from Intel.
-See:
-  http://www.intel.com/content/www/us/en/ethernet-controllers/82574l-gbe-controller-datasheet.html
-
 /* ******************************************************************
+This is the first simple ethernet device driver for the E1000E NIC
+from Intel.  
+  See:
+    http://www.intel.com/content/www/us/en/ethernet-controllers/82574l-gbe-controller-datasheet.html
+
   Goal of this first ethernet driver:
   ----------------------------------
   1. get basic networking going
@@ -38,6 +39,7 @@ scatter/gather, demux of incomming packets... that will be later.
 For reception, a regisered hander is invoked with the buffer
 (list). The buffers are freed automatically after the event has
 completed.
+
 Rational:
 o Naturally couples the data with the event.
 o For now, we assume on read that most of the time buffer alignment,
@@ -73,8 +75,10 @@ the network with scatter gather to avoid copies.
 #define NUM_RC_BUFS 8
 #define NUM_TX_BUFS 8
 
+#if 0
 static struct le_e1ke_tx_desc tx_ring[NUM_TX_BUFS] __attribute__ ((aligned(16)));
 static struct le_e1ke_rc_desc rc_ring[NUM_RC_BUFS] __attribute__ ((aligned(16)));
+#endif
 
 CObject(EthMgrE1000E) {
   COBJ_EBBFuncTbl(EthMgr);
@@ -84,6 +88,7 @@ CObject(EthMgrE1000E) {
 				   for memory mapped device registers */
   // ring of control information for transmission
   unsigned tx_tail;
+  void *tx_ring_base_add, *rc_ring_base_add;
   struct le_e1ke_tx_desc *tx_ring_p;
 
   // ring of control information for reception
@@ -317,9 +322,22 @@ EthMgrE1000E_init(void *_self)
   EBBRC rc;
   uint32_t tmp;
 
+  // needs to be 16 byte aligned
+  rc = EBBPrimMalloc(sizeof(struct le_e1ke_tx_desc)*NUM_TX_BUFS + 16, 
+		     &self->tx_ring_base_add, EBB_MEM_DEFAULT);
+  LRT_RCAssert(rc);
+  rc = EBBPrimMalloc(sizeof(struct le_e1ke_rc_desc)*NUM_RC_BUFS + 16, 
+		     &self->rc_ring_base_add, EBB_MEM_DEFAULT);
+  LRT_RCAssert(rc);
 
-  self->tx_ring_p = &tx_ring[0];
-  self->rc_ring_p = &rc_ring[0];
+  self->tx_ring_p = (void *)((uint64_t)self->tx_ring_base_add & ~0xF);
+  self->rc_ring_p = (void *)((uint64_t)self->rc_ring_base_add & ~0xF);
+
+  lrt_printf(" wt ring buf %lx, ptr %lx\n", 
+	     (uint64_t)self->tx_ring_base_add, (uint64_t)self->tx_ring_p);
+  lrt_printf(" rd ring buf %lx, ptr %lx\n", 
+	     (uint64_t)self->rc_ring_base_add, (uint64_t)self->rc_ring_p);
+
   // set pci information in device
   rc = pci_get_info(PCI_VENDOR_INTEL, PCI_INTEL_DEVID_E1000E, &self->pi);
   LRT_RCAssert(rc);		/* later check EBBRC_NOTFOUND */
