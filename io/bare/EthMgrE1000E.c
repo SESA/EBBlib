@@ -36,7 +36,7 @@ from Intel.
 We are not at this point fully exploiting the device, e.g., offload,
 scatter/gather, demux of incomming packets... that will be later.
 
-For reception, a regisered hander is invoked with the buffer
+For packet reception, a registered hander is invoked with the buffer
 (list). The buffers are freed automatically after the event has
 completed.
 
@@ -74,11 +74,6 @@ the network with scatter gather to avoid copies.
 
 #define NUM_RC_BUFS 8
 #define NUM_TX_BUFS 8
-
-#if 0
-static struct le_e1ke_tx_desc tx_ring[NUM_TX_BUFS] __attribute__ ((aligned(16)));
-static struct le_e1ke_rc_desc rc_ring[NUM_RC_BUFS] __attribute__ ((aligned(16)));
-#endif
 
 CObject(EthMgrE1000E) {
   COBJ_EBBFuncTbl(EthMgr);
@@ -118,9 +113,10 @@ dump_regs(EthMgrE1000ERef self)
 static inline unsigned 
 get_transmit_tail(EthMgrE1000ERef self)
 {
-  // comment this out when everything is working, since
-  // this is expensive
+#if 0
+  // this is expensive, but good debugging check
   LRT_Assert(self->tx_tail == rd_reg(self->bar, E1KE_TDT(0)));
+#endif
   return self->tx_tail;
 }
 
@@ -134,10 +130,10 @@ advance_transmit_tail(EthMgrE1000ERef self)
 static inline unsigned 
 get_receive_tail(EthMgrE1000ERef self)
 {
-  // comment this out when everything is working, since
+#if 0
   // this is expensive
   LRT_Assert(self->rc_tail == rd_reg(self->bar, E1KE_RDT(0)));
-
+#endif
   return self->rc_tail;
 }
 
@@ -158,7 +154,6 @@ EthMgrE1000E_setup_transmit(EthMgrE1000ERef self)
     self->tx_ring_p[i].val = 0;	/* FIXME: set dd to 1 so can check done read */
     self->tx_ring_p[i].buf_add = 0;
   }
-
   
   print_txdctl_reg(rd_reg(self->bar, E1KE_TXDCTL(0)));
   val = 1 << E1KE_TXDCTL_WTHRESH; /* set write back threashold to 1 */
@@ -186,7 +181,9 @@ setup_next_receive_buffer(EthMgrE1000ERef self)
 
   rc_desc = &self->rc_ring_p[self->rc_tail];
 
+  lrt_printf("alloc [");
   rc = EBBPrimMalloc(E1KE_BUFLEN, &buf, EBB_MEM_DEFAULT);
+  lrt_printf("alloc ]\n");
   LRT_RCAssert(rc);
 
   rc_desc->val = 0;
@@ -196,7 +193,6 @@ setup_next_receive_buffer(EthMgrE1000ERef self)
   lrt_printf("after advance tail is %d, head is %d\n", 
 	     rd_reg(self->bar, E1KE_RDT(0)), 
 	     rd_reg(self->bar, E1KE_RDH(0)));
-
 }
 
 
@@ -220,7 +216,9 @@ EthMgrE1000E_setup_receive(EthMgrE1000ERef self)
   self->rc_tail = 0;
   // allocate one buffer less, so tail doesn't wrap around
   for (int i=0; i<NUM_RC_BUFS-1; i++) {
+    lrt_printf("buf %d [", i);
     setup_next_receive_buffer(self);
+    lrt_printf("]");
   }
 
   // setup the receive buffer ring
@@ -234,7 +232,7 @@ EthMgrE1000E_setup_receive(EthMgrE1000ERef self)
   // setup the read control register
   val = (1 << E1KE_RCTL_EN);	/* enable */
   val |= (1 << E1KE_RCTL_SBP); /* FIXME: store bad packets for now */
-  val |= (1 << E1KE_RCTL_UPE); /* FIXME: lets be sexy */
+  val |= (1 << E1KE_RCTL_UPE); /* FIXME: lets be promiscuous */
   val |= (1 << E1KE_RCTL_LBM); /* FIXME: doing loopback */
   val |= (1 << E1KE_RCTL_BAM); /* FIXME: accept broadcasts */
 
@@ -260,6 +258,8 @@ EthMgrE1000E_dumpread(EthMgrE1000ERef self)
       lrt_printf("val is %lx, status is %lx\n", 
 		 self->rc_ring_p[i].val, 
 		 (long)self->rc_ring_p[i].status);
+      lrt_printf("packet contents %s\n", 
+		 (char *)self->rc_ring_p[i].buf_add);
       lhd = hd;
     }
   }
@@ -315,6 +315,9 @@ EthMgrE1000E_write(EthMgrE1000ERef self, void *buf, unsigned len)
 }
 
 
+static struct le_e1ke_tx_desc tx_ring[NUM_TX_BUFS] __attribute__ ((aligned(16)));
+static struct le_e1ke_rc_desc rc_ring[NUM_RC_BUFS] __attribute__ ((aligned(16)));
+
 static EBBRC
 EthMgrE1000E_init(void *_self)
 {
@@ -322,8 +325,9 @@ EthMgrE1000E_init(void *_self)
   EBBRC rc;
   uint32_t tmp;
 
+#if 0
   // needs to be 16 byte aligned
-  rc = EBBPrimMalloc(sizeof(struct le_e1ke_tx_desc)*NUM_TX_BUFS + 16, 
+  rc = EBBPrimMalloc(((sizeof(struct le_e1ke_tx_desc)*NUM_TX_BUFS) + 16), 
 		     &self->tx_ring_base_add, EBB_MEM_DEFAULT);
   LRT_RCAssert(rc);
   rc = EBBPrimMalloc(sizeof(struct le_e1ke_rc_desc)*NUM_RC_BUFS + 16, 
@@ -332,9 +336,13 @@ EthMgrE1000E_init(void *_self)
 
   self->tx_ring_p = (void *)((uint64_t)self->tx_ring_base_add & ~0xF);
   self->rc_ring_p = (void *)((uint64_t)self->rc_ring_base_add & ~0xF);
-
-  lrt_printf(" wt ring buf %lx, ptr %lx\n", 
-	     (uint64_t)self->tx_ring_base_add, (uint64_t)self->tx_ring_p);
+#else
+  self->tx_ring_p = &tx_ring[0];
+  self->rc_ring_p = &rc_ring[0];
+#endif
+  lrt_printf(" wt ring buf %lx, ptr %lx, len %ld\n", 
+	     (uint64_t)self->tx_ring_base_add, (uint64_t)self->tx_ring_p,
+	     ((sizeof(struct le_e1ke_tx_desc)*NUM_TX_BUFS) + 16));
   lrt_printf(" rd ring buf %lx, ptr %lx\n", 
 	     (uint64_t)self->rc_ring_base_add, (uint64_t)self->rc_ring_p);
 
