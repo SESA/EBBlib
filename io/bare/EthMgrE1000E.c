@@ -30,7 +30,7 @@ from Intel.
   Goal of this first ethernet driver:
   ----------------------------------
   1. get basic networking going
-  2. solidify the interface to the driver
+  2. explore the interface to the driver
   3. experiment with event model, wiring up ethernet
 
 We are not at this point fully exploiting the device, e.g., offload,
@@ -75,22 +75,62 @@ the network with scatter gather to avoid copies.
 #define NUM_RC_BUFS 8
 #define NUM_TX_BUFS 8
 
+// prototype for handler for ethernet packets
+typedef EBBRC (* ethPacketHandler)(void * _self, void *buf);
+
 CObject(EthMgrE1000E) {
-  COBJ_EBBFuncTbl(EthMgr);
+  COBJ_EBBFuncTbl(EthMgrE1000E);
   
+  EthMgrId myID;
+
   struct pci_info pi;
   uint32_t bar;			/* base address register, i.e., base address
 				   for memory mapped device registers */
+  EventNo pollEvent;
+
   // ring of control information for transmission
   unsigned tx_tail;
   void *tx_ring_base_add, *rc_ring_base_add;
   struct le_e1ke_tx_desc *tx_ring_p;
 
+  EBBId handlerId;
+  EBBFuncNum handlerFuncNum;
+
   // ring of control information for reception
   unsigned rc_tail;
-  unsigned rc_next;		/* next buf to read */
+  unsigned rc_last_head;		/* next buf to read */
   struct le_e1ke_rc_desc *rc_ring_p;
 };
+EBBRC 
+EthMgrE1000E_defaultEthernetPacketHandler(void *self, void *buf)
+{
+  lrt_printf("R");
+  return EBBRC_OK;
+}
+
+EBBRC 
+EthMgrE1000E_bindPacketHandler(EthMgrE1000ERef self, EBBId handler, 
+			       EBBFuncNum fn)
+{
+  self->handlerId = handler;
+  self->handlerFuncNum = fn;
+  return EBBRC_OK;
+}
+
+
+CObjInterface(EthMgrE1000E) {
+  CObjImplements(EthMgr);
+
+  // this is a cludge function to poll the network for now
+  EBBRC (*readPoll)(EthMgrE1000ERef self);
+
+  // default packet handler, supported by this device
+  EBBRC (*defPacketHandler)(void *_self, void *buf);
+
+  // bind a new packet handler
+  EBBRC (*bindPacketHandler)(EthMgrE1000ERef self, EBBId handler, EBBFuncNum fn);
+};
+
 
 static inline void
 dump_regs(EthMgrE1000ERef self)
@@ -181,20 +221,69 @@ setup_next_receive_buffer(EthMgrE1000ERef self)
 
   rc_desc = &self->rc_ring_p[self->rc_tail];
 
-  lrt_printf("alloc [");
   rc = EBBPrimMalloc(E1KE_BUFLEN, &buf, EBB_MEM_DEFAULT);
-  lrt_printf("alloc ]\n");
   LRT_RCAssert(rc);
 
   rc_desc->val = 0;
   rc_desc->buf_add = buf;
 
-  advance_receive_tail(self);
   lrt_printf("after advance tail is %d, head is %d\n", 
 	     rd_reg(self->bar, E1KE_RDT(0)), 
 	     rd_reg(self->bar, E1KE_RDH(0)));
 }
 
+static inline void
+EthMgrE1000E_handleReceives(EthMgrE1000ERef self) 
+{
+  uint32_t hd = 0;
+  hd = rd_reg(self->bar, E1KE_RDH(0));
+  uint32_t cur = self->rc_last_head;
+
+  while (cur != hd) {
+    lrt_trans_rep_ref ref = lrt_trans_id_dref(self->handlerId);
+    ((ethPacketHandler)(ref->ft[self->handlerFuncNum]))
+      (ref, self->rc_ring_p[cur].buf_add);
+
+    // reinit this entry
+    self->rc_ring_p[cur].val = 0;
+    
+    // advance rc_last_head
+    cur = (cur+1)%NUM_RC_BUFS;
+
+    // advance tail
+    advance_receive_tail(self);
+  }
+  self->rc_last_head = cur;
+}
+
+EBBRC
+EthMgrE1000E_readPoll(EthMgrE1000ERef self)
+{
+  EBBRC rc;
+  
+  EthMgrE1000E_handleReceives(self);
+
+  rc = COBJ_EBBCALL(theEventMgrPrimId, triggerEvent, self->pollEvent,
+                    EVENT_LOC_SINGLE, MyEventLoc());
+  LRT_RCAssert(rc);
+  return EBBRC_OK;
+}
+
+static inline void
+bindReadPoll(EthMgrE1000ERef self)
+{
+  EBBRC rc;
+  rc = COBJ_EBBCALL(theEventMgrPrimId, allocEventNo, &self->pollEvent);
+  LRT_RCAssert(rc);
+  rc = COBJ_EBBCALL(theEventMgrPrimId, bindEvent, self->pollEvent, 
+		    (EBBId)self->myID,
+                    COBJ_FUNCNUM(self, readPoll));
+  LRT_RCAssert(rc);
+  rc = COBJ_EBBCALL(theEventMgrPrimId, triggerEvent, self->pollEvent,
+                    EVENT_LOC_SINGLE, MyEventLoc());
+  LRT_RCAssert(rc);
+
+}
 
 static inline void
 EthMgrE1000E_setup_receive(EthMgrE1000ERef self)
@@ -214,12 +303,18 @@ EthMgrE1000E_setup_receive(EthMgrE1000ERef self)
   }
 
   self->rc_tail = 0;
-  // allocate one buffer less, so tail doesn't wrap around
-  for (int i=0; i<NUM_RC_BUFS-1; i++) {
-    lrt_printf("buf %d [", i);
+  // for now, initialize all the receive ring entries
+  // with a receive buffer
+  for (int i=0; i<NUM_RC_BUFS; i++) {
     setup_next_receive_buffer(self);
-    lrt_printf("]");
   }
+  // need to have tail point to 1 less than the end
+  for (int i=0; i<NUM_RC_BUFS-1; i++) {
+    advance_receive_tail(self);
+  }
+
+  EthMgrE1000E_bindPacketHandler(self, (EBBId)self->myID, 
+				 COBJ_FUNCNUM_FROM_TYPE(CObjInterface(EthMgrE1000E),defPacketHandler));
 
   // setup the receive buffer ring
   lrt_printf("address of rc ring is %lx\n", (long unsigned)&self->rc_ring_p[0]);
@@ -238,35 +333,11 @@ EthMgrE1000E_setup_receive(EthMgrE1000ERef self)
 
   LRT_Assert(E1KE_BUFLEN == 2048); /* else, set BSIZE */
   wt_reg(self->bar, E1KE_RCTL, val);
+
+  bindReadPoll(self);
 }
 
-static void
-EthMgrE1000E_dumpread(EthMgrE1000ERef self) 
-{
-  uint32_t hd = 0, lhd =0;
-  // uint32_t tl = rd_reg(self->bar, E1KE_RDT(0));
-  lrt_printf("dumread, tail is %d, head is %d\n", 
-	     rd_reg(self->bar, E1KE_RDT(0)), 
-	     rd_reg(self->bar, E1KE_RDH(0)));
-  while (1) {
-    while (hd == rd_reg(self->bar, E1KE_RDH(0))) {}
-    hd = rd_reg(self->bar, E1KE_RDH(0));
-    for (int i=lhd ; i<hd; i++) {
-      lrt_printf("head changed tail is %d, head is %d\n", 
-		 rd_reg(self->bar, E1KE_RDT(0)), 
-		 rd_reg(self->bar, E1KE_RDH(0)));
-      lrt_printf("val is %lx, status is %lx\n", 
-		 self->rc_ring_p[i].val, 
-		 (long)self->rc_ring_p[i].status);
-      lrt_printf("packet contents %s\n", 
-		 (char *)self->rc_ring_p[i].buf_add);
-      lhd = hd;
-    }
-  }
-}
-
-
-static EBBRC
+static inline EBBRC
 EthMgrE1000E_write(EthMgrE1000ERef self, void *buf, unsigned len) 
 {
   unsigned i;
@@ -309,33 +380,38 @@ EthMgrE1000E_write(EthMgrE1000ERef self, void *buf, unsigned len)
 
   /* //block until we get confirmation that it was sent out */
   lrt_printf("blocking until write gets out\n");
-  while (!tx_desc->dd) {lrt_printf("*");}; 
+  // while (!tx_desc->dd) {lrt_printf("*");}; 
   lrt_printf("we think the write got out\n");
   return len;
 }
 
 
+#if 0
 static struct le_e1ke_tx_desc tx_ring[NUM_TX_BUFS] __attribute__ ((aligned(16)));
 static struct le_e1ke_rc_desc rc_ring[NUM_RC_BUFS] __attribute__ ((aligned(16)));
+#define STATiC_RINGS
+#endif
 
 static EBBRC
-EthMgrE1000E_init(void *_self)
+EthMgrE1000E_init(void *_self, EthMgrId id)
 {
   EthMgrE1000ERef self = (EthMgrE1000ERef)_self;
   EBBRC rc;
   uint32_t tmp;
+  
+  self->myID = id;
 
-#if 0
+#ifndef STATIC_RINGS
   // needs to be 16 byte aligned
   rc = EBBPrimMalloc(((sizeof(struct le_e1ke_tx_desc)*NUM_TX_BUFS) + 16), 
 		     &self->tx_ring_base_add, EBB_MEM_DEFAULT);
   LRT_RCAssert(rc);
-  rc = EBBPrimMalloc(sizeof(struct le_e1ke_rc_desc)*NUM_RC_BUFS + 16, 
+  rc = EBBPrimMalloc(((sizeof(struct le_e1ke_rc_desc)*NUM_RC_BUFS) + 16), 
 		     &self->rc_ring_base_add, EBB_MEM_DEFAULT);
   LRT_RCAssert(rc);
 
-  self->tx_ring_p = (void *)((uint64_t)self->tx_ring_base_add & ~0xF);
-  self->rc_ring_p = (void *)((uint64_t)self->rc_ring_base_add & ~0xF);
+  self->tx_ring_p = (void *)(((uint64_t)self->tx_ring_base_add+15) & ~0xF);
+  self->rc_ring_p = (void *)(((uint64_t)self->rc_ring_base_add+15) & ~0xF);
 #else
   self->tx_ring_p = &tx_ring[0];
   self->rc_ring_p = &rc_ring[0];
@@ -378,10 +454,12 @@ EthMgrE1000E_init(void *_self)
   lrt_printf("***after initialization:\n");
   dump_regs(self);		/* print out all key registers */
 
+#if 0
   lrt_printf("---- done initializing e1000e\n");
   EthMgrE1000E_write(self, "dan is a bozo", 14); 
+#endif
 
-  EthMgrE1000E_dumpread(self);  
+  // EthMgrE1000E_dumpread(self);  
 
   return EBBRC_OK;
 }
@@ -399,14 +477,18 @@ EthMgrE1000E_inEvent(EthMgrE1000ERef self)
   return EBBRC_GENERIC_FAILURE;
 }
   
-CObjInterface(EthMgr) EthMgrE1000E_ftable = {
+CObjInterface(EthMgrE1000E) EthMgrE1000E_ftable = {
   // base functions of ethernet manager
   // OK: not entirely clear to me idea that JA had here, 
   // ignoring, and just implementing device driver for single
   // ethernet device
-  .init = EthMgrE1000E_init,
-  .bind = EthMgrE1000E_bind,
-  .inEvent = (GenericEventFunc)EthMgrE1000E_inEvent
+  .EthMgr_if = {
+    .bind = EthMgrE1000E_bind,
+    .inEvent = (GenericEventFunc)EthMgrE1000E_inEvent,
+  },
+  .readPoll = EthMgrE1000E_readPoll,
+  .defPacketHandler = EthMgrE1000E_defaultEthernetPacketHandler,
+  .bindPacketHandler = EthMgrE1000E_bindPacketHandler
 };
 
 EBBRC
@@ -423,14 +505,14 @@ EthMgrE1000ECreate(EthMgrId *id)
 
   lrt_printf("found device, intializing\n");
 
-  rc = EthMgrE1000E_init(repRef);
+  rc = EBBAllocPrimId((EBBId *)id);
+  LRT_RCAssert(rc);
+
+  rc = EthMgrE1000E_init(repRef, *id);
   // fixme, if fails should free storage and return
   LRT_RCAssert(rc);		/* later return EBBRC_NOTFOUND */
 
   rc = CObjEBBRootSharedCreate(&rootRef, (EBBRepRef)repRef);
-  LRT_RCAssert(rc);
-
-  rc = EBBAllocPrimId((EBBId *)id);
   LRT_RCAssert(rc);
 
   rc = CObjEBBBind((EBBId)*id, rootRef); 
