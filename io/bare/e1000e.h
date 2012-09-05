@@ -195,41 +195,6 @@ print_txdctl_reg(uint32_t r)
 #define E1KE_MAX_PACKLEN 1514
 #define E1KE_BUFLEN 2048
 
-// little endian transmit descriptor
-struct le_e1ke_tx_desc {
-  uint64_t *buf_add;
-  union {
-    uint64_t val;
-    struct {
-      uint16_t len;
-      uint8_t cso;
-      union {
-	uint8_t cmd;
-	struct {
-	  uint8_t eop:1;
-	  uint8_t ifcs:1;
-	  uint8_t ic:1;
-	  uint8_t rs:1;
-	  uint8_t rsvc:1;
-	  uint8_t dext:1;
-	  uint8_t vle:1;
-	  uint8_t ide:1;
-	};
-      };
-      union {
-	uint8_t status:4;
-	struct {
-	  uint8_t dd:1;
-	  uint8_t rsvs:3;
-	};
-      };
-      uint8_t extcmd:4;
-      uint8_t css;
-      uint16_t vlan;
-    };
-  };
-}__attribute__((packed));
-
 // little endian recieve descriptor
 struct le_e1ke_rc_desc {
   uint64_t *buf_add;
@@ -269,6 +234,39 @@ struct le_e1ke_rc_desc {
   };
 }__attribute__((packed));
 
+STATIC_ASSERT(sizeof(struct le_e1ke_rc_desc) == 16, "rc ring packing issue");
+
+// little endian transmit descriptor
+struct le_e1ke_tx_desc {
+  uint64_t *buf_add;
+  union {
+    uint64_t val;
+    struct {
+      uint16_t len;
+      uint8_t cso;
+      union {
+	uint8_t cmd;
+	struct {
+	  uint8_t eop:1;
+	  uint8_t ifcs:1;
+	  uint8_t ic:1;
+	  uint8_t rs:1;
+	  uint8_t rsvc:1;
+	  uint8_t dext:1;
+	  uint8_t vle:1;
+	  uint8_t ide:1;
+	};
+      };
+      uint8_t status_dd:1;
+      uint8_t status_rsvs:3;
+      uint8_t extcmd:4;
+      uint8_t css;
+      uint16_t vlan;
+    };
+  };
+}__attribute__((packed));
+
+STATIC_ASSERT(sizeof(struct le_e1ke_tx_desc) == 16, "tx ring packing issue");
 
 static uint32_t 
 rd_reg(uint32_t bar, uint32_t offset)
