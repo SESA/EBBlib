@@ -28,6 +28,15 @@
 
 #define PCI_CONFIG_ADDRESS 0xCF8
 #define PCI_CONFIG_DATA 0xCFC
+#define PCI_CAP_LIST_OFFSET 0x34
+
+#define PCI_CAP_TYPE_PM  1	/* power management */
+#define PCI_CAP_TYPE_AGP 2
+#define PCI_CAP_TYPE_VPD 3
+#define PCI_CAP_TYPE_SLI 4
+#define PCI_CAP_TYPE_MSI 5
+#define PCI_CAP_TYPE_HSW 6
+#define PCI_CAP_TYPE_MSIX 0x11
 
 static uint32_t 
 _pci_config_read32 (uint8_t bus, uint8_t slot, uint16_t func, uint16_t offset) 
@@ -216,8 +225,70 @@ parse_msix_capability(uint8_t bus, uint8_t slot, uint8_t ptr)
   bar = _pci_config_read32( bus, slot, 0, 0x10);
   lrt_printf("\t\t\t msix taboffset %x, pbaoffset %x bar %x\n", 
 	     taboffset, pbaoffset, bar);
-
 }
+
+static uint8_t 
+find_capability(uint8_t bus, uint8_t slot, uint8_t type)
+{
+  uint8_t ptr;
+  uint8_t id;
+  uint8_t nxt;
+  ptr = (pci_config_read8(bus, slot, 0, PCI_CAP_LIST_OFFSET) & ~0x3);
+  while(ptr) {
+    id = pci_config_read8(bus, slot, 0, ptr);
+    nxt = (pci_config_read8(bus, slot, 0, ptr+1) & ~0x3);
+    if (id == type) return ptr;
+    ptr = nxt;
+  };
+  return 0;
+}
+
+
+// enable msix for this device
+void 
+pci_enable_msix(struct pci_info *pi)
+{
+  uint8_t ptr;
+  uint16_t tmp;
+  ptr = find_capability(pi->bus, pi->slot, PCI_CAP_TYPE_MSIX);
+  // oops, couldn't find capability 
+
+  LRT_Assert(ptr!=0);		
+  lrt_printf("found msix capability, ptr is %x, enabling\n", ptr);
+  lrt_printf("note for MSIX on ether should be A0\n");
+  tmp = pci_config_read16(pi->bus, pi->slot, 0, ptr+2);
+  tmp &= ~(1<<14);		/* turning off function mask */
+  tmp |= (1<<15);		/* enable interrupts */
+  pci_config_write16(pi->bus, pi->slot, 0, ptr+2, tmp);
+  tmp = pci_config_read16(pi->bus, pi->slot, 0, ptr+2);
+  lrt_printf("enabled msix on device\n");
+} 
+
+// enable msi for this device
+void 
+pci_enable_msi(struct pci_info *pi, uint32_t mal, uint32_t mau, 
+	       uint16_t mad)
+{
+  uint8_t ptr;
+  uint16_t tmp;
+  ptr = find_capability(pi->bus, pi->slot, PCI_CAP_TYPE_MSI);
+  // oops, couldn't find capability 
+  LRT_Assert(ptr!=0);		
+  lrt_printf("found msi capability, ptr is %x, enabling\n", ptr);
+  lrt_printf("note for MSI on ether should be D0\n");
+
+  lrt_printf("writting lower address to %x\n", ptr+4);
+  pci_config_write32(pi->bus, pi->slot, 0, ptr+4, mal);
+  lrt_printf("writting upper address to %x\n", ptr+8);
+  pci_config_write32(pi->bus, pi->slot, 0, ptr+8, mau);
+  lrt_printf("writting data to %x\n", ptr+12);
+  pci_config_write16(pi->bus, pi->slot, 0, ptr+12, mad);
+  
+
+  tmp = pci_config_read16(pi->bus, pi->slot, 0, ptr+2);
+  tmp |= (1);		/* enable interrupts */
+  pci_config_write16(pi->bus, pi->slot, 0, ptr+2, tmp);
+} 
 
 // tell pci this device can be a bus master
 void
@@ -241,36 +312,47 @@ print_vendor_dev(uint16_t vendor, uint16_t device)
 }
 
 static void
-print_capability_list(uint8_t bus, uint8_t slot)
+print_capability_list(uint8_t bus, uint8_t slot, int isabus)
 {
   uint8_t ptr;
   uint8_t id;
   uint8_t nxt;
-  ptr = (pci_config_read8(bus, slot, 0, 0x34) & ~0x3);
+  ptr = (pci_config_read8(bus, slot, 0, PCI_CAP_LIST_OFFSET) & ~0x3);
   while(ptr) {
     id = pci_config_read8(bus, slot, 0, ptr);
     nxt = (pci_config_read8(bus, slot, 0, ptr+1) & ~0x3);
     lrt_printf("\t\t\t - cap id %x, nxt %x :", id, nxt);
     switch(id) {
-    case 1:
+    case PCI_CAP_TYPE_PM:
       lrt_printf(" - PCI power management\n");
       break;
-    case 2:
+    case PCI_CAP_TYPE_AGP:
       lrt_printf(" - AGP\n");
       break;
-    case 3:
+    case PCI_CAP_TYPE_VPD:
       lrt_printf(" - VPD\n");
       break;
-    case 4:
+    case PCI_CAP_TYPE_SLI:
       lrt_printf(" - slot identifiation\n");
       break;
-    case 5:
+    case PCI_CAP_TYPE_MSI:
       lrt_printf(" - MSI capable\n");
+#if 0 // don't think we need to enable MSI on bridge
+      if (isabus) {
+	uint16_t tmp;
+	lrt_printf("bad bad dan, enabling msi in reading this\n");
+	tmp = pci_config_read16(bus, slot, 0, ptr+2);
+	lrt_printf("msg control register %x\n", tmp);
+
+	tmp |= (1<<0);		/* enable interrupts */
+	pci_config_write16(bus, slot, 0, ptr+2, tmp);
+      }
+#endif      
       break;
-    case 6:
+    case PCI_CAP_TYPE_HSW:
       lrt_printf(" - hot swap\n");
       break;
-    case 0x11:
+    case PCI_CAP_TYPE_MSIX:
       lrt_printf(" - MSI-X capable\n");
       parse_msix_capability(bus, slot, ptr);
       break;
@@ -282,7 +364,6 @@ print_capability_list(uint8_t bus, uint8_t slot)
 }
 
 #define VPRINT if(verbose) lrt_printf
-
 
 static EBBRC
 pci_get_info_bus(int bus, int targ_vend, int targ_devid, struct pci_info *info, 
@@ -331,14 +412,21 @@ pci_get_info_bus(int bus, int targ_vend, int targ_devid, struct pci_info *info,
 	       dev_class, subclass, progif);
 	parse_status(status);
 	if (status & (1<<4)) {
-	  print_capability_list(bus, slot);
+	  print_capability_list(bus, slot, 0);
 	}
       }
       break;
     case 0x1: 
       {
 	uint8_t sbus = pci_config_read8(bus,slot,0,25);
-	VPRINT(" - PCI bridge, subbus is %d\n", sbus);
+	if (verbose) {
+	  VPRINT(" - PCI bridge, subbus is %d\n", sbus);
+	  parse_status(status);
+	  if (status & (1<<4)) {
+	    print_capability_list(bus, slot, 1);
+	  }
+	}
+
 	rc = pci_get_info_bus(sbus, targ_vend,  targ_devid, info, verbose);
 	if (rc == EBBRC_OK) return rc;
 	VPRINT("still searchhing, back to bus %d\n", bus);

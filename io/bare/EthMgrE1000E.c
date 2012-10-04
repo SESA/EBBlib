@@ -71,6 +71,13 @@ the network with scatter gather to avoid copies.
 #include <l0/cobj/CObjEBB.h>
 #include <l0/cobj/CObjEBBUtils.h>
 #include <io/bare/e1000e.h>
+#include <l0/lrt/event.h>
+#include <arpa/inet.h>
+
+#define swapShort(x) \
+    ((__uint16_t)((((__uint16_t)(x) & 0xff00) >> 8) | \
+		  (((__uint16_t)(x) & 0x00ff) << 8)))
+#define ntohs(x) swapShort(x)
 
 #define NUM_RC_BUFS 8
 #define NUM_TX_BUFS 8
@@ -84,7 +91,7 @@ CObject(EthMgrE1000E) {
   EthMgrId myID;
 
   struct pci_info pi;
-  uint32_t bar;			/* base address register, i.e., base address
+  uint32_t bar[6];		/* base address registers, i.e., base address
 				   for memory mapped device registers */
   EventNo pollEvent;
 
@@ -92,6 +99,9 @@ CObject(EthMgrE1000E) {
   unsigned tx_tail;
   void *tx_ring_base_add, *rc_ring_base_add;
   struct le_e1ke_tx_desc *tx_ring_p;
+
+  EventNo msiev;
+  EventNo msixev[5];
 
   EBBId handlerId;
   EBBFuncNum handlerFuncNum;
@@ -101,10 +111,27 @@ CObject(EthMgrE1000E) {
   unsigned rc_last_head;		/* next buf to read */
   struct le_e1ke_rc_desc *rc_ring_p;
 };
+
+#define ETH_ALEN 6
+
 EBBRC 
 EthMgrE1000E_defaultEthernetPacketHandler(void *self, void *buf)
 {
-  lrt_printf("R");
+  uint8_t *tmp;
+  uint16_t protocol;
+
+  tmp = buf;
+  lrt_printf("defEthhandler packet:(");
+  lrt_printf("d %02x:%02x:%02x:%02x:%02x:%02x, ", 
+	     tmp[0], tmp[1], tmp[2], tmp[3], tmp[4], tmp[5]);
+  tmp += ETH_ALEN;
+  lrt_printf("s %02x:%02x:%02x:%02x:%02x:%02x, ", 
+	     tmp[0], tmp[1], tmp[2], tmp[3], tmp[4], tmp[5]);
+
+  tmp += ETH_ALEN;
+  protocol = ntohs(*(uint16_t *)tmp);
+  lrt_printf("t %x)\n", (short)protocol);
+
   return EBBRC_OK;
 }
 
@@ -124,6 +151,15 @@ CObjInterface(EthMgrE1000E) {
   // this is a cludge function to poll the network for now
   EBBRC (*readPoll)(EthMgrE1000ERef self);
 
+  // interrupt routines for MSI-X interrupts
+  EBBRC (*int0)(EthMgrE1000ERef self);
+  EBBRC (*int1)(EthMgrE1000ERef self);
+  EBBRC (*int2)(EthMgrE1000ERef self);
+  EBBRC (*int3)(EthMgrE1000ERef self);
+  EBBRC (*int4)(EthMgrE1000ERef self);
+  // interrupt routines for MSI mode
+  EBBRC (*intMSI)(EthMgrE1000ERef self);
+
   // default packet handler, supported by this device
   EBBRC (*defPacketHandler)(void *_self, void *buf);
 
@@ -135,18 +171,18 @@ CObjInterface(EthMgrE1000E) {
 static inline void
 dump_regs(EthMgrE1000ERef self)
 {
-  uint32_t tmp = rd_reg(self->bar, E1KE_CTRL);
+  uint32_t tmp = rd_reg(self->bar[0], E1KE_CTRL);
   print_ctrl_reg(tmp);
-  tmp = rd_reg(self->bar, E1KE_TCTL);
+  tmp = rd_reg(self->bar[0], E1KE_TCTL);
   print_tctl_reg(tmp);
-  tmp = rd_reg(self->bar, E1KE_STATUS);
+  tmp = rd_reg(self->bar[0], E1KE_STATUS);
   lrt_printf("status register is %x\n", tmp);
-  dump_phys(self->bar);
+  dump_phys(self->bar[0]);
 
-  tmp = rd_reg(self->bar, 0x10);
+  tmp = rd_reg(self->bar[0], 0x10);
   lrt_printf("eprom/flash control is %x\n", tmp);
 
-  tmp = rd_reg(self->bar, E1KE_CTRL_EXT);
+  tmp = rd_reg(self->bar[0], E1KE_CTRL_EXT);
   lrt_printf("CTRL_EXT %x\n", tmp);
 }
 
@@ -155,7 +191,7 @@ get_transmit_tail(EthMgrE1000ERef self)
 {
 #if 0
   // this is expensive, but good debugging check
-  LRT_Assert(self->tx_tail == rd_reg(self->bar, E1KE_TDT(0)));
+  LRT_Assert(self->tx_tail == rd_reg(self->bar[0], E1KE_TDT(0)));
 #endif
   return self->tx_tail;
 }
@@ -164,7 +200,7 @@ static inline void
 advance_transmit_tail(EthMgrE1000ERef self)
 {
   self->tx_tail = (self->tx_tail+1)%NUM_TX_BUFS;
-  wt_reg(self->bar, E1KE_TDT(0), self->tx_tail);
+  wt_reg(self->bar[0], E1KE_TDT(0), self->tx_tail);
 }
 
 static inline unsigned 
@@ -172,7 +208,7 @@ get_receive_tail(EthMgrE1000ERef self)
 {
 #if 0
   // this is expensive
-  LRT_Assert(self->rc_tail == rd_reg(self->bar, E1KE_RDT(0)));
+  LRT_Assert(self->rc_tail == rd_reg(self->bar[0], E1KE_RDT(0)));
 #endif
   return self->rc_tail;
 }
@@ -181,7 +217,7 @@ static inline void
 advance_receive_tail(EthMgrE1000ERef self)
 {
   self->rc_tail = (self->rc_tail+1)%NUM_RC_BUFS;
-  wt_reg(self->bar, E1KE_RDT(0), self->rc_tail );
+  wt_reg(self->bar[0], E1KE_RDT(0), self->rc_tail );
 }
 
 static void
@@ -195,21 +231,21 @@ EthMgrE1000E_setup_transmit(EthMgrE1000ERef self)
     self->tx_ring_p[i].buf_add = 0;
   }
   
-  print_txdctl_reg(rd_reg(self->bar, E1KE_TXDCTL(0)));
+  print_txdctl_reg(rd_reg(self->bar[0], E1KE_TXDCTL(0)));
   val = 1 << E1KE_TXDCTL_WTHRESH; /* set write back threashold to 1 */
   val |= (1 << E1KE_TXDCTL_GRAN); /* granularity in descriptors */
-  wt_reg(self->bar, E1KE_TXDCTL(0), val);
+  wt_reg(self->bar[0], E1KE_TXDCTL(0), val);
 		   
   lrt_printf("after initialize txdctl register\n");
-  print_txdctl_reg(rd_reg(self->bar, E1KE_TXDCTL(0)));
+  print_txdctl_reg(rd_reg(self->bar[0], E1KE_TXDCTL(0)));
 
   val = (0xF<<E1KE_TCTL_CT) | (0x3f <<E1KE_TCTL_COLD) | (1<<E1KE_TCTL_PSP) 
     | (1 <<E1KE_TCTL_EN);
-  wt_reg(self->bar, E1KE_TCTL, val);
+  wt_reg(self->bar[0], E1KE_TCTL, val);
 
-  wt_reg(self->bar, E1KE_TDBAL(0), ((uintptr_t)self->tx_ring_p) & 0xFFFFFFFF);
-  wt_reg(self->bar, E1KE_TDBAH(0), ((uintptr_t)self->tx_ring_p) >> 32);
-  wt_reg(self->bar, E1KE_TDLEN(0), sizeof(struct le_e1ke_tx_desc)*NUM_TX_BUFS);
+  wt_reg(self->bar[0], E1KE_TDBAL(0), ((uintptr_t)self->tx_ring_p) & 0xFFFFFFFF);
+  wt_reg(self->bar[0], E1KE_TDBAH(0), ((uintptr_t)self->tx_ring_p) >> 32);
+  wt_reg(self->bar[0], E1KE_TDLEN(0), sizeof(struct le_e1ke_tx_desc)*NUM_TX_BUFS);
 }
 
 static void inline
@@ -226,17 +262,13 @@ setup_next_receive_buffer(EthMgrE1000ERef self)
 
   rc_desc->val = 0;
   rc_desc->buf_add = buf;
-
-  lrt_printf("after advance tail is %d, head is %d\n", 
-	     rd_reg(self->bar, E1KE_RDT(0)), 
-	     rd_reg(self->bar, E1KE_RDH(0)));
 }
 
 static inline void
 EthMgrE1000E_handleReceives(EthMgrE1000ERef self) 
 {
   uint32_t hd = 0;
-  hd = rd_reg(self->bar, E1KE_RDH(0));
+  hd = rd_reg(self->bar[0], E1KE_RDH(0));
   uint32_t cur = self->rc_last_head;
 
   while (cur != hd) {
@@ -252,6 +284,12 @@ EthMgrE1000E_handleReceives(EthMgrE1000ERef self)
 
     // advance tail
     advance_receive_tail(self);
+
+    // FIXME: get rid of this
+    uint32_t tmp = rd_reg(self->bar[3], MSIXPBA);
+    lrt_printf("MSIX PBA (pending bits) %x\n", tmp);
+    e1000e_clear_all_interrupts(self->bar[0]);
+    // FIXME: end get rid of this
   }
   self->rc_last_head = cur;
 }
@@ -266,6 +304,48 @@ EthMgrE1000E_readPoll(EthMgrE1000ERef self)
   rc = COBJ_EBBCALL(theEventMgrPrimId, triggerEvent, self->pollEvent,
                     EVENT_LOC_SINGLE, MyEventLoc());
   LRT_RCAssert(rc);
+  return EBBRC_OK;
+}
+
+EBBRC
+EthMgrE1000E_int0(EthMgrE1000ERef self)
+{
+  lrt_printf("--------------------EthMgrE1000E_int0----------------\n");
+  return EBBRC_OK;
+}
+EBBRC
+EthMgrE1000E_int1(EthMgrE1000ERef self)
+{
+  lrt_printf("--------------------EthMgrE1000E_int1----------------\n");
+  return EBBRC_OK;
+}
+EBBRC
+EthMgrE1000E_int2(EthMgrE1000ERef self)
+{
+  lrt_printf("--------------------EthMgrE1000E_int2----------------\n");
+  return EBBRC_OK;
+}
+EBBRC
+EthMgrE1000E_int3(EthMgrE1000ERef self)
+{
+  lrt_printf("--------------------EthMgrE1000E_int3----------------\n");
+  return EBBRC_OK;
+}
+EBBRC
+EthMgrE1000E_int4(EthMgrE1000ERef self)
+{
+  lrt_printf("--------------------EthMgrE1000E_int4----------------\n");
+  return EBBRC_OK;
+}
+EBBRC
+EthMgrE1000E_intMSI(EthMgrE1000ERef self)
+{
+  lrt_printf("--------------------EthMgrE1000E_intMSI----------------\n");
+
+  e1000e_clear_all_interrupts(self->bar[0]);
+
+  wt_reg(self->bar[0], E1KE_ICS, 1<<21);
+
   return EBBRC_OK;
 }
 
@@ -290,10 +370,10 @@ EthMgrE1000E_setup_receive(EthMgrE1000ERef self)
 {
   uint64_t mac;
 
-  if (rd_reg(self->bar, E1KE_RAH(0)) & (1<<31)) {
+  if (rd_reg(self->bar[0], E1KE_RAH(0)) & (1<<31)) {
     lrt_printf("mac address is valid\n");
-    mac = (((uint64_t)rd_reg(self->bar, E1KE_RAH(0)))<<32) | 
-      rd_reg(self->bar, E1KE_RAL(0));
+    mac = (((uint64_t)rd_reg(self->bar[0], E1KE_RAH(0)))<<32) | 
+      rd_reg(self->bar[0], E1KE_RAL(0));
     mac = mac & ~(0xffffLL<<48);	/* mask off upper bits of crap */
     unsigned char *c = (unsigned char *)&mac;
     lrt_printf("address is: %02x:%02x:%02x:%02x:%02x:%02x\n", 
@@ -313,17 +393,20 @@ EthMgrE1000E_setup_receive(EthMgrE1000ERef self)
     advance_receive_tail(self);
   }
 
-  EthMgrE1000E_bindPacketHandler(self, (EBBId)self->myID, 
-				 COBJ_FUNCNUM_FROM_TYPE(CObjInterface(EthMgrE1000E),defPacketHandler));
+  EthMgrE1000E_bindPacketHandler(
+    self, (EBBId)self->myID, COBJ_FUNCNUM_FROM_TYPE(
+      CObjInterface(EthMgrE1000E),defPacketHandler));
 
   // setup the receive buffer ring
   lrt_printf("address of rc ring is %lx\n", (long unsigned)&self->rc_ring_p[0]);
-  wt_reg(self->bar, E1KE_RDBAL(0), ((uintptr_t)&self->rc_ring_p[0]) 
+  wt_reg(self->bar[0], E1KE_RDBAL(0), ((uintptr_t)&self->rc_ring_p[0]) 
 	 & 0xFFFFFFFF);
-  wt_reg(self->bar, E1KE_RDBAH(0), ((uintptr_t)&self->rc_ring_p[0]) >> 32);
-  wt_reg(self->bar, E1KE_RDLEN(0), sizeof(struct le_e1ke_rc_desc)*NUM_RC_BUFS);
+  wt_reg(self->bar[0], E1KE_RDBAH(0), ((uintptr_t)&self->rc_ring_p[0]) >> 32);
+  wt_reg(self->bar[0], E1KE_RDLEN(0), 
+	 sizeof(struct le_e1ke_rc_desc)*NUM_RC_BUFS);
 
   uint32_t val;
+  lrt_printf("enabling interrupt, setting to promiscuous\n");
   // setup the read control register
   val = (1 << E1KE_RCTL_EN);	/* enable */
   val |= (1 << E1KE_RCTL_SBP); /* FIXME: store bad packets for now */
@@ -332,9 +415,10 @@ EthMgrE1000E_setup_receive(EthMgrE1000ERef self)
   val |= (1 << E1KE_RCTL_BAM); /* FIXME: accept broadcasts */
 
   LRT_Assert(E1KE_BUFLEN == 2048); /* else, set BSIZE */
-  wt_reg(self->bar, E1KE_RCTL, val);
+  wt_reg(self->bar[0], E1KE_RCTL, val);
 
-  bindReadPoll(self);
+  // FIXME: took out polling, we might want to re-enable with a timeout
+  //bindReadPoll(self);
 }
 
 static inline EBBRC
@@ -386,11 +470,121 @@ EthMgrE1000E_write(EthMgrE1000ERef self, void *buf, unsigned len)
 }
 
 
-#if 0
-static struct le_e1ke_tx_desc tx_ring[NUM_TX_BUFS] __attribute__ ((aligned(16)));
-static struct le_e1ke_rc_desc rc_ring[NUM_RC_BUFS] __attribute__ ((aligned(16)));
-#define STATiC_RINGS
-#endif
+static inline EBBRC
+EthMgrE1000E_setup_MSIX(EthMgrE1000ERef self)
+{
+  EBBRC rc;
+  // allocate the events for MSI-X interrupts
+  for (int i; i<5; i++) {
+    rc = COBJ_EBBCALL(theEventMgrPrimId, allocEventNo, &self->msixev[i]);
+    LRT_RCAssert(rc);
+  }
+  rc = COBJ_EBBCALL(theEventMgrPrimId, bindEvent, self->msixev[0],
+		    (EBBId)self->myID, 
+                    COBJ_FUNCNUM(self, int0));
+  rc = COBJ_EBBCALL(theEventMgrPrimId, bindEvent, self->msixev[1],
+		    (EBBId)self->myID, 
+                    COBJ_FUNCNUM(self, int1));
+  rc = COBJ_EBBCALL(theEventMgrPrimId, bindEvent, self->msixev[2],
+		    (EBBId)self->myID, 
+                    COBJ_FUNCNUM(self, int2));
+  rc = COBJ_EBBCALL(theEventMgrPrimId, bindEvent, self->msixev[3],
+		    (EBBId)self->myID, 
+                    COBJ_FUNCNUM(self, int3));
+  rc = COBJ_EBBCALL(theEventMgrPrimId, bindEvent, self->msixev[4],
+		    (EBBId)self->myID, 
+                    COBJ_FUNCNUM(self, int4));
+
+
+  // set the address to my local core
+  uint32_t destid, redHint = 0, destMode = 0;
+  destid = lrt_event_loc2apicid(MyEventLoc());
+  lrt_printf("directing interrupts to apic id %x\n", destid);
+  uint32_t msiadd = 0xfee<<20 | destid<<12 | redHint<<3 | destMode <<2;
+
+  for(int i=0;i<5;i++) {
+    uint32_t msidata;
+
+    // for intel, upper address always 0
+    wt_reg(self->bar[3], MSIXTUADD(i), 0);
+
+    // lower addres as constructed above
+    wt_reg(self->bar[3], MSIXTADD(i), msiadd);
+
+    // set the data to vector number, eveyrthing else 0 ok from intel manuel
+    // pg 10.11.3 Message Data Register Format
+    // yuck, we add 32 since Dan substracted 32 reserved vectors from 
+    // the number returned for event number
+    msidata = self->msixev[i]+32;
+    msidata |= 1<<15; // make it level triggered
+    msidata |= 1<<14; // make it level triggered
+    wt_reg(self->bar[3], MSIXTMSG(i), msidata);
+
+    // enable interrupts on this vector, 0 enables
+    wt_reg(self->bar[3], MSIXTVCTRL(i), 0);
+  }
+  
+  uint32_t ivar;
+  for (int i=0;i<5;i++) {
+    ivar = i<<(i*4); // map read receive queue i to vector i
+    ivar |= 1<<(i*4+3); 		/* enable it */
+  }
+  wt_reg(self->bar[0], E1KE_IVAR, ivar);
+
+  uint32_t ims;
+  ims = E1KE_IMS_RXDMT0 | E1KE_IMS_RXQ0| E1KE_IMS_RXQ1| E1KE_IMS_TXQ0| 
+    E1KE_IMS_TXQ1| E1KE_IMS_OTHER;
+  wt_reg(self->bar[0], E1KE_IMS, ims);
+
+  // This will enable autoclearning of the interrupt
+  // after the message has been sent. FIXME: enable this
+  // once we have interrupts working. 
+  uint32_t eiac;
+  eiac = 1<<20 | 1<<21  | 1<<22  | 1<<23  | 1<<24;
+  wt_reg(self->bar[0], E1KE_EIAC, eiac);
+  // now enable msix in the configuraiton space
+  pci_enable_msix(&self->pi);
+
+  return EBBRC_OK;
+}
+
+static EBBRC
+EthMgrE1000E_setup_MSI(EthMgrE1000ERef self)
+{
+  EBBRC rc;
+  // allocate the events for MSI interrupts
+  rc = COBJ_EBBCALL(theEventMgrPrimId, allocEventNo, &self->msiev);
+  LRT_RCAssert(rc);
+
+  rc = COBJ_EBBCALL(theEventMgrPrimId, bindEvent, self->msiev,
+		    (EBBId)self->myID, 
+                    COBJ_FUNCNUM(self, intMSI));
+
+  // set the address to my local core
+  uint32_t destid, redHint = 0, destMode = 0;
+  destid = lrt_event_loc2apicid(MyEventLoc());
+
+  lrt_printf("directing interrupts to apic id %x\n", destid);
+  uint32_t msiadd = 0xfee<<20 | destid<<12 | redHint<<3 | destMode <<2;
+  uint16_t msidata;
+
+  // set the data to vector number, eveyrthing else 0 ok from intel manuel
+  // pg 10.11.3 Message Data Register Format
+  // yuck, we add 32 since Dan substracted 32 reserved vectors from 
+  // the number returned for event number
+  msidata = self->msiev+32;
+  msidata |= 1<<15; // make it level triggered
+  msidata |= 1<<14; // make it level triggered
+
+  uint32_t ims;
+  ims = E1KE_IMS_RXDMT0 | E1KE_IMS_RXQ0| E1KE_IMS_RXQ1| E1KE_IMS_TXQ0| 
+    E1KE_IMS_TXQ1| E1KE_IMS_OTHER;
+  wt_reg(self->bar[0], E1KE_IMS, ims);
+
+  pci_enable_msi(&self->pi, msiadd, 0, msidata);
+
+  return EBBRC_OK;
+}
 
 static EBBRC
 EthMgrE1000E_init(void *_self, EthMgrId id)
@@ -401,7 +595,6 @@ EthMgrE1000E_init(void *_self, EthMgrId id)
   
   self->myID = id;
 
-#ifndef STATIC_RINGS
   // needs to be 16 byte aligned
   rc = EBBPrimMalloc(((sizeof(struct le_e1ke_tx_desc)*NUM_TX_BUFS) + 16), 
 		     &self->tx_ring_base_add, EBB_MEM_DEFAULT);
@@ -412,10 +605,7 @@ EthMgrE1000E_init(void *_self, EthMgrId id)
 
   self->tx_ring_p = (void *)(((uint64_t)self->tx_ring_base_add+15) & ~0xF);
   self->rc_ring_p = (void *)(((uint64_t)self->rc_ring_base_add+15) & ~0xF);
-#else
-  self->tx_ring_p = &tx_ring[0];
-  self->rc_ring_p = &rc_ring[0];
-#endif
+
   lrt_printf(" wt ring buf %lx, ptr %lx, len %ld\n", 
 	     (uint64_t)self->tx_ring_base_add, (uint64_t)self->tx_ring_p,
 	     ((sizeof(struct le_e1ke_tx_desc)*NUM_TX_BUFS) + 16));
@@ -429,30 +619,40 @@ EthMgrE1000E_init(void *_self, EthMgrId id)
   lrt_printf("found dev, bus %d, slot %d initializing e1000e\n",
 	     self->pi.bus, self->pi.slot);
 
-  self->bar = pci_config_read32(&self->pi, 0x10);
+  for (int i=0; i<6 ; i++) {
+    self->bar[i] = pci_config_read32(&self->pi, 0x10+i*sizeof(uint32_t));
+  }
 
   pci_enable_bus_master(&self->pi);
 
-  dump_regs(self);		/* print out all key registers */
+  // dump_regs(self);		/* print out all key registers */
 
-  e1000e_disable_all_interrupts(self->bar);
-  e1000e_reset_device(self->bar);
-  e1000e_disable_all_interrupts(self->bar);
-  e1000e_clear_all_interrupts(self->bar);
+  e1000e_disable_all_interrupts(self->bar[0]);
+  e1000e_reset_device(self->bar[0]);
+  e1000e_disable_all_interrupts(self->bar[0]);
+  e1000e_clear_all_interrupts(self->bar[0]);
 
-  tmp = rd_reg(self->bar, E1KE_CTRL);
+  tmp = rd_reg(self->bar[0], E1KE_CTRL);
   tmp |= 1<<E1KE_CTRL_SLU_BIT;
-  wt_reg(self->bar, E1KE_CTRL, tmp);
+  wt_reg(self->bar[0], E1KE_CTRL, tmp);
 
-  tmp = rd_reg(self->bar, E1KE_CTRL_EXT);
+  tmp = rd_reg(self->bar[0], E1KE_CTRL_EXT);
   tmp |= 1<<E1KE_CTRL_EXT_DRV_LOAD;
-  wt_reg(self->bar, E1KE_CTRL_EXT, tmp);
+  tmp |= 1<<E1KE_CTRL_EXT_PBA_SUPP;
+  tmp |= 1<<E1KE_CTRL_EXT_EIAME;
+  wt_reg(self->bar[0], E1KE_CTRL_EXT, tmp);
 
   EthMgrE1000E_setup_receive(self);
   EthMgrE1000E_setup_transmit(self);
-
-  lrt_printf("***after initialization:\n");
-  dump_regs(self);		/* print out all key registers */
+#if 0
+  lrt_printf("***** setting up to use MSIX *******\n");
+  EthMgrE1000E_setup_MSIX(self);
+#else
+  lrt_printf("***** setting up to use MSI *******\n");
+  EthMgrE1000E_setup_MSI(self);
+#endif
+  // lrt_printf("***after initialization:\n");
+  // dump_regs(self);		/* print out all key registers */
 
 #if 0
   lrt_printf("---- done initializing e1000e\n");
@@ -461,6 +661,32 @@ EthMgrE1000E_init(void *_self, EthMgrId id)
 
   // EthMgrE1000E_dumpread(self);  
 
+#if 0
+  // testing triggering of reads
+  for(int i=0; i<5; i++)
+    rc = COBJ_EBBCALL(theEventMgrPrimId, triggerEvent, self->msixev[i], 
+		      LRT_EVENT_LOC_SINGLE, MyEventLoc());
+#endif
+
+  
+  // generate explicit interrupt, to see if we get it
+  // wt_reg(self->bar[0], E1KE_ICS, 1<<20|1<<21|1<<22|1<<23|1<<24);
+  wt_reg(self->bar[0], E1KE_ICS, 1<<21);
+
+#if 0
+  // FIXME: get rid of this
+  uint32_t tp = rd_reg(self->bar[3], MSIXPBA);
+  while (tp == 0) { 
+    lrt_printf("*");
+    tp = rd_reg(self->bar[3], MSIXPBA);
+  }
+  lrt_printf("MSIX PBA (pending bits) %x\n", tp);
+#endif
+#if 0
+  e1000e_clear_all_interrupts(self->bar[0]);
+  tp = rd_reg(self->bar[3], MSIXPBA);
+  lrt_printf("MSIX PBA (pending bits) %x\n", tp);
+#endif
   return EBBRC_OK;
 }
 
@@ -473,7 +699,6 @@ EthMgrE1000E_bind(void *_self, uint16_t type, EthTypeMgrId id)
 static EBBRC 
 EthMgrE1000E_inEvent(EthMgrE1000ERef self)
 {
-  // wire up for input event for MSI-X
   return EBBRC_GENERIC_FAILURE;
 }
   
@@ -487,6 +712,12 @@ CObjInterface(EthMgrE1000E) EthMgrE1000E_ftable = {
     .inEvent = (GenericEventFunc)EthMgrE1000E_inEvent,
   },
   .readPoll = EthMgrE1000E_readPoll,
+  .int0 = EthMgrE1000E_int0,
+  .int1 = EthMgrE1000E_int1,
+  .int2 = EthMgrE1000E_int2,
+  .int3 = EthMgrE1000E_int3,
+  .int4 = EthMgrE1000E_int4,
+  .intMSI = EthMgrE1000E_intMSI,
   .defPacketHandler = EthMgrE1000E_defaultEthernetPacketHandler,
   .bindPacketHandler = EthMgrE1000E_bindPacketHandler
 };
@@ -525,15 +756,14 @@ EthMgrE1000ECreate(EthMgrId *id)
 
 #ifndef LRT_ULNX
 /*
- * For now, doing something brain damged, telling 
- * pci bus to give us info about the one nic we know
- * about.  We should probably move this outside of this
- * file and ask for a list of all NICs...
+ * For now, this driver function is called, probes the pci bus to see if it 
+ * exists.  We need to debate this model, it assumes that the rigth device
+ * drives, and just them, are built in. 
  */
 EBBRC
 EthMgrCreate(EthMgrId *id) 
 {
-  pci_print_all();
+  // pci_print_all();
 
   lrt_printf("calling EthMgrE1000ECreate\n");
   return EthMgrE1000ECreate(id);

@@ -30,11 +30,14 @@
 #define E1KE_MDIC     0x020              /* Managemt Data Int(MDI) contr reg */
 #define E1KE_IMC 0xd8		         /* interrupt mask clear (WO) */
 #define E1KE_ICR 0xc0		         /* interrupt cause read (RW) */
+#define E1KE_ICS 0xc8			 /* interrupt cause register (W) */
 #define E1KE_GCR 0x5b00		         /* 3GIO control register (RW) */
 #define E1KE_TXDCTL(N) (0x03828+N*0x100) /* transmit descriptor control (RW) */
 #define E1KE_TCTL 0x0400		 /* transmit control (RW) */
 #define E1KE_RXDCTL(N) (0x02828+N*0x100) /* receive descriptor control (RW) */
 #define E1KE_RCTL 0x0100		 /* receive control (RW) */
+#define E1KE_IMS 0xd0			 /* interrupt mask set/read register */
+#define E1KE_EIAC 0xdc			 /* bits that Kauto cleard on MSI-X */
 
 #define E1KE_TDBAL(N) (0x3800+N*0x100)
 #define E1KE_TDBAH(N) (0x3804+N*0x100)
@@ -59,6 +62,23 @@
 #define E1KE_CTRL_SPEED_BIT 8    /* set link up */
 #define E1KE_CTRL_RST_BIT 26   /* reset */
 
+// MSIX registers, these are offset from base address 3
+#define MSIXTADD(N) (N*0x10)
+#define MSIXTUADD(N) (0x4 + N*0x10)
+#define MSIXTMSG(N) (0x8+(N*0x10))
+#define MSIXTVCTRL(N) (0xC+(N*0x10))
+#define MSIXPBA       (0x2000)
+
+// Interrupt vector allocation register, used for MSI-X mode
+#define E1KE_IVAR 0xe4
+
+// bit definitions in IMS register
+#define E1KE_IMS_RXDMT0     (1<<4)
+#define E1KE_IMS_RXQ0       (1<<20)
+#define E1KE_IMS_RXQ1       (1<<21)
+#define E1KE_IMS_TXQ0       (1<<22)
+#define E1KE_IMS_TXQ1       (1<<23)
+#define E1KE_IMS_OTHER       (1<<24)
 
 static inline void
 print_ctrl_reg(uint32_t ctrl)
@@ -154,6 +174,8 @@ print_tctl_reg(uint32_t r)
 
 // BIT definitons in CTRL_EXT register 
 #define E1KE_CTRL_EXT_DRV_LOAD 28 /* driver loaded */
+#define E1KE_CTRL_EXT_EIAME 24    /* auot-mask; clear int bit on MSI-X int */
+#define E1KE_CTRL_EXT_PBA_SUPP 31 /* MSI-X support */
 
 // BIT definitions in transmit descriptor control
 #define E1KE_TXDCTL_WTHRESH 16 	        /* bits 16-21 */
@@ -380,5 +402,10 @@ e1000e_reset_device(uint32_t bar)
 static inline void
 e1000e_clear_all_interrupts(uint32_t bar)
 {
-  rd_reg(bar, E1KE_ICR);
+  uint32_t tmp = rd_reg(bar, E1KE_ICR);
+  lrt_printf("clearing interrupts, current val is %x\n", tmp);
+  tmp = rd_reg(bar, E1KE_ICR);
+  lrt_printf("clearing interrupts, current val is %x\n", tmp);
+  tmp = rd_reg(bar, E1KE_IMS);
+  lrt_printf("interrupt mask is %x\n", tmp);
 }
