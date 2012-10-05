@@ -399,13 +399,10 @@ e1000e_reset_device(uint32_t bar)
   wt_reg(bar, E1KE_GCR, tmp);
 }
 
-static inline void
+// clear and return value of ICR
+static inline uint32_t
 e1000e_clear_all_interrupts(uint32_t bar)
 {
   uint32_t tmp = rd_reg(bar, E1KE_ICR);
-  lrt_printf("clearing interrupts, current val is %x\n", tmp);
-  tmp = rd_reg(bar, E1KE_ICR);
-  lrt_printf("clearing interrupts, current val is %x\n", tmp);
-  tmp = rd_reg(bar, E1KE_IMS);
-  lrt_printf("interrupt mask is %x\n", tmp);
+  return tmp;
 }

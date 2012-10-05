@@ -274,14 +274,11 @@ pci_enable_msi(struct pci_info *pi, uint32_t mal, uint32_t mau,
   ptr = find_capability(pi->bus, pi->slot, PCI_CAP_TYPE_MSI);
   // oops, couldn't find capability 
   LRT_Assert(ptr!=0);		
-  lrt_printf("found msi capability, ptr is %x, enabling\n", ptr);
+  lrt_printf("found msi capability, ptr is %x, enabling; ", ptr);
   lrt_printf("note for MSI on ether should be D0\n");
 
-  lrt_printf("writting lower address to %x\n", ptr+4);
   pci_config_write32(pi->bus, pi->slot, 0, ptr+4, mal);
-  lrt_printf("writting upper address to %x\n", ptr+8);
   pci_config_write32(pi->bus, pi->slot, 0, ptr+8, mau);
-  lrt_printf("writting data to %x\n", ptr+12);
   pci_config_write16(pi->bus, pi->slot, 0, ptr+12, mad);
   
 

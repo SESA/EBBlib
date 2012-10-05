@@ -340,12 +340,9 @@ EthMgrE1000E_int4(EthMgrE1000ERef self)
 EBBRC
 EthMgrE1000E_intMSI(EthMgrE1000ERef self)
 {
-  lrt_printf("--------------------EthMgrE1000E_intMSI----------------\n");
-
-  e1000e_clear_all_interrupts(self->bar[0]);
-
-  wt_reg(self->bar[0], E1KE_ICS, 1<<21);
-
+  uint32_t i;
+  i = e1000e_clear_all_interrupts(self->bar[0]);
+  lrt_printf("got interrupt ICR-%x\n", i);
   return EBBRC_OK;
 }
 
@@ -612,13 +609,6 @@ EthMgrE1000E_init(void *_self, EthMgrId id)
   lrt_printf(" rd ring buf %lx, ptr %lx\n", 
 	     (uint64_t)self->rc_ring_base_add, (uint64_t)self->rc_ring_p);
 
-  // set pci information in device
-  rc = pci_get_info(PCI_VENDOR_INTEL, PCI_INTEL_DEVID_E1000E, &self->pi);
-  LRT_RCAssert(rc);		/* later check EBBRC_NOTFOUND */
-
-  lrt_printf("found dev, bus %d, slot %d initializing e1000e\n",
-	     self->pi.bus, self->pi.slot);
-
   for (int i=0; i<6 ; i++) {
     self->bar[i] = pci_config_read32(&self->pi, 0x10+i*sizeof(uint32_t));
   }
@@ -671,7 +661,7 @@ EthMgrE1000E_init(void *_self, EthMgrId id)
   
   // generate explicit interrupt, to see if we get it
   // wt_reg(self->bar[0], E1KE_ICS, 1<<20|1<<21|1<<22|1<<23|1<<24);
-  wt_reg(self->bar[0], E1KE_ICS, 1<<21);
+  // wt_reg(self->bar[0], E1KE_ICS, 1<<21);
 
 #if 0
   // FIXME: get rid of this
@@ -732,9 +722,15 @@ EthMgrE1000ECreate(EthMgrId *id)
   rc = EBBPrimMalloc(sizeof(EthMgrE1000E), &repRef, EBB_MEM_DEFAULT);
   LRT_RCAssert(rc);
 
-  repRef->ft = &EthMgrE1000E_ftable; 
+  // set pci information in device
+  rc = pci_get_info(PCI_VENDOR_INTEL, PCI_INTEL_DEVID_E1000E, &repRef->pi);
+  LRT_RCAssert(rc);		/* later check EBBRC_NOTFOUND */
 
-  lrt_printf("found device, intializing\n");
+  lrt_printf("found device, EthMgrE1000E: bus %d, slot %d\n",
+	     repRef->pi.bus, repRef->pi.slot);
+
+
+  repRef->ft = &EthMgrE1000E_ftable; 
 
   rc = EBBAllocPrimId((EBBId *)id);
   LRT_RCAssert(rc);
@@ -764,8 +760,6 @@ EBBRC
 EthMgrCreate(EthMgrId *id) 
 {
   // pci_print_all();
-
-  lrt_printf("calling EthMgrE1000ECreate\n");
   return EthMgrE1000ECreate(id);
 }
 #endif
