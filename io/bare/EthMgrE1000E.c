@@ -285,11 +285,13 @@ EthMgrE1000E_handleReceives(EthMgrE1000ERef self)
     // advance tail
     advance_receive_tail(self);
 
+#if 0
     // FIXME: get rid of this
     uint32_t tmp = rd_reg(self->bar[3], MSIXPBA);
     lrt_printf("MSIX PBA (pending bits) %x\n", tmp);
     e1000e_clear_all_interrupts(self->bar[0]);
     // FIXME: end get rid of this
+#endif
   }
   self->rc_last_head = cur;
 }
@@ -342,6 +344,7 @@ EthMgrE1000E_intMSI(EthMgrE1000ERef self)
 {
   uint32_t i;
   i = e1000e_clear_all_interrupts(self->bar[0]);
+  EthMgrE1000E_handleReceives(self);
   lrt_printf("got interrupt ICR-%x\n", i);
   return EBBRC_OK;
 }
