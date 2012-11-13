@@ -193,12 +193,13 @@ static int printi(long long val, unsigned int base, int sign,
     } else if (flags & NO_SIGN_SPACE) {
       *--s = ' ';
     }
-  } else if (base == 16) {
-    *--s = cbase;
-    *s -= 'A';
-    *s += 'X';
-    *--s = '0';
   }
+ /* else if (base == 16) { */
+ /*    *--s = cbase; */
+ /*    *s -= 'A'; */
+ /*    *s += 'X'; */
+ /*    *--s = '0'; */
+ /*  } */
   return prints(s, width, -1, flags, stream);
 }
 

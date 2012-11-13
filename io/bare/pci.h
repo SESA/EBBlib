@@ -77,7 +77,11 @@ extern uint32_t pci_config_read32(struct pci_info *pi, uint16_t offset);
 extern void pci_enable_bus_master(struct pci_info *pi);
 extern void pci_print_all();	/* prints on console everything we can find */
 extern EBBRC pci_get_info(int vendor, int devid, struct pci_info *info);
+extern void pci_enable_msix(struct pci_info *pi);
 
-// move this out to driver
-extern void e1000e_init(uint8_t bus, uint8_t slot);
+// write the following message address lower, upper and data into PCI config
+// space for MSI
+extern void pci_enable_msi(struct pci_info *pi, uint32_t mal, uint32_t mau, 
+			   uint16_t mad);
+
 #endif
