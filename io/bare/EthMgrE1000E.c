@@ -345,7 +345,7 @@ EthMgrE1000E_intMSI(EthMgrE1000ERef self)
   uint32_t i;
   i = e1000e_clear_all_interrupts(self->bar[0]);
   EthMgrE1000E_handleReceives(self);
-  lrt_printf("got interrupt ICR-%x\n", i);
+  e1000e_parse_icr(i);
   return EBBRC_OK;
 }
 

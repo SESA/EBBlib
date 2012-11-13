@@ -62,6 +62,26 @@
 #define E1KE_CTRL_SPEED_BIT 8    /* set link up */
 #define E1KE_CTRL_RST_BIT 26   /* reset */
 
+// bit definitions in ICR register
+#define E1KE_ICR_TXDW 0
+#define E1KE_ICR_TXQE 1
+#define E1KE_ICR_LSC  2
+#define E1KE_ICR_RXDMT0 4
+#define E1KE_ICR_RXO  6
+#define E1KE_ICR_RXTO 7
+#define E1KE_ICR_MDAC 9
+#define E1KE_ICR_TXD_LOW 15
+#define E1KE_ICR_SRPD 16
+#define E1KE_ICR_ACK 17
+#define E1KE_ICR_MNG 18
+#define E1KE_ICR_RxQ0 20
+#define E1KE_ICR_RxQ1 21
+#define E1KE_ICR_TxQ0 22
+#define E1KE_ICR_TxQ1 23
+#define E1KE_ICR_Other 24
+#define E1KE_ICR_INT_ASSERTED 31
+
+
 // MSIX registers, these are offset from base address 3
 #define MSIXTADD(N) (N*0x10)
 #define MSIXTUADD(N) (0x4 + N*0x10)
@@ -398,6 +418,48 @@ e1000e_reset_device(uint32_t bar)
   tmp |= 1<<22;
   wt_reg(bar, E1KE_GCR, tmp);
 }
+
+static inline void
+e1000e_parse_icr(uint32_t icr)
+{
+  if (icr & (1 << E1KE_ICR_TXDW)) 
+    lrt_printf("E1KE_ICR_TXDW ");
+  if (icr & (1 << E1KE_ICR_TXQE))
+    lrt_printf("E1KE_ICR_TXQE ");
+  if (icr & (1 << E1KE_ICR_LSC ))
+    lrt_printf("E1KE_ICR_LSC  ");
+  if (icr & (1 << E1KE_ICR_RXDMT0))
+    lrt_printf("E1KE_ICR_RXDMT0 ");
+  if (icr & (1 << E1KE_ICR_RXO ))
+    lrt_printf("E1KE_ICR_RXO  ");
+  if (icr & (1 << E1KE_ICR_RXTO))
+    lrt_printf("E1KE_ICR_RXTO ");
+  if (icr & (1 << E1KE_ICR_MDAC))
+    lrt_printf("E1KE_ICR_MDAC ");
+  if (icr & (1 << E1KE_ICR_TXD_LOW))
+    lrt_printf("E1KE_ICR_TXD_LOW ");
+  if (icr & (1 << E1KE_ICR_SRPD))
+    lrt_printf("E1KE_ICR_SRPD ");
+  if (icr & (1 << E1KE_ICR_ACK))
+    lrt_printf("E1KE_ICR_ACK ");
+  if (icr & (1 << E1KE_ICR_MNG))
+    lrt_printf("E1KE_ICR_MNG ");
+  if (icr & (1 << E1KE_ICR_RxQ0))
+    lrt_printf("E1KE_ICR_RxQ0 ");
+  if (icr & (1 << E1KE_ICR_RxQ1))
+    lrt_printf("E1KE_ICR_RxQ1 ");
+  if (icr & (1 << E1KE_ICR_TxQ0))
+    lrt_printf("E1KE_ICR_TxQ0 ");
+  if (icr & (1 << E1KE_ICR_TxQ1))
+    lrt_printf("E1KE_ICR_TxQ1 ");
+  if (icr & (1 << E1KE_ICR_Other))
+    lrt_printf("E1KE_ICR_Other ");
+  if (icr & (1 << E1KE_ICR_INT_ASSERTED))
+    lrt_printf("E1KE_ICR_INT_ASSERTED ");
+  lrt_printf("\n");
+}
+
+
 
 // clear and return value of ICR
 static inline uint32_t
