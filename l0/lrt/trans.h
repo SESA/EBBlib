@@ -88,7 +88,7 @@ struct lrt_trans_s {
   };
   union {
     uintptr_t v6;
-    rwlock rwlock;
+    rwlock rwlock_instance;
   };
   union {
     uintptr_t v7;

@@ -197,28 +197,28 @@ void
 lrt_trans_wrlock(lrt_trans_id id)
 {
   lrt_trans_gtrans *gt = lrt_trans_id2gt(id);
-  rwlock_wrlock(&gt->rwlock);
+  rwlock_wrlock(&gt->rwlock_instance);
 }
 
 void
 lrt_trans_wrunlock(lrt_trans_id id)
 {
   lrt_trans_gtrans *gt = lrt_trans_id2gt(id);
-  rwlock_wrunlock(&gt->rwlock);
+  rwlock_wrunlock(&gt->rwlock_instance);
 }
 
 void
 lrt_trans_rdlock(lrt_trans_id id)
 {
   lrt_trans_gtrans *gt = lrt_trans_id2gt(id);
-  rwlock_rdlock(&gt->rwlock);
+  rwlock_rdlock(&gt->rwlock_instance);
 }
 
 void
 lrt_trans_rdunlock(lrt_trans_id id)
 {
   lrt_trans_gtrans *gt = lrt_trans_id2gt(id);
-  rwlock_rdunlock(&gt->rwlock);
+  rwlock_rdunlock(&gt->rwlock_instance);
 }
 
 uintptr_t
