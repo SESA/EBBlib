@@ -1,5 +1,8 @@
+if HAVE_PYTHON
+TESTS_ENVIRONMENT = python
 if LRT_ULNX
-TESTS = scripts/regression
+TESTS = scripts/bindtst.py scripts/msgtst.py scripts/primalloctst.py
+endif
 endif
 
 AM_CFLAGS = -Wall -Werror -fno-strict-aliasing -g3

@@ -10,7 +10,8 @@ AC_CONFIG_SRCDIR([l0/EBBMgrPrim.c])
 AC_CONFIG_HEADER([config.h])
 #AC_CONFIG_MACRO_DIR([m4])
 m4_include([m4/check_gnu_make.m4])
-
+AM_PATH_PYTHON([2.6],, [:])
+AM_CONDITIONAL([HAVE_PYTHON], [test "$PYTHON" != ":"])
 AC_CANONICAL_HOST
 AS_CASE([$host_cpu], [x86_64], 
 		     [AC_DEFINE([ARCH_AMD64], [1], [x86_64 architecture])],
