@@ -1,7 +1,8 @@
 if HAVE_PYTHON
 TESTS_ENVIRONMENT = python
 if LRT_ULNX
-TESTS = scripts/bindtst.py scripts/msgtst.py scripts/primalloctst.py
+TESTS = scripts/bindtst.py scripts/msgtst.py scripts/primalloctst.py \
+	scripts/helloworld.py scripts/helloworldcpp.py
 endif
 endif
 
