@@ -1,5 +1,9 @@
+if HAVE_PYTHON
+TESTS_ENVIRONMENT = python
 if LRT_ULNX
-TESTS = scripts/regression
+TESTS = scripts/bindtst.py scripts/msgtst.py scripts/primalloctst.py \
+	scripts/helloworld.py scripts/helloworldcpp.py
+endif
 endif
 
 AM_CFLAGS = -Wall -Werror -fno-strict-aliasing -g3
@@ -59,7 +63,7 @@ endif
 
 if x86_64
 BAREFLAGS += -mno-red-zone -mno-mmx -mno-sse -mno-sse2 -mno-sse3
-AM_LDFLAGS += -melf_x86_64 -static -n -z max-page-size=0x1000 \
+AM_LDFLAGS += -Wl,-melf_x86_64 -static -n -z max-page-size=0x1000 \
 	-Wl,--build-id=none \
 	-T $(top_srcdir)/l0/lrt/bare/arch/amd64/link.ld
 
