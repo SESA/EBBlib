@@ -63,7 +63,7 @@ endif
 
 if x86_64
 BAREFLAGS += -mno-red-zone -mno-mmx -mno-sse -mno-sse2 -mno-sse3
-AM_LDFLAGS += -melf_x86_64 -static -n -z max-page-size=0x1000 \
+AM_LDFLAGS += -Wl,-melf_x86_64 -static -n -z max-page-size=0x1000 \
 	-Wl,--build-id=none \
 	-T $(top_srcdir)/l0/lrt/bare/arch/amd64/link.ld
 
