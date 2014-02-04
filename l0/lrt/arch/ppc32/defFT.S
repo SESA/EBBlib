@@ -33,7 +33,7 @@ defaultFuncCommon:
 	lwz r0, 0x4(r1)               //restore link register
 	mtlr r0
 	cmpi 0, 1, r3, 0                   //check return value
-	bne   OnSuccess
+	bgt   OnSuccess
 	blr
 OnSuccess:
 	mtctr r3  //load ctr to branch to later
@@ -58,9 +58,9 @@ OnSuccess:
 #define	DEFAULT_FUNC(OP)	\
 	.section ".text"; \
 	.align 2; \
-	.globl EBBDefFunc_ ## OP; \
-	.type EBBDefFunc_ ## OP ##, @function; \
-EBBDefFunc_ ## OP ##: ;\
+	.globl lrt_trans_def_func_ ## OP; \
+	.type lrt_trans_def_func_ ## OP ##, @function; \
+lrt_trans_def_func_ ## OP ##: ;\
 		li r11, OP	; \
 		b defaultFuncCommon ; 
 

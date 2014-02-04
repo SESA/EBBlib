@@ -36,7 +36,6 @@
 #include <l0/lrt/event.h>
 
 int verbose=0;
-static uint64_t (*timingfunc)(void);
 
 CObject(EventTiming) {
   CObjInterface(EventTiming) *ft;
@@ -111,12 +110,12 @@ EventTiming_loopEvent(EventTimingRef self)
         break;
       }
     }
-    t0 = timingfunc();
+    t0 = read_timestamp();
   }
 
   if (count == max_count) {	/* done an iteration */
     uint64_t ctot, cavg;
-    t1 = timingfunc();
+    t1 = read_timestamp();
     LRT_Assert(t1>t0);
 
     ctot = t1-t0;
@@ -253,19 +252,19 @@ testEBBCall()
   rc = testObjImpCreate();
   LRT_RCAssert(rc);
 
-  t0 = timingfunc();
+  t0 = read_timestamp();
   COBJ_EBBCALL(toid, nullCall);
-  t1 = timingfunc();
+  t1 = read_timestamp();
 
   lrt_printf("\t first EBB call %ld\n", (long int)(t1 - t0));
 
   for(i=0;i<max_iteration;i++) {
     uint64_t ctot, cavg;
-    t0 = timingfunc();
+    t0 = read_timestamp();
     for(j=0;j<max_count;j++) {
       COBJ_EBBCALL(toid, nullCall);
     }
-    t1 = timingfunc();
+    t1 = read_timestamp();
     ctot = t1-t0;
     cavg = ctot/max_count;
     if (i == 0) {
@@ -302,11 +301,11 @@ testTimerOverhead()
 
   for(i=0;i<max_iteration;i++) {
     uint64_t ctot, cavg;
-    t0 = timingfunc();
+    t0 = read_timestamp();
     for(j=0;j<max_count;j++) {
-      t3 = timingfunc();
+      t3 = read_timestamp();
     }
-    t1 = timingfunc();
+    t1 = read_timestamp();
     ctot = t1-t0;
     cavg = ctot/max_count;
     if (i == 0) {
@@ -462,18 +461,13 @@ runNextTest()
 static EBBRC
 EventTiming_start(AppRef _self)
 {
-  if (has_rdtscp()) {
-    timingfunc = rdtscp;
-  } else {
-    timingfunc = rdtsc;
-  }
   //block for a while to let other cores halt
-  uint64_t time = timingfunc();
+  uint64_t time = read_timestamp();
   numcores = NumEventLoc();
   verbose = 1;
 
   lrt_printf("eventtiming: started\n");
-  while ((timingfunc() - time) < 1000000) ;
+  while ((read_timestamp() - time) < 1000000) ;
   EBBRC rc = COBJ_EBBCALL(theEventMgrPrimId, allocEventNo, &ev);
   LRT_RCAssert(rc);
 

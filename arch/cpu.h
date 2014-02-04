@@ -25,6 +25,10 @@
 #include <arch/amd64/cpu.h>
 #endif
 
+#ifdef ARCH_PPC
+#include <arch/powerpc/cpu.h>
+#endif
+
 #define _ALIGN_CACHE_ __attribute__ ((aligned(CACHE_LINE_ALIGNMENT)))
 
 #endif

@@ -10,6 +10,12 @@
 #include <arch/powerpc/450/cpu.h>
 #endif
 
+static inline void 
+cpu_relax(void)
+{
+        
+}
+
 static inline msr
 get_msr(void)
 {
@@ -109,6 +115,13 @@ typedef union {
   };
 } ccr2;
 
+
+static inline uint64_t 
+read_timestamp(void)
+{
+  return get_spr(SPRN_TB);
+}
+  
 STATIC_ASSERT(sizeof(ccr2) == 4, "ccr2 struct packing issue");
 
 #endif

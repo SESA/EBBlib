@@ -285,4 +285,12 @@ rdtscp(void) {
                 : : "ecx");
   return (uint64_t)high << 32 | low;
 }
+
+
+static inline uint64_t 
+read_timestamp(void)
+{
+  return rdtsc();
+}
+
 #endif

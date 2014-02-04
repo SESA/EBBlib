@@ -30,6 +30,6 @@ else
   runalltests "-ebbos_cores 1"
   echo "---- running all test with default cores ---"
   runalltests 
-  echo "---- running all test with 63 cores ---"
-  runalltests "-ebbos_cores 63"
+  echo "---- running all test with 32 cores ---"
+  runalltests "-ebbos_cores 32"
 fi

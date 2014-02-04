@@ -123,7 +123,7 @@ parse_ebbos_arg(int i, char **argv, int *s)
     // overridding the number of cores
     ret = 2;			/* 2 arguments to be handled */
     start_args.cores=atoi(argv[i+1]);
-    fprintf(stdout, "EBBOS: overriding cores to %ld\n", start_args.cores);
+    fprintf(stdout, "EBBOS: overriding cores to %" PRIdPTR "\n", start_args.cores);
   } else {
     fprintf(stderr, "EBBOS: unknown argument stripped: %s\n", argv[i]);
     exit(1);

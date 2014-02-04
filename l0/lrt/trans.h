@@ -78,7 +78,7 @@ struct lrt_trans_s {
   };
   union {
     uintptr_t v4;
-    uint64_t corebv; //bit vector of cores where object is cached in
+    uint32_t corebv; //bit vector of cores where object is cached in
                      //translation table, note, object may have been
                      //accessed in larger set of nodes and translated
                      //id may be on stack in other nodes
@@ -88,7 +88,7 @@ struct lrt_trans_s {
   };
   union {
     uintptr_t v6;
-    rwlock rwlock;
+    rwlock lock;
   };
   union {
     uintptr_t v7;
